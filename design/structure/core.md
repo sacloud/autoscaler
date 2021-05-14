@@ -64,7 +64,7 @@ config:
     # TODO 項目追加
 ```
 
-`resources`で指定するリソースについては[Resources](resources)を参照。
+`resources`で指定するリソースについては[Resources](resources.md)を参照。
 
 ### Handlersの呼び出し
 
