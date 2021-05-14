@@ -49,7 +49,8 @@
 - Server Vertical Scaler: サーバのスペックを任意の状態へスケールアップ/ダウンする
 - DNS A Record Handler: さくらのクラウドDNSへ任意のAレコードを登録/削除する
 - DNS CNAME Record Handler: さくらのクラウドDNSへ任意のCNAMEレコードを登録/削除する
-- Shell Exec Handler: 任意のスクリプト(など)を実行する。パラメータは標準入力経由でJSON形式で渡される
+- Shell Exec Handler: 任意のスクリプト(など)を実行する
+- Terraform Handler: Terraformコンフィギュレーションの出力〜リソースのインポート〜`apply`を実行する
 
 さくらのクラウドだけでなく、Route53などを併用するパターンも考えられる。  
 このためShell Exec Handlerなどのような汎用的に処理できる仕組みが必要となる。  
