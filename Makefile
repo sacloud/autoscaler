@@ -40,11 +40,16 @@ tools:
 	go install github.com/client9/misspell/cmd/misspell@latest
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.40.0/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.40.0
 
-.PHONY: build
-build: bin/autoscaler
+.PHONY: build build-all build-autoscaler build-inputs-direct
+build: build-autoscaler build-inputs-direct
+build-autoscaler: bin/autoscaler
+build-inputs-direct: bin/autoscaler-inputs-direct
 
 bin/autoscaler: $(GO_FILES)
-	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler main.go
+	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler cmd/autoscaler/main.go
+
+bin/autoscaler-inputs-direct: $(GO_FILES)
+	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler-inputs-direct cmd/autoscaler-inputs-direct/main.go
 
 .PHONY: shasum
 shasum:
