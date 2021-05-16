@@ -4,7 +4,7 @@
 
 Inputsは外部からのリクエストなどを契機にCoreを呼び出す。
 
-- [InputsからCoreへのリクエスト定義](inputs-to-core.md)
+- [InputsからCoreへのリクエスト定義](../../request.proto)
 - [Grafana Inputs](inputs_grafana.md)
 - [AlertManager Inputs](inputs_alertmanager.md)
 
@@ -14,5 +14,5 @@ Coreはコマンドラインオプションや設定ファイルなどから起�
 
 - [Coreのコンフィギュレーション](core.md)
 - [リソース定義](resources.md)
-- [CoreからHandlersへのリクエスト定義](core-to-handlers.md)
+- [CoreからHandlersへのリクエスト定義](../../handler.proto)
 

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build tools
+
 package main
 
 import (
-	"log"
-	"os"
+	_ "github.com/sacloud/addlicense"
+	_ "golang.org/x/tools/cmd/goimports"
+	_ "golang.org/x/tools/cmd/stringer"
+	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
+	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
 )
-
-func main() {
-	log.Println("not implemented yet")
-	os.Exit(1)
-}

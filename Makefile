@@ -34,17 +34,36 @@ clean:
 
 .PHONY: tools
 tools:
-	go install golang.org/x/tools/cmd/goimports@latest
-	go install golang.org/x/tools/cmd/stringer@latest
-	go install github.com/sacloud/addlicense@latest
-	go install github.com/client9/misspell/cmd/misspell@latest
+	(cd tools; go install golang.org/x/tools/cmd/goimports)
+	(cd tools; go install golang.org/x/tools/cmd/stringer)
+	(cd tools; go install github.com/sacloud/addlicense)
+	(cd tools; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc)
+	(cd tools; go install google.golang.org/protobuf/cmd/protoc-gen-go)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.40.0/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.40.0
 
-.PHONY: build
-build: bin/autoscaler
+.PHONY: gen
+gen: gen-request gen-handler
+gen-request:
+	(cd docs; protoc --go_out=../request --go_opt=paths=source_relative --go-grpc_out=../request --go-grpc_opt=paths=source_relative request.proto)
 
+gen-handler:
+	(cd docs; protoc --go_out=../handler --go_opt=paths=source_relative --go-grpc_out=../handler --go-grpc_opt=paths=source_relative handler.proto)
+
+.PHONY: build build-all build-autoscaler build-inputs-direct
+
+build: build-autoscaler build-inputs-direct build-handlers-fake
+
+build-autoscaler: bin/autoscaler
 bin/autoscaler: $(GO_FILES)
-	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler main.go
+	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler cmd/autoscaler/main.go
+
+build-inputs-direct: bin/autoscaler-inputs-direct
+bin/autoscaler-inputs-direct: $(GO_FILES)
+	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler-inputs-direct cmd/autoscaler-inputs-direct/main.go
+
+build-handlers-fake: bin/autoscaler-handlers-fake
+bin/autoscaler-handlers-fake: $(GO_FILES)
+	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler-handlers-fake cmd/autoscaler-handlers-fake/main.go
 
 .PHONY: shasum
 shasum:
@@ -56,7 +75,7 @@ test:
 
 .PHONY: lint
 lint:
-	golangci-lint run ./...
+	golangci-lint run ./... --modules-download-mode=readonly
 
 .PHONY: goimports
 goimports:
