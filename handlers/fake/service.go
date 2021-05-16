@@ -32,7 +32,7 @@ func NewFakeHandlerService() handler.HandleServiceServer {
 }
 
 func (h *HandleService) Handle(req *handler.HandleRequest, server handler.HandleService_HandleServer) error {
-	log.Printf("received: source: %s, action: %s group:%s, job-id:%s", req.Source, req.Action, req.ResourceGroupName, req.ScalingJobId)
+	log.Printf("received: %s", req.String())
 
 	// 受付メッセージ送信
 	if err := server.Send(&handler.HandleResponse{
