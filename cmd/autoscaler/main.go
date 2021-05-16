@@ -22,12 +22,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/sacloud/autoscaler/core"
 	"github.com/sacloud/autoscaler/defaults"
@@ -56,13 +59,23 @@ func main() {
 		fmt.Println(version.FullVersion())
 		return
 	default:
+		errCh := make(chan error)
+		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+		defer stop()
+
 		// TODO 簡易的な実装、後ほど整理&切り出し
 		filename := strings.Replace(defaults.CoreSocketAddr, "unix:", "", -1)
 		lis, err := net.Listen("unix", filename)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		server := grpc.NewServer()
+		srv := core.NewScalingService()
+		request.RegisterScalingServiceServer(server, srv)
+
 		defer func() {
+			server.GracefulStop()
 			lis.Close()
 			if _, err := os.Stat(filename); err == nil {
 				if err := os.RemoveAll(filename); err != nil {
@@ -71,14 +84,18 @@ func main() {
 			}
 		}()
 
-		log.Printf("autoscaler started with: %s\n", lis.Addr().String())
+		go func() {
+			log.Printf("autoscaler started with: %s\n", lis.Addr().String())
+			if err := server.Serve(lis); err != nil {
+				errCh <- err
+			}
+		}()
 
-		server := grpc.NewServer()
-		srv := core.NewScalingService()
-		request.RegisterScalingServiceServer(server, srv)
-
-		if err := server.Serve(lis); err != nil {
-			log.Fatal(err)
+		select {
+		case err := <-errCh:
+			log.Fatalln("Fatal error: ", err)
+		case <-ctx.Done():
+			log.Println("shutting down with:", ctx.Err())
 		}
 	}
 }
