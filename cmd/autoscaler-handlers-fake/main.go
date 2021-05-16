@@ -34,7 +34,7 @@ import (
 
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/autoscaler/plugins/handlers/fake"
+	"github.com/sacloud/autoscaler/handlers/fake"
 	"github.com/sacloud/autoscaler/version"
 	"google.golang.org/grpc"
 )
