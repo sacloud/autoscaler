@@ -15,10 +15,10 @@
 // AutoScaler Core
 //
 // Usage:
-//   autoscaler [flags]
+//   autoscaler-handlers-fake [flags]
 //
 // Flags:
-//   -address: (optional) URL of gRPC endpoint of AutoScaler Core. default:`unix:autoscaler.sock`
+//   -address: (optional) URL of gRPC endpoint of the handler. default:`unix:autoscaler-handlers-fake.sock`
 package main
 
 import (
@@ -29,16 +29,16 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sacloud/autoscaler/core"
 	"github.com/sacloud/autoscaler/defaults"
-	"github.com/sacloud/autoscaler/request"
+	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/autoscaler/plugins/handlers/fake"
 	"github.com/sacloud/autoscaler/version"
 	"google.golang.org/grpc"
 )
 
 func main() {
 	var address string
-	flag.StringVar(&address, "address", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
+	flag.StringVar(&address, "address", defaults.HandlerFakeSocketAddr, "URL of gRPC endpoint of the handler")
 
 	var showHelp, showVersion bool
 	flag.BoolVar(&showHelp, "help", false, "Show help")
@@ -57,7 +57,7 @@ func main() {
 		return
 	default:
 		// TODO 簡易的な実装、後ほど整理&切り出し
-		filename := strings.Replace(defaults.CoreSocketAddr, "unix:", "", -1)
+		filename := strings.Replace(defaults.HandlerFakeSocketAddr, "unix:", "", -1)
 		lis, err := net.Listen("unix", filename)
 		if err != nil {
 			log.Fatal(err)
@@ -74,8 +74,8 @@ func main() {
 		log.Printf("autoscaler started with: %s\n", lis.Addr().String())
 
 		server := grpc.NewServer()
-		srv := core.NewScalingService()
-		request.RegisterScalingServiceServer(server, srv)
+		srv := fake.NewFakeHandlerService()
+		handler.RegisterHandleServiceServer(server, srv)
 
 		if err := server.Serve(lis); err != nil {
 			log.Fatal(err)
@@ -84,6 +84,6 @@ func main() {
 }
 
 func showUsage() {
-	fmt.Println("usage: autoscaler [flags]")
+	fmt.Println("usage: autoscaler-handlers-fake [flags]")
 	flag.Usage()
 }

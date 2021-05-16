@@ -14,21 +14,31 @@
 
 // AutoScaler Inputs: Direct
 //
+// Usage:
+//   autoscaler-inputs-direct [flags] up|down|status
+//
+// Arguments:
+//   up: run the Up func
+//   down: run the Down func
+//
 // Flags:
-//  -dest: (optional) URL of gRPC endpoint of AutoScaler Core. default:`unix:autoscaler.sock`
-//  -action: (optional) Name of the action to perform. default:`default`
-//  -group: (optional) Name of the target resource group. default:`default`
-//  -source: (optional) A string representing the request source, passed to AutoScaler Core. default:`default`
+//   -dest: (optional) URL of gRPC endpoint of AutoScaler Core. default:`unix:autoscaler.sock`
+//   -action: (optional) Name of the action to perform. default:`default`
+//   -group: (optional) Name of the target resource group. default:`default`
+//   -source: (optional) A string representing the request source, passed to AutoScaler Core. default:`default`
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/request"
 	"github.com/sacloud/autoscaler/version"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -44,18 +54,60 @@ func main() {
 
 	flag.Parse()
 
-	// TODO validate
+	// TODO add flag validation
+
+	if len(os.Args) != 2 {
+		showUsage()
+		return
+	}
+
+	command := os.Args[1]
+	if command != "up" && command != "down" {
+		showUsage()
+		os.Exit(1)
+	}
 
 	switch {
 	case showHelp:
-		flag.Usage()
+		showUsage()
 		return
 	case showVersion:
 		fmt.Println(version.FullVersion())
 		return
 	default:
-		// TODO implements here
-		log.Println("not implemented yet")
-		os.Exit(1)
+		ctx := context.Background()
+		// TODO 簡易的な実装、後ほど整理&切り出し
+		conn, err := grpc.DialContext(ctx, dest, grpc.WithInsecure())
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer conn.Close()
+
+		req := request.NewScalingServiceClient(conn)
+		var f func(ctx context.Context, in *request.ScalingRequest, opts ...grpc.CallOption) (*request.ScalingResponse, error)
+
+		switch command {
+		case "up":
+			f = req.Up
+		case "down":
+			f = req.Down
+		default:
+			log.Fatal("invalid args")
+		}
+		res, err := f(ctx, &request.ScalingRequest{
+			Source:            source,
+			Action:            action,
+			ResourceGroupName: group,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("status: %s, job-id: %s\n", res.Status, res.ScalingJobId)
 	}
+}
+
+func showUsage() {
+	fmt.Println("usage: autoscaler-inputs-direct [flags] up|down")
+	flag.Usage()
 }

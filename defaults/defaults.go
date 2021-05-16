@@ -15,8 +15,9 @@
 package defaults
 
 const (
-	CoreSocketAddr    = "unix:autoscaler.sock" // CoreのデフォルトgRPCエンドポイント(Inputsから呼ばれる)
-	ActionName        = "default"
-	ResourceGroupName = "default"
-	SourceName        = "default"
+	CoreSocketAddr        = "unix:autoscaler.sock"               // CoreのデフォルトgRPCエンドポイント(Inputsから呼ばれる)
+	HandlerFakeSocketAddr = "unix:autoscaler-handlers-fake.sock" // Fake HanderのデフォルトgRPCエンドポイント(Coreから呼ばれる)
+	ActionName            = "default"
+	ResourceGroupName     = "default"
+	SourceName            = "default"
 )
