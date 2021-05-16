@@ -79,6 +79,25 @@ func (s *ScalingService) handle(ctx context.Context, req *request.ScalingRequest
 		Action:            req.Action,
 		ResourceGroupName: req.ResourceGroupName,
 		ScalingJobId:      "1",
+		// サーバが存在するパターン
+		Resources: []*handler.Resource{
+			{
+				Resource: &handler.Resource_Server{
+					Server: &handler.Server{
+						Status: handler.ResourceStatus_RUNNING,
+						Id:     "123456789012",
+						AssignedNetwork: &handler.NetworkInfo{
+							IpAddress: "192.0.2.11",
+							Netmask:   24,
+							Gateway:   "192.0.2.1",
+						},
+						Core:          2,
+						Memory:        4,
+						DedicatedCpu:  false,
+						PrivateHostId: "",
+					}},
+			},
+		},
 	})
 	if err != nil {
 		return err
@@ -91,7 +110,7 @@ func (s *ScalingService) handle(ctx context.Context, req *request.ScalingRequest
 		if err != nil {
 			return err
 		}
-		log.Printf("handler replied: %#v\n", stat)
+		log.Println("handler replied:", stat.String())
 	}
 	return nil
 }
