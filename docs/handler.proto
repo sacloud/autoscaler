@@ -14,7 +14,8 @@ message HandleRequest {
   string resource_group_name = 3;
 
   // Coreからの指示情報
-  string scaling_job_id      = 4;
+  string scaling_job_id       = 4;
+  repeated Resource resources = 5;
 }
 
 message HandleResponse {
@@ -43,6 +44,16 @@ enum ResourceStatus {
 }
 
 // リソース型
+message Resource {
+  oneof resource {
+    Server server            = 10;
+    ServerGroup server_group = 11;
+    ELB elb                  = 12;
+    GSLB gslb                = 13;
+    DNS dns                  = 14;
+  }
+}
+
 message Server {
   ResourceStatus status        = 1;
   string id                    = 2;
