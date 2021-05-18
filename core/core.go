@@ -31,7 +31,7 @@ func (c *Core) Up(ctx context.Context, eventSource *EventSource) *Job {
 	return &Job{
 		ID:     c.generateJobID(JobTypeUp, eventSource),
 		Type:   JobTypeUp,
-		Status: request.ScalingJobStatus_DONE,
+		Status: request.ScalingJobStatus_JOB_DONE,
 	}
 }
 
@@ -40,7 +40,7 @@ func (c *Core) Down(ctx context.Context, eventSource *EventSource) *Job {
 	return &Job{
 		ID:     c.generateJobID(JobTypeDown, eventSource),
 		Type:   JobTypeDown,
-		Status: request.ScalingJobStatus_DONE,
+		Status: request.ScalingJobStatus_JOB_DONE,
 	}
 }
 
@@ -49,7 +49,7 @@ func (c *Core) Status(ctx context.Context, jobID string) *Job {
 	return &Job{
 		ID:     jobID,
 		Type:   JobTypeDown,
-		Status: request.ScalingJobStatus_DONE,
+		Status: request.ScalingJobStatus_JOB_DONE,
 	}
 }
 

@@ -30,9 +30,6 @@ const (
 	ResourceTypeDNS
 )
 
-// ResourceGroup 一意な名前をキーとするリソースのリスト
-type ResourceGroup map[string]Resources
-
 // Resources リソースのリスト
 type Resources []Resource
 
@@ -46,12 +43,38 @@ type Resource interface {
 	Desired() Desired
 }
 
+// ResourceBase 全てのリソースが実装すべき基本プロパティ
+type ResourceBase struct {
+	TypeName       string            `json:"type" yaml:"type"` // TODO enumにすべきか?
+	TargetSelector *ResourceSelector `json:"selector" yaml:"selector"`
+}
+
+func (r *ResourceBase) Type() ResourceTypes {
+	switch r.TypeName {
+	case "Server":
+		return ResourceTypeServer
+	case "ServerGroup":
+		return ResourceTypeServerGroup
+	case "EnhancedLoadBalancer", "ELB":
+		return ResourceTypeEnhancedLoadBalancer
+	case "GSLB":
+		return ResourceTypeGSLB
+	case "DNS":
+		return ResourceTypeDNS
+	}
+	return ResourceTypeUnknown // TODO バリデーションなどで到達させないようにする
+}
+
+func (r *ResourceBase) Selector() *ResourceSelector {
+	return r.TargetSelector
+}
+
 // ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
 type ResourceSelector struct {
-	ID    types.ID
-	Names []string
-	Tags  []string
-	Zone  string // グローバルリソースの場合はsacloud.APIDefaultZoneが入る // TODO 要検討
+	ID    types.ID `json:"id" yaml:"id"`
+	Names []string `json:"names" yaml:"names"`
+	Tags  []string `json:"tags" yaml:"tags"`
+	Zone  string   `json:"zone" yaml:"zone"` // グローバルリソースの場合はsacloud.APIDefaultZoneが入る // TODO 要検討
 }
 
 // CurrentResource リソースの現在の状態を示す

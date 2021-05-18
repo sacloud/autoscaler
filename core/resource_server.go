@@ -25,24 +25,16 @@ type ServerPlan struct {
 }
 
 type Server struct {
-	DedicatedCPU  bool
-	PrivateHostID types.ID
-	Zone          string
-	Plans         []ServerPlan
-	Wrappers      Resources
+	*ResourceBase `yaml:",inline"`
+	DedicatedCPU  bool         `yaml:"dedicated_cpu"`
+	PrivateHostID types.ID     `yaml:"private_host_id"`
+	Zone          string       `yaml:"zone"`
+	Plans         []ServerPlan `yaml:"plans"`
+	Wrappers      Resources    `yaml:"wrappers"`
 }
 
 type CurrentServer struct {
 	ResourceState handler.ResourceStatus
-}
-
-func (s *Server) Type() ResourceTypes {
-	return ResourceTypeServer
-}
-
-func (s *Server) Selector() *ResourceSelector {
-	// TODO 実装
-	return nil
 }
 
 func (s *Server) Current() CurrentResource {

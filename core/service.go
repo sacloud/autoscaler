@@ -42,7 +42,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 	}
 	return &request.ScalingResponse{
 		ScalingJobId: "1",
-		Status:       request.ScalingJobStatus_DONE,
+		Status:       request.ScalingJobStatus_JOB_DONE,
 	}, nil
 }
 
@@ -53,7 +53,7 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 	}
 	return &request.ScalingResponse{
 		ScalingJobId: "1",
-		Status:       request.ScalingJobStatus_DONE,
+		Status:       request.ScalingJobStatus_JOB_DONE,
 	}, nil
 }
 
@@ -61,7 +61,7 @@ func (s *ScalingService) Status(ctx context.Context, req *request.StatusRequest)
 	log.Println("Core.ScalingService: Status:", req)
 	return &request.ScalingResponse{
 		ScalingJobId: "1",
-		Status:       request.ScalingJobStatus_DONE,
+		Status:       request.ScalingJobStatus_JOB_DONE,
 	}, nil
 }
 

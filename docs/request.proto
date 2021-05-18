@@ -25,10 +25,10 @@ message ScalingResponse {
 }
 
 enum ScalingJobStatus {
-  UNKNOWN         = 0;
-  ACCEPTED        = 1;
-  RUNNING         = 2;
-  DONE            = 3;
-  CANCELED        = 4;
-  FAILED          = 5;
+  JOB_UNKNOWN         = 0;
+  JOB_ACCEPTED        = 1;
+  JOB_RUNNING         = 2;
+  JOB_DONE            = 3;
+  JOB_CANCELED        = 4;
+  JOB_FAILED          = 5;
 }
