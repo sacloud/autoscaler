@@ -47,7 +47,42 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 						PrivateHostID: 123456789012,
 						Zone:          "is1a",
 					},
-					// TODO Server以外のリソースを実装したら以下とargsに追記する
+					&ServerGroup{
+						ResourceBase: &ResourceBase{
+							TypeName: "ServerGroup",
+							TargetSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+								Zone:  "is1a",
+							},
+						},
+					},
+					&DNS{
+						ResourceBase: &ResourceBase{
+							TypeName: "DNS",
+							TargetSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+								Zone:  "is1a",
+							},
+						},
+					},
+					&GSLB{
+						ResourceBase: &ResourceBase{
+							TypeName: "GSLB",
+							TargetSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+								Zone:  "is1a",
+							},
+						},
+					},
+					&EnhancedLoadBalancer{
+						ResourceBase: &ResourceBase{
+							TypeName: "EnhancedLoadBalancer",
+							TargetSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+								Zone:  "is1a",
+							},
+						},
+					},
 				},
 			},
 			args: args{
@@ -60,6 +95,22 @@ web:
     dedicated_cpu: true
     private_host_id: 123456789012
     zone: "is1a"
+  - type: ServerGroup
+    selector:
+      names: ["test-name"]
+      zone: "is1a"
+  - type: DNS
+    selector:
+      names: ["test-name"]
+      zone: "is1a"
+  - type: GSLB 
+    selector:
+      names: ["test-name"]
+      zone: "is1a"
+  - type: ELB
+    selector:
+      names: ["test-name"]
+      zone: "is1a"
 `),
 			},
 			wantErr: false,

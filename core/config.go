@@ -17,20 +17,41 @@ package core
 import (
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/goccy/go-yaml"
+	"github.com/sacloud/libsacloud/v2/helper/api"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
 type Config struct {
-	SakuraCloud *Credential    `json:"sakuracloud" yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
-	Actions     Actions        `json:"actions" yaml:"actions"`         // Inputsからのリクエストパラメータとして指定されるアクションリストのマップ、Inputsからはキーを指定する
-	Handlers    Handlers       `json:"handlers" yaml:"handlers"`       // カスタムハンドラーの定義
-	Resources   ResourceGroups `json:"resources" yaml:"resources"`     // リソースグループの定義
+	SakuraCloud *SakuraCloud   `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
+	Actions     Actions        `yaml:"actions"`     // Inputsからのリクエストパラメータとして指定されるアクションリストのマップ、Inputsからはキーを指定する
+	Handlers    Handlers       `yaml:"handlers"`    // カスタムハンドラーの定義
+	Resources   ResourceGroups `yaml:"resources"`   // リソースグループの定義
+}
+
+func NewConfigFromPath(filePath string) (*Config, error) {
+	reader, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("opening configuration file failed: %s error: %s", filePath, err)
+	}
+	defer reader.Close()
+
+	return NewConfigFromReader(reader)
+}
+
+func NewConfigFromReader(reader io.Reader) (*Config, error) {
+	c := &Config{}
+	if err := c.load(reader); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 // Load 指定のreaderからYAMLを読み取りConfigへ値を設定する
-func (c *Config) Load(reader io.Reader) error {
+func (c *Config) load(reader io.Reader) error {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("loading configuration failed: %s", err)
@@ -39,4 +60,28 @@ func (c *Config) Load(reader io.Reader) error {
 		return fmt.Errorf("unmarshalling of config values failed: %s", err)
 	}
 	return nil
+}
+
+// APIClient Configに保持しているCredentialからさくらのクラウドAPIクライアント(sacloud.APICaller)を返す
+func (c *Config) APIClient() sacloud.APICaller {
+	return api.NewCaller(&api.CallerOptions{
+		AccessToken:       c.SakuraCloud.Token,
+		AccessTokenSecret: c.SakuraCloud.Secret,
+		//APIRootURL:           "",
+		//DefaultZone:          "",
+		//AcceptLanguage:       "",
+		//HTTPClient:           nil,
+		//HTTPRequestTimeout:   0,
+		//HTTPRequestRateLimit: 0,
+		//RetryMax:             0,
+		//RetryWaitMax:         0,
+		//RetryWaitMin:         0,
+		//UserAgent:            "",
+		//TraceAPI:             false,
+		//TraceHTTP:            false,
+		//OpenTelemetry:        false,
+		//OpenTelemetryOptions: nil,
+		FakeMode: true, // TODO プロトタイプはFakeモードで動作させる
+		//FakeStorePath:        "",
+	})
 }

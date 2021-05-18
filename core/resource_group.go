@@ -51,19 +51,24 @@ func (r *ResourceGroups) UnmarshalYAML(data []byte) error {
 			case "Server":
 				resource = &Server{}
 			case "ServerGroup":
-				// TODO 未実装
+				resource = &ServerGroup{}
 			case "EnhancedLoadBalancer", "ELB":
-				// TODO 未実装
+				resource = &EnhancedLoadBalancer{}
 			case "GSLB":
-				// TODO 未実装
+				resource = &GSLB{}
 			case "DNS":
-				// TODO 未実装
+				resource = &DNS{}
 			default:
 				return fmt.Errorf("received unexpected type: %s", typeName)
 			}
 
 			if err := yaml.Unmarshal(remarshelded, resource); err != nil {
 				return fmt.Errorf("yaml.Unmarshal failed with key:%s, element: %v", k, v)
+			}
+
+			// TypeNameのエイリアスを正規化
+			if elb, ok := resource.(*EnhancedLoadBalancer); ok {
+				elb.TypeName = "EnhancedLoadBalancer"
 			}
 
 			rg[k] = append(rg[k], resource)

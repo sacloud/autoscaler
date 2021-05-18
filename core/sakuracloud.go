@@ -14,11 +14,7 @@
 
 package core
 
-type Handlers []*Handler
-
-// Handler カスタムハンドラーの定義
-type Handler struct {
-	Type     string `yaml:"type"` // ハンドラー種別 TODO: enumにすべきか要検討
-	Name     string `yaml:"name"` // ハンドラーを識別するための名称
-	Endpoint string `yaml:"endpoint"`
+type SakuraCloud struct {
+	*Credential `yaml:",inline"`
+	// TODO 項目追加
 }

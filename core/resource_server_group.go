@@ -14,11 +14,16 @@
 
 package core
 
-type Handlers []*Handler
+type ServerGroup struct {
+	*ResourceBase `yaml:",inline"`
+}
 
-// Handler カスタムハンドラーの定義
-type Handler struct {
-	Type     string `yaml:"type"` // ハンドラー種別 TODO: enumにすべきか要検討
-	Name     string `yaml:"name"` // ハンドラーを識別するための名称
-	Endpoint string `yaml:"endpoint"`
+func (s *ServerGroup) Current() CurrentResource {
+	// TODO 実装
+	return nil
+}
+
+func (s *ServerGroup) Desired() Desired {
+	// TODO 実装
+	return nil
 }

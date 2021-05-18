@@ -45,8 +45,8 @@ type Resource interface {
 
 // ResourceBase 全てのリソースが実装すべき基本プロパティ
 type ResourceBase struct {
-	TypeName       string            `json:"type" yaml:"type"` // TODO enumにすべきか?
-	TargetSelector *ResourceSelector `json:"selector" yaml:"selector"`
+	TypeName       string            `yaml:"type"` // TODO enumにすべきか?
+	TargetSelector *ResourceSelector `yaml:"selector"`
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
@@ -71,10 +71,10 @@ func (r *ResourceBase) Selector() *ResourceSelector {
 
 // ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
 type ResourceSelector struct {
-	ID    types.ID `json:"id" yaml:"id"`
-	Names []string `json:"names" yaml:"names"`
-	Tags  []string `json:"tags" yaml:"tags"`
-	Zone  string   `json:"zone" yaml:"zone"` // グローバルリソースの場合はsacloud.APIDefaultZoneが入る // TODO 要検討
+	ID    types.ID `yaml:"id"`
+	Names []string `yaml:"names"`
+	Tags  []string `yaml:"tags"`
+	Zone  string   `yaml:"zone"` // グローバルリソースの場合はsacloud.APIDefaultZoneが入る // TODO 要検討
 }
 
 // CurrentResource リソースの現在の状態を示す

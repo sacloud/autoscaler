@@ -24,7 +24,7 @@ import (
 
 func TestConfig_Load(t *testing.T) {
 	type fields struct {
-		SakuraCloud *Credential
+		SakuraCloud *SakuraCloud
 		Actions     Actions
 		Handlers    Handlers
 		Resources   ResourceGroups
@@ -41,9 +41,11 @@ func TestConfig_Load(t *testing.T) {
 		{
 			name: "minimal",
 			fields: fields{
-				SakuraCloud: &Credential{
-					Token:  "token",
-					Secret: "secret",
+				SakuraCloud: &SakuraCloud{
+					Credential: &Credential{
+						Token:  "token",
+						Secret: "secret",
+					},
 				},
 				Actions:  nil,
 				Handlers: nil,
@@ -92,7 +94,7 @@ resources:
 				Resources:   tt.fields.Resources,
 			}
 			c := &Config{}
-			if err := c.Load(tt.args.reader); (err != nil) != tt.wantErr {
+			if err := c.load(tt.args.reader); (err != nil) != tt.wantErr {
 				t.Errorf("Load() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

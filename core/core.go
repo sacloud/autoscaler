@@ -23,7 +23,11 @@ import (
 
 // Core AutoScaler Coreのインスタンス
 type Core struct {
-	Credential *Credential
+	config *Config
+}
+
+func NewCoreInstance(c *Config) *Core {
+	return &Core{config: c}
 }
 
 func (c *Core) Up(ctx context.Context, eventSource *EventSource) *Job {
