@@ -47,6 +47,7 @@ type Resource interface {
 type ResourceBase struct {
 	TypeName       string            `yaml:"type"` // TODO enumにすべきか?
 	TargetSelector *ResourceSelector `yaml:"selector"`
+	Wrappers       Resources         `yaml:"wrappers"`
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
@@ -74,7 +75,7 @@ type ResourceSelector struct {
 	ID    types.ID `yaml:"id"`
 	Names []string `yaml:"names"`
 	Tags  []string `yaml:"tags"`
-	Zone  string   `yaml:"zone"` // グローバルリソースの場合はsacloud.APIDefaultZoneが入る // TODO 要検討
+	Zones []string `yaml:"zone"` // グローバルリソースの場合はis1aまたは空とする TODO 要検討
 }
 
 // CurrentResource リソースの現在の状態を示す

@@ -40,7 +40,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "Server",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zone:  "is1a",
+								Zones: []string{"is1a"},
 							},
 						},
 						DedicatedCPU:  true,
@@ -52,7 +52,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "ServerGroup",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zone:  "is1a",
+								Zones: []string{"is1a"},
 							},
 						},
 					},
@@ -61,7 +61,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "DNS",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zone:  "is1a",
+								Zones: []string{"is1a"},
 							},
 						},
 					},
@@ -70,7 +70,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "GSLB",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zone:  "is1a",
+								Zones: []string{"is1a"},
 							},
 						},
 					},
@@ -79,7 +79,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "EnhancedLoadBalancer",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zone:  "is1a",
+								Zones: []string{"is1a"},
 							},
 						},
 					},
@@ -91,26 +91,26 @@ web:
   - type: Server
     selector:
       names: ["test-name"]
-      zone: "is1a"
+      zone: ["is1a"]
     dedicated_cpu: true
     private_host_id: 123456789012
     zone: "is1a"
   - type: ServerGroup
     selector:
       names: ["test-name"]
-      zone: "is1a"
+      zone: ["is1a"]
   - type: DNS
     selector:
       names: ["test-name"]
-      zone: "is1a"
+      zone: ["is1a"]
   - type: GSLB 
     selector:
       names: ["test-name"]
-      zone: "is1a"
+      zone: ["is1a"]
   - type: ELB
     selector:
       names: ["test-name"]
-      zone: "is1a"
+      zone: ["is1a"]
 `),
 			},
 			wantErr: false,
