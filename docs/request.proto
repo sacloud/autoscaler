@@ -20,15 +20,15 @@ message StatusRequest {
 }
 
 message ScalingResponse {
-  enum ScalingJobStatus {
-    UNKNOWN         = 0;
-    ACCEPTED        = 1;
-    RUNNING         = 2;
-    DONE            = 3;
-    CANCELED        = 4;
-    FAILED          = 5;
-  }
-
   string scaling_job_id   = 1;
   ScalingJobStatus status = 2;
+}
+
+enum ScalingJobStatus {
+  UNKNOWN         = 0;
+  ACCEPTED        = 1;
+  RUNNING         = 2;
+  DONE            = 3;
+  CANCELED        = 4;
+  FAILED          = 5;
 }
