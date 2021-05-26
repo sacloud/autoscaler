@@ -27,7 +27,7 @@ func TestConfig_Load(t *testing.T) {
 		SakuraCloud *SakuraCloud
 		Actions     Actions
 		Handlers    Handlers
-		Resources   ResourceGroups
+		Resources   *ResourceGroups
 	}
 	type args struct {
 		reader io.Reader
@@ -49,8 +49,9 @@ func TestConfig_Load(t *testing.T) {
 				},
 				Actions:  nil,
 				Handlers: nil,
-				Resources: ResourceGroups{
-					"web": []Resource{
+				Resources: func() *ResourceGroups {
+					rg := newResourceGroups()
+					rg.Set("web", Resources{
 						&Server{
 							ResourceBase: &ResourceBase{
 								TypeName: "Server",
@@ -63,8 +64,9 @@ func TestConfig_Load(t *testing.T) {
 							PrivateHostID: 123456789012,
 							Zone:          "is1a",
 						},
-					},
-				},
+					})
+					return rg
+				}(),
 			},
 			args: args{
 				reader: bytes.NewReader([]byte(`

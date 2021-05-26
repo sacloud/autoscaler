@@ -26,10 +26,10 @@ import (
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
 type Config struct {
-	SakuraCloud *SakuraCloud   `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
-	Actions     Actions        `yaml:"actions"`     // Inputsからのリクエストパラメータとして指定されるアクションリストのマップ、Inputsからはキーを指定する
-	Handlers    Handlers       `yaml:"handlers"`    // カスタムハンドラーの定義
-	Resources   ResourceGroups `yaml:"resources"`   // リソースグループの定義
+	SakuraCloud *SakuraCloud    `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
+	Actions     Actions         `yaml:"actions"`     // Inputsからのリクエストパラメータとして指定されるアクションリストのマップ、Inputsからはキーを指定する
+	Handlers    Handlers        `yaml:"handlers"`    // カスタムハンドラーの定義
+	Resources   *ResourceGroups `yaml:"resources"`   // リソースグループの定義
 }
 
 func NewConfigFromPath(filePath string) (*Config, error) {

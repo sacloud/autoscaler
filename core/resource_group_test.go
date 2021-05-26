@@ -27,14 +27,15 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		r       ResourceGroups
+		r       *ResourceGroups
 		args    args
 		wantErr bool
 	}{
 		{
 			name: "resource group",
-			r: map[string]Resources{
-				"web": {
+			r: func() *ResourceGroups {
+				rg := newResourceGroups()
+				rg.Set("web", Resources{
 					&Server{
 						ResourceBase: &ResourceBase{
 							TypeName: "Server",
@@ -83,8 +84,9 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							},
 						},
 					},
-				},
-			},
+				})
+				return rg
+			}(),
 			args: args{
 				data: []byte(`
 web: 
@@ -122,7 +124,7 @@ web:
 			if err := yaml.Unmarshal(tt.args.data, &target); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalYAML() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			require.EqualValues(t, tt.r, target)
+			require.EqualValues(t, tt.r, &target)
 		})
 	}
 }

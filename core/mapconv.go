@@ -14,18 +14,10 @@
 
 package core
 
-import "github.com/sacloud/libsacloud/v2/sacloud"
+import "github.com/sacloud/libsacloud/v2/pkg/mapconv"
 
-type ServerGroup struct {
-	*ResourceBase `yaml:",inline"`
-}
-
-func (s *ServerGroup) Validate() error {
-	// TODO 実装
-	return nil
-}
-
-func (s *ServerGroup) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentResource, Desired, error) {
-	// TODO 実装
-	return nil, nil, nil
+var mapconvDecoder = mapconv.Decoder{
+	Config: &mapconv.DecoderConfig{
+		TagName: "autoscaler",
+	},
 }

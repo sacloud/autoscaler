@@ -14,18 +14,18 @@
 
 package core
 
-import "github.com/sacloud/libsacloud/v2/sacloud"
+//go:generate stringer -type=RequestTypes
+type RequestTypes int
 
-type ServerGroup struct {
-	*ResourceBase `yaml:",inline"`
-}
+const (
+	requestTypeUnknown RequestTypes = iota // nolint
+	requestTypeUp
+	requestTypeDown
+)
 
-func (s *ServerGroup) Validate() error {
-	// TODO 実装
-	return nil
-}
-
-func (s *ServerGroup) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentResource, Desired, error) {
-	// TODO 実装
-	return nil, nil, nil
+type requestInfo struct {
+	requestType       RequestTypes
+	source            string
+	action            string
+	resourceGroupName string
 }

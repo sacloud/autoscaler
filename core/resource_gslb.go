@@ -14,16 +14,18 @@
 
 package core
 
+import "github.com/sacloud/libsacloud/v2/sacloud"
+
 type GSLB struct {
 	*ResourceBase `yaml:",inline"`
 }
 
-func (s *GSLB) Current() CurrentResource {
+func (s *GSLB) Validate() error {
 	// TODO 実装
 	return nil
 }
 
-func (s *GSLB) Desired() Desired {
+func (s *GSLB) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentResource, Desired, error) {
 	// TODO 実装
-	return nil
+	return nil, nil, nil
 }

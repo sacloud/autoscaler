@@ -14,16 +14,18 @@
 
 package core
 
+import "github.com/sacloud/libsacloud/v2/sacloud"
+
 type DNS struct {
 	*ResourceBase `yaml:",inline"`
 }
 
-func (s *DNS) Current() CurrentResource {
+func (s *DNS) Validate() error {
 	// TODO 実装
 	return nil
 }
 
-func (s *DNS) Desired() Desired {
+func (s *DNS) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentResource, Desired, error) {
 	// TODO 実装
-	return nil
+	return nil, nil, nil
 }

@@ -21,15 +21,46 @@ import (
 )
 
 // ResourceGroups 一意な名前をキーとするリソースのリスト
-type ResourceGroups map[string]Resources
+type ResourceGroups struct {
+	groups map[string]Resources
+}
 
-func (r *ResourceGroups) UnmarshalYAML(data []byte) error {
+func newResourceGroups() *ResourceGroups {
+	return &ResourceGroups{
+		groups: make(map[string]Resources),
+	}
+}
+
+func (rg *ResourceGroups) Get(key string) Resources {
+	v, _ := rg.GetOk(key)
+	return v
+}
+
+func (rg *ResourceGroups) GetOk(key string) (Resources, bool) {
+	v, ok := rg.groups[key]
+	return v, ok
+}
+
+func (rg *ResourceGroups) Set(key string, resources Resources) {
+	rg.groups[key] = resources
+}
+
+func (rg *ResourceGroups) appendResource(key string, r Resource) {
+	rs, ok := rg.GetOk(key)
+	if !ok {
+		rs = Resources{}
+	}
+	rs = append(rs, r)
+	rg.Set(key, rs)
+}
+
+func (rg *ResourceGroups) UnmarshalYAML(data []byte) error {
 	var rawMap map[string][]map[string]interface{}
 	if err := yaml.Unmarshal(data, &rawMap); err != nil {
 		return err
 	}
 
-	rg := ResourceGroups(make(map[string]Resources))
+	resourceGroups := newResourceGroups()
 	for k, v := range rawMap {
 		for _, v := range v {
 			rawTypeName, ok := v["type"]
@@ -71,9 +102,9 @@ func (r *ResourceGroups) UnmarshalYAML(data []byte) error {
 				elb.TypeName = "EnhancedLoadBalancer"
 			}
 
-			rg[k] = append(rg[k], resource)
+			resourceGroups.appendResource(k, resource)
 		}
 	}
-	*r = rg
+	*rg = *resourceGroups
 	return nil
 }

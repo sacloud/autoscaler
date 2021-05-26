@@ -14,16 +14,18 @@
 
 package core
 
+import "github.com/sacloud/libsacloud/v2/sacloud"
+
 type EnhancedLoadBalancer struct {
 	*ResourceBase `yaml:",inline"`
 }
 
-func (s *EnhancedLoadBalancer) Current() CurrentResource {
+func (s *EnhancedLoadBalancer) Validate() error {
 	// TODO 実装
 	return nil
 }
 
-func (s *EnhancedLoadBalancer) Desired() Desired {
+func (s *EnhancedLoadBalancer) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentResource, Desired, error) {
 	// TODO 実装
-	return nil
+	return nil, nil, nil
 }

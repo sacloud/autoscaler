@@ -15,10 +15,17 @@
 package core
 
 import (
+	"fmt"
+
+	"github.com/sacloud/libsacloud/v2/sacloud/search"
+
+	"github.com/sacloud/libsacloud/v2/sacloud"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
+//go:generate stringer -type=ResourceTypes
 type ResourceTypes int
 
 const (
@@ -39,15 +46,15 @@ type Resources []Resource
 type Resource interface {
 	Type() ResourceTypes
 	Selector() *ResourceSelector
-	Current() CurrentResource
-	Desired() Desired
+	Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentResource, Desired, error)
+	Validate() error
 }
 
 // ResourceBase 全てのリソースが実装すべき基本プロパティ
 type ResourceBase struct {
 	TypeName       string            `yaml:"type"` // TODO enumにすべきか?
 	TargetSelector *ResourceSelector `yaml:"selector"`
-	Wrappers       Resources         `yaml:"wrappers"`
+	Children       Resources         `yaml:"wrappers"`
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
@@ -70,12 +77,36 @@ func (r *ResourceBase) Selector() *ResourceSelector {
 	return r.TargetSelector
 }
 
+// Resources 子リソースを返す(自身は含まない)
+func (r *ResourceBase) Resources() Resources {
+	return r.Children
+}
+
 // ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
 type ResourceSelector struct {
 	ID    types.ID `yaml:"id"`
 	Names []string `yaml:"names"`
-	Tags  []string `yaml:"tags"`
 	Zones []string `yaml:"zone"` // グローバルリソースの場合はis1aまたは空とする TODO 要検討
+}
+
+func (rs *ResourceSelector) String() string {
+	if rs != nil {
+		return fmt.Sprintf("ID: %s, Names: %s, Zones: %s", rs.ID, rs.Names, rs.Zones)
+	}
+	return ""
+}
+
+func (rs *ResourceSelector) FindCondition() *sacloud.FindCondition {
+	fc := &sacloud.FindCondition{
+		Filter: search.Filter{},
+	}
+	if !rs.ID.IsEmpty() {
+		fc.Filter[search.Key("ID")] = search.ExactMatch(rs.ID.String())
+	}
+	if len(rs.Names) != 0 {
+		fc.Filter[search.Key("Name")] = search.PartialMatch(rs.Names...)
+	}
+	return fc
 }
 
 // CurrentResource リソースの現在の状態を示す

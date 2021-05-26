@@ -14,7 +14,22 @@
 
 package core
 
-import "gonum.org/v1/gonum/graph"
+import (
+	"os"
 
-// Graph AutoScaler起動時に与えられたコンフィギュレーションから形成されるリソースグループの有向グラフ
-type Graph graph.Graph
+	"github.com/sacloud/libsacloud/v2/helper/api"
+)
+
+var (
+	testZone      = "is1a"
+	testZones     = []string{testZone}
+	testAPIClient = api.NewCaller(&api.CallerOptions{
+		AccessToken:       "fake",
+		AccessTokenSecret: "fake",
+		UserAgent:         "sacloud/autoscaler/fake",
+		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
+		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
+		FakeMode:          true,
+		FakeStorePath:     "",
+	})
+)
