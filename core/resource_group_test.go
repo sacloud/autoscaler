@@ -35,52 +35,54 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 			name: "resource group",
 			r: func() *ResourceGroups {
 				rg := newResourceGroups()
-				rg.Set("web", Resources{
-					&Server{
-						ResourceBase: &ResourceBase{
-							TypeName: "Server",
-							TargetSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
+				rg.Set("web", &ResourceGroup{
+					Resources: Resources{
+						&Server{
+							ResourceBase: &ResourceBase{
+								TypeName: "Server",
+								TargetSelector: &ResourceSelector{
+									Names: []string{"test-name"},
+									Zones: []string{"is1a"},
+								},
+							},
+							DedicatedCPU:  true,
+							PrivateHostID: 123456789012,
+							Zone:          "is1a",
+						},
+						&ServerGroup{
+							ResourceBase: &ResourceBase{
+								TypeName: "ServerGroup",
+								TargetSelector: &ResourceSelector{
+									Names: []string{"test-name"},
+									Zones: []string{"is1a"},
+								},
 							},
 						},
-						DedicatedCPU:  true,
-						PrivateHostID: 123456789012,
-						Zone:          "is1a",
-					},
-					&ServerGroup{
-						ResourceBase: &ResourceBase{
-							TypeName: "ServerGroup",
-							TargetSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
+						&DNS{
+							ResourceBase: &ResourceBase{
+								TypeName: "DNS",
+								TargetSelector: &ResourceSelector{
+									Names: []string{"test-name"},
+									Zones: []string{"is1a"},
+								},
 							},
 						},
-					},
-					&DNS{
-						ResourceBase: &ResourceBase{
-							TypeName: "DNS",
-							TargetSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
+						&GSLB{
+							ResourceBase: &ResourceBase{
+								TypeName: "GSLB",
+								TargetSelector: &ResourceSelector{
+									Names: []string{"test-name"},
+									Zones: []string{"is1a"},
+								},
 							},
 						},
-					},
-					&GSLB{
-						ResourceBase: &ResourceBase{
-							TypeName: "GSLB",
-							TargetSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
-							},
-						},
-					},
-					&EnhancedLoadBalancer{
-						ResourceBase: &ResourceBase{
-							TypeName: "EnhancedLoadBalancer",
-							TargetSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
+						&EnhancedLoadBalancer{
+							ResourceBase: &ResourceBase{
+								TypeName: "EnhancedLoadBalancer",
+								TargetSelector: &ResourceSelector{
+									Names: []string{"test-name"},
+									Zones: []string{"is1a"},
+								},
 							},
 						},
 					},
@@ -90,29 +92,30 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 			args: args{
 				data: []byte(`
 web: 
-  - type: Server
-    selector:
-      names: ["test-name"]
-      zone: ["is1a"]
-    dedicated_cpu: true
-    private_host_id: 123456789012
-    zone: "is1a"
-  - type: ServerGroup
-    selector:
-      names: ["test-name"]
-      zone: ["is1a"]
-  - type: DNS
-    selector:
-      names: ["test-name"]
-      zone: ["is1a"]
-  - type: GSLB 
-    selector:
-      names: ["test-name"]
-      zone: ["is1a"]
-  - type: ELB
-    selector:
-      names: ["test-name"]
-      zone: ["is1a"]
+  resources:
+    - type: Server
+      selector:
+        names: ["test-name"]
+        zone: ["is1a"]
+      dedicated_cpu: true
+      private_host_id: 123456789012
+      zone: "is1a"
+    - type: ServerGroup
+      selector:
+        names: ["test-name"]
+        zone: ["is1a"]
+    - type: DNS
+      selector:
+        names: ["test-name"]
+        zone: ["is1a"]
+    - type: GSLB 
+      selector:
+        names: ["test-name"]
+        zone: ["is1a"]
+    - type: ELB
+      selector:
+        names: ["test-name"]
+        zone: ["is1a"]
 `),
 			},
 			wantErr: false,
