@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fake
+package logging
 
 import (
 	"log"
-	"time"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
@@ -26,7 +25,7 @@ import (
 type Handler struct{}
 
 func (h *Handler) Name() string {
-	return "fake"
+	return "logging"
 }
 
 func (h *Handler) Version() string {
@@ -34,33 +33,6 @@ func (h *Handler) Version() string {
 }
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	log.Printf("received: %s", req.String())
-
-	// 受付メッセージ送信
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          "",
-	}); err != nil {
-		return err
-	}
-
-	// 数回ほど処理中ステータスを返しておく
-	for i := 0; i < 3; i++ {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-			Log:          "",
-		}); err != nil {
-			return err
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-
-	// 完了メッセージ
-	return sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_DONE,
-		Log:          "",
-	})
+	log.Printf("autoscaler-handlers-%s: received: %s", h.Name(), req.String())
+	return nil
 }

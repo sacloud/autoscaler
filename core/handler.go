@@ -15,13 +15,12 @@
 package core
 
 import (
-	"context"
 	"io"
 	"log"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/handlers/fake"
+	"github.com/sacloud/autoscaler/handlers/logging"
 	"google.golang.org/grpc"
 )
 
@@ -29,31 +28,20 @@ type Handlers []*Handler
 
 var BuiltinHandlers = Handlers{
 	{
-		Type:           "fake",
-		Name:           "fake",
-		Endpoint:       "unix:autoscaler-handlers-fake.sock", // ビルトインの場合は後ほどstartBuiltinHandlersを実行した際に設定される
-		BuiltinHandler: &fake.Handler{},
+		Type:           "logging",
+		Name:           "logging",
+		Endpoint:       "",
+		BuiltinHandler: &logging.Handler{},
 	},
 	// TODO その他ビルトインを追加
 }
 
-func startBuiltinHandlers(ctx context.Context, handlers Handlers) error {
-	// TODO ソケットのパスを受け取れるように修正
-	for _, h := range handlers {
-		if h.isBuiltin() {
-			// TODO ビルトインの開始
-			log.Println("startBuiltinHandlers is not implemented")
-		}
-	}
-	return nil
-}
-
 // Handler カスタムハンドラーの定義
 type Handler struct {
-	Type           string `yaml:"type"` // ハンドラー種別 TODO: enumにすべきか要検討
-	Name           string `yaml:"name"` // ハンドラーを識別するための名称
-	Endpoint       string `yaml:"endpoint"`
-	BuiltinHandler handlers.Server
+	Type           string          `yaml:"type"` // ハンドラー種別 TODO: enumにすべきか要検討
+	Name           string          `yaml:"name"` // ハンドラーを識別するための名称
+	Endpoint       string          `yaml:"endpoint"`
+	BuiltinHandler handlers.Server `yaml:"-"`
 }
 
 func (h *Handler) isBuiltin() bool {
