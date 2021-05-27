@@ -14,11 +14,40 @@
 
 package core
 
+import (
+	"context"
+	"log"
+)
+
 type Handlers []*Handler
+
+var BuiltinHandlers = Handlers{
+	{
+		Type:     "server_vertical_scaler",
+		Name:     "server_vertical_scaler",
+		Endpoint: "server_vertical_scaler.sock", // ビルトインの場合は後ほどstartBuiltinHandlersを実行した際に設定される
+	},
+	// TODO その他ビルトインを追加
+}
 
 // Handler カスタムハンドラーの定義
 type Handler struct {
 	Type     string `yaml:"type"` // ハンドラー種別 TODO: enumにすべきか要検討
 	Name     string `yaml:"name"` // ハンドラーを識別するための名称
 	Endpoint string `yaml:"endpoint"`
+}
+
+func (h *Handler) isBuiltin() bool {
+	return h.Type == "server_vertical_scaler" // TODO ビルトインを増やす際に修正
+}
+
+func startBuiltinHandlers(ctx context.Context, handlers Handlers) error {
+	// TODO ソケットのパスを受け取れるように修正
+	for _, h := range handlers {
+		if h.isBuiltin() {
+			// TODO ビルトインの開始
+			log.Println("startBuiltinHandlers is not implemented")
+		}
+	}
+	return nil
 }

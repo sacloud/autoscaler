@@ -50,7 +50,15 @@ func Start(ctx context.Context, configPath string) error {
 		return err
 	}
 
+	if err := instance.initBuiltinHandlers(ctx); err != nil {
+		return err
+	}
+
 	return instance.run(ctx)
+}
+
+func (c *Core) initBuiltinHandlers(ctx context.Context) error {
+	return startBuiltinHandlers(ctx, append(BuiltinHandlers, c.config.Handlers...))
 }
 
 func (c *Core) run(ctx context.Context) error {
