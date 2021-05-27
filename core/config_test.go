@@ -25,7 +25,6 @@ import (
 func TestConfig_Load(t *testing.T) {
 	type fields struct {
 		SakuraCloud *SakuraCloud
-		Actions     Actions
 		Handlers    Handlers
 		Resources   *ResourceGroups
 	}
@@ -47,7 +46,6 @@ func TestConfig_Load(t *testing.T) {
 						Secret: "secret",
 					},
 				},
-				Actions:  nil,
 				Handlers: nil,
 				Resources: func() *ResourceGroups {
 					rg := newResourceGroups()

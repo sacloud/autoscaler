@@ -21,6 +21,7 @@ import (
 // Job スケールアウト/イン/アップ/ダウンなどの各種ジョブを表す
 //
 // Inputsからのリクエストパラメータ Source/Action/ResourceGroupNameごとに作成される
+// TODO Contextとの兼ね合いを再考
 type Job struct {
 	RequestType RequestTypes
 	ID          string
