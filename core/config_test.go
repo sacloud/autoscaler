@@ -24,7 +24,7 @@ import (
 
 func TestConfig_Load(t *testing.T) {
 	type fields struct {
-		SakuraCloud *SakuraCloud
+		SakuraCloud SakuraCloud
 		Handlers    Handlers
 		Resources   *ResourceGroups
 	}
@@ -40,8 +40,8 @@ func TestConfig_Load(t *testing.T) {
 		{
 			name: "minimal",
 			fields: fields{
-				SakuraCloud: &SakuraCloud{
-					Credential: &Credential{
+				SakuraCloud: SakuraCloud{
+					Credential: Credential{
 						Token:  "token",
 						Secret: "secret",
 					},
