@@ -14,7 +14,8 @@
 
 package core
 
-//go:generate stringer -type=RequestTypes
+import "fmt"
+
 type RequestTypes int
 
 const (
@@ -23,9 +24,28 @@ const (
 	requestTypeDown
 )
 
+func (r RequestTypes) String() string {
+	switch r {
+	case requestTypeUp:
+		return "Up"
+	case requestTypeDown:
+		return "Down"
+	default:
+		return "unknown request type"
+	}
+}
+
 type requestInfo struct {
 	requestType       RequestTypes
 	source            string
 	action            string
 	resourceGroupName string
+}
+
+func (r *requestInfo) String() string {
+	return fmt.Sprintf("%s_%s-%s-%s", r.requestType.String(), r.source, r.action, r.resourceGroupName)
+}
+
+func (r *requestInfo) ID() string {
+	return r.String()
 }

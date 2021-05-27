@@ -58,6 +58,14 @@ func (c *Config) load(reader io.Reader) error {
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return fmt.Errorf("unmarshalling of config values failed: %s", err)
 	}
+
+	// APIキーが未設定の場合環境変数を読む
+	if c.SakuraCloud.Token == "" {
+		c.SakuraCloud.Token = os.Getenv("SAKURACLOUD_ACCESS_TOKEN")
+	}
+	if c.SakuraCloud.Secret == "" {
+		c.SakuraCloud.Secret = os.Getenv("SAKURACLOUD_ACCESS_TOKEN_SECRET")
+	}
 	return nil
 }
 
@@ -84,3 +92,5 @@ func (c *Config) APIClient() sacloud.APICaller {
 		//FakeStorePath:        "",
 	})
 }
+
+// TODO Validateの実装

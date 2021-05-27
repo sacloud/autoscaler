@@ -6,7 +6,7 @@ package autoscaler;
 service ScalingService {
   rpc Up(ScalingRequest) returns (ScalingResponse);
   rpc Down(ScalingRequest) returns (ScalingResponse);
-  rpc Status(StatusRequest) returns (ScalingResponse);
+//  rpc Status(StatusRequest) returns (ScalingResponse);
 }
 
 message ScalingRequest {
@@ -15,9 +15,9 @@ message ScalingRequest {
   string resource_group_name = 3;
 }
 
-message StatusRequest {
-  string scaling_job_id = 1;
-}
+//message StatusRequest {
+//  string scaling_job_id = 1;
+//}
 
 message ScalingResponse {
   string scaling_job_id   = 1;

@@ -24,9 +24,9 @@ type Context struct {
 	request *requestInfo
 }
 
-func NewContext(request *requestInfo) *Context {
+func NewContext(parent context.Context, request *requestInfo) *Context {
 	return &Context{
-		ctx:     context.Background(),
+		ctx:     parent,
 		request: request,
 	}
 }

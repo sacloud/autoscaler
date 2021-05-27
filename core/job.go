@@ -18,21 +18,11 @@ import (
 	"github.com/sacloud/autoscaler/request"
 )
 
-//go:generate stringer -type=JobTypes
-type JobTypes int
-
-// JobTypes StatusはJobではないためここでは定義していない
-const (
-	JobTypeUnknown JobTypes = iota
-	JobTypeUp
-	JobTypeDown
-)
-
 // Job スケールアウト/イン/アップ/ダウンなどの各種ジョブを表す
 //
 // Inputsからのリクエストパラメータ Source/Action/ResourceGroupNameごとに作成される
 type Job struct {
-	ID     string
-	Type   JobTypes
-	Status request.ScalingJobStatus
+	RequestType RequestTypes
+	ID          string
+	Status      request.ScalingJobStatus
 }
