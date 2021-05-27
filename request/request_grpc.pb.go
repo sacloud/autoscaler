@@ -35,7 +35,6 @@ const _ = grpc.SupportPackageIsVersion7
 type ScalingServiceClient interface {
 	Up(ctx context.Context, in *ScalingRequest, opts ...grpc.CallOption) (*ScalingResponse, error)
 	Down(ctx context.Context, in *ScalingRequest, opts ...grpc.CallOption) (*ScalingResponse, error)
-	Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*ScalingResponse, error)
 }
 
 type scalingServiceClient struct {
@@ -64,22 +63,12 @@ func (c *scalingServiceClient) Down(ctx context.Context, in *ScalingRequest, opt
 	return out, nil
 }
 
-func (c *scalingServiceClient) Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*ScalingResponse, error) {
-	out := new(ScalingResponse)
-	err := c.cc.Invoke(ctx, "/autoscaler.ScalingService/Status", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ScalingServiceServer is the server API for ScalingService service.
 // All implementations must embed UnimplementedScalingServiceServer
 // for forward compatibility
 type ScalingServiceServer interface {
 	Up(context.Context, *ScalingRequest) (*ScalingResponse, error)
 	Down(context.Context, *ScalingRequest) (*ScalingResponse, error)
-	Status(context.Context, *StatusRequest) (*ScalingResponse, error)
 	mustEmbedUnimplementedScalingServiceServer()
 }
 
@@ -92,9 +81,6 @@ func (UnimplementedScalingServiceServer) Up(context.Context, *ScalingRequest) (*
 }
 func (UnimplementedScalingServiceServer) Down(context.Context, *ScalingRequest) (*ScalingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Down not implemented")
-}
-func (UnimplementedScalingServiceServer) Status(context.Context, *StatusRequest) (*ScalingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
 }
 func (UnimplementedScalingServiceServer) mustEmbedUnimplementedScalingServiceServer() {}
 
@@ -145,24 +131,6 @@ func _ScalingService_Down_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ScalingService_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StatusRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ScalingServiceServer).Status(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/autoscaler.ScalingService/Status",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ScalingServiceServer).Status(ctx, req.(*StatusRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ScalingService_ServiceDesc is the grpc.ServiceDesc for ScalingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -177,10 +145,6 @@ var ScalingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Down",
 			Handler:    _ScalingService_Down_Handler,
-		},
-		{
-			MethodName: "Status",
-			Handler:    _ScalingService_Status_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
