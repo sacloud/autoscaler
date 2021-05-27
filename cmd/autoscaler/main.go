@@ -26,22 +26,18 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
-	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/sacloud/autoscaler/core"
 	"github.com/sacloud/autoscaler/defaults"
-	"github.com/sacloud/autoscaler/request"
 	"github.com/sacloud/autoscaler/version"
-	"google.golang.org/grpc"
 )
 
 func main() {
-	var address string
+	var address, configPath string
 	flag.StringVar(&address, "address", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
+	flag.StringVar(&configPath, "config", defaults.CoreConfigPath, "File path of configuration of AutoScaler Core")
 
 	var showHelp, showVersion bool
 	flag.BoolVar(&showHelp, "help", false, "Show help")
@@ -59,43 +55,10 @@ func main() {
 		fmt.Println(version.FullVersion())
 		return
 	default:
-		errCh := make(chan error)
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer stop()
-
-		// TODO 簡易的な実装、後ほど整理&切り出し
-		filename := strings.Replace(defaults.CoreSocketAddr, "unix:", "", -1)
-		lis, err := net.Listen("unix", filename)
-		if err != nil {
+		if err := core.Start(ctx, configPath); err != nil {
 			log.Fatal(err)
-		}
-
-		server := grpc.NewServer()
-		srv := core.NewScalingService()
-		request.RegisterScalingServiceServer(server, srv)
-
-		defer func() {
-			server.GracefulStop()
-			lis.Close()
-			if _, err := os.Stat(filename); err == nil {
-				if err := os.RemoveAll(filename); err != nil {
-					log.Fatal(err)
-				}
-			}
-		}()
-
-		go func() {
-			log.Printf("autoscaler started with: %s\n", lis.Addr().String())
-			if err := server.Serve(lis); err != nil {
-				errCh <- err
-			}
-		}()
-
-		select {
-		case err := <-errCh:
-			log.Fatalln("Fatal error: ", err)
-		case <-ctx.Done():
-			log.Println("shutting down with:", ctx.Err())
 		}
 	}
 }

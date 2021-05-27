@@ -12,13 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package defaults
+package core
 
-const (
-	CoreSocketAddr        = "unix:autoscaler.sock"               // CoreのデフォルトgRPCエンドポイント(Inputsから呼ばれる)
-	CoreConfigPath        = "autoscaler.yaml"                    // CoreのConfigurationのファイルパス
-	HandlerFakeSocketAddr = "unix:autoscaler-handlers-fake.sock" // Fake HanderのデフォルトgRPCエンドポイント(Coreから呼ばれる)
-	ActionName            = "default"
-	ResourceGroupName     = "default"
-	SourceName            = "default"
-)
+import "github.com/sacloud/libsacloud/v2/sacloud"
+
+type GSLB struct {
+	*ResourceBase `yaml:",inline"`
+}
+
+func (s *GSLB) Validate() error {
+	// TODO 実装
+	return nil
+}
+
+func (s *GSLB) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentResource, Desired, error) {
+	// TODO 実装
+	return nil, nil, nil
+}

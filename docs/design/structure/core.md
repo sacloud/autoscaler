@@ -13,18 +13,6 @@ config:
     token: "your-api-key"
     secret: "your-api-secret"
     
-  # 公開するアクション: キー:handlersのリストを定義。
-  # Inputsからのリクエスト時に任意で指定される
-  # いくつかのアクションはデフォルトで提供される
-  actions:
-    - server_horizontal_scaling:
-        - server_horizontal_scaler
-        - route53_handler
-    - server_vertical_scaling:
-        - server_vertical_scaler
-    - your_custom_rule:
-        - your_custom_handler
-    
   # 利用するHandlersの指定  
   handlers:
     # ビルトインHandler: パラメータを受けないものはデフォルトで利用可能
@@ -44,15 +32,21 @@ config:
 
   resources: #任意のキーでリソースのグループを定義(Inputsは操作対象としてキーを指定する)
     web: 
-      - name: front-servers
-        type: ServerGroup
-        # ...
-      - name: load-balancer
-        type: EnhancedLoadBalancer
-        # ...
-      - name: rdb
-        type: Server
-        # ...
+      resources:
+        - name: front-servers
+          type: ServerGroup
+          handlers:
+            - server_vertical_scaler # リソースごとにHandlersを指定可能、指定の場合のみリソースグループへの指定を上書きする
+          # ...
+        - name: load-balancer
+          type: EnhancedLoadBalancer
+          # ...
+        - name: rdb
+          type: Server
+          # ...
+      handlers:
+        - server_horizontal_scaler  
+        - route53_handler
       
       
 # その他動作関連

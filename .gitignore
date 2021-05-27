@@ -7,3 +7,5 @@ key.gpg
 
 dist/
 vendor/
+
+autoscaler.yaml

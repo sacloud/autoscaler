@@ -6,7 +6,7 @@ package autoscaler;
 service ScalingService {
   rpc Up(ScalingRequest) returns (ScalingResponse);
   rpc Down(ScalingRequest) returns (ScalingResponse);
-  rpc Status(StatusRequest) returns (ScalingResponse);
+//  rpc Status(StatusRequest) returns (ScalingResponse);
 }
 
 message ScalingRequest {
@@ -15,20 +15,20 @@ message ScalingRequest {
   string resource_group_name = 3;
 }
 
-message StatusRequest {
-  string scaling_job_id = 1;
-}
+//message StatusRequest {
+//  string scaling_job_id = 1;
+//}
 
 message ScalingResponse {
-  enum ScalingJobStatus {
-    UNKNOWN         = 0;
-    ACCEPTED        = 1;
-    RUNNING         = 2;
-    DONE            = 3;
-    CANCELED        = 4;
-    FAILED          = 5;
-  }
-
   string scaling_job_id   = 1;
   ScalingJobStatus status = 2;
+}
+
+enum ScalingJobStatus {
+  JOB_UNKNOWN         = 0;
+  JOB_ACCEPTED        = 1;
+  JOB_RUNNING         = 2;
+  JOB_DONE            = 3;
+  JOB_CANCELED        = 4;
+  JOB_FAILED          = 5;
 }

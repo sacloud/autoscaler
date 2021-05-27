@@ -16,101 +16,54 @@ package core
 
 import (
 	"context"
-	"io"
 	"log"
 
-	"github.com/sacloud/autoscaler/defaults"
-	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/request"
-	"google.golang.org/grpc"
 )
 
 var _ request.ScalingServiceServer = (*ScalingService)(nil)
 
 type ScalingService struct {
 	request.UnimplementedScalingServiceServer
+	instance *Core
 }
 
-func NewScalingService() request.ScalingServiceServer {
-	return &ScalingService{}
+func NewScalingService(instance *Core) request.ScalingServiceServer {
+	return &ScalingService{instance: instance}
 }
 
 func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
 	log.Println("Core.ScalingService: Up:", req)
-	if err := s.handle(ctx, req); err != nil {
+	serviceCtx := NewContext(ctx, &requestInfo{
+		requestType:       requestTypeUp,
+		source:            req.Source,
+		action:            req.Action,
+		resourceGroupName: req.ResourceGroupName,
+	})
+	job, err := s.instance.Up(serviceCtx)
+	if err != nil {
 		return nil, err
 	}
 	return &request.ScalingResponse{
-		ScalingJobId: "1",
-		Status:       request.ScalingResponse_DONE,
+		ScalingJobId: job.ID,
+		Status:       job.Status,
 	}, nil
 }
 
 func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
 	log.Println("Core.ScalingService: Down:", req)
-	if err := s.handle(ctx, req); err != nil {
+	serviceCtx := NewContext(ctx, &requestInfo{
+		requestType:       requestTypeDown,
+		source:            req.Source,
+		action:            req.Action,
+		resourceGroupName: req.ResourceGroupName,
+	})
+	job, err := s.instance.Down(serviceCtx)
+	if err != nil {
 		return nil, err
 	}
 	return &request.ScalingResponse{
-		ScalingJobId: "1",
-		Status:       request.ScalingResponse_DONE,
+		ScalingJobId: job.ID,
+		Status:       job.Status,
 	}, nil
-}
-
-func (s *ScalingService) Status(ctx context.Context, req *request.StatusRequest) (*request.ScalingResponse, error) {
-	log.Println("Core.ScalingService: Status:", req)
-	return &request.ScalingResponse{
-		ScalingJobId: "1",
-		Status:       request.ScalingResponse_DONE,
-	}, nil
-}
-
-func (s *ScalingService) handle(ctx context.Context, req *request.ScalingRequest) error {
-	// TODO 簡易的な実装、後ほど整理&切り出し
-	conn, err := grpc.DialContext(ctx, defaults.HandlerFakeSocketAddr, grpc.WithInsecure())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-
-	client := handler.NewHandleServiceClient(conn)
-	stream, err := client.Handle(ctx, &handler.HandleRequest{
-		Source:            req.Source,
-		Action:            req.Action,
-		ResourceGroupName: req.ResourceGroupName,
-		ScalingJobId:      "1",
-		// サーバが存在するパターン
-		Resources: []*handler.Resource{
-			{
-				Resource: &handler.Resource_Server{
-					Server: &handler.Server{
-						Status: handler.ResourceStatus_RUNNING,
-						Id:     "123456789012",
-						AssignedNetwork: &handler.NetworkInfo{
-							IpAddress: "192.0.2.11",
-							Netmask:   24,
-							Gateway:   "192.0.2.1",
-						},
-						Core:          2,
-						Memory:        4,
-						DedicatedCpu:  false,
-						PrivateHostId: "",
-					}},
-			},
-		},
-	})
-	if err != nil {
-		return err
-	}
-	for {
-		stat, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		log.Println("handler replied:", stat.String())
-	}
-	return nil
 }

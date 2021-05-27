@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package defaults
+package core
 
-const (
-	CoreSocketAddr        = "unix:autoscaler.sock"               // CoreのデフォルトgRPCエンドポイント(Inputsから呼ばれる)
-	CoreConfigPath        = "autoscaler.yaml"                    // CoreのConfigurationのファイルパス
-	HandlerFakeSocketAddr = "unix:autoscaler-handlers-fake.sock" // Fake HanderのデフォルトgRPCエンドポイント(Coreから呼ばれる)
-	ActionName            = "default"
-	ResourceGroupName     = "default"
-	SourceName            = "default"
+import (
+	"github.com/sacloud/autoscaler/request"
 )
+
+// Job スケールアウト/イン/アップ/ダウンなどの各種ジョブを表す
+//
+// Inputsからのリクエストパラメータ Source/Action/ResourceGroupNameごとに作成される
+// TODO Contextとの兼ね合いを再考
+type Job struct {
+	RequestType RequestTypes
+	ID          string
+	Status      request.ScalingJobStatus
+}
