@@ -34,63 +34,63 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 		{
 			name: "resource group",
 			r: func() *ResourceGroups {
-				rg := newResourceGroups()
-				rg.Set("web", &ResourceGroup{
-					Handlers: []*ResourceHandlerConfig{
-						{Name: "fake"},
+				rgs := newResourceGroups()
+				rg := &ResourceGroup{}
+				rg.HandlerConfigs = []*ResourceHandlerConfig{
+					{Name: "fake"},
+				}
+				rg.Resources = Resources{
+					&Server{
+						ResourceBase: &ResourceBase{
+							TypeName: "Server",
+							TargetSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+								Zones: []string{"is1a"},
+							},
+						},
+						DedicatedCPU:  true,
+						PrivateHostID: 123456789012,
+						Zone:          "is1a",
 					},
-					Resources: Resources{
-						&Server{
-							ResourceBase: &ResourceBase{
-								TypeName: "Server",
-								TargetSelector: &ResourceSelector{
-									Names: []string{"test-name"},
-									Zones: []string{"is1a"},
-								},
-							},
-							DedicatedCPU:  true,
-							PrivateHostID: 123456789012,
-							Zone:          "is1a",
-						},
-						&ServerGroup{
-							ResourceBase: &ResourceBase{
-								TypeName: "ServerGroup",
-								TargetSelector: &ResourceSelector{
-									Names: []string{"test-name"},
-									Zones: []string{"is1a"},
-								},
-							},
-						},
-						&DNS{
-							ResourceBase: &ResourceBase{
-								TypeName: "DNS",
-								TargetSelector: &ResourceSelector{
-									Names: []string{"test-name"},
-									Zones: []string{"is1a"},
-								},
-							},
-						},
-						&GSLB{
-							ResourceBase: &ResourceBase{
-								TypeName: "GSLB",
-								TargetSelector: &ResourceSelector{
-									Names: []string{"test-name"},
-									Zones: []string{"is1a"},
-								},
-							},
-						},
-						&EnhancedLoadBalancer{
-							ResourceBase: &ResourceBase{
-								TypeName: "EnhancedLoadBalancer",
-								TargetSelector: &ResourceSelector{
-									Names: []string{"test-name"},
-									Zones: []string{"is1a"},
-								},
+					&ServerGroup{
+						ResourceBase: &ResourceBase{
+							TypeName: "ServerGroup",
+							TargetSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+								Zones: []string{"is1a"},
 							},
 						},
 					},
-				})
-				return rg
+					&DNS{
+						ResourceBase: &ResourceBase{
+							TypeName: "DNS",
+							TargetSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+								Zones: []string{"is1a"},
+							},
+						},
+					},
+					&GSLB{
+						ResourceBase: &ResourceBase{
+							TypeName: "GSLB",
+							TargetSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+								Zones: []string{"is1a"},
+							},
+						},
+					},
+					&EnhancedLoadBalancer{
+						ResourceBase: &ResourceBase{
+							TypeName: "EnhancedLoadBalancer",
+							TargetSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+								Zones: []string{"is1a"},
+							},
+						},
+					},
+				}
+				rgs.Set("web", rg)
+				return rgs
 			}(),
 			args: args{
 				data: []byte(`

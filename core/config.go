@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/libsacloud/v2/helper/api"
@@ -26,9 +27,12 @@ import (
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
 type Config struct {
-	SakuraCloud SakuraCloud     `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
-	Handlers    Handlers        `yaml:"handlers"`    // カスタムハンドラーの定義
-	Resources   *ResourceGroups `yaml:"resources"`   // リソースグループの定義
+	SakuraCloud    SakuraCloud     `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
+	CustomHandlers Handlers        `yaml:"handlers"`    // カスタムハンドラーの定義
+	Resources      *ResourceGroups `yaml:"resources"`   // リソースグループの定義
+
+	clientOnce sync.Once
+	apiClient  sacloud.APICaller
 }
 
 func NewConfigFromPath(filePath string) (*Config, error) {
@@ -70,27 +74,35 @@ func (c *Config) load(reader io.Reader) error {
 }
 
 // APIClient Configに保持しているCredentialからさくらのクラウドAPIクライアント(sacloud.APICaller)を返す
+//
+// シングルトンなインスタンスを返す
 func (c *Config) APIClient() sacloud.APICaller {
-	return api.NewCaller(&api.CallerOptions{
-		AccessToken:       c.SakuraCloud.Token,
-		AccessTokenSecret: c.SakuraCloud.Secret,
-		//APIRootURL:           "",
-		//DefaultZone:          "",
-		//AcceptLanguage:       "",
-		//HTTPClient:           nil,
-		//HTTPRequestTimeout:   0,
-		//HTTPRequestRateLimit: 0,
-		//RetryMax:             0,
-		//RetryWaitMax:         0,
-		//RetryWaitMin:         0,
-		//UserAgent:            "",
-		//TraceAPI:             false,
-		//TraceHTTP:            false,
-		//OpenTelemetry:        false,
-		//OpenTelemetryOptions: nil,
-		FakeMode: true, // TODO プロトタイプはFakeモードで動作させる
-		//FakeStorePath:        "",
+	c.clientOnce.Do(func() {
+		c.apiClient = api.NewCaller(&api.CallerOptions{
+			AccessToken:       c.SakuraCloud.Token,
+			AccessTokenSecret: c.SakuraCloud.Secret,
+			//APIRootURL:           "",
+			//DefaultZone:          "",
+			//AcceptLanguage:       "",
+			//HTTPClient:           nil,
+			//HTTPRequestTimeout:   0,
+			//HTTPRequestRateLimit: 0,
+			//RetryMax:             0,
+			//RetryWaitMax:         0,
+			//RetryWaitMin:         0,
+			//UserAgent:            "",
+			//TraceAPI:             false,
+			//TraceHTTP:            false,
+			//OpenTelemetry:        false,
+			//OpenTelemetryOptions: nil,
+			FakeMode: os.Getenv("FAKE_MODE") != "",
+		})
 	})
+	return c.apiClient
 }
 
 // TODO Validateの実装
+
+func (c *Config) Handlers() Handlers {
+	return append(BuiltinHandlers, c.CustomHandlers...)
+}

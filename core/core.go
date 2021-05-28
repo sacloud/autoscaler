@@ -120,7 +120,44 @@ func (c *Core) generateJobID(ctx *Context) string {
 }
 
 func (c *Core) handle(ctx *Context) error {
-	// TODO configから適切なhandlerを選択する処理を実装
-	// それまではビルトインの先頭を固定で利用する
-	return BuiltinHandlers[0].Handle(ctx)
+	//対象リソースグループを取得
+	resourceGroup, err := c.targetResourceGroup(ctx)
+	if err != nil {
+		return err
+	}
+
+	handlers, err := resourceGroup.Handlers(c.config.Handlers())
+	if err != nil {
+		return err
+	}
+
+	for _, handler := range handlers {
+		// desiredはハンドラー処理ごとに再計算する
+		allDesired, err := resourceGroup.ComputeAll(ctx, c.config.APIClient())
+		if err != nil {
+			return err
+		}
+
+		if err := handler.Handle(ctx, allDesired); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Core) targetResourceGroup(ctx *Context) (*ResourceGroup, error) {
+	groupName := ctx.Request().resourceGroupName
+	if groupName == defaults.ResourceGroupName {
+		// デフォルトではmap内の先頭のリソースグループを返すようにする(yamlでの定義順とは限らない点に注意)
+		// TODO 要検討
+		for _, v := range c.config.Resources.All() {
+			return v, nil
+		}
+	}
+
+	rg, ok := c.config.Resources.GetOk(groupName)
+	if !ok {
+		return nil, fmt.Errorf("resource group %q not found", groupName)
+	}
+	return rg, nil
 }

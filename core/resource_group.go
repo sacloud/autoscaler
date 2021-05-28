@@ -17,57 +17,21 @@ package core
 import (
 	"fmt"
 
+	"github.com/sacloud/libsacloud/v2/sacloud"
+
 	"github.com/goccy/go-yaml"
 )
 
-// ResourceGroups 一意な名前をキーとするリソースのリスト
-type ResourceGroups struct {
-	groups map[string]*ResourceGroup
-}
-
 type ResourceGroup struct {
-	Handlers  []*ResourceHandlerConfig `yaml:"handlers"`
-	Resources Resources                `yaml:"resources"`
-	Name      string
+	HandlerConfigs []*ResourceHandlerConfig `yaml:"handlers"`
+	Resources      Resources                `yaml:"resources"`
+	Name           string
 }
 
 type ResourceHandlerConfig struct {
 	Name string `yaml:"name"`
 	// TODO 未実装
 	//Selector *ResourceSelector `yaml:"selector"`
-}
-
-func newResourceGroups() *ResourceGroups {
-	return &ResourceGroups{
-		groups: make(map[string]*ResourceGroup),
-	}
-}
-
-func (rg *ResourceGroups) Get(key string) *ResourceGroup {
-	v, _ := rg.GetOk(key)
-	return v
-}
-
-func (rg *ResourceGroups) GetOk(key string) (*ResourceGroup, bool) {
-	v, ok := rg.groups[key]
-	return v, ok
-}
-
-func (rg *ResourceGroups) Set(key string, group *ResourceGroup) {
-	group.Name = key
-	rg.groups[key] = group
-}
-
-func (rg *ResourceGroups) UnmarshalYAML(data []byte) error {
-	var loaded map[string]*ResourceGroup
-	if err := yaml.Unmarshal(data, &loaded); err != nil {
-		return err
-	}
-	for k, v := range loaded {
-		v.Name = k
-	}
-	*rg = ResourceGroups{groups: loaded}
-	return nil
 }
 
 func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
@@ -126,11 +90,45 @@ func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
 		handlers := rawHandlers.([]interface{})
 		for _, name := range handlers {
 			if n, ok := name.(string); ok {
-				resourceGroup.Handlers = append(resourceGroup.Handlers, &ResourceHandlerConfig{Name: n})
+				resourceGroup.HandlerConfigs = append(resourceGroup.HandlerConfigs, &ResourceHandlerConfig{Name: n})
 			}
 		}
 	}
 
 	*rg = *resourceGroup
 	return nil
+}
+
+func (rg *ResourceGroup) ComputeAll(ctx *Context, apiClient sacloud.APICaller) ([]Desired, error) {
+	// TODO 並列化
+	var allDesired []Desired
+	err := rg.Resources.Walk(func(resource Resource) error {
+		desired, err := resource.Desired(ctx, apiClient)
+		if err != nil {
+			return err
+		}
+		allDesired = append(allDesired, desired)
+		return nil
+	})
+	return allDesired, err
+}
+
+// Handlers 引数で指定されたハンドラーのリストをHandlerConfigsに合致するハンドラだけにフィルタして返す
+func (rg *ResourceGroup) Handlers(allHandlers Handlers) (Handlers, error) {
+	// ビルトイン + configで定義されたハンドラーからHandlerConfigsに定義されたハンドラーを探す
+	var handlers Handlers
+	for _, conf := range rg.HandlerConfigs {
+		var found *Handler
+		for _, h := range allHandlers {
+			if h.Name == conf.Name {
+				found = h
+				break
+			}
+		}
+		if found == nil {
+			return nil, fmt.Errorf("handler %q not found", conf.Name)
+		}
+		handlers = append(handlers, found)
+	}
+	return handlers, nil
 }

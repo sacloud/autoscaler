@@ -14,18 +14,29 @@
 
 package core
 
-import "github.com/sacloud/libsacloud/v2/sacloud"
+type ResourceTypes int
 
-type GSLB struct {
-	*ResourceBase `yaml:",inline"`
-}
+const (
+	ResourceTypeUnknown ResourceTypes = iota
+	ResourceTypeServer
+	ResourceTypeServerGroup
+	ResourceTypeEnhancedLoadBalancer
+	ResourceTypeGSLB
+	ResourceTypeDNS
+)
 
-func (s *GSLB) Validate() error {
-	// TODO 実装
-	return nil
-}
-
-func (s *GSLB) Desired(ctx *Context, apiClient sacloud.APICaller) (Desired, error) {
-	// TODO 実装
-	return nil, nil
+func (rt ResourceTypes) String() string {
+	switch rt {
+	case ResourceTypeServer:
+		return "Server"
+	case ResourceTypeServerGroup:
+		return "ServerGroup"
+	case ResourceTypeEnhancedLoadBalancer:
+		return "EnhancedLoadBalancer"
+	case ResourceTypeGSLB:
+		return "GSLB"
+	case ResourceTypeDNS:
+		return "return DNS"
+	}
+	return "unknown"
 }

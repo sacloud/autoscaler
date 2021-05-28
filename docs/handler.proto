@@ -43,6 +43,7 @@ enum ResourceInstructions {
 }
 
 // リソース型
+// TODO ネスとしたリソースへの対応
 message Resource {
   oneof resource {
     Server server            = 10;
@@ -54,14 +55,14 @@ message Resource {
 }
 
 message Server {
-  ResourceInstructions instruction = 1;
-  string id                        = 2;
-  string zone                      = 3;
-  uint32 core                      = 4;
-  uint32 memory                    = 5;
-  bool dedicated_cpu               = 6;
-  string private_host_id           = 7;
-  NetworkInfo assigned_network     = 8;
+  ResourceInstructions instruction      = 1;
+  string id                             = 2;
+  string zone                           = 3;
+  uint32 core                           = 4;
+  uint32 memory                         = 5;
+  bool dedicated_cpu                    = 6;
+  string private_host_id                = 7;
+  repeated NetworkInfo assigned_network = 8;
   // TODO その他渡すパラメータを整理する
 }
 

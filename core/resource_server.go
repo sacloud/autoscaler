@@ -29,6 +29,15 @@ type ServerPlan struct {
 	Memory int // メモリサイズ(GiB)
 }
 
+// DefaultServerPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
+//
+// TODO 要検討
+var DefaultServerPlans = []ServerPlan{
+	{Core: 1, Memory: 1},
+	{Core: 2, Memory: 4},
+	{Core: 4, Memory: 8},
+}
+
 type Server struct {
 	*ResourceBase `yaml:",inline"`
 	DedicatedCPU  bool         `yaml:"dedicated_cpu"`
@@ -36,9 +45,6 @@ type Server struct {
 	Zone          string       `yaml:"zone"`
 	Plans         []ServerPlan `yaml:"plans"`
 	Wrappers      Resources    `yaml:"wrappers"`
-
-	current *currentServer
-	desired *desiredServer
 }
 
 func (s *Server) Validate() error {
@@ -52,9 +58,9 @@ func (s *Server) Validate() error {
 	return nil
 }
 
-func (s *Server) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentResource, Desired, error) {
+func (s *Server) Desired(ctx *Context, apiClient sacloud.APICaller) (Desired, error) {
 	if err := s.Validate(); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	serverOp := sacloud.NewServerOp(apiClient)
@@ -64,7 +70,7 @@ func (s *Server) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentRe
 		fc := selector.FindCondition()
 		found, err := serverOp.Find(ctx, zone, fc)
 		if err != nil {
-			return nil, nil, fmt.Errorf("calculating server status failed: %s", err)
+			return nil, fmt.Errorf("computing server status failed: %s", err)
 		}
 		if len(found.Servers) > 0 {
 			server = found.Servers[0]
@@ -72,46 +78,46 @@ func (s *Server) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentRe
 	}
 
 	if server == nil {
-		return nil, nil, fmt.Errorf("server not found with selector: %s", selector.String())
+		return nil, fmt.Errorf("server not found with selector: %s", selector.String())
 	}
 
 	desired := &desiredServer{
-		raw: &sacloud.Server{},
+		instruction: handler.ResourceInstructions_NOOP,
+		server:      &sacloud.Server{},
+		zone:        s.Zone,
 	}
-	if err := mapconvDecoder.ConvertTo(server, desired.raw); err != nil {
-		return nil, nil, fmt.Errorf("calculating desired state failed: %s", err)
+	if err := mapconvDecoder.ConvertTo(server, desired.server); err != nil {
+		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
 	plan := s.desiredPlan(ctx, server)
-	instruction := handler.ResourceInstructions_NOOP
 
 	if plan != nil {
-		desired.raw.CPU = plan.Core
-		desired.raw.MemoryMB = plan.Memory * size.GiB
-		instruction = handler.ResourceInstructions_UPDATE
+		desired.server.CPU = plan.Core
+		desired.server.MemoryMB = plan.Memory * size.GiB
+		desired.instruction = handler.ResourceInstructions_UPDATE
 	}
 
-	s.current = &currentServer{
-		status: instruction,
-		server: server,
-	}
-	s.desired = desired
-
-	return s.current, s.desired, nil
+	return desired, nil
 }
 
 func (s *Server) desiredPlan(ctx *Context, current *sacloud.Server) *ServerPlan {
 	var fn func(i int) *ServerPlan
-	// TODO s.Plansがない場合のデフォルト値を考慮する
+
+	plans := s.Plans
+	if len(plans) == 0 {
+		plans = DefaultServerPlans
+	}
+
 	// TODO s.Plansの並べ替えを考慮する
 
 	switch ctx.Request().requestType {
 	case requestTypeUp:
 		fn = func(i int) *ServerPlan {
-			if i < len(s.Plans) {
+			if i < len(plans) {
 				return &ServerPlan{
-					Core:   s.Plans[i+1].Core,
-					Memory: s.Plans[i+1].Memory,
+					Core:   plans[i+1].Core,
+					Memory: plans[i+1].Memory,
 				}
 			}
 			return nil
@@ -120,8 +126,8 @@ func (s *Server) desiredPlan(ctx *Context, current *sacloud.Server) *ServerPlan 
 		fn = func(i int) *ServerPlan {
 			if i > 0 {
 				return &ServerPlan{
-					Core:   s.Plans[i-1].Core,
-					Memory: s.Plans[i-1].Memory,
+					Core:   plans[i-1].Core,
+					Memory: plans[i-1].Memory,
 				}
 			}
 			return nil
@@ -130,7 +136,7 @@ func (s *Server) desiredPlan(ctx *Context, current *sacloud.Server) *ServerPlan 
 		return nil // 到達しないはず
 	}
 
-	for i, plan := range s.Plans {
+	for i, plan := range plans {
 		if plan.Core == current.CPU && plan.Memory == current.GetMemoryGB() {
 			return fn(i)
 		}
@@ -138,24 +144,47 @@ func (s *Server) desiredPlan(ctx *Context, current *sacloud.Server) *ServerPlan 
 	return nil
 }
 
-// currentServer CurrentResourceを実装した、現在のサーバの状態を表すためのデータ構造
-type currentServer struct {
-	status handler.ResourceInstructions
-	server *sacloud.Server
-}
-
-func (c *currentServer) Status() handler.ResourceInstructions {
-	return c.status
-}
-
-func (c *currentServer) Raw() interface{} {
-	return c.server
-}
-
 type desiredServer struct {
-	raw *sacloud.Server
+	instruction handler.ResourceInstructions
+	server      *sacloud.Server
+	zone        string
 }
 
-func (d *desiredServer) Raw() interface{} {
-	return d.raw
+func (d *desiredServer) Instruction() handler.ResourceInstructions {
+	return d.instruction
+}
+
+func (d *desiredServer) ToRequest() *handler.Resource {
+	if d.server != nil {
+		var assignedNetwork []*handler.NetworkInfo
+		for _, nic := range d.server.Interfaces {
+			var ipAddress string
+			if nic.SwitchScope == types.Scopes.Shared {
+				ipAddress = nic.IPAddress
+			} else {
+				ipAddress = nic.UserIPAddress
+			}
+			assignedNetwork = append(assignedNetwork, &handler.NetworkInfo{
+				IpAddress: ipAddress,
+				Netmask:   uint32(nic.UserSubnetNetworkMaskLen),
+				Gateway:   nic.UserSubnetDefaultRoute,
+			})
+		}
+
+		return &handler.Resource{
+			Resource: &handler.Resource_Server{
+				Server: &handler.Server{
+					Instruction:     d.Instruction(),
+					Id:              d.server.ID.String(),
+					Zone:            d.zone,
+					Core:            uint32(d.server.CPU),
+					Memory:          uint32(d.server.GetMemoryGB()),
+					DedicatedCpu:    d.server.ServerPlanCommitment.IsDedicatedCPU(),
+					PrivateHostId:   d.server.PrivateHostID.String(),
+					AssignedNetwork: assignedNetwork,
+				},
+			},
+		}
+	}
+	return nil
 }

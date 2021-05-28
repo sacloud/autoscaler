@@ -58,10 +58,9 @@ func (c *SakuraCloudFlagCustomizer) APIClient() sacloud.APICaller {
 		//RetryMax:             0,
 		//RetryWaitMax:         0,
 		//RetryWaitMin:         0,
-		UserAgent:     "sacloud/autoscaler-handlers", // TODO カスタマイズ可能にしたい
-		TraceAPI:      os.Getenv("SAKURACLOUD_TRACE") != "",
-		TraceHTTP:     os.Getenv("SAKURACLOUD_TRACE") != "",
-		FakeMode:      true, // TODO プロトタイプ時点ではfakeドライバーで対応
-		FakeStorePath: "",
+		UserAgent: "sacloud/autoscaler-handlers", // TODO カスタマイズ可能にしたい
+		TraceAPI:  os.Getenv("SAKURACLOUD_TRACE") != "",
+		TraceHTTP: os.Getenv("SAKURACLOUD_TRACE") != "",
+		FakeMode:  os.Getenv("FAKE_MODE") != "",
 	})
 }
