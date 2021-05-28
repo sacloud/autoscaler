@@ -2,9 +2,13 @@
 
 さくらのクラウド向けAutoScaler
 
+## Getting Started
+
+[Getting Started Guide(プロトタイプ)](docs/getting-started.md)を参照してください。
+
 ## Installation
 
-**TODO**: 
+**TODO**:
 
 ## Usages
 
