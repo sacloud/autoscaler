@@ -67,8 +67,8 @@ func (h *Handler) handleBuiltin(ctx *Context) error {
 			{
 				Resource: &handler.Resource_Server{
 					Server: &handler.Server{
-						Status: handler.ResourceStatus_RUNNING,
-						Id:     "123456789012",
+						Instruction: handler.ResourceInstructions_UPDATE,
+						Id:          "123456789012",
 						AssignedNetwork: &handler.NetworkInfo{
 							IpAddress: "192.0.2.11",
 							Netmask:   24,
@@ -104,8 +104,8 @@ func (h *Handler) handle(ctx *Context) error {
 			{
 				Resource: &handler.Resource_Server{
 					Server: &handler.Server{
-						Status: handler.ResourceStatus_RUNNING,
-						Id:     "123456789012",
+						Instruction: handler.ResourceInstructions_UPDATE,
+						Id:          "123456789012",
 						AssignedNetwork: &handler.NetworkInfo{
 							IpAddress: "192.0.2.11",
 							Netmask:   24,

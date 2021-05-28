@@ -72,11 +72,7 @@ func (s *Server) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentRe
 	}
 
 	if server == nil {
-		s.current = &currentServer{
-			status: handler.ResourceStatus_NOT_EXISTS,
-			server: nil,
-		}
-		return s.current, nil, nil
+		return nil, nil, fmt.Errorf("server not found with selector: %s", selector.String())
 	}
 
 	desired := &desiredServer{
@@ -87,14 +83,16 @@ func (s *Server) Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentRe
 	}
 
 	plan := s.desiredPlan(ctx, server)
+	instruction := handler.ResourceInstructions_NOOP
 
 	if plan != nil {
 		desired.raw.CPU = plan.Core
 		desired.raw.MemoryMB = plan.Memory * size.GiB
+		instruction = handler.ResourceInstructions_UPDATE
 	}
 
 	s.current = &currentServer{
-		status: handler.ResourceStatus_RUNNING, // TODO RUNNINGだけで良いか? 作成途中などを示すステータスは不要か?
+		status: instruction,
 		server: server,
 	}
 	s.desired = desired
@@ -142,11 +140,11 @@ func (s *Server) desiredPlan(ctx *Context, current *sacloud.Server) *ServerPlan 
 
 // currentServer CurrentResourceを実装した、現在のサーバの状態を表すためのデータ構造
 type currentServer struct {
-	status handler.ResourceStatus
+	status handler.ResourceInstructions
 	server *sacloud.Server
 }
 
-func (c *currentServer) Status() handler.ResourceStatus {
+func (c *currentServer) Status() handler.ResourceInstructions {
 	return c.status
 }
 

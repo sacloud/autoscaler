@@ -25,7 +25,7 @@ import (
 type Handler struct{}
 
 func (h *Handler) Name() string {
-	return "server-vertical-scaler"
+	return "logging"
 }
 
 func (h *Handler) Version() string {

@@ -1,20 +1,48 @@
-package logging
+// Copyright 2021 The sacloud Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package server
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"os"
+	"testing"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/libsacloud/v2/helper/api"
 	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"os"
-	"testing"
 )
+
+type fakeSender struct {
+	buf *bytes.Buffer
+}
+
+func (s *fakeSender) Send(res *handler.HandleResponse) error {
+	_, err := io.Copy(s.buf, bytes.NewBufferString(res.Log))
+	return err
+}
 
 func TestHandler_Handle(t *testing.T) {
 	server, cleanup := initTestServer(t)
 	defer cleanup()
+
+	sender := &fakeSender{buf: bytes.NewBufferString("")}
 
 	type args struct {
 		req    *handler.HandleRequest
@@ -28,31 +56,32 @@ func TestHandler_Handle(t *testing.T) {
 		{
 			name: "scale up",
 			args: args{
-				req:    &handler.HandleRequest{
+				req: &handler.HandleRequest{
 					Source:            "default",
 					Action:            "default",
 					ResourceGroupName: "default",
 					ScalingJobId:      "1",
-					Resources:         []*handler.Resource{
+					Resources: []*handler.Resource{
 						{Resource: &handler.Resource_Server{
 							Server: &handler.Server{
-								Status:          handler.ResourceStatus_RUNNING,
+								Instruction:     handler.ResourceInstructions_UPDATE,
 								Id:              server.ID.String(),
 								AssignedNetwork: nil,
 								Core:            4,
 								Memory:          8,
+								Zone:            testZone,
 							},
 						}},
 					},
 				},
-				sender: nil,
+				sender: sender,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Handler{}
+			h := &VerticalScaleHandler{}
 			if err := h.Handle(tt.args.req, tt.args.sender); (err != nil) != tt.wantErr {
 				t.Errorf("Handle() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -61,8 +90,8 @@ func TestHandler_Handle(t *testing.T) {
 }
 
 var (
-	testZone = "is1a"
-	testAPIClient = 	api.NewCaller(&api.CallerOptions{
+	testZone      = "is1a"
+	testAPIClient = api.NewCaller(&api.CallerOptions{
 		AccessToken:       "fake",
 		AccessTokenSecret: "fake",
 		UserAgent:         "sacloud/autoscaler/fake",
@@ -74,7 +103,7 @@ var (
 
 func initTestServer(t *testing.T) (*sacloud.Server, func()) {
 	serverOp := sacloud.NewServerOp(testAPIClient)
-	server, err := serverOp.Create(context.Background(), testZone	, &sacloud.ServerCreateRequest{
+	server, err := serverOp.Create(context.Background(), testZone, &sacloud.ServerCreateRequest{
 		CPU:                  2,
 		MemoryMB:             4 * size.GiB,
 		ServerPlanCommitment: types.Commitments.Standard,

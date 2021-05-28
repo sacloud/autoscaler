@@ -112,7 +112,7 @@ func (rs *ResourceSelector) FindCondition() *sacloud.FindCondition {
 // CurrentResource リソースの現在の状態を示す
 type CurrentResource interface {
 	// Status 現在のリソースの状態
-	Status() handler.ResourceStatus
+	Status() handler.ResourceInstructions
 	// Raw さくらのクラウドAPIからの戻り値(libsacloud v2のsacloud APIsの戻り値)
 	Raw() interface{}
 }
