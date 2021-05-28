@@ -123,9 +123,11 @@ func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
 	}
 
 	if rawHandlers, ok := rawMap["handlers"]; ok {
-		handlers := rawHandlers.([]string)
+		handlers := rawHandlers.([]interface{})
 		for _, name := range handlers {
-			resourceGroup.Handlers = append(resourceGroup.Handlers, &ResourceHandlerConfig{Name: name})
+			if n, ok := name.(string); ok {
+				resourceGroup.Handlers = append(resourceGroup.Handlers, &ResourceHandlerConfig{Name: n})
+			}
 		}
 	}
 
