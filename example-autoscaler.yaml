@@ -1,0 +1,18 @@
+# 操作対象のリソースの定義
+resources:
+  web:
+    resources:
+      - type: Server
+        selector:
+          names: ["example"]
+          zone: ["is1a"]
+        zone: "is1a"
+    handlers:
+      - logging
+      - server-vertical-scaler
+
+# カスタムハンドラーの定義
+# handlers:
+#   - type: "fake"
+#     name: "fake"
+#     endpoint: "unix:autoscaler-handlers-fake.sock"
