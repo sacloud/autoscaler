@@ -104,7 +104,7 @@ func TestServer_Calculate(t *testing.T) {
 
 	ctx := testContext()
 
-	t.Run("returns NOT_EXISTS status if selector has invalid value", func(t *testing.T) {
+	t.Run("returns error if selector has invalid value", func(t *testing.T) {
 		notFound := &Server{
 			ResourceBase: &ResourceBase{
 				TypeName: "Server",
@@ -115,13 +115,11 @@ func TestServer_Calculate(t *testing.T) {
 			},
 		}
 
-		current, _, err := notFound.Calculate(ctx, testAPIClient)
-		require.NoError(t, err)
-		require.NotNil(t, current)
-		require.Equal(t, handler.ResourceStatus_NOT_EXISTS, current.Status())
+		_, _, err := notFound.Calculate(ctx, testAPIClient)
+		require.Error(t, err)
 	})
 
-	t.Run("returns RUNNING status if selector has valid value", func(t *testing.T) {
+	t.Run("returns UPDATE instruction if selector has valid value", func(t *testing.T) {
 		running := &Server{
 			ResourceBase: &ResourceBase{
 				TypeName: "Server",
@@ -130,13 +128,18 @@ func TestServer_Calculate(t *testing.T) {
 					Zones: testZones,
 				},
 			},
+			Plans: []ServerPlan{
+				{Core: 1, Memory: 1},
+				{Core: 2, Memory: 4},
+				{Core: 4, Memory: 8},
+			},
 		}
 
 		current, _, err := running.Calculate(ctx, testAPIClient)
 		require.NoError(t, err)
 		require.NoError(t, err)
 		require.NotNil(t, current)
-		require.Equal(t, handler.ResourceStatus_RUNNING, current.Status())
+		require.Equal(t, handler.ResourceInstructions_UPDATE, current.Status())
 	})
 
 	t.Run("returns scale-upd state", func(t *testing.T) {

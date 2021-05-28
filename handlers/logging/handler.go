@@ -12,20 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// AutoScaler Core
-//
-// Usage:
-//   autoscaler-handlers-fake [flags]
-//
-// Flags:
-//   -address: (optional) URL of gRPC endpoint of the handler. default:`unix:autoscaler-handlers-fake.sock`
-package main
+package logging
 
 import (
+	"log"
+
+	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/handlers/fake"
+	"github.com/sacloud/autoscaler/version"
 )
 
-func main() {
-	handlers.Serve(&fake.Handler{})
+type Handler struct{}
+
+func (h *Handler) Name() string {
+	return "logging"
+}
+
+func (h *Handler) Version() string {
+	return version.FullVersion()
+}
+
+func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
+	log.Printf("autoscaler-handlers-%s: received: %s", h.Name(), req.String())
+	return nil
 }

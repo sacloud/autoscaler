@@ -15,6 +15,6 @@
 package core
 
 type SakuraCloud struct {
-	*Credential `yaml:",inline"`
+	Credential `yaml:",inline"`
 	// TODO 項目追加
 }

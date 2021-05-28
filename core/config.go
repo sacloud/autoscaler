@@ -26,7 +26,7 @@ import (
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
 type Config struct {
-	SakuraCloud *SakuraCloud    `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
+	SakuraCloud SakuraCloud     `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
 	Handlers    Handlers        `yaml:"handlers"`    // カスタムハンドラーの定義
 	Resources   *ResourceGroups `yaml:"resources"`   // リソースグループの定義
 }

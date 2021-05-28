@@ -19,23 +19,25 @@ import (
 	"time"
 
 	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/autoscaler/handlers"
+	"github.com/sacloud/autoscaler/version"
 )
 
-var _ handler.HandleServiceServer = (*HandleService)(nil)
+type Handler struct{}
 
-type HandleService struct {
-	handler.UnimplementedHandleServiceServer
+func (h *Handler) Name() string {
+	return "fake"
 }
 
-func NewFakeHandlerService() handler.HandleServiceServer {
-	return &HandleService{}
+func (h *Handler) Version() string {
+	return version.FullVersion()
 }
 
-func (h *HandleService) Handle(req *handler.HandleRequest, server handler.HandleService_HandleServer) error {
+func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	log.Printf("received: %s", req.String())
 
 	// 受付メッセージ送信
-	if err := server.Send(&handler.HandleResponse{
+	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
 		Log:          "",
@@ -45,7 +47,7 @@ func (h *HandleService) Handle(req *handler.HandleRequest, server handler.Handle
 
 	// 数回ほど処理中ステータスを返しておく
 	for i := 0; i < 3; i++ {
-		if err := server.Send(&handler.HandleResponse{
+		if err := sender.Send(&handler.HandleResponse{
 			ScalingJobId: req.ScalingJobId,
 			Status:       handler.HandleResponse_RUNNING,
 			Log:          "",
@@ -55,7 +57,8 @@ func (h *HandleService) Handle(req *handler.HandleRequest, server handler.Handle
 		time.Sleep(5 * time.Millisecond)
 	}
 
-	return server.Send(&handler.HandleResponse{
+	// 完了メッセージ
+	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_DONE,
 		Log:          "",

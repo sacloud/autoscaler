@@ -17,14 +17,12 @@ package core
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
 	"strings"
 
 	"github.com/sacloud/autoscaler/defaults"
-	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/request"
 	"google.golang.org/grpc"
 )
@@ -50,15 +48,7 @@ func Start(ctx context.Context, configPath string) error {
 		return err
 	}
 
-	if err := instance.initBuiltinHandlers(ctx); err != nil {
-		return err
-	}
-
 	return instance.run(ctx)
-}
-
-func (c *Core) initBuiltinHandlers(ctx context.Context) error {
-	return startBuiltinHandlers(ctx, append(BuiltinHandlers, c.config.Handlers...))
 }
 
 func (c *Core) run(ctx context.Context) error {
@@ -130,52 +120,7 @@ func (c *Core) generateJobID(ctx *Context) string {
 }
 
 func (c *Core) handle(ctx *Context) error {
-	// TODO 簡易的な実装、後ほど整理&切り出し
-	conn, err := grpc.DialContext(ctx, defaults.HandlerFakeSocketAddr, grpc.WithInsecure())
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	client := handler.NewHandleServiceClient(conn)
-	req := ctx.Request()
-	stream, err := client.Handle(ctx, &handler.HandleRequest{
-		Source:            req.source,
-		Action:            req.action,
-		ResourceGroupName: req.resourceGroupName,
-		ScalingJobId:      req.ID(),
-		// サーバが存在するパターン
-		Resources: []*handler.Resource{
-			{
-				Resource: &handler.Resource_Server{
-					Server: &handler.Server{
-						Status: handler.ResourceStatus_RUNNING,
-						Id:     "123456789012",
-						AssignedNetwork: &handler.NetworkInfo{
-							IpAddress: "192.0.2.11",
-							Netmask:   24,
-							Gateway:   "192.0.2.1",
-						},
-						Core:          2,
-						Memory:        4,
-						DedicatedCpu:  false,
-						PrivateHostId: "",
-					}},
-			},
-		},
-	})
-	if err != nil {
-		return err
-	}
-	for {
-		stat, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		log.Println("handler replied:", stat.String())
-	}
-	return nil
+	// TODO configから適切なhandlerを選択する処理を実装
+	// それまではビルトインの先頭を固定で利用する
+	return BuiltinHandlers[0].Handle(ctx)
 }

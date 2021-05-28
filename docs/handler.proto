@@ -33,14 +33,13 @@ message HandleResponse {
   string log    = 3; // stdout & stderr
 }
 
-// TODO ステータスの整理
-enum ResourceStatus {
+// Handlersが対象リソースをどう扱うべきかを示す
+enum ResourceInstructions {
   UNKNOWN      = 0;
-  NOT_EXISTS   = 1;
-  CREATING     = 2;
-  PROVISIONING = 3;
-  CREATED      = 4;
-  RUNNING      = 5;
+  CREATE       = 1;
+  UPDATE       = 2;
+  DELETE       = 3;
+  NOOP         = 4; // 特に変更の必要がない状態を示す。参照用のリソースなどで利用される。
 }
 
 // リソース型
@@ -55,13 +54,14 @@ message Resource {
 }
 
 message Server {
-  ResourceStatus status        = 1;
-  string id                    = 2;
-  NetworkInfo assigned_network = 3;
-  uint32 core                  = 4;
-  uint32 memory                = 5;
-  bool dedicated_cpu           = 6;
-  string private_host_id       = 7;
+  ResourceInstructions instruction = 1;
+  string id                        = 2;
+  string zone                      = 3;
+  uint32 core                      = 4;
+  uint32 memory                    = 5;
+  bool dedicated_cpu               = 6;
+  string private_host_id           = 7;
+  NetworkInfo assigned_network     = 8;
   // TODO その他渡すパラメータを整理する
 }
 
@@ -82,24 +82,24 @@ message Wrapper {
 }
 
 message ELB {
-  ResourceStatus status        = 1;
-  string id                    = 2;
-  uint32 plan                  = 3;
-  string virtual_ip_address    = 4;
-  string fqdn                  = 5;
+  ResourceInstructions instruction = 1;
+  string id                        = 2;
+  uint32 plan                      = 3;
+  string virtual_ip_address        = 4;
+  string fqdn                      = 5;
   // TODO その他渡すパラメータを整理
 }
 
 message GSLB {
-  ResourceStatus status        = 1;
-  string id                    = 2;
-  string fqdn                  = 3;
+  ResourceInstructions instruction = 1;
+  string id                        = 2;
+  string fqdn                      = 3;
 }
 
 message DNS {
-  ResourceStatus status        = 1;
-  string id                    = 2;
-  string zone                  = 3;
+  ResourceInstructions instruction = 1;
+  string id                        = 2;
+  string zone                      = 3;
 }
 
 message NetworkInfo {
