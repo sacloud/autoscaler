@@ -46,26 +46,32 @@ func TestConfig_Load(t *testing.T) {
 						Secret: "secret",
 					},
 				},
-				Handlers: nil,
+				Handlers: Handlers{
+					{
+						Type:     "fake",
+						Name:     "fake",
+						Endpoint: "unix:autoscaler-handlers-fake.sock",
+					},
+				},
 				Resources: func() *ResourceGroups {
-					rg := newResourceGroups()
-					rg.Set("web", &ResourceGroup{
-						Resources: Resources{
-							&Server{
-								ResourceBase: &ResourceBase{
-									TypeName: "Server",
-									TargetSelector: &ResourceSelector{
-										Names: []string{"test-name"},
-										Zones: []string{"is1a"},
-									},
+					rgs := newResourceGroups()
+					rg := &ResourceGroup{}
+					rg.Resources = Resources{
+						&Server{
+							ResourceBase: &ResourceBase{
+								TypeName: "Server",
+								TargetSelector: &ResourceSelector{
+									Names: []string{"test-name"},
+									Zones: []string{"is1a"},
 								},
-								DedicatedCPU:  true,
-								PrivateHostID: 123456789012,
-								Zone:          "is1a",
 							},
+							DedicatedCPU:  true,
+							PrivateHostID: 123456789012,
+							Zone:          "is1a",
 						},
-					})
-					return rg
+					}
+					rgs.Set("web", rg)
+					return rgs
 				}(),
 			},
 			args: args{
@@ -73,6 +79,10 @@ func TestConfig_Load(t *testing.T) {
 sakuracloud:
   token: token
   secret: secret
+handlers:
+  - type: "fake"
+    name: "fake"
+    endpoint: "unix:autoscaler-handlers-fake.sock"
 resources:
   web: 
     resources:
@@ -91,9 +101,9 @@ resources:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			expected := &Config{
-				SakuraCloud: tt.fields.SakuraCloud,
-				Handlers:    tt.fields.Handlers,
-				Resources:   tt.fields.Resources,
+				SakuraCloud:    tt.fields.SakuraCloud,
+				CustomHandlers: tt.fields.Handlers,
+				Resources:      tt.fields.Resources,
 			}
 			c := &Config{}
 			if err := c.load(tt.args.reader); (err != nil) != tt.wantErr {

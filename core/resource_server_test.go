@@ -99,7 +99,7 @@ func TestServer_Validate(t *testing.T) {
 	})
 }
 
-func TestServer_Calculate(t *testing.T) {
+func TestServer_Desired(t *testing.T) {
 	defer initTestServer(t)()
 
 	ctx := testContext()
@@ -115,7 +115,7 @@ func TestServer_Calculate(t *testing.T) {
 			},
 		}
 
-		_, _, err := notFound.Calculate(ctx, testAPIClient)
+		_, err := notFound.Desired(ctx, testAPIClient)
 		require.Error(t, err)
 	})
 
@@ -135,28 +135,28 @@ func TestServer_Calculate(t *testing.T) {
 			},
 		}
 
-		current, _, err := running.Calculate(ctx, testAPIClient)
+		desired, err := running.Desired(ctx, testAPIClient)
 		require.NoError(t, err)
-		require.NoError(t, err)
-		require.NotNil(t, current)
-		require.Equal(t, handler.ResourceInstructions_UPDATE, current.Status())
+		require.NotNil(t, desired)
+		require.Equal(t, handler.ResourceInstructions_UPDATE, desired.Instruction())
 	})
 
-	t.Run("returns scale-upd state", func(t *testing.T) {
+	t.Run("returns desired state that can convert to the request parameter", func(t *testing.T) {
 		ctx := testContext()
 		server := testServer()
-		current, desired, err := server.Calculate(ctx, testAPIClient)
+		desired, err := server.Desired(ctx, testAPIClient)
 		require.NoError(t, err)
-		require.NotNil(t, current)
 		require.NotNil(t, desired)
 
-		desiredServer, ok := desired.Raw().(*sacloud.Server)
-		require.True(t, ok)
+		handlerReq := desired.ToRequest()
+		require.NotNil(t, handlerReq)
+
+		desiredServer := handlerReq.GetServer()
 		require.NotNil(t, desiredServer)
 
 		// Server.Plansで指定した次のプランが返されるはず
-		require.Equal(t, 4, desiredServer.CPU, 2)
-		require.Equal(t, 8, size.MiBToGiB(desiredServer.MemoryMB))
-		require.Equal(t, server.DedicatedCPU, desiredServer.ServerPlanCommitment.IsDedicatedCPU())
+		require.Equal(t, uint32(4), desiredServer.Core)
+		require.Equal(t, uint32(8), desiredServer.Memory)
+		require.Equal(t, server.DedicatedCPU, desiredServer.DedicatedCpu)
 	})
 }

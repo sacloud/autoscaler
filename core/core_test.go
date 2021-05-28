@@ -30,6 +30,5 @@ var (
 		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
 		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
 		FakeMode:          true,
-		FakeStorePath:     "",
 	})
 )

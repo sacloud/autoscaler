@@ -25,49 +25,36 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
-//go:generate stringer -type=ResourceTypes
-type ResourceTypes int
-
-const (
-	ResourceTypeUnknown ResourceTypes = iota
-	ResourceTypeServer
-	ResourceTypeServerGroup
-	ResourceTypeEnhancedLoadBalancer
-	ResourceTypeGSLB
-	ResourceTypeDNS
-)
-
-// Resources リソースのリスト
-type Resources []Resource
-
 // Resource Coreが扱うさくらのクラウド上のリソースを表す
 //
 // Core起動時のコンフィギュレーションから形成される
 type Resource interface {
-	Type() ResourceTypes
+	Type() ResourceTypes // リソースの型
 	Selector() *ResourceSelector
-	Calculate(ctx *Context, apiClient sacloud.APICaller) (CurrentResource, Desired, error)
+	Desired(ctx *Context, apiClient sacloud.APICaller) (Desired, error)
 	Validate() error
+	Resources() Resources // 子リソース(GSLBに対する実サーバなど)
 }
 
 // ResourceBase 全てのリソースが実装すべき基本プロパティ
 type ResourceBase struct {
-	TypeName       string            `yaml:"type"` // TODO enumにすべきか?
-	TargetSelector *ResourceSelector `yaml:"selector"`
-	Children       Resources         `yaml:"wrappers"`
+	TypeName       string                   `yaml:"type"` // TODO enumにすべきか?
+	TargetSelector *ResourceSelector        `yaml:"selector"`
+	Children       Resources                `yaml:"wrappers"`
+	TargetHandlers []*ResourceHandlerConfig `yaml:"handlers"`
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
 	switch r.TypeName {
-	case "Server":
+	case ResourceTypeServer.String():
 		return ResourceTypeServer
-	case "ServerGroup":
+	case ResourceTypeServerGroup.String():
 		return ResourceTypeServerGroup
-	case "EnhancedLoadBalancer", "ELB":
+	case ResourceTypeEnhancedLoadBalancer.String(), "ELB":
 		return ResourceTypeEnhancedLoadBalancer
-	case "GSLB":
+	case ResourceTypeGSLB.String():
 		return ResourceTypeGSLB
-	case "DNS":
+	case ResourceTypeDNS.String():
 		return ResourceTypeDNS
 	}
 	return ResourceTypeUnknown // TODO バリデーションなどで到達させないようにする
@@ -109,18 +96,9 @@ func (rs *ResourceSelector) FindCondition() *sacloud.FindCondition {
 	return fc
 }
 
-// CurrentResource リソースの現在の状態を示す
-type CurrentResource interface {
-	// Status 現在のリソースの状態
-	Status() handler.ResourceInstructions
-	// Raw さくらのクラウドAPIからの戻り値(libsacloud v2のsacloud APIsの戻り値)
-	Raw() interface{}
-}
-
 type Desired interface {
-	// Raw CurrentResource.Raw()に対し更新すべきデータ差分(Up/Downの算出結果やtemplateの値など)を適用したもの
-	//
-	// Handlerはこの値から一部の値を取り出して処理することで、自身が関心のある項目のみを更新する
-	// このためここに設定した値はHandlerの組み合わせ次第では実リソースへ適用されないことがある点に注意
-	Raw() interface{}
+	// Instruction 現在のリソースの状態から算出されたハンドラーへの指示の種類
+	Instruction() handler.ResourceInstructions
+	// ToRequest ハンドラーに渡すパラメータ、InstructionがNOOPやDELETEの場合はnilを返す
+	ToRequest() *handler.Resource
 }
