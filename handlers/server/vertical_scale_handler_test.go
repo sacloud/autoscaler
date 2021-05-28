@@ -117,8 +117,7 @@ func initTestServer(t *testing.T) (*sacloud.Server, func()) {
 	}
 
 	return server, func() {
-		if err := serverOp.Delete(context.Background(), testZone, server.ID); err != nil {
-			t.Logf("[WARN] deleting server failed: %s", err)
-		}
+		// TODO プラン変更後のサーバのクリーンアップを行いたいが、プラン変更でIDが変わるためここでは行えない。
+		// fakeドライバの場合は不要だが以外の場合のも対応したいため、どこかで実装するようにする
 	}
 }
