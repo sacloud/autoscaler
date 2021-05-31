@@ -18,6 +18,7 @@ import "github.com/sacloud/libsacloud/v2/sacloud"
 
 type EnhancedLoadBalancer struct {
 	*ResourceBase `yaml:",inline"`
+	wrapper       Resource
 }
 
 func (s *EnhancedLoadBalancer) Validate() error {
@@ -28,4 +29,12 @@ func (s *EnhancedLoadBalancer) Validate() error {
 func (s *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	// TODO 実装
 	return nil, nil
+}
+
+func (s *EnhancedLoadBalancer) Wrapper() Resource {
+	return s.wrapper
+}
+
+func (s *EnhancedLoadBalancer) SetWrapper(parent Resource) {
+	s.wrapper = parent
 }

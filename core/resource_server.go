@@ -43,7 +43,7 @@ type Server struct {
 	PrivateHostID types.ID     `yaml:"private_host_id"`
 	Zone          string       `yaml:"zone"`
 	Plans         []ServerPlan `yaml:"plans"`
-	Wrappers      Resources    `yaml:"wrappers"`
+	wrapper       Resource
 }
 
 func (s *Server) Validate() error {
@@ -86,6 +86,14 @@ func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed,
 	}
 
 	return allComputed, nil
+}
+
+func (s *Server) Wrapper() Resource {
+	return s.wrapper
+}
+
+func (s *Server) SetWrapper(parent Resource) {
+	s.wrapper = parent
 }
 
 type computedServer struct {

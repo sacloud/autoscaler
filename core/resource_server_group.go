@@ -18,6 +18,7 @@ import "github.com/sacloud/libsacloud/v2/sacloud"
 
 type ServerGroup struct {
 	*ResourceBase `yaml:",inline"`
+	wrapper       Resource
 }
 
 func (s *ServerGroup) Validate() error {
@@ -28,4 +29,12 @@ func (s *ServerGroup) Validate() error {
 func (s *ServerGroup) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	// TODO 実装
 	return nil, nil
+}
+
+func (s *ServerGroup) Wrapper() Resource {
+	return s.wrapper
+}
+
+func (s *ServerGroup) SetWrapper(parent Resource) {
+	s.wrapper = parent
 }

@@ -34,11 +34,16 @@ type Resource interface {
 	Resources() Resources // 子リソース(GSLBに対する実サーバなど)
 }
 
+type ChildResource interface {
+	Wrapper() Resource
+	SetWrapper(wrapper Resource)
+}
+
 // ResourceBase 全てのリソースが実装すべき基本プロパティ
 type ResourceBase struct {
 	TypeName       string                   `yaml:"type"` // TODO enumにすべきか?
 	TargetSelector *ResourceSelector        `yaml:"selector"`
-	Children       Resources                `yaml:"resources"`
+	Children       Resources                `yaml:"-"`
 	TargetHandlers []*ResourceHandlerConfig `yaml:"handlers"`
 }
 
