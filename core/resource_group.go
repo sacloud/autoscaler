@@ -115,7 +115,9 @@ func (rg *ResourceGroup) ComputeAll(ctx *Context, apiClient sacloud.APICaller) (
 
 // Handlers 引数で指定されたハンドラーのリストをHandlerConfigsに合致するハンドラだけにフィルタして返す
 func (rg *ResourceGroup) Handlers(allHandlers Handlers) (Handlers, error) {
-	// ビルトイン + configで定義されたハンドラーからHandlerConfigsに定義されたハンドラーを探す
+	if len(rg.HandlerConfigs) == 0 {
+		return allHandlers, nil
+	}
 	var handlers Handlers
 	for _, conf := range rg.HandlerConfigs {
 		var found *Handler

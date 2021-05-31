@@ -21,7 +21,7 @@ type ResourceWalkFunc func(Resource) error
 
 // Walk 各リソースに対し順次fnを適用する
 //
-// fnの適用は深さ優先(DFS)で行われる
+// fnの適用は末端から行われる
 // fnがerrorを返した場合は即時リターンし以降のリソースに対する処理は行われない
 func (r *Resources) Walk(fn ResourceWalkFunc) error {
 	return r.walk(*r, fn)
@@ -29,13 +29,18 @@ func (r *Resources) Walk(fn ResourceWalkFunc) error {
 
 func (r *Resources) walk(targets Resources, fn ResourceWalkFunc) error {
 	for _, target := range targets {
-		if err := fn(target); err != nil {
-			return err
-		}
+		// 子リソースを優先
 		for _, child := range target.Resources() {
+			// 子リソースを優先
 			if err := r.walk(child.Resources(), fn); err != nil {
 				return err
 			}
+			if err := fn(child); err != nil {
+				return err
+			}
+		}
+		if err := fn(target); err != nil {
+			return err
 		}
 	}
 	return nil

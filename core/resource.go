@@ -38,7 +38,7 @@ type Resource interface {
 type ResourceBase struct {
 	TypeName       string                   `yaml:"type"` // TODO enumにすべきか?
 	TargetSelector *ResourceSelector        `yaml:"selector"`
-	Children       Resources                `yaml:"wrappers"`
+	Children       Resources                `yaml:"resources"`
 	TargetHandlers []*ResourceHandlerConfig `yaml:"handlers"`
 }
 
