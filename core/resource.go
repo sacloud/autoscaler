@@ -29,7 +29,7 @@ import (
 type Resource interface {
 	Type() ResourceTypes // リソースの型
 	Selector() *ResourceSelector
-	Desired(ctx *Context, apiClient sacloud.APICaller) (Desired, error)
+	Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error)
 	Validate() error
 	Resources() Resources // 子リソース(GSLBに対する実サーバなど)
 }
@@ -94,9 +94,11 @@ func (rs *ResourceSelector) FindCondition() *sacloud.FindCondition {
 	return fc
 }
 
-type Desired interface {
+type Computed interface {
 	// Instruction 現在のリソースの状態から算出されたハンドラーへの指示の種類
 	Instruction() handler.ResourceInstructions
-	// ToRequest ハンドラーに渡すパラメータ、InstructionがNOOPやDELETEの場合はnilを返す
-	ToRequest() *handler.Resource
+	// Current ハンドラーに渡すパラメータ、現在の状態を示す 現在存在しないリソースの場合はnilを返す
+	Current() *handler.Resource
+	// Desired ハンドラーに渡すパラメータ、InstructionがNOOPやDELETEの場合はnilを返す
+	Desired() *handler.Resource
 }

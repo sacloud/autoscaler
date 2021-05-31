@@ -99,7 +99,7 @@ func TestServer_Validate(t *testing.T) {
 	})
 }
 
-func TestServer_Desired(t *testing.T) {
+func TestServer_Computed(t *testing.T) {
 	defer initTestServer(t)()
 
 	ctx := testContext()
@@ -115,7 +115,7 @@ func TestServer_Desired(t *testing.T) {
 			},
 		}
 
-		_, err := notFound.Desired(ctx, testAPIClient)
+		_, err := notFound.Compute(ctx, testAPIClient)
 		require.Error(t, err)
 	})
 
@@ -135,20 +135,27 @@ func TestServer_Desired(t *testing.T) {
 			},
 		}
 
-		desired, err := running.Desired(ctx, testAPIClient)
+		computed, err := running.Compute(ctx, testAPIClient)
 		require.NoError(t, err)
+		require.NotNil(t, computed)
+		require.Len(t, computed, 1)
+		require.Equal(t, handler.ResourceInstructions_UPDATE, computed[0].Instruction())
+
+		current := computed[0].Current()
+		require.NotNil(t, current)
+
+		desired := computed[0].Desired()
 		require.NotNil(t, desired)
-		require.Equal(t, handler.ResourceInstructions_UPDATE, desired.Instruction())
 	})
 
 	t.Run("returns desired state that can convert to the request parameter", func(t *testing.T) {
 		ctx := testContext()
 		server := testServer()
-		desired, err := server.Desired(ctx, testAPIClient)
+		computed, err := server.Compute(ctx, testAPIClient)
 		require.NoError(t, err)
-		require.NotNil(t, desired)
+		require.Len(t, computed, 1)
 
-		handlerReq := desired.ToRequest()
+		handlerReq := computed[0].Desired()
 		require.NotNil(t, handlerReq)
 
 		desiredServer := handlerReq.GetServer()

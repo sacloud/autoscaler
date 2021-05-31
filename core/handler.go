@@ -58,8 +58,9 @@ func (h *Handler) isBuiltin() bool {
 	return h.BuiltinHandler != nil
 }
 
-func (h *Handler) Handle(ctx *Context, desired Desired) error {
-	resource := desired.ToRequest()
+func (h *Handler) Handle(ctx *Context, desired Computed) error {
+	// TODO IDが変わるケースに対応するためにhandler呼び出しごとにリフレッシュが必要かも
+	resource := desired.Desired()
 	if h.isBuiltin() {
 		return h.handleBuiltin(ctx, resource)
 	}

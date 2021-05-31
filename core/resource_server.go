@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
@@ -58,53 +57,68 @@ func (s *Server) Validate() error {
 	return nil
 }
 
-func (s *Server) Desired(ctx *Context, apiClient sacloud.APICaller) (Desired, error) {
+func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	if err := s.Validate(); err != nil {
 		return nil, err
 	}
 
+	var allComputed []Computed
 	serverOp := sacloud.NewServerOp(apiClient)
 	selector := s.Selector()
-	var server *sacloud.Server
+
 	for _, zone := range selector.Zones {
 		fc := selector.FindCondition()
 		found, err := serverOp.Find(ctx, zone, fc)
 		if err != nil {
 			return nil, fmt.Errorf("computing server status failed: %s", err)
 		}
-		if len(found.Servers) > 0 {
-			server = found.Servers[0]
+		for _, server := range found.Servers {
+			computed, err := newComputedServer(ctx, zone, server, s.Plans)
+			if err != nil {
+				return nil, err
+			}
+			allComputed = append(allComputed, computed)
 		}
 	}
 
-	if server == nil {
+	if len(allComputed) == 0 {
 		return nil, fmt.Errorf("server not found with selector: %s", selector.String())
 	}
 
-	desired := &desiredServer{
+	return allComputed, nil
+}
+
+type computedServer struct {
+	instruction handler.ResourceInstructions
+	server      *sacloud.Server
+	zone        string
+	newCPU      int
+	newMemory   int
+}
+
+func newComputedServer(ctx *Context, zone string, server *sacloud.Server, plans []ServerPlan) (*computedServer, error) {
+	computed := &computedServer{
 		instruction: handler.ResourceInstructions_NOOP,
 		server:      &sacloud.Server{},
-		zone:        s.Zone,
+		zone:        zone,
 	}
-	if err := mapconvDecoder.ConvertTo(server, desired.server); err != nil {
+	if err := mapconvDecoder.ConvertTo(server, computed.server); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan := s.desiredPlan(ctx, server)
+	plan := computed.desiredPlan(ctx, server, plans)
 
 	if plan != nil {
-		desired.server.CPU = plan.Core
-		desired.server.MemoryMB = plan.Memory * size.GiB
-		desired.instruction = handler.ResourceInstructions_UPDATE
+		computed.newCPU = plan.Core
+		computed.newMemory = plan.Memory
+		computed.instruction = handler.ResourceInstructions_UPDATE
 	}
-
-	return desired, nil
+	return computed, nil
 }
 
-func (s *Server) desiredPlan(ctx *Context, current *sacloud.Server) *ServerPlan {
+func (cs *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans []ServerPlan) *ServerPlan {
 	var fn func(i int) *ServerPlan
 
-	plans := s.Plans
 	if len(plans) == 0 {
 		plans = DefaultServerPlans
 	}
@@ -144,47 +158,64 @@ func (s *Server) desiredPlan(ctx *Context, current *sacloud.Server) *ServerPlan 
 	return nil
 }
 
-type desiredServer struct {
-	instruction handler.ResourceInstructions
-	server      *sacloud.Server
-	zone        string
+func (cs *computedServer) Instruction() handler.ResourceInstructions {
+	return cs.instruction
 }
 
-func (d *desiredServer) Instruction() handler.ResourceInstructions {
-	return d.instruction
-}
-
-func (d *desiredServer) ToRequest() *handler.Resource {
-	if d.server != nil {
-		var assignedNetwork []*handler.NetworkInfo
-		for _, nic := range d.server.Interfaces {
-			var ipAddress string
-			if nic.SwitchScope == types.Scopes.Shared {
-				ipAddress = nic.IPAddress
-			} else {
-				ipAddress = nic.UserIPAddress
-			}
-			assignedNetwork = append(assignedNetwork, &handler.NetworkInfo{
-				IpAddress: ipAddress,
-				Netmask:   uint32(nic.UserSubnetNetworkMaskLen),
-				Gateway:   nic.UserSubnetDefaultRoute,
-			})
-		}
-
+func (cs *computedServer) Current() *handler.Resource {
+	if cs.server != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Server{
 				Server: &handler.Server{
-					Instruction:     d.Instruction(),
-					Id:              d.server.ID.String(),
-					Zone:            d.zone,
-					Core:            uint32(d.server.CPU),
-					Memory:          uint32(d.server.GetMemoryGB()),
-					DedicatedCpu:    d.server.ServerPlanCommitment.IsDedicatedCPU(),
-					PrivateHostId:   d.server.PrivateHostID.String(),
-					AssignedNetwork: assignedNetwork,
+					Instruction:     cs.Instruction(),
+					Id:              cs.server.ID.String(),
+					Zone:            cs.zone,
+					Core:            uint32(cs.server.CPU),
+					Memory:          uint32(cs.server.GetMemoryGB()),
+					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
+					PrivateHostId:   cs.server.PrivateHostID.String(),
+					AssignedNetwork: cs.assignedNetwork(),
 				},
 			},
 		}
 	}
 	return nil
+}
+
+func (cs *computedServer) Desired() *handler.Resource {
+	if cs.server != nil {
+		return &handler.Resource{
+			Resource: &handler.Resource_Server{
+				Server: &handler.Server{
+					Instruction:     cs.Instruction(),
+					Id:              cs.server.ID.String(),
+					Zone:            cs.zone,
+					Core:            uint32(cs.newCPU),
+					Memory:          uint32(cs.newMemory),
+					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
+					PrivateHostId:   cs.server.PrivateHostID.String(),
+					AssignedNetwork: cs.assignedNetwork(),
+				},
+			},
+		}
+	}
+	return nil
+}
+
+func (cs *computedServer) assignedNetwork() []*handler.NetworkInfo {
+	var assignedNetwork []*handler.NetworkInfo
+	for _, nic := range cs.server.Interfaces {
+		var ipAddress string
+		if nic.SwitchScope == types.Scopes.Shared {
+			ipAddress = nic.IPAddress
+		} else {
+			ipAddress = nic.UserIPAddress
+		}
+		assignedNetwork = append(assignedNetwork, &handler.NetworkInfo{
+			IpAddress: ipAddress,
+			Netmask:   uint32(nic.UserSubnetNetworkMaskLen),
+			Gateway:   nic.UserSubnetDefaultRoute,
+		})
+	}
+	return assignedNetwork
 }
