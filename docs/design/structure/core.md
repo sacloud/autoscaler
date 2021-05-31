@@ -35,16 +35,14 @@ config:
       resources:
         - name: front-servers
           type: ServerGroup
-          handlers:
-            - server_vertical_scaler # リソースごとにHandlersを指定可能、指定の場合のみリソースグループへの指定を上書きする
           # ...
         - name: load-balancer
           type: EnhancedLoadBalancer
           # ...
         - name: rdb
           type: Server
-          # ...
-      handlers:
+          # ...    
+      handlers: # (オプション)任意のハンドラーのみ利用したい場合に指定する
         - server_horizontal_scaler  
         - route53_handler
       
@@ -64,5 +62,3 @@ config:
 
 - Handlersは複数指定可能
 - Handlersの呼び出しは順次同期的に行う  
-- Handlersの順次呼び出しの都度Handlersに渡すパラメータをリフレッシュする
-  -> Handlersからは詳しい処理結果を受け取らない。代わりにCoreがリフレッシュすることで処理結果を次のHandlersに渡す役目をはたす

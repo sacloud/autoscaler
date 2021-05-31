@@ -126,22 +126,24 @@ func (c *Core) handle(ctx *Context) error {
 		return err
 	}
 
+	allDesired, err := resourceGroup.ComputeAll(ctx, c.config.APIClient())
+	if err != nil {
+		return err
+	}
+
 	handlers, err := resourceGroup.Handlers(c.config.Handlers())
 	if err != nil {
 		return err
 	}
 
-	for _, handler := range handlers {
-		// desiredはハンドラー処理ごとに再計算する
-		allDesired, err := resourceGroup.ComputeAll(ctx, c.config.APIClient())
-		if err != nil {
-			return err
-		}
-
-		if err := handler.Handle(ctx, allDesired); err != nil {
-			return err
+	for _, desired := range allDesired {
+		for _, handler := range handlers {
+			if err := handler.Handle(ctx, desired); err != nil {
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 

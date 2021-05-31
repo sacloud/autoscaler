@@ -18,26 +18,30 @@ import (
 	"io"
 	"log"
 
-	"github.com/sacloud/autoscaler/handlers/server"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/handlers/logging"
+	"github.com/sacloud/autoscaler/handlers/builtins"
+	"github.com/sacloud/autoscaler/handlers/server"
 	"google.golang.org/grpc"
 )
 
 type Handlers []*Handler
 
 var BuiltinHandlers = Handlers{
+	// TODO ログの扱いを決めるまでコメントアウトしたまま残しておく
+	//{
+	//	Type: "logging",
+	//	Name: "logging",
+	//	BuiltinHandler: &builtins.Handler{
+	//		Builtin: &logging.Handler{},
+	//	},
+	//},
 	{
-		Type:           "logging",
-		Name:           "logging",
-		BuiltinHandler: &logging.Handler{},
-	},
-	{
-		Type:           "server-vertical-scaler",
-		Name:           "server-vertical-scaler",
-		BuiltinHandler: &server.VerticalScaleHandler{},
+		Type: "server-vertical-scaler",
+		Name: "server-vertical-scaler",
+		BuiltinHandler: &builtins.Handler{
+			Builtin: &server.VerticalScaleHandler{},
+		},
 	},
 	// TODO その他ビルトインを追加
 }
@@ -54,33 +58,63 @@ func (h *Handler) isBuiltin() bool {
 	return h.BuiltinHandler != nil
 }
 
-func (h *Handler) Handle(ctx *Context, allDesired []Desired) error {
-	var resources []*handler.Resource
-	for _, desired := range allDesired {
-		resource := desired.ToRequest()
-		if resource != nil {
-			resources = append(resources, resource)
+func (h *Handler) Handle(ctx *Context, desired Desired) error {
+	resource := desired.ToRequest()
+	if h.isBuiltin() {
+		return h.handleBuiltin(ctx, resource)
+	}
+	return h.handle(ctx, resource)
+}
+
+func (h *Handler) handleBuiltin(ctx *Context, resource *handler.Resource) error {
+	req := ctx.Request()
+
+	if actualHandler, ok := h.BuiltinHandler.(handlers.PreHandler); ok {
+		err := actualHandler.PreHandle(&handler.PreHandleRequest{
+			Source:            req.source,
+			Action:            req.action,
+			ResourceGroupName: req.resourceGroupName,
+			ScalingJobId:      req.ID(),
+			Current:           nil,
+			Desired:           resource,
+		}, &builtinResponseSender{})
+		if err != nil {
+			return err
 		}
 	}
 
-	if h.isBuiltin() {
-		return h.handleBuiltin(ctx, resources)
+	if actualHandler, ok := h.BuiltinHandler.(handlers.Handler); ok {
+		err := actualHandler.Handle(&handler.HandleRequest{
+			Source:            req.source,
+			Action:            req.action,
+			ResourceGroupName: req.resourceGroupName,
+			ScalingJobId:      req.ID(),
+			Current:           nil,
+			Desired:           resource,
+		}, &builtinResponseSender{})
+		if err != nil {
+			return err
+		}
 	}
-	return h.handle(ctx, resources)
+
+	if actualHandler, ok := h.BuiltinHandler.(handlers.PostHandler); ok {
+		err := actualHandler.PostHandle(&handler.PostHandleRequest{
+			Source:            req.source,
+			Action:            req.action,
+			ResourceGroupName: req.resourceGroupName,
+			ScalingJobId:      req.ID(),
+			Current:           nil,
+			Desired:           resource,
+		}, &builtinResponseSender{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (h *Handler) handleBuiltin(ctx *Context, resources []*handler.Resource) error {
-	req := ctx.Request()
-	return h.BuiltinHandler.Handle(&handler.HandleRequest{
-		Source:            req.source,
-		Action:            req.action,
-		ResourceGroupName: req.resourceGroupName,
-		ScalingJobId:      req.ID(),
-		Resources:         resources,
-	}, &builtinResponseSender{})
-}
-
-func (h *Handler) handle(ctx *Context, resources []*handler.Resource) error {
+func (h *Handler) handle(ctx *Context, resource *handler.Resource) error {
 	// TODO 簡易的な実装、後ほど整理&切り出し
 	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
 	if err != nil {
@@ -90,19 +124,59 @@ func (h *Handler) handle(ctx *Context, resources []*handler.Resource) error {
 
 	client := handler.NewHandleServiceClient(conn)
 	req := ctx.Request()
-	stream, err := client.Handle(ctx, &handler.HandleRequest{
+
+	preHandleResponse, err := client.PreHandle(ctx, &handler.PreHandleRequest{
 		Source:            req.source,
 		Action:            req.action,
 		ResourceGroupName: req.resourceGroupName,
 		ScalingJobId:      req.ID(),
-		// サーバが存在するパターン
-		Resources: resources,
+		Desired:           resource,
 	})
 	if err != nil {
 		return err
 	}
+	if err := h.handleHandlerResponse(preHandleResponse); err != nil {
+		return err
+	}
+
+	handleResponse, err := client.Handle(ctx, &handler.HandleRequest{
+		Source:            req.source,
+		Action:            req.action,
+		ResourceGroupName: req.resourceGroupName,
+		ScalingJobId:      req.ID(),
+		Desired:           resource,
+	})
+	if err != nil {
+		return err
+	}
+	if err := h.handleHandlerResponse(handleResponse); err != nil {
+		return err
+	}
+
+	postHandleResponse, err := client.PostHandle(ctx, &handler.PostHandleRequest{
+		Source:            req.source,
+		Action:            req.action,
+		ResourceGroupName: req.resourceGroupName,
+		ScalingJobId:      req.ID(),
+		Desired:           resource,
+	})
+	if err != nil {
+		return err
+	}
+	if err := h.handleHandlerResponse(postHandleResponse); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type handlerResponseReceiver interface {
+	Recv() (*handler.HandleResponse, error)
+}
+
+func (h *Handler) handleHandlerResponse(receiver handlerResponseReceiver) error {
 	for {
-		stat, err := stream.Recv()
+		stat, err := receiver.Recv()
 		if err == io.EOF {
 			break
 		}

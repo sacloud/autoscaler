@@ -110,6 +110,7 @@ func (rg *ResourceGroup) ComputeAll(ctx *Context, apiClient sacloud.APICaller) (
 		allDesired = append(allDesired, desired)
 		return nil
 	})
+	// TODO 並べ替え
 	return allDesired, err
 }
 

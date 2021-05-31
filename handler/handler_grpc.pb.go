@@ -33,7 +33,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HandleServiceClient interface {
+	PreHandle(ctx context.Context, in *PreHandleRequest, opts ...grpc.CallOption) (HandleService_PreHandleClient, error)
 	Handle(ctx context.Context, in *HandleRequest, opts ...grpc.CallOption) (HandleService_HandleClient, error)
+	PostHandle(ctx context.Context, in *PostHandleRequest, opts ...grpc.CallOption) (HandleService_PostHandleClient, error)
 }
 
 type handleServiceClient struct {
@@ -44,8 +46,40 @@ func NewHandleServiceClient(cc grpc.ClientConnInterface) HandleServiceClient {
 	return &handleServiceClient{cc}
 }
 
+func (c *handleServiceClient) PreHandle(ctx context.Context, in *PreHandleRequest, opts ...grpc.CallOption) (HandleService_PreHandleClient, error) {
+	stream, err := c.cc.NewStream(ctx, &HandleService_ServiceDesc.Streams[0], "/autoscaler.HandleService/PreHandle", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &handleServicePreHandleClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type HandleService_PreHandleClient interface {
+	Recv() (*HandleResponse, error)
+	grpc.ClientStream
+}
+
+type handleServicePreHandleClient struct {
+	grpc.ClientStream
+}
+
+func (x *handleServicePreHandleClient) Recv() (*HandleResponse, error) {
+	m := new(HandleResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *handleServiceClient) Handle(ctx context.Context, in *HandleRequest, opts ...grpc.CallOption) (HandleService_HandleClient, error) {
-	stream, err := c.cc.NewStream(ctx, &HandleService_ServiceDesc.Streams[0], "/autoscaler.HandleService/Handle", opts...)
+	stream, err := c.cc.NewStream(ctx, &HandleService_ServiceDesc.Streams[1], "/autoscaler.HandleService/Handle", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +110,45 @@ func (x *handleServiceHandleClient) Recv() (*HandleResponse, error) {
 	return m, nil
 }
 
+func (c *handleServiceClient) PostHandle(ctx context.Context, in *PostHandleRequest, opts ...grpc.CallOption) (HandleService_PostHandleClient, error) {
+	stream, err := c.cc.NewStream(ctx, &HandleService_ServiceDesc.Streams[2], "/autoscaler.HandleService/PostHandle", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &handleServicePostHandleClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type HandleService_PostHandleClient interface {
+	Recv() (*HandleResponse, error)
+	grpc.ClientStream
+}
+
+type handleServicePostHandleClient struct {
+	grpc.ClientStream
+}
+
+func (x *handleServicePostHandleClient) Recv() (*HandleResponse, error) {
+	m := new(HandleResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // HandleServiceServer is the server API for HandleService service.
 // All implementations must embed UnimplementedHandleServiceServer
 // for forward compatibility
 type HandleServiceServer interface {
+	PreHandle(*PreHandleRequest, HandleService_PreHandleServer) error
 	Handle(*HandleRequest, HandleService_HandleServer) error
+	PostHandle(*PostHandleRequest, HandleService_PostHandleServer) error
 	mustEmbedUnimplementedHandleServiceServer()
 }
 
@@ -88,8 +156,14 @@ type HandleServiceServer interface {
 type UnimplementedHandleServiceServer struct {
 }
 
+func (UnimplementedHandleServiceServer) PreHandle(*PreHandleRequest, HandleService_PreHandleServer) error {
+	return status.Errorf(codes.Unimplemented, "method PreHandle not implemented")
+}
 func (UnimplementedHandleServiceServer) Handle(*HandleRequest, HandleService_HandleServer) error {
 	return status.Errorf(codes.Unimplemented, "method Handle not implemented")
+}
+func (UnimplementedHandleServiceServer) PostHandle(*PostHandleRequest, HandleService_PostHandleServer) error {
+	return status.Errorf(codes.Unimplemented, "method PostHandle not implemented")
 }
 func (UnimplementedHandleServiceServer) mustEmbedUnimplementedHandleServiceServer() {}
 
@@ -102,6 +176,27 @@ type UnsafeHandleServiceServer interface {
 
 func RegisterHandleServiceServer(s grpc.ServiceRegistrar, srv HandleServiceServer) {
 	s.RegisterService(&HandleService_ServiceDesc, srv)
+}
+
+func _HandleService_PreHandle_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(PreHandleRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(HandleServiceServer).PreHandle(m, &handleServicePreHandleServer{stream})
+}
+
+type HandleService_PreHandleServer interface {
+	Send(*HandleResponse) error
+	grpc.ServerStream
+}
+
+type handleServicePreHandleServer struct {
+	grpc.ServerStream
+}
+
+func (x *handleServicePreHandleServer) Send(m *HandleResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _HandleService_Handle_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -125,6 +220,27 @@ func (x *handleServiceHandleServer) Send(m *HandleResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _HandleService_PostHandle_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(PostHandleRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(HandleServiceServer).PostHandle(m, &handleServicePostHandleServer{stream})
+}
+
+type HandleService_PostHandleServer interface {
+	Send(*HandleResponse) error
+	grpc.ServerStream
+}
+
+type handleServicePostHandleServer struct {
+	grpc.ServerStream
+}
+
+func (x *handleServicePostHandleServer) Send(m *HandleResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // HandleService_ServiceDesc is the grpc.ServiceDesc for HandleService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -134,8 +250,18 @@ var HandleService_ServiceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
+			StreamName:    "PreHandle",
+			Handler:       _HandleService_PreHandle_Handler,
+			ServerStreams: true,
+		},
+		{
 			StreamName:    "Handle",
 			Handler:       _HandleService_Handle_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "PostHandle",
+			Handler:       _HandleService_PostHandle_Handler,
 			ServerStreams: true,
 		},
 	},
