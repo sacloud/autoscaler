@@ -16,9 +16,10 @@ message PreHandleRequest {
   string resource_group_name = 3;
 
   // Coreからの指示情報
-  string scaling_job_id       = 4;
-  Resource current = 5;
-  Resource desired = 6;
+  string scaling_job_id            = 4;
+  ResourceInstructions instruction = 5;
+  Resource current                 = 6;
+  Resource desired                 = 7;
 }
 
 message HandleRequest {
@@ -28,9 +29,10 @@ message HandleRequest {
   string resource_group_name = 3;
 
   // Coreからの指示情報
-  string scaling_job_id       = 4;
-  Resource current            = 5;
-  Resource desired            = 6;
+  string scaling_job_id            = 4;
+  ResourceInstructions instruction = 5;
+  Resource current                 = 6;
+  Resource desired                 = 7;
 }
 
 message PostHandleRequest {
@@ -40,9 +42,10 @@ message PostHandleRequest {
   string resource_group_name = 3;
 
   // Coreからの指示情報
-  string scaling_job_id       = 4;
-  Resource current            = 5;
-  Resource desired            = 6;
+  string scaling_job_id            = 4;
+  ResourceInstructions instruction = 5;
+  Resource current                 = 6;
+  Resource desired                 = 7;
 }
 
 message HandleResponse {
@@ -82,9 +85,8 @@ message Resource {
 }
 
 message Server {
-  ResourceInstructions instruction      = 1;
-  Wrapper wrapper                       = 2;
-  reserved 3 to 10;
+  Wrapper wrapper                       = 1;
+  reserved 2 to 10;
 
   string id                             = 11;
   string zone                           = 12;
@@ -98,17 +100,15 @@ message Server {
 }
 
 message ServerGroup {
-  ResourceInstructions instruction = 1;
-  Wrapper wrapper                  = 2;
-  reserved 3 to 10;
+  Wrapper wrapper                  = 1;
+  reserved 2 to 10;
 
   repeated Server servers          = 11;
 }
 
 message ELB {
-  ResourceInstructions instruction = 1;
-  Wrapper wrapper                  = 2;
-  reserved 3 to 10;
+  Wrapper wrapper                  = 1;
+  reserved 2 to 10;
 
   string id                        = 11;
   uint32 plan                      = 12;
@@ -118,17 +118,15 @@ message ELB {
 }
 
 message GSLB {
-  ResourceInstructions instruction = 1;
-  Wrapper wrapper                  = 2;
-  reserved 3 to 10;
+  Wrapper wrapper                  = 1;
+  reserved 2 to 10;
 
   string id                        = 11;
   string fqdn                      = 12;
 }
 
 message DNS {
-  ResourceInstructions instruction = 1;
-  Wrapper wrapper                  = 2;
+  Wrapper wrapper                  = 1;
 
   string id                        = 11;
   string zone                      = 12;

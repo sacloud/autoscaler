@@ -61,10 +61,10 @@ func TestHandler_Handle(t *testing.T) {
 					Action:            "default",
 					ResourceGroupName: "default",
 					ScalingJobId:      "1",
+					Instruction:       handler.ResourceInstructions_UPDATE,
 					Desired: &handler.Resource{
 						Resource: &handler.Resource_Server{
 							Server: &handler.Server{
-								Instruction:     handler.ResourceInstructions_UPDATE,
 								Id:              server.ID.String(),
 								AssignedNetwork: nil,
 								Core:            4,

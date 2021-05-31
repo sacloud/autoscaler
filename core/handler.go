@@ -75,6 +75,7 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
 			ScalingJobId:      req.ID(),
+			Instruction:       computed.Instruction(),
 			Current:           computed.Current(),
 			Desired:           computed.Desired(),
 		}, &builtinResponseSender{})
@@ -89,6 +90,7 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
 			ScalingJobId:      req.ID(),
+			Instruction:       computed.Instruction(),
 			Current:           computed.Current(),
 			Desired:           computed.Desired(),
 		}, &builtinResponseSender{})
@@ -103,6 +105,7 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
 			ScalingJobId:      req.ID(),
+			Instruction:       computed.Instruction(),
 			Current:           computed.Current(),
 			Desired:           computed.Desired(),
 		}, &builtinResponseSender{})
@@ -130,6 +133,7 @@ func (h *Handler) handle(ctx *Context, computed Computed) error {
 		Action:            req.action,
 		ResourceGroupName: req.resourceGroupName,
 		ScalingJobId:      req.ID(),
+		Instruction:       computed.Instruction(),
 		Current:           computed.Current(),
 		Desired:           computed.Desired(),
 	})
@@ -145,6 +149,7 @@ func (h *Handler) handle(ctx *Context, computed Computed) error {
 		Action:            req.action,
 		ResourceGroupName: req.resourceGroupName,
 		ScalingJobId:      req.ID(),
+		Instruction:       computed.Instruction(),
 		Current:           computed.Current(),
 		Desired:           computed.Desired(),
 	})
@@ -160,6 +165,7 @@ func (h *Handler) handle(ctx *Context, computed Computed) error {
 		Action:            req.action,
 		ResourceGroupName: req.resourceGroupName,
 		ScalingJobId:      req.ID(),
+		Instruction:       computed.Instruction(),
 		Current:           computed.Current(),
 		Desired:           computed.Desired(),
 	})

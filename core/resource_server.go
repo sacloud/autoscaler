@@ -167,7 +167,6 @@ func (cs *computedServer) Current() *handler.Resource {
 		return &handler.Resource{
 			Resource: &handler.Resource_Server{
 				Server: &handler.Server{
-					Instruction:     cs.Instruction(),
 					Id:              cs.server.ID.String(),
 					Zone:            cs.zone,
 					Core:            uint32(cs.server.CPU),
@@ -187,7 +186,6 @@ func (cs *computedServer) Desired() *handler.Resource {
 		return &handler.Resource{
 			Resource: &handler.Resource_Server{
 				Server: &handler.Server{
-					Instruction:     cs.Instruction(),
 					Id:              cs.server.ID.String(),
 					Zone:            cs.zone,
 					Core:            uint32(cs.newCPU),
