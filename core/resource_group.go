@@ -17,9 +17,8 @@ package core
 import (
 	"fmt"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-
 	"github.com/goccy/go-yaml"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 type ResourceGroup struct {
@@ -110,6 +109,7 @@ func (rg *ResourceGroup) ComputeAll(ctx *Context, apiClient sacloud.APICaller) (
 		allDesired = append(allDesired, desired)
 		return nil
 	})
+	// TODO 並べ替え
 	return allDesired, err
 }
 

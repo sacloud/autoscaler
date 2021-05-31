@@ -15,7 +15,6 @@
 package fake
 
 import (
-	"log"
 	"time"
 
 	"github.com/sacloud/autoscaler/handler"
@@ -34,8 +33,6 @@ func (h *Handler) Version() string {
 }
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	log.Printf("received: %s", req.String())
-
 	// 受付メッセージ送信
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,

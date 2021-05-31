@@ -61,8 +61,8 @@ func TestHandler_Handle(t *testing.T) {
 					Action:            "default",
 					ResourceGroupName: "default",
 					ScalingJobId:      "1",
-					Resources: []*handler.Resource{
-						{Resource: &handler.Resource_Server{
+					Desired: &handler.Resource{
+						Resource: &handler.Resource_Server{
 							Server: &handler.Server{
 								Instruction:     handler.ResourceInstructions_UPDATE,
 								Id:              server.ID.String(),
@@ -71,7 +71,7 @@ func TestHandler_Handle(t *testing.T) {
 								Memory:          8,
 								Zone:            testZone,
 							},
-						}},
+						},
 					},
 				},
 				sender: sender,

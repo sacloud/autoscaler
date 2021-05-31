@@ -17,16 +17,13 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
-
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/version"
+	"github.com/sacloud/libsacloud/v2/pkg/size"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type VerticalScaleHandler struct {
@@ -42,32 +39,25 @@ func (h *VerticalScaleHandler) Version() string {
 }
 
 func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	log.Printf("%s: received: %s", h.fullName(), req.String())
 	ctx := context.TODO()
 
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          fmt.Sprintf("%s: accepted: %s", h.fullName(), req.String()),
+		Log:          fmt.Sprintf("%s: accepted: %s", h.Name(), req.String()),
 	}); err != nil {
 		return err
 	}
 
-	for _, r := range req.Resources {
-		server := r.GetServer()
-		if server != nil && server.Instruction == handler.ResourceInstructions_UPDATE {
-			// TODO 入力値のバリデーション
-			if err := h.handleServer(ctx, req, server, sender); err != nil {
-				return err
-			}
+	server := req.Desired.GetServer()
+	if server != nil && server.Instruction == handler.ResourceInstructions_UPDATE {
+		// TODO 入力値のバリデーション
+		if err := h.handleServer(ctx, req, server, sender); err != nil {
+			return err
 		}
 	}
 
 	return nil
-}
-
-func (h *VerticalScaleHandler) fullName() string {
-	return fmt.Sprintf("autoscaler-handlers-%s", h.Name())
 }
 
 func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.HandleRequest, server *handler.Server, sender handlers.ResponseSender) error {

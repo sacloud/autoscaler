@@ -4,7 +4,21 @@ option go_package = "github.com/sacloud/autoscaler/handler";
 package autoscaler;
 
 service HandleService {
+  rpc PreHandle(PreHandleRequest) returns (stream HandleResponse);
   rpc Handle(HandleRequest) returns (stream HandleResponse);
+  rpc PostHandle(PostHandleRequest) returns (stream HandleResponse);
+}
+
+message PreHandleRequest {
+  // Inputから引き渡し
+  string source              = 1;
+  string action              = 2;
+  string resource_group_name = 3;
+
+  // Coreからの指示情報
+  string scaling_job_id       = 4;
+  Resource current = 5;
+  Resource desired = 6;
 }
 
 message HandleRequest {
@@ -15,7 +29,20 @@ message HandleRequest {
 
   // Coreからの指示情報
   string scaling_job_id       = 4;
-  repeated Resource resources = 5;
+  Resource current            = 5;
+  Resource desired            = 6;
+}
+
+message PostHandleRequest {
+  // Inputから引き渡し
+  string source              = 1;
+  string action              = 2;
+  string resource_group_name = 3;
+
+  // Coreからの指示情報
+  string scaling_job_id       = 4;
+  Resource current            = 5;
+  Resource desired            = 6;
 }
 
 message HandleResponse {
@@ -56,19 +83,55 @@ message Resource {
 
 message Server {
   ResourceInstructions instruction      = 1;
-  string id                             = 2;
-  string zone                           = 3;
-  uint32 core                           = 4;
-  uint32 memory                         = 5;
-  bool dedicated_cpu                    = 6;
-  string private_host_id                = 7;
-  repeated NetworkInfo assigned_network = 8;
+  Wrapper wrapper                       = 2;
+  reserved 3 to 10;
+
+  string id                             = 11;
+  string zone                           = 12;
+  uint32 core                           = 13;
+  uint32 memory                         = 14;
+  bool dedicated_cpu                    = 15;
+  string private_host_id                = 16;
+  repeated NetworkInfo assigned_network = 17;
+
   // TODO その他渡すパラメータを整理する
 }
 
 message ServerGroup {
-  repeated Server servers   = 1;
-  repeated Wrapper wrappers = 2;
+  ResourceInstructions instruction = 1;
+  Wrapper wrapper                  = 2;
+  reserved 3 to 10;
+
+  repeated Server servers          = 11;
+}
+
+message ELB {
+  ResourceInstructions instruction = 1;
+  Wrapper wrapper                  = 2;
+  reserved 3 to 10;
+
+  string id                        = 11;
+  uint32 plan                      = 12;
+  string virtual_ip_address        = 13;
+  string fqdn                      = 14;
+  // TODO その他渡すパラメータを整理
+}
+
+message GSLB {
+  ResourceInstructions instruction = 1;
+  Wrapper wrapper                  = 2;
+  reserved 3 to 10;
+
+  string id                        = 11;
+  string fqdn                      = 12;
+}
+
+message DNS {
+  ResourceInstructions instruction = 1;
+  Wrapper wrapper                  = 2;
+
+  string id                        = 11;
+  string zone                      = 12;
 }
 
 message Wrapper {
@@ -80,27 +143,6 @@ message Wrapper {
     GSLB gslb = 11;
     DNS dns   = 12;
   }
-}
-
-message ELB {
-  ResourceInstructions instruction = 1;
-  string id                        = 2;
-  uint32 plan                      = 3;
-  string virtual_ip_address        = 4;
-  string fqdn                      = 5;
-  // TODO その他渡すパラメータを整理
-}
-
-message GSLB {
-  ResourceInstructions instruction = 1;
-  string id                        = 2;
-  string fqdn                      = 3;
-}
-
-message DNS {
-  ResourceInstructions instruction = 1;
-  string id                        = 2;
-  string zone                      = 3;
 }
 
 message NetworkInfo {

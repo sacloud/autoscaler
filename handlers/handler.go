@@ -32,7 +32,18 @@ import (
 type Server interface {
 	Name() string
 	Version() string
+}
+
+type Handler interface {
 	Handle(*handler.HandleRequest, ResponseSender) error
+}
+
+type PreHandler interface {
+	PreHandle(*handler.PreHandleRequest, ResponseSender) error
+}
+
+type PostHandler interface {
+	PostHandle(*handler.PostHandleRequest, ResponseSender) error
 }
 
 type ResponseSender interface {
@@ -44,7 +55,9 @@ type FlagCustomizer interface {
 }
 
 func Serve(server Server) {
-	handlerName := fmt.Sprintf("autoscaler-handlers-%s", server.Name())
+	validateHandlerInterfaces(server)
+
+	handlerName := HandlerFullName(server)
 
 	fs := flag.CommandLine
 	var address string
@@ -85,8 +98,8 @@ func Serve(server Server) {
 		}
 
 		grpcServer := grpc.NewServer()
-		srv := &handleService{
-			handler: server,
+		srv := &HandleService{
+			Handler: server,
 		}
 		handler.RegisterHandleServiceServer(grpcServer, srv)
 
@@ -116,18 +129,61 @@ func Serve(server Server) {
 	}
 }
 
+func validateHandlerInterfaces(server Server) {
+	if _, ok := server.(PreHandler); ok {
+		return
+	}
+	if _, ok := server.(Handler); ok {
+		return
+	}
+	if _, ok := server.(PostHandler); ok {
+		return
+	}
+	log.Fatalf("%s: At least one of the following must be implemented: PreHandler or Handler or PostHandler", HandlerFullName(server))
+}
+
 func showUsage(name string, fs *flag.FlagSet) {
 	fmt.Printf("usage: %s [flags]\n", name)
 	fs.Usage()
 }
 
-var _ handler.HandleServiceServer = (*handleService)(nil)
-
-type handleService struct {
-	handler.UnimplementedHandleServiceServer
-	handler Server
+func HandlerFullName(server Server) string {
+	return fmt.Sprintf("autoscaler-handlers-%s", server.Name())
 }
 
-func (h *handleService) Handle(req *handler.HandleRequest, server handler.HandleService_HandleServer) error {
-	return h.handler.Handle(req, server)
+var _ handler.HandleServiceServer = (*HandleService)(nil)
+
+type HandleService struct {
+	handler.UnimplementedHandleServiceServer
+	Handler Server
+}
+
+func (h *HandleService) PreHandle(req *handler.PreHandleRequest, server handler.HandleService_PreHandleServer) error {
+	if handler, ok := h.Handler.(PreHandler); ok {
+		log.Printf("%s: PreHandle request received: %s", HandlerFullName(h.Handler), req.String())
+		return handler.PreHandle(req, server)
+	}
+
+	log.Printf("%s: PreHandle request ignored: %s", HandlerFullName(h.Handler), req.String())
+	return nil
+}
+
+func (h *HandleService) Handle(req *handler.HandleRequest, server handler.HandleService_HandleServer) error {
+	if handler, ok := h.Handler.(Handler); ok {
+		log.Printf("%s: Handle request received: %s", HandlerFullName(h.Handler), req.String())
+		return handler.Handle(req, server)
+	}
+
+	log.Printf("%s: Handle request ignored: %s", HandlerFullName(h.Handler), req.String())
+	return nil
+}
+
+func (h *HandleService) PostHandle(req *handler.PostHandleRequest, server handler.HandleService_PostHandleServer) error {
+	if handler, ok := h.Handler.(PostHandler); ok {
+		log.Printf("%s: PostHandle request received: %s", HandlerFullName(h.Handler), req.String())
+		return handler.PostHandle(req, server)
+	}
+
+	log.Printf("%s: PostHandle request ignored: %s", HandlerFullName(h.Handler), req.String())
+	return nil
 }
