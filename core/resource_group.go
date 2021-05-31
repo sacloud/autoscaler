@@ -98,24 +98,25 @@ func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
 	return nil
 }
 
-func (rg *ResourceGroup) ComputeAll(ctx *Context, apiClient sacloud.APICaller) ([]Desired, error) {
+func (rg *ResourceGroup) ComputeAll(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	// TODO 並列化
-	var allDesired []Desired
+	var allComputed []Computed
 	err := rg.Resources.Walk(func(resource Resource) error {
-		desired, err := resource.Desired(ctx, apiClient)
+		computed, err := resource.Compute(ctx, apiClient)
 		if err != nil {
 			return err
 		}
-		allDesired = append(allDesired, desired)
+		allComputed = append(allComputed, computed...)
 		return nil
 	})
-	// TODO 並べ替え
-	return allDesired, err
+	return allComputed, err
 }
 
 // Handlers 引数で指定されたハンドラーのリストをHandlerConfigsに合致するハンドラだけにフィルタして返す
 func (rg *ResourceGroup) Handlers(allHandlers Handlers) (Handlers, error) {
-	// ビルトイン + configで定義されたハンドラーからHandlerConfigsに定義されたハンドラーを探す
+	if len(rg.HandlerConfigs) == 0 {
+		return allHandlers, nil
+	}
 	var handlers Handlers
 	for _, conf := range rg.HandlerConfigs {
 		var found *Handler

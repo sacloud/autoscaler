@@ -25,7 +25,7 @@ func (s *DNS) Validate() error {
 	return nil
 }
 
-func (s *DNS) Desired(ctx *Context, apiClient sacloud.APICaller) (Desired, error) {
+func (s *DNS) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	// TODO 実装
 	return nil, nil
 }

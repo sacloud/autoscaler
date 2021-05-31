@@ -25,7 +25,7 @@ func (s *EnhancedLoadBalancer) Validate() error {
 	return nil
 }
 
-func (s *EnhancedLoadBalancer) Desired(ctx *Context, apiClient sacloud.APICaller) (Desired, error) {
+func (s *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	// TODO 実装
 	return nil, nil
 }

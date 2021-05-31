@@ -25,7 +25,7 @@ func (s *GSLB) Validate() error {
 	return nil
 }
 
-func (s *GSLB) Desired(ctx *Context, apiClient sacloud.APICaller) (Desired, error) {
+func (s *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	// TODO 実装
 	return nil, nil
 }

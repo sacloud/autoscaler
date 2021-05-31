@@ -58,15 +58,15 @@ func (h *Handler) isBuiltin() bool {
 	return h.BuiltinHandler != nil
 }
 
-func (h *Handler) Handle(ctx *Context, desired Desired) error {
-	resource := desired.ToRequest()
+func (h *Handler) Handle(ctx *Context, computed Computed) error {
+	// TODO IDが変わるケースに対応するためにhandler呼び出しごとにリフレッシュが必要かも
 	if h.isBuiltin() {
-		return h.handleBuiltin(ctx, resource)
+		return h.handleBuiltin(ctx, computed)
 	}
-	return h.handle(ctx, resource)
+	return h.handle(ctx, computed)
 }
 
-func (h *Handler) handleBuiltin(ctx *Context, resource *handler.Resource) error {
+func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 	req := ctx.Request()
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PreHandler); ok {
@@ -75,8 +75,9 @@ func (h *Handler) handleBuiltin(ctx *Context, resource *handler.Resource) error 
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
 			ScalingJobId:      req.ID(),
-			Current:           nil,
-			Desired:           resource,
+			Instruction:       computed.Instruction(),
+			Current:           computed.Current(),
+			Desired:           computed.Desired(),
 		}, &builtinResponseSender{})
 		if err != nil {
 			return err
@@ -89,8 +90,9 @@ func (h *Handler) handleBuiltin(ctx *Context, resource *handler.Resource) error 
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
 			ScalingJobId:      req.ID(),
-			Current:           nil,
-			Desired:           resource,
+			Instruction:       computed.Instruction(),
+			Current:           computed.Current(),
+			Desired:           computed.Desired(),
 		}, &builtinResponseSender{})
 		if err != nil {
 			return err
@@ -103,8 +105,9 @@ func (h *Handler) handleBuiltin(ctx *Context, resource *handler.Resource) error 
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
 			ScalingJobId:      req.ID(),
-			Current:           nil,
-			Desired:           resource,
+			Instruction:       computed.Instruction(),
+			Current:           computed.Current(),
+			Desired:           computed.Desired(),
 		}, &builtinResponseSender{})
 		if err != nil {
 			return err
@@ -114,7 +117,7 @@ func (h *Handler) handleBuiltin(ctx *Context, resource *handler.Resource) error 
 	return nil
 }
 
-func (h *Handler) handle(ctx *Context, resource *handler.Resource) error {
+func (h *Handler) handle(ctx *Context, computed Computed) error {
 	// TODO 簡易的な実装、後ほど整理&切り出し
 	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
 	if err != nil {
@@ -130,7 +133,9 @@ func (h *Handler) handle(ctx *Context, resource *handler.Resource) error {
 		Action:            req.action,
 		ResourceGroupName: req.resourceGroupName,
 		ScalingJobId:      req.ID(),
-		Desired:           resource,
+		Instruction:       computed.Instruction(),
+		Current:           computed.Current(),
+		Desired:           computed.Desired(),
 	})
 	if err != nil {
 		return err
@@ -144,7 +149,9 @@ func (h *Handler) handle(ctx *Context, resource *handler.Resource) error {
 		Action:            req.action,
 		ResourceGroupName: req.resourceGroupName,
 		ScalingJobId:      req.ID(),
-		Desired:           resource,
+		Instruction:       computed.Instruction(),
+		Current:           computed.Current(),
+		Desired:           computed.Desired(),
 	})
 	if err != nil {
 		return err
@@ -158,7 +165,9 @@ func (h *Handler) handle(ctx *Context, resource *handler.Resource) error {
 		Action:            req.action,
 		ResourceGroupName: req.resourceGroupName,
 		ScalingJobId:      req.ID(),
-		Desired:           resource,
+		Instruction:       computed.Instruction(),
+		Current:           computed.Current(),
+		Desired:           computed.Desired(),
 	})
 	if err != nil {
 		return err
