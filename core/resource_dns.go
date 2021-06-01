@@ -29,12 +29,3 @@ func (s *DNS) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, er
 	// TODO 実装
 	return nil, nil
 }
-
-func (s *DNS) Computed() []Computed {
-	// TODO 実装
-	return nil
-}
-
-func (s *DNS) ClearCache() {
-	// TODO 実装
-}

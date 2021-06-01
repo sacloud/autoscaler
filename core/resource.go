@@ -55,11 +55,14 @@ type ChildResource interface {
 }
 
 // ResourceBase 全てのリソースが実装すべき基本プロパティ
+//
+// Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceBase struct {
 	TypeName       string                   `yaml:"type"` // TODO enumにすべきか?
 	TargetSelector *ResourceSelector        `yaml:"selector"`
 	Children       Resources                `yaml:"-"`
 	TargetHandlers []*ResourceHandlerConfig `yaml:"handlers"`
+	ComputedCache  []Computed               `yaml:"-"`
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
@@ -85,6 +88,16 @@ func (r *ResourceBase) Selector() *ResourceSelector {
 // Resources 子リソースを返す(自身は含まない)
 func (r *ResourceBase) Resources() Resources {
 	return r.Children
+}
+
+// Computed 各リソースでのCompute()のキャッシュされた結果を返す
+func (r *ResourceBase) Computed() []Computed {
+	return r.ComputedCache
+}
+
+// ClearCache Compute()の結果のキャッシュをクリア
+func (r *ResourceBase) ClearCache() {
+	r.ComputedCache = []Computed{}
 }
 
 // ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する

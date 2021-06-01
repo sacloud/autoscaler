@@ -31,15 +31,6 @@ func (s *ServerGroup) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Comp
 	return nil, nil
 }
 
-func (s *ServerGroup) Computed() []Computed {
-	// TODO 実装
-	return nil
-}
-
-func (s *ServerGroup) ClearCache() {
-	// TODO 実装
-}
-
 // Wrapper ChildResourceインターフェースの実装
 func (s *ServerGroup) Wrapper() Resource {
 	return s.wrapper

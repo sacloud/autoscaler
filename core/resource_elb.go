@@ -31,15 +31,6 @@ func (s *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller
 	return nil, nil
 }
 
-func (s *EnhancedLoadBalancer) Computed() []Computed {
-	// TODO 実装
-	return nil
-}
-
-func (s *EnhancedLoadBalancer) ClearCache() {
-	// TODO 実装
-}
-
 // Wrapper ChildResourceインターフェースの実装
 func (s *EnhancedLoadBalancer) Wrapper() Resource {
 	return s.wrapper
