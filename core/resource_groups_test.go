@@ -60,7 +60,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 					PrivateHostID: 2,
 					Zone:          "is1a",
 				}
-				childServer.SetWrapper(dns)
+				childServer.SetParent(dns)
 				dns.Children = Resources{childServer}
 
 				rg.Resources = Resources{

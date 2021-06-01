@@ -71,13 +71,12 @@ func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed,
 	selector := s.Selector()
 
 	for _, zone := range selector.Zones {
-		fc := selector.FindCondition()
-		found, err := serverOp.Find(ctx, zone, fc)
+		found, err := serverOp.Find(ctx, zone, selector.FindCondition())
 		if err != nil {
 			return nil, fmt.Errorf("computing server status failed: %s", err)
 		}
 		for _, server := range found.Servers {
-			computed, err := newComputedServer(ctx, zone, server, s.Plans)
+			computed, err := newComputedServer(ctx, s, zone, server)
 			if err != nil {
 				return nil, err
 			}
@@ -93,11 +92,11 @@ func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed,
 	return allComputed, nil
 }
 
-func (s *Server) Wrapper() Resource {
+func (s *Server) Parent() Resource {
 	return s.wrapper
 }
 
-func (s *Server) SetWrapper(parent Resource) {
+func (s *Server) SetParent(parent Resource) {
 	s.wrapper = parent
 }
 
@@ -107,9 +106,10 @@ type computedServer struct {
 	zone        string
 	newCPU      int
 	newMemory   int
+	resource    *Server // nolint 算出元のResourceへの参照
 }
 
-func newComputedServer(ctx *Context, zone string, server *sacloud.Server, plans []ServerPlan) (*computedServer, error) {
+func newComputedServer(ctx *Context, resource *Server, zone string, server *sacloud.Server) (*computedServer, error) {
 	computed := &computedServer{
 		instruction: handler.ResourceInstructions_NOOP,
 		server:      &sacloud.Server{},
@@ -119,7 +119,7 @@ func newComputedServer(ctx *Context, zone string, server *sacloud.Server, plans 
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan := computed.desiredPlan(ctx, server, plans)
+	plan := computed.desiredPlan(ctx, server, resource.Plans)
 
 	if plan != nil {
 		computed.newCPU = plan.Core

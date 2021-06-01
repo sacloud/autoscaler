@@ -144,7 +144,7 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 func (rg *ResourceGroup) setParentResource(parent, r Resource) {
 	if parent != nil {
 		if v, ok := r.(ChildResource); ok {
-			v.SetWrapper(parent)
+			v.SetParent(parent)
 		}
 	}
 	for _, child := range r.Resources() {

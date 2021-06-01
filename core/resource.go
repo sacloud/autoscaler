@@ -50,8 +50,8 @@ type Resource interface {
 }
 
 type ChildResource interface {
-	Wrapper() Resource
-	SetWrapper(wrapper Resource)
+	Parent() Resource
+	SetParent(parent Resource)
 }
 
 // ResourceBase 全てのリソースが実装すべき基本プロパティ

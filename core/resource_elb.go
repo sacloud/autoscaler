@@ -32,11 +32,11 @@ func (s *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller
 }
 
 // Wrapper ChildResourceインターフェースの実装
-func (s *EnhancedLoadBalancer) Wrapper() Resource {
+func (s *EnhancedLoadBalancer) Parent() Resource {
 	return s.wrapper
 }
 
 // SetWrapper ChildResourceインターフェースの実装
-func (s *EnhancedLoadBalancer) SetWrapper(parent Resource) {
+func (s *EnhancedLoadBalancer) SetParent(parent Resource) {
 	s.wrapper = parent
 }
