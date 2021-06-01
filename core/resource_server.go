@@ -58,6 +58,10 @@ func (s *Server) Validate() error {
 }
 
 func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+	if len(s.ComputedCache) != 0 {
+		return s.ComputedCache, nil
+	}
+
 	if err := s.Validate(); err != nil {
 		return nil, err
 	}
@@ -85,6 +89,7 @@ func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed,
 		return nil, fmt.Errorf("server not found with selector: %s", selector.String())
 	}
 
+	s.ComputedCache = allComputed
 	return allComputed, nil
 }
 

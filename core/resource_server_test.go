@@ -166,4 +166,20 @@ func TestServer_Computed(t *testing.T) {
 		require.Equal(t, uint32(8), desiredServer.Memory)
 		require.Equal(t, server.DedicatedCPU, desiredServer.DedicatedCpu)
 	})
+
+	t.Run("stores results to own cache", func(t *testing.T) {
+		ctx := testContext()
+		server := testServer()
+		computed, err := server.Compute(ctx, testAPIClient)
+		require.NoError(t, err)
+		require.Len(t, computed, 1)
+
+		cached := server.Computed()
+		require.Len(t, cached, 1)
+		require.Equal(t, computed, cached)
+
+		server.ClearCache()
+		cached = server.Computed()
+		require.Len(t, cached, 0)
+	})
 }
