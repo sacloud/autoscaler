@@ -43,7 +43,7 @@ type Server struct {
 	PrivateHostID types.ID     `yaml:"private_host_id"`
 	Zone          string       `yaml:"zone"`
 	Plans         []ServerPlan `yaml:"plans"`
-	wrapper       Resource     `yaml:"-"`
+	parent        Resource     `yaml:"-"`
 }
 
 func (s *Server) Validate() error {
@@ -93,11 +93,11 @@ func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed,
 }
 
 func (s *Server) Parent() Resource {
-	return s.wrapper
+	return s.parent
 }
 
 func (s *Server) SetParent(parent Resource) {
-	s.wrapper = parent
+	s.parent = parent
 }
 
 type computedServer struct {
@@ -106,7 +106,7 @@ type computedServer struct {
 	zone        string
 	newCPU      int
 	newMemory   int
-	resource    *Server // nolint 算出元のResourceへの参照
+	resource    *Server // 算出元のResourceへの参照
 }
 
 func newComputedServer(ctx *Context, resource *Server, zone string, server *sacloud.Server) (*computedServer, error) {
@@ -114,6 +114,7 @@ func newComputedServer(ctx *Context, resource *Server, zone string, server *sacl
 		instruction: handler.ResourceInstructions_NOOP,
 		server:      &sacloud.Server{},
 		zone:        zone,
+		resource:    resource,
 	}
 	if err := mapconvDecoder.ConvertTo(server, computed.server); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
@@ -175,6 +176,13 @@ func (cs *computedServer) Instruction() handler.ResourceInstructions {
 	return cs.instruction
 }
 
+func (cs *computedServer) parents() []*handler.Parent {
+	if cs.resource.parent != nil {
+		return computedToParents(cs.resource.parent.Computed())
+	}
+	return nil
+}
+
 func (cs *computedServer) Current() *handler.Resource {
 	if cs.server != nil {
 		return &handler.Resource{
@@ -187,6 +195,7 @@ func (cs *computedServer) Current() *handler.Resource {
 					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
 					PrivateHostId:   cs.server.PrivateHostID.String(),
 					AssignedNetwork: cs.assignedNetwork(),
+					Parents:         cs.parents(),
 				},
 			},
 		}
@@ -206,6 +215,7 @@ func (cs *computedServer) Desired() *handler.Resource {
 					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
 					PrivateHostId:   cs.server.PrivateHostID.String(),
 					AssignedNetwork: cs.assignedNetwork(),
+					Parents:         cs.parents(),
 				},
 			},
 		}

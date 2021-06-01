@@ -74,6 +74,22 @@ func initTestServer(t *testing.T) func() {
 	}
 }
 
+func initTestDNS(t *testing.T) func() {
+	dnsOp := sacloud.NewDNSOp(testAPIClient)
+	dns, err := dnsOp.Create(context.Background(), &sacloud.DNSCreateRequest{
+		Name: "test-dns.com",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return func() {
+		if err := dnsOp.Delete(context.Background(), dns.ID); err != nil {
+			t.Logf("[WARN] deleting dns failed: %s", err)
+		}
+	}
+}
+
 func TestServer_Validate(t *testing.T) {
 	defer initTestServer(t)()
 
@@ -101,6 +117,7 @@ func TestServer_Validate(t *testing.T) {
 
 func TestServer_Computed(t *testing.T) {
 	defer initTestServer(t)()
+	defer initTestDNS(t)()
 
 	ctx := testContext()
 
@@ -181,5 +198,44 @@ func TestServer_Computed(t *testing.T) {
 		server.ClearCache()
 		cached = server.Computed()
 		require.Len(t, cached, 0)
+	})
+
+	t.Run("with Parent", func(t *testing.T) {
+		ctx := testContext()
+		dns := &DNS{
+			ResourceBase: &ResourceBase{
+				TypeName: "DNS",
+				TargetSelector: &ResourceSelector{
+					Names: []string{"test-dns.com"},
+				},
+			},
+		}
+		server := &Server{
+			ResourceBase: &ResourceBase{
+				TypeName: "Server",
+				TargetSelector: &ResourceSelector{
+					Names: []string{"test-server"},
+					Zones: testZones,
+				},
+			},
+			Zone: testZone,
+			Plans: []ServerPlan{
+				{Core: 1, Memory: 1},
+				{Core: 2, Memory: 4},
+				{Core: 4, Memory: 8},
+			},
+			parent: dns,
+		}
+
+		_, err := dns.Compute(ctx, testAPIClient)
+		require.NoError(t, err)
+
+		computed, err := server.Compute(ctx, testAPIClient)
+		require.NoError(t, err)
+		require.Len(t, computed, 1)
+
+		current := computed[0].Current()
+		require.Len(t, current.GetServer().Parents, 1)
+		require.NotNil(t, current.GetServer().Parents[0])
 	})
 }

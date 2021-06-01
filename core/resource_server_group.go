@@ -31,12 +31,12 @@ func (s *ServerGroup) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Comp
 	return nil, nil
 }
 
-// Wrapper ChildResourceインターフェースの実装
+// Parent ChildResourceインターフェースの実装
 func (s *ServerGroup) Parent() Resource {
 	return s.wrapper
 }
 
-// SetWrapper ChildResourceインターフェースの実装
+// SetParent ChildResourceインターフェースの実装
 func (s *ServerGroup) SetParent(parent Resource) {
 	s.wrapper = parent
 }

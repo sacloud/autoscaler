@@ -31,12 +31,12 @@ func (s *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller
 	return nil, nil
 }
 
-// Wrapper ChildResourceインターフェースの実装
+// Parent ChildResourceインターフェースの実装
 func (s *EnhancedLoadBalancer) Parent() Resource {
 	return s.wrapper
 }
 
-// SetWrapper ChildResourceインターフェースの実装
+// SetParent ChildResourceインターフェースの実装
 func (s *EnhancedLoadBalancer) SetParent(parent Resource) {
 	s.wrapper = parent
 }
