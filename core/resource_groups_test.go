@@ -39,6 +39,30 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 				rg.HandlerConfigs = []*ResourceHandlerConfig{
 					{Name: "fake"},
 				}
+
+				dns := &DNS{
+					ResourceBase: &ResourceBase{
+						TypeName: "DNS",
+						TargetSelector: &ResourceSelector{
+							Names: []string{"test-name"},
+							Zones: []string{"is1a"},
+						},
+					},
+				}
+				childServer := &Server{
+					ResourceBase: &ResourceBase{
+						TypeName: "Server",
+						TargetSelector: &ResourceSelector{
+							Names: []string{"test-child"},
+							Zones: []string{"is1a"},
+						},
+					},
+					PrivateHostID: 2,
+					Zone:          "is1a",
+				}
+				childServer.SetParent(dns)
+				dns.Children = Resources{childServer}
+
 				rg.Resources = Resources{
 					&Server{
 						ResourceBase: &ResourceBase{
@@ -49,7 +73,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							},
 						},
 						DedicatedCPU:  true,
-						PrivateHostID: 123456789012,
+						PrivateHostID: 1,
 						Zone:          "is1a",
 					},
 					&ServerGroup{
@@ -61,15 +85,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							},
 						},
 					},
-					&DNS{
-						ResourceBase: &ResourceBase{
-							TypeName: "DNS",
-							TargetSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
-							},
-						},
-					},
+					dns,
 					&GSLB{
 						ResourceBase: &ResourceBase{
 							TypeName: "GSLB",
@@ -101,7 +117,7 @@ web:
         names: ["test-name"]
         zone: ["is1a"]
       dedicated_cpu: true
-      private_host_id: 123456789012
+      private_host_id: 1
       zone: "is1a"
     - type: ServerGroup
       selector:
@@ -111,6 +127,13 @@ web:
       selector:
         names: ["test-name"]
         zone: ["is1a"]
+      resources:
+        - type: Server
+          selector:
+            names: ["test-child"]
+            zone: ["is1a"]
+          private_host_id: 2
+          zone: "is1a"
     - type: GSLB 
       selector:
         names: ["test-name"]

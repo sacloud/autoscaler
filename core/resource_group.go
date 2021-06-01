@@ -43,45 +43,12 @@ func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
 	resources := rawMap["resources"].([]interface{})
 	for _, rawResource := range resources {
 		v := rawResource.(map[string]interface{})
-		rawTypeName, ok := v["type"]
-		if !ok {
-			return fmt.Errorf("'type' field required: %v", v)
-		}
-		typeName, ok := rawTypeName.(string)
-		if !ok {
-			return fmt.Errorf("'type' is not string: %v", v)
-		}
-
-		remarshelded, err := yaml.Marshal(v)
+		resource, err := rg.unmarshalResourceFromMap(v)
 		if err != nil {
-			return fmt.Errorf("yaml.Marshal failed with %v", v)
+			return err
 		}
 
-		var resource Resource
-		switch typeName {
-		case "Server":
-			resource = &Server{}
-		case "ServerGroup":
-			resource = &ServerGroup{}
-		case "EnhancedLoadBalancer", "ELB":
-			resource = &EnhancedLoadBalancer{}
-		case "GSLB":
-			resource = &GSLB{}
-		case "DNS":
-			resource = &DNS{}
-		default:
-			return fmt.Errorf("received unexpected type: %s", typeName)
-		}
-
-		if err := yaml.Unmarshal(remarshelded, resource); err != nil {
-			return fmt.Errorf("yaml.Unmarshal failed with %v", v)
-		}
-
-		// TypeNameのエイリアスを正規化
-		if elb, ok := resource.(*EnhancedLoadBalancer); ok {
-			elb.TypeName = "EnhancedLoadBalancer"
-		}
-
+		rg.setParentResource(nil, resource)
 		resourceGroup.Resources = append(resourceGroup.Resources, resource)
 	}
 
@@ -96,6 +63,93 @@ func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
 
 	*rg = *resourceGroup
 	return nil
+}
+
+func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (Resource, error) {
+	rawTypeName, ok := data["type"]
+	if !ok {
+		return nil, fmt.Errorf("'type' field required: %v", data)
+	}
+	typeName, ok := rawTypeName.(string)
+	if !ok {
+		return nil, fmt.Errorf("'type' is not string: %v", data)
+	}
+
+	remarshelded, err := yaml.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("yaml.Marshal failed with %v", data)
+	}
+
+	var resources Resources
+	if rawChildren, ok := data["resources"]; ok {
+		if children, ok := rawChildren.([]interface{}); ok {
+			for _, child := range children {
+				if c, ok := child.(map[string]interface{}); ok {
+					r, err := rg.unmarshalResourceFromMap(c)
+					if err != nil {
+						return nil, err
+					}
+					resources = append(resources, r)
+				}
+			}
+		}
+	}
+
+	var resource Resource
+	switch typeName {
+	case "Server":
+		v := &Server{}
+		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+		}
+		v.Children = resources
+		resource = v
+	case "ServerGroup":
+		v := &ServerGroup{}
+		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+		}
+		v.Children = resources
+		resource = v
+	case "EnhancedLoadBalancer", "ELB":
+		v := &EnhancedLoadBalancer{}
+		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+		}
+		// TypeNameのエイリアスを正規化
+		v.TypeName = "EnhancedLoadBalancer"
+		v.Children = resources
+		resource = v
+	case "GSLB":
+		v := &GSLB{}
+		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+		}
+		v.Children = resources
+		resource = v
+	case "DNS":
+		v := &DNS{}
+		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+		}
+		v.Children = resources
+		resource = v
+	default:
+		return nil, fmt.Errorf("received unexpected type: %s", typeName)
+	}
+
+	return resource, nil
+}
+
+func (rg *ResourceGroup) setParentResource(parent, r Resource) {
+	if parent != nil {
+		if v, ok := r.(ChildResource); ok {
+			v.SetParent(parent)
+		}
+	}
+	for _, child := range r.Resources() {
+		rg.setParentResource(r, child)
+	}
 }
 
 func (rg *ResourceGroup) ComputeAll(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {

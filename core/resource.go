@@ -29,17 +29,40 @@ import (
 type Resource interface {
 	Type() ResourceTypes // リソースの型
 	Selector() *ResourceSelector
-	Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error)
 	Validate() error
-	Resources() Resources // 子リソース(GSLBに対する実サーバなど)
+
+	// Compute 現在/あるべき姿を算出する
+	//
+	// さくらのクラウド上の1つのリソースに対し1つのComputedを返す
+	// Selector()の値によっては複数のComputedを返しても良い
+	// Computeの結果はキャッシュしておき、Computed()で参照可能にしておく
+	// キャッシュはClearCache()を呼ぶまで保持しておく
+	Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error)
+
+	// Computed Compute()の結果のキャッシュ、Compute()呼び出し前はnilを返す
+	Computed() []Computed
+
+	// ClearCache Compute()の結果のキャッシュをクリアする
+	ClearCache()
+
+	// Resources このリソースに対する子リソースを返す
+	Resources() Resources
+}
+
+type ChildResource interface {
+	Parent() Resource
+	SetParent(parent Resource)
 }
 
 // ResourceBase 全てのリソースが実装すべき基本プロパティ
+//
+// Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceBase struct {
 	TypeName       string                   `yaml:"type"` // TODO enumにすべきか?
 	TargetSelector *ResourceSelector        `yaml:"selector"`
-	Children       Resources                `yaml:"resources"`
+	Children       Resources                `yaml:"-"`
 	TargetHandlers []*ResourceHandlerConfig `yaml:"handlers"`
+	ComputedCache  []Computed               `yaml:"-"`
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
@@ -65,6 +88,16 @@ func (r *ResourceBase) Selector() *ResourceSelector {
 // Resources 子リソースを返す(自身は含まない)
 func (r *ResourceBase) Resources() Resources {
 	return r.Children
+}
+
+// Computed 各リソースでのCompute()のキャッシュされた結果を返す
+func (r *ResourceBase) Computed() []Computed {
+	return r.ComputedCache
+}
+
+// ClearCache Compute()の結果のキャッシュをクリア
+func (r *ResourceBase) ClearCache() {
+	r.ComputedCache = []Computed{}
 }
 
 // ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する

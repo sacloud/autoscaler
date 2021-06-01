@@ -85,7 +85,7 @@ message Resource {
 }
 
 message Server {
-  Wrapper wrapper                       = 1;
+  repeated Parent parents               = 1;
   reserved 2 to 10;
 
   string id                             = 11;
@@ -100,14 +100,14 @@ message Server {
 }
 
 message ServerGroup {
-  Wrapper wrapper                  = 1;
+  repeated Parent parents          = 1;
   reserved 2 to 10;
 
   repeated Server servers          = 11;
 }
 
 message ELB {
-  Wrapper wrapper                  = 1;
+  repeated Parent parents          = 1;
   reserved 2 to 10;
 
   string id                        = 11;
@@ -118,28 +118,27 @@ message ELB {
 }
 
 message GSLB {
-  Wrapper wrapper                  = 1;
-  reserved 2 to 10;
+  reserved 1 to 10;
 
   string id                        = 11;
   string fqdn                      = 12;
 }
 
 message DNS {
-  Wrapper wrapper                  = 1;
+  reserved 1 to 10;
 
   string id                        = 11;
   string zone                      = 12;
+  repeated string dns_servers      = 13;
 }
 
-message Wrapper {
-  repeated Wrapper children = 1;
-  reserved 2 to 9;
+message Parent {
+  reserved 1 to 10;
 
-  oneof wrapper {
-    ELB elb   = 10;
-    GSLB gslb = 11;
-    DNS dns   = 12;
+  oneof resource {
+    ELB elb   = 11;
+    GSLB gslb = 12;
+    DNS dns   = 13;
   }
 }
 

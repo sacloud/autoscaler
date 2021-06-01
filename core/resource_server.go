@@ -43,7 +43,7 @@ type Server struct {
 	PrivateHostID types.ID     `yaml:"private_host_id"`
 	Zone          string       `yaml:"zone"`
 	Plans         []ServerPlan `yaml:"plans"`
-	Wrappers      Resources    `yaml:"wrappers"`
+	parent        Resource     `yaml:"-"`
 }
 
 func (s *Server) Validate() error {
@@ -58,6 +58,10 @@ func (s *Server) Validate() error {
 }
 
 func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+	if len(s.ComputedCache) != 0 {
+		return s.ComputedCache, nil
+	}
+
 	if err := s.Validate(); err != nil {
 		return nil, err
 	}
@@ -67,13 +71,12 @@ func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed,
 	selector := s.Selector()
 
 	for _, zone := range selector.Zones {
-		fc := selector.FindCondition()
-		found, err := serverOp.Find(ctx, zone, fc)
+		found, err := serverOp.Find(ctx, zone, selector.FindCondition())
 		if err != nil {
 			return nil, fmt.Errorf("computing server status failed: %s", err)
 		}
 		for _, server := range found.Servers {
-			computed, err := newComputedServer(ctx, zone, server, s.Plans)
+			computed, err := newComputedServer(ctx, s, zone, server)
 			if err != nil {
 				return nil, err
 			}
@@ -85,7 +88,16 @@ func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed,
 		return nil, fmt.Errorf("server not found with selector: %s", selector.String())
 	}
 
+	s.ComputedCache = allComputed
 	return allComputed, nil
+}
+
+func (s *Server) Parent() Resource {
+	return s.parent
+}
+
+func (s *Server) SetParent(parent Resource) {
+	s.parent = parent
 }
 
 type computedServer struct {
@@ -94,19 +106,21 @@ type computedServer struct {
 	zone        string
 	newCPU      int
 	newMemory   int
+	resource    *Server // 算出元のResourceへの参照
 }
 
-func newComputedServer(ctx *Context, zone string, server *sacloud.Server, plans []ServerPlan) (*computedServer, error) {
+func newComputedServer(ctx *Context, resource *Server, zone string, server *sacloud.Server) (*computedServer, error) {
 	computed := &computedServer{
 		instruction: handler.ResourceInstructions_NOOP,
 		server:      &sacloud.Server{},
 		zone:        zone,
+		resource:    resource,
 	}
 	if err := mapconvDecoder.ConvertTo(server, computed.server); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan := computed.desiredPlan(ctx, server, plans)
+	plan := computed.desiredPlan(ctx, server, resource.Plans)
 
 	if plan != nil {
 		computed.newCPU = plan.Core
@@ -162,6 +176,13 @@ func (cs *computedServer) Instruction() handler.ResourceInstructions {
 	return cs.instruction
 }
 
+func (cs *computedServer) parents() []*handler.Parent {
+	if cs.resource.parent != nil {
+		return computedToParents(cs.resource.parent.Computed())
+	}
+	return nil
+}
+
 func (cs *computedServer) Current() *handler.Resource {
 	if cs.server != nil {
 		return &handler.Resource{
@@ -174,6 +195,7 @@ func (cs *computedServer) Current() *handler.Resource {
 					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
 					PrivateHostId:   cs.server.PrivateHostID.String(),
 					AssignedNetwork: cs.assignedNetwork(),
+					Parents:         cs.parents(),
 				},
 			},
 		}
@@ -193,6 +215,7 @@ func (cs *computedServer) Desired() *handler.Resource {
 					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
 					PrivateHostId:   cs.server.PrivateHostID.String(),
 					AssignedNetwork: cs.assignedNetwork(),
+					Parents:         cs.parents(),
 				},
 			},
 		}

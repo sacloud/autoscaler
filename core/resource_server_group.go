@@ -18,6 +18,7 @@ import "github.com/sacloud/libsacloud/v2/sacloud"
 
 type ServerGroup struct {
 	*ResourceBase `yaml:",inline"`
+	wrapper       Resource
 }
 
 func (s *ServerGroup) Validate() error {
@@ -28,4 +29,14 @@ func (s *ServerGroup) Validate() error {
 func (s *ServerGroup) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	// TODO 実装
 	return nil, nil
+}
+
+// Parent ChildResourceインターフェースの実装
+func (s *ServerGroup) Parent() Resource {
+	return s.wrapper
+}
+
+// SetParent ChildResourceインターフェースの実装
+func (s *ServerGroup) SetParent(parent Resource) {
+	s.wrapper = parent
 }
