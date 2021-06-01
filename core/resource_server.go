@@ -139,6 +139,14 @@ func (cs *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, pla
 
 	// TODO s.Plansの並べ替えを考慮する
 
+	if ctx.Request().refresh {
+		// リフレッシュ時は現在のプランをそのまま返す
+		return &ServerPlan{
+			Core:   current.CPU,
+			Memory: current.GetMemoryGB(),
+		}
+	}
+
 	switch ctx.Request().requestType {
 	case requestTypeUp:
 		fn = func(i int) *ServerPlan {

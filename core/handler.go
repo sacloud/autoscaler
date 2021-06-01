@@ -63,14 +63,20 @@ func (h *Handler) Handle(ctx *Context, computed Computed) error {
 	if h.isBuiltin() {
 		return h.handleBuiltin(ctx, computed)
 	}
-	return h.handle(ctx, computed)
+	return h.handleExternal(ctx, computed)
 }
 
-func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
+type handleArg struct {
+	preHandle  func(request *handler.PreHandleRequest) error
+	handle     func(request *handler.HandleRequest) error
+	postHandle func(request *handler.PostHandleRequest) error
+}
+
+func (h *Handler) handle(ctx *Context, computed Computed, handleArg *handleArg) error {
 	req := ctx.Request()
 
-	if actualHandler, ok := h.BuiltinHandler.(handlers.PreHandler); ok {
-		err := actualHandler.PreHandle(&handler.PreHandleRequest{
+	if handleArg.preHandle != nil {
+		if err := handleArg.preHandle(&handler.PreHandleRequest{
 			Source:            req.source,
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
@@ -78,14 +84,13 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 			Instruction:       computed.Instruction(),
 			Current:           computed.Current(),
 			Desired:           computed.Desired(),
-		}, &builtinResponseSender{})
-		if err != nil {
+		}); err != nil {
 			return err
 		}
 	}
 
-	if actualHandler, ok := h.BuiltinHandler.(handlers.Handler); ok {
-		err := actualHandler.Handle(&handler.HandleRequest{
+	if handleArg.handle != nil {
+		if err := handleArg.handle(&handler.HandleRequest{
 			Source:            req.source,
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
@@ -93,14 +98,14 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 			Instruction:       computed.Instruction(),
 			Current:           computed.Current(),
 			Desired:           computed.Desired(),
-		}, &builtinResponseSender{})
-		if err != nil {
+		}); err != nil {
 			return err
 		}
 	}
 
-	if actualHandler, ok := h.BuiltinHandler.(handlers.PostHandler); ok {
-		err := actualHandler.PostHandle(&handler.PostHandleRequest{
+	if handleArg.postHandle != nil {
+		// TODO Refreshの実行
+		if err := handleArg.postHandle(&handler.PostHandleRequest{
 			Source:            req.source,
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
@@ -108,8 +113,7 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 			Instruction:       computed.Instruction(),
 			Current:           computed.Current(),
 			Desired:           computed.Desired(),
-		}, &builtinResponseSender{})
-		if err != nil {
+		}); err != nil {
 			return err
 		}
 	}
@@ -117,7 +121,31 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 	return nil
 }
 
-func (h *Handler) handle(ctx *Context, computed Computed) error {
+func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
+	handleArg := &handleArg{}
+
+	if actualHandler, ok := h.BuiltinHandler.(handlers.PreHandler); ok {
+		handleArg.preHandle = func(req *handler.PreHandleRequest) error {
+			return actualHandler.PreHandle(req, &builtinResponseSender{})
+		}
+	}
+
+	if actualHandler, ok := h.BuiltinHandler.(handlers.Handler); ok {
+		handleArg.handle = func(req *handler.HandleRequest) error {
+			return actualHandler.Handle(req, &builtinResponseSender{})
+		}
+	}
+
+	if actualHandler, ok := h.BuiltinHandler.(handlers.PostHandler); ok {
+		handleArg.postHandle = func(req *handler.PostHandleRequest) error {
+			return actualHandler.PostHandle(req, &builtinResponseSender{})
+		}
+	}
+
+	return h.handle(ctx, computed, handleArg)
+}
+
+func (h *Handler) handleExternal(ctx *Context, computed Computed) error {
 	// TODO 簡易的な実装、後ほど整理&切り出し
 	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
 	if err != nil {
@@ -126,57 +154,30 @@ func (h *Handler) handle(ctx *Context, computed Computed) error {
 	defer conn.Close()
 
 	client := handler.NewHandleServiceClient(conn)
-	req := ctx.Request()
-
-	preHandleResponse, err := client.PreHandle(ctx, &handler.PreHandleRequest{
-		Source:            req.source,
-		Action:            req.action,
-		ResourceGroupName: req.resourceGroupName,
-		ScalingJobId:      req.ID(),
-		Instruction:       computed.Instruction(),
-		Current:           computed.Current(),
-		Desired:           computed.Desired(),
-	})
-	if err != nil {
-		return err
+	handleArg := &handleArg{
+		preHandle: func(req *handler.PreHandleRequest) error {
+			res, err := client.PreHandle(ctx, req)
+			if err != nil {
+				return err
+			}
+			return h.handleHandlerResponse(res)
+		},
+		handle: func(req *handler.HandleRequest) error {
+			res, err := client.Handle(ctx, req)
+			if err != nil {
+				return err
+			}
+			return h.handleHandlerResponse(res)
+		},
+		postHandle: func(req *handler.PostHandleRequest) error {
+			res, err := client.PostHandle(ctx, req)
+			if err != nil {
+				return err
+			}
+			return h.handleHandlerResponse(res)
+		},
 	}
-	if err := h.handleHandlerResponse(preHandleResponse); err != nil {
-		return err
-	}
-
-	handleResponse, err := client.Handle(ctx, &handler.HandleRequest{
-		Source:            req.source,
-		Action:            req.action,
-		ResourceGroupName: req.resourceGroupName,
-		ScalingJobId:      req.ID(),
-		Instruction:       computed.Instruction(),
-		Current:           computed.Current(),
-		Desired:           computed.Desired(),
-	})
-	if err != nil {
-		return err
-	}
-	if err := h.handleHandlerResponse(handleResponse); err != nil {
-		return err
-	}
-
-	postHandleResponse, err := client.PostHandle(ctx, &handler.PostHandleRequest{
-		Source:            req.source,
-		Action:            req.action,
-		ResourceGroupName: req.resourceGroupName,
-		ScalingJobId:      req.ID(),
-		Instruction:       computed.Instruction(),
-		Current:           computed.Current(),
-		Desired:           computed.Desired(),
-	})
-	if err != nil {
-		return err
-	}
-	if err := h.handleHandlerResponse(postHandleResponse); err != nil {
-		return err
-	}
-
-	return nil
+	return h.handle(ctx, computed, handleArg)
 }
 
 type handlerResponseReceiver interface {

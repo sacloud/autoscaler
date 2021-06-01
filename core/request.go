@@ -20,8 +20,8 @@ type RequestTypes int
 
 const (
 	requestTypeUnknown RequestTypes = iota // nolint
-	requestTypeUp
-	requestTypeDown
+	requestTypeUp                          // スケールアップ or スケールアウト
+	requestTypeDown                        // スケールダウン or スケールイン
 )
 
 func (r RequestTypes) String() string {
@@ -40,6 +40,7 @@ type requestInfo struct {
 	source            string
 	action            string
 	resourceGroupName string
+	refresh           bool
 }
 
 func (r *requestInfo) String() string {
