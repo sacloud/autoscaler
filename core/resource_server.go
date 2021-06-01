@@ -88,6 +88,15 @@ func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed,
 	return allComputed, nil
 }
 
+func (s *Server) Computed() []Computed {
+	// TODO 実装
+	return nil
+}
+
+func (s *Server) ClearCache() {
+	// TODO 実装
+}
+
 func (s *Server) Wrapper() Resource {
 	return s.wrapper
 }

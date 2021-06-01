@@ -29,9 +29,24 @@ import (
 type Resource interface {
 	Type() ResourceTypes // リソースの型
 	Selector() *ResourceSelector
-	Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error)
 	Validate() error
-	Resources() Resources // 子リソース(GSLBに対する実サーバなど)
+
+	// Compute 現在/あるべき姿を算出する
+	//
+	// さくらのクラウド上の1つのリソースに対し1つのComputedを返す
+	// Selector()の値によっては複数のComputedを返しても良い
+	// Computeの結果はキャッシュしておき、Computed()で参照可能にしておく
+	// キャッシュはClearCache()を呼ぶまで保持しておく
+	Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error)
+
+	// Computed Compute()の結果のキャッシュ、Compute()呼び出し前はnilを返す
+	Computed() []Computed
+
+	// ClearCache Compute()の結果のキャッシュをクリアする
+	ClearCache()
+
+	// Resources このリソースに対する子リソースを返す
+	Resources() Resources
 }
 
 type ChildResource interface {

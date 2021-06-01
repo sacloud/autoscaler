@@ -29,3 +29,12 @@ func (s *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, e
 	// TODO 実装
 	return nil, nil
 }
+
+func (s *GSLB) Computed() []Computed {
+	// TODO 実装
+	return nil
+}
+
+func (s *GSLB) ClearCache() {
+	// TODO 実装
+}

@@ -36,7 +36,7 @@ func (rt ResourceTypes) String() string {
 	case ResourceTypeGSLB:
 		return "GSLB"
 	case ResourceTypeDNS:
-		return "return DNS"
+		return "DNS"
 	}
 	return "unknown"
 }
