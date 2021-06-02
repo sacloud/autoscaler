@@ -49,9 +49,9 @@ gen-request:
 gen-handler:
 	(cd docs; protoc --go_out=../handler --go_opt=paths=source_relative --go-grpc_out=../handler --go-grpc_opt=paths=source_relative handler.proto)
 
-.PHONY: build build-all build-autoscaler build-inputs-direct
+.PHONY: build build-autoscaler build-inputs-direct build-inputs-grafana build-handlers-fake
 
-build: build-autoscaler build-inputs-direct build-handlers-fake
+build: build-autoscaler build-inputs-direct build-inputs-grafana build-handlers-fake
 
 build-autoscaler: bin/autoscaler
 bin/autoscaler: $(GO_FILES)
@@ -60,6 +60,10 @@ bin/autoscaler: $(GO_FILES)
 build-inputs-direct: bin/autoscaler-inputs-direct
 bin/autoscaler-inputs-direct: $(GO_FILES)
 	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler-inputs-direct cmd/autoscaler-inputs-direct/main.go
+
+build-inputs-grafana: bin/autoscaler-inputs-grafana
+bin/autoscaler-inputs-grafana: $(GO_FILES)
+	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler-inputs-grafana cmd/autoscaler-inputs-grafana/main.go
 
 build-handlers-fake: bin/autoscaler-handlers-fake
 bin/autoscaler-handlers-fake: $(GO_FILES)
