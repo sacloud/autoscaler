@@ -58,10 +58,6 @@ func (s *Server) Validate() error {
 }
 
 func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
-	if len(s.ComputedCache) != 0 {
-		return s.ComputedCache, nil
-	}
-
 	if err := s.Validate(); err != nil {
 		return nil, err
 	}
@@ -140,11 +136,8 @@ func (cs *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, pla
 	// TODO s.Plansの並べ替えを考慮する
 
 	if ctx.Request().refresh {
-		// リフレッシュ時は現在のプランをそのまま返す
-		return &ServerPlan{
-			Core:   current.CPU,
-			Memory: current.GetMemoryGB(),
-		}
+		// リフレッシュ時はプラン変更しない
+		return nil
 	}
 
 	switch ctx.Request().requestType {

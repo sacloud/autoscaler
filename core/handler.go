@@ -58,12 +58,25 @@ func (h *Handler) isBuiltin() bool {
 	return h.BuiltinHandler != nil
 }
 
+func (h *Handler) PreHandle(ctx *Context, computed Computed) error {
+	if h.isBuiltin() {
+		return h.preHandleBuiltin(ctx, computed)
+	}
+	return h.preHandleExternal(ctx, computed)
+}
+
 func (h *Handler) Handle(ctx *Context, computed Computed) error {
-	// TODO IDが変わるケースに対応するためにhandler呼び出しごとにリフレッシュが必要かも
 	if h.isBuiltin() {
 		return h.handleBuiltin(ctx, computed)
 	}
 	return h.handleExternal(ctx, computed)
+}
+
+func (h *Handler) PostHandle(ctx *Context, computed Computed) error {
+	if h.isBuiltin() {
+		return h.postHandleBuiltin(ctx, computed)
+	}
+	return h.postHandleExternal(ctx, computed)
 }
 
 type handleArg struct {
@@ -104,7 +117,6 @@ func (h *Handler) handle(ctx *Context, computed Computed, handleArg *handleArg) 
 	}
 
 	if handleArg.postHandle != nil {
-		// TODO Refreshの実行
 		if err := handleArg.postHandle(&handler.PostHandleRequest{
 			Source:            req.source,
 			Action:            req.action,
@@ -121,7 +133,7 @@ func (h *Handler) handle(ctx *Context, computed Computed, handleArg *handleArg) 
 	return nil
 }
 
-func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
+func (h *Handler) preHandleBuiltin(ctx *Context, computed Computed) error {
 	handleArg := &handleArg{}
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PreHandler); ok {
@@ -129,12 +141,23 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 			return actualHandler.PreHandle(req, &builtinResponseSender{})
 		}
 	}
+	return h.handle(ctx, computed, handleArg)
+}
+
+func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
+	handleArg := &handleArg{}
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.Handler); ok {
 		handleArg.handle = func(req *handler.HandleRequest) error {
 			return actualHandler.Handle(req, &builtinResponseSender{})
 		}
 	}
+
+	return h.handle(ctx, computed, handleArg)
+}
+
+func (h *Handler) postHandleBuiltin(ctx *Context, computed Computed) error {
+	handleArg := &handleArg{}
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PostHandler); ok {
 		handleArg.postHandle = func(req *handler.PostHandleRequest) error {
@@ -145,7 +168,7 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 	return h.handle(ctx, computed, handleArg)
 }
 
-func (h *Handler) handleExternal(ctx *Context, computed Computed) error {
+func (h *Handler) preHandleExternal(ctx *Context, computed Computed) error {
 	// TODO 簡易的な実装、後ほど整理&切り出し
 	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
 	if err != nil {
@@ -162,6 +185,20 @@ func (h *Handler) handleExternal(ctx *Context, computed Computed) error {
 			}
 			return h.handleHandlerResponse(res)
 		},
+	}
+	return h.handle(ctx, computed, handleArg)
+}
+
+func (h *Handler) handleExternal(ctx *Context, computed Computed) error {
+	// TODO 簡易的な実装、後ほど整理&切り出し
+	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client := handler.NewHandleServiceClient(conn)
+	handleArg := &handleArg{
 		handle: func(req *handler.HandleRequest) error {
 			res, err := client.Handle(ctx, req)
 			if err != nil {
@@ -169,6 +206,20 @@ func (h *Handler) handleExternal(ctx *Context, computed Computed) error {
 			}
 			return h.handleHandlerResponse(res)
 		},
+	}
+	return h.handle(ctx, computed, handleArg)
+}
+
+func (h *Handler) postHandleExternal(ctx *Context, computed Computed) error {
+	// TODO 簡易的な実装、後ほど整理&切り出し
+	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client := handler.NewHandleServiceClient(conn)
+	handleArg := &handleArg{
 		postHandle: func(req *handler.PostHandleRequest) error {
 			res, err := client.PostHandle(ctx, req)
 			if err != nil {
