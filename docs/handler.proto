@@ -111,9 +111,10 @@ message ELB {
   reserved 2 to 10;
 
   string id                        = 11;
-  uint32 plan                      = 12;
-  string virtual_ip_address        = 13;
-  string fqdn                      = 14;
+  string region                    = 12;
+  uint32 plan                      = 13;
+  string virtual_ip_address        = 14;
+  string fqdn                      = 15;
   // TODO その他渡すパラメータを整理
 }
 

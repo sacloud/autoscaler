@@ -21,6 +21,7 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
+	"github.com/sacloud/autoscaler/handlers/elb"
 	"github.com/sacloud/autoscaler/handlers/server"
 	"google.golang.org/grpc"
 )
@@ -41,6 +42,13 @@ var BuiltinHandlers = Handlers{
 		Name: "server-vertical-scaler",
 		BuiltinHandler: &builtins.Handler{
 			Builtin: &server.VerticalScaleHandler{},
+		},
+	},
+	{
+		Type: "elb-vertical-scaler",
+		Name: "elb-vertical-scaler",
+		BuiltinHandler: &builtins.Handler{
+			Builtin: &elb.VerticalScaleHandler{},
 		},
 	},
 	// TODO その他ビルトインを追加
