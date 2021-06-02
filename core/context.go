@@ -31,6 +31,19 @@ func NewContext(parent context.Context, request *requestInfo) *Context {
 	}
 }
 
+// ForRefresh リフレッシュのためのContextを現在のContextを元に作成して返す
+//
+// 現在のContextが親Contextとなる
+func (c *Context) ForRefresh() *Context {
+	return NewContext(c, &requestInfo{
+		requestType:       c.request.requestType,
+		source:            c.request.source,
+		action:            c.request.action,
+		resourceGroupName: c.request.resourceGroupName,
+		refresh:           true,
+	})
+}
+
 func (c *Context) Request() *requestInfo {
 	return c.request
 }

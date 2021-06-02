@@ -152,7 +152,63 @@ func (rg *ResourceGroup) setParentResource(parent, r Resource) {
 	}
 }
 
-func (rg *ResourceGroup) ComputeAll(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, handlerFilters Handlers) error {
+	handlers, err := rg.handlers(handlerFilters)
+	if err != nil {
+		return err
+	}
+	return rg.handleAll(ctx, apiClient, handlers)
+}
+
+func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, handlers Handlers) error {
+	allComputed, err := rg.computeAll(ctx, apiClient)
+	if err != nil {
+		return err
+	}
+
+	// preHandle
+	if err := rg.handleAllByFunc(allComputed, handlers, func(h *Handler, c Computed) error {
+		return h.PreHandle(ctx, c)
+	}); err != nil {
+		return err
+	}
+
+	// handle
+	if err := rg.handleAllByFunc(allComputed, handlers, func(h *Handler, c Computed) error {
+		return h.Handle(ctx, c)
+	}); err != nil {
+		return err
+	}
+
+	// refresh
+	allComputed, err = rg.computeAll(ctx.ForRefresh(), apiClient) // refresh
+	if err != nil {
+		return err
+	}
+
+	// postHandle
+	if err := rg.handleAllByFunc(allComputed, handlers, func(h *Handler, c Computed) error {
+		return h.PostHandle(ctx, c)
+	}); err != nil {
+		return err
+	}
+
+	rg.clearCacheAll()
+	return nil
+}
+
+func (rg *ResourceGroup) handleAllByFunc(allComputed []Computed, handlers Handlers, fn func(*Handler, Computed) error) error {
+	for _, computed := range allComputed {
+		for _, handler := range handlers {
+			if err := fn(handler, computed); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (rg *ResourceGroup) computeAll(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	// TODO 並列化
 	var allComputed []Computed
 	err := rg.Resources.Walk(func(resource Resource) error {
@@ -166,8 +222,15 @@ func (rg *ResourceGroup) ComputeAll(ctx *Context, apiClient sacloud.APICaller) (
 	return allComputed, err
 }
 
+func (rg *ResourceGroup) clearCacheAll() {
+	rg.Resources.Walk(func(resource Resource) error { // nolint 戻り値のerrorを無視しているがerrorが返ることはない
+		resource.ClearCache()
+		return nil
+	})
+}
+
 // Handlers 引数で指定されたハンドラーのリストをHandlerConfigsに合致するハンドラだけにフィルタして返す
-func (rg *ResourceGroup) Handlers(allHandlers Handlers) (Handlers, error) {
+func (rg *ResourceGroup) handlers(allHandlers Handlers) (Handlers, error) {
 	if len(rg.HandlerConfigs) == 0 {
 		return allHandlers, nil
 	}

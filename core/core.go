@@ -121,30 +121,11 @@ func (c *Core) generateJobID(ctx *Context) string {
 
 func (c *Core) handle(ctx *Context) error {
 	//対象リソースグループを取得
-	resourceGroup, err := c.targetResourceGroup(ctx)
+	rg, err := c.targetResourceGroup(ctx)
 	if err != nil {
 		return err
 	}
-
-	allDesired, err := resourceGroup.ComputeAll(ctx, c.config.APIClient())
-	if err != nil {
-		return err
-	}
-
-	handlers, err := resourceGroup.Handlers(c.config.Handlers())
-	if err != nil {
-		return err
-	}
-
-	for _, desired := range allDesired {
-		for _, handler := range handlers {
-			if err := handler.Handle(ctx, desired); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	return rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
 }
 
 func (c *Core) targetResourceGroup(ctx *Context) (*ResourceGroup, error) {
