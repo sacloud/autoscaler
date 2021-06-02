@@ -24,8 +24,8 @@ import (
 )
 
 type ServerPlan struct {
-	Core   int // コア数
-	Memory int // メモリサイズ(GiB)
+	Core   int `yaml:"core"`   // コア数
+	Memory int `yaml:"memory"` // メモリサイズ(GiB)
 }
 
 // DefaultServerPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
@@ -143,7 +143,7 @@ func (cs *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, pla
 	switch ctx.Request().requestType {
 	case requestTypeUp:
 		fn = func(i int) *ServerPlan {
-			if i < len(plans) {
+			if i < len(plans)-1 {
 				return &ServerPlan{
 					Core:   plans[i+1].Core,
 					Memory: plans[i+1].Memory,
