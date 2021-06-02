@@ -2,14 +2,35 @@
 resources:
   web:
     resources:
+      -
+      # サーバ(垂直スケール)
       - type: Server
         selector:
           names: ["example"]
           zone: ["is1a"]
         zone: "is1a"
-    handlers:
-      - logging
-      - server-vertical-scaler
+        # プラン(省略可)、省略した場合はデフォルトのプラン範囲内でスケールする
+        plans:
+          - core: 1
+            memory: 1
+          - core: 2
+            memory: 4
+          - core: 4
+            memory: 8
+      # エンハンスドロードバランサ(垂直スケール)
+      # - type: ELB
+      #   selector:
+      #     names: ["example"]
+      #   #プラン(省略可)
+      #   plans:
+      #     - cps: 100
+      #     - cps: 500
+      #     - cps: 1000
+
+# ハンドラーを限定したい場合はここで利用したいハンドラーを指定する
+#    handlers:
+#      - logging
+#      - server-vertical-scaler
 
 # カスタムハンドラーの定義
 # handlers:
