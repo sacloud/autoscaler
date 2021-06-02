@@ -21,6 +21,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"os"
 
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/request"
@@ -65,6 +66,10 @@ func Serve(input Input) {
 	}
 
 	// TODO add flag validation
+
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		log.Fatal(err)
+	}
 
 	switch {
 	case showHelp:
@@ -139,7 +144,7 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*scalingRe
 		if err != nil {
 			return nil, err
 		}
-		log.Println(dump)
+		log.Println(string(dump))
 	}
 
 	shouldAccept, err := s.input.ShouldAccept(req)
