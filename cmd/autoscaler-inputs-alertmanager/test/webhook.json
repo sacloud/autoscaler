@@ -1,0 +1,14 @@
+{
+  "version": "4",
+  "groupKey": "groupKey",
+  "truncatedAlerts": 0,
+  "status": "firing",
+  "receiver": "receiver",
+  "alerts": [
+    {
+      "status": "firing",
+      "startsAt": "<rfc3339>",
+      "endsAt": "<rfc3339>"
+    }
+  ]
+}
