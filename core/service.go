@@ -34,36 +34,42 @@ func NewScalingService(instance *Core) request.ScalingServiceServer {
 
 func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
 	log.Println("Core.ScalingService: Up:", req)
-	serviceCtx := NewContext(ctx, &requestInfo{
+
+	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
+	serviceCtx := NewContext(context.Background(), &requestInfo{
 		requestType:       requestTypeUp,
 		source:            req.Source,
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
 	})
-	job, err := s.instance.Up(serviceCtx)
+	job, message, err := s.instance.Up(serviceCtx)
 	if err != nil {
 		return nil, err
 	}
 	return &request.ScalingResponse{
-		ScalingJobId: job.ID,
-		Status:       job.Status,
+		ScalingJobId: job.ID(),
+		Status:       job.Status(),
+		Message:      message,
 	}, nil
 }
 
 func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
 	log.Println("Core.ScalingService: Down:", req)
-	serviceCtx := NewContext(ctx, &requestInfo{
+
+	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
+	serviceCtx := NewContext(context.Background(), &requestInfo{
 		requestType:       requestTypeDown,
 		source:            req.Source,
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
 	})
-	job, err := s.instance.Down(serviceCtx)
+	job, message, err := s.instance.Down(serviceCtx)
 	if err != nil {
 		return nil, err
 	}
 	return &request.ScalingResponse{
-		ScalingJobId: job.ID,
-		Status:       job.Status,
+		ScalingJobId: job.ID(),
+		Status:       job.Status(),
+		Message:      message,
 	}, nil
 }

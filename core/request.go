@@ -47,6 +47,9 @@ func (r *requestInfo) String() string {
 	return fmt.Sprintf("%s_%s-%s-%s", r.requestType.String(), r.source, r.action, r.resourceGroupName)
 }
 
+// ID リクエストのSource/Action/ResourceGroupNameの組み合わせで一意に決まるID
+//
+// RequestTypesがUp/Downを問わずに値を決めるため、ジョブが実行中かの判定に利用できる
 func (r *requestInfo) ID() string {
-	return r.String()
+	return fmt.Sprintf("%s-%s-%s", r.source, r.action, r.resourceGroupName)
 }

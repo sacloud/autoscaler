@@ -156,6 +156,7 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*scalingRe
 		return nil, nil
 	}
 
+	// TODO 外部からの入力となるため厳しめのバリデーションを実装する
 	queryStrings := req.URL.Query()
 	source := queryStrings.Get("source")
 	if source == "" {

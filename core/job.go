@@ -15,15 +15,80 @@
 package core
 
 import (
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/request"
 )
 
-// Job スケールアウト/イン/アップ/ダウンなどの各種ジョブを表す
+// JobStatus スケールアウト/イン/アップ/ダウンなどの各種ジョブを表す
 //
 // Inputsからのリクエストパラメータ Source/Action/ResourceGroupNameごとに作成される
-// TODO Contextとの兼ね合いを再考
-type Job struct {
-	RequestType RequestTypes
-	ID          string
-	Status      request.ScalingJobStatus
+type JobStatus struct {
+	requestType   RequestTypes
+	id            string
+	status        request.ScalingJobStatus
+	statusChanged time.Time
+	coolingTime   time.Duration
+	mu            sync.Mutex
+}
+
+func NewJobStatus(req *requestInfo, coolingTime time.Duration) *JobStatus {
+	return &JobStatus{
+		requestType:   req.requestType,
+		id:            req.ID(),
+		status:        request.ScalingJobStatus_JOB_UNKNOWN,
+		statusChanged: time.Now(),
+		coolingTime:   coolingTime,
+	}
+}
+
+func (j *JobStatus) Type() RequestTypes {
+	return j.requestType
+}
+
+func (j *JobStatus) ID() string {
+	return j.id
+}
+
+func (j *JobStatus) Status() request.ScalingJobStatus {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+
+	return j.status
+}
+
+func (j *JobStatus) SetStatus(status request.ScalingJobStatus) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+
+	j.status = status
+	j.statusChanged = time.Now()
+}
+
+func (j *JobStatus) String() string {
+	return fmt.Sprintf("Type: %s ID: %s Status: %s StatusChanged: %s", j.Type(), j.ID(), j.Status(), j.statusChanged)
+}
+
+// Acceptable このジョブが新規に受け入れ可能(新たに起動できる)状態の場合true
+func (j *JobStatus) Acceptable() bool {
+	switch j.Status() {
+	case request.ScalingJobStatus_JOB_ACCEPTED, request.ScalingJobStatus_JOB_RUNNING:
+		// すでに受け入れ済み or 実行中
+		return false
+	default:
+		// 以外は冷却期間でなければtrue
+		return !j.inCoolingTime()
+	}
+}
+
+// inCoolingTime StatusがDONE、かつ冷却期間内であればtrue
+func (j *JobStatus) inCoolingTime() bool {
+	if j.coolingTime == 0 {
+		j.coolingTime = defaults.JobCoolingTime
+	}
+	return j.Status() == request.ScalingJobStatus_JOB_DONE &&
+		j.statusChanged.After(time.Now().Add(-1*j.coolingTime))
 }

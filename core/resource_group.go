@@ -16,6 +16,9 @@ package core
 
 import (
 	"fmt"
+	"log"
+
+	"github.com/sacloud/autoscaler/request"
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -152,12 +155,29 @@ func (rg *ResourceGroup) setParentResource(parent, r Resource) {
 	}
 }
 
-func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, handlerFilters Handlers) error {
+func (rg *ResourceGroup) ValidateHandlerFilters(handlerFilters Handlers) error {
+	_, err := rg.handlers(handlerFilters)
+	return err
+}
+
+func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, handlerFilters Handlers) {
+	job := ctx.Job()
+	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
+
 	handlers, err := rg.handlers(handlerFilters)
-	if err != nil {
-		return err
+	if err != nil { // 事前にValidateHandlerFiltersで検証しておくため基本的にありえないはず
+		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
+		log.Printf("[FATAL] %s\n", err)
+		return
 	}
-	return rg.handleAll(ctx, apiClient, handlers)
+
+	if err := rg.handleAll(ctx, apiClient, handlers); err != nil {
+		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
+		log.Printf("[WARN] %s\n", err)
+		return
+	}
+
+	job.SetStatus(request.ScalingJobStatus_JOB_DONE)
 }
 
 func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, handlers Handlers) error {

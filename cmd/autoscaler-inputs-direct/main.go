@@ -103,7 +103,11 @@ func main() {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("status: %s, job-id: %s\n", res.Status, res.ScalingJobId)
+		fmt.Printf("status: %s, job-id: %s", res.Status, res.ScalingJobId)
+		if res.Message != "" {
+			fmt.Printf(", message: %s", res.Message)
+		}
+		fmt.Println()
 	}
 }
 

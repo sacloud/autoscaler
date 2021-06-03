@@ -37,3 +37,7 @@ resources:
 #   - type: "fake"
 #     name: "fake"
 #     endpoint: "unix:autoscaler-handlers-fake.sock"
+
+# オートスケーラーの動作設定
+autoscaler:
+  job_cooling_sec: 6000 # デフォルト: 6000(10分)
