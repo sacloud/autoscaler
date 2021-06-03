@@ -30,11 +30,15 @@ import (
 // Core AutoScaler Coreのインスタンス
 type Core struct {
 	config *Config
+	jobs   map[string]*JobStatus
 }
 
 func newCoreInstance(c *Config) (*Core, error) {
-	// TODO バリデーション
-	return &Core{config: c}, nil
+	// TODO バリデーションの実装
+	return &Core{
+		config: c,
+		jobs:   make(map[string]*JobStatus),
+	}, nil
 }
 
 func Start(ctx context.Context, configPath string) error {
@@ -91,45 +95,56 @@ func (c *Core) run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (c *Core) Up(ctx *Context) (*Job, error) {
-	err := c.handle(ctx)
-
-	// TODO 未実装
-
-	return &Job{
-		ID:          c.generateJobID(ctx),
-		RequestType: ctx.Request().requestType,
-		Status:      request.ScalingJobStatus_JOB_DONE,
-	}, err
+func (c *Core) Up(ctx *Context) (*JobStatus, error) {
+	return c.handle(ctx)
 }
 
-func (c *Core) Down(ctx *Context) (*Job, error) {
-	err := c.handle(ctx)
-
-	// TODO 未実装
-
-	return &Job{
-		ID:          c.generateJobID(ctx),
-		RequestType: ctx.Request().requestType,
-		Status:      request.ScalingJobStatus_JOB_DONE,
-	}, err
+func (c *Core) Down(ctx *Context) (*JobStatus, error) {
+	return c.handle(ctx)
 }
 
-func (c *Core) generateJobID(ctx *Context) string {
-	return ctx.request.String()
+func (c *Core) currentJob(ctx *Context) *JobStatus {
+	job, ok := c.jobs[ctx.JobID()]
+	if !ok {
+		job = NewJobStatus(ctx.Request(), c.config.AutoScaler.JobCoolingTime())
+		c.jobs[ctx.JobID()] = job
+	}
+	return job
 }
 
-func (c *Core) handle(ctx *Context) error {
+func (c *Core) handle(ctx *Context) (*JobStatus, error) {
+	job := c.currentJob(ctx)
+	if !job.Acceptable() {
+		return job, nil
+	}
+
+	// 現在のコンテキスト(リクエストスコープ)にjobを保持しておく
+	ctx = ctx.WithJobStatus(job)
+
 	//対象リソースグループを取得
 	rg, err := c.targetResourceGroup(ctx)
 	if err != nil {
-		return err
+		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
+		return job, err
 	}
-	return rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
+
+	if err := rg.ValidateHandlerFilters(c.config.Handlers()); err != nil {
+		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
+		return job, err
+	}
+
+	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
+
+	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
+	return job, nil
 }
 
 func (c *Core) targetResourceGroup(ctx *Context) (*ResourceGroup, error) {
 	groupName := ctx.Request().resourceGroupName
+	if groupName == "" {
+		groupName = defaults.ResourceGroupName
+	}
+
 	if groupName == defaults.ResourceGroupName {
 		// デフォルトではmap内の先頭のリソースグループを返すようにする(yamlでの定義順とは限らない点に注意)
 		// TODO 要検討

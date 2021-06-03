@@ -19,17 +19,20 @@ import (
 	"io"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/goccy/go-yaml"
+	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/libsacloud/v2/helper/api"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
 type Config struct {
-	SakuraCloud    SakuraCloud     `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
-	CustomHandlers Handlers        `yaml:"handlers"`    // カスタムハンドラーの定義
-	Resources      *ResourceGroups `yaml:"resources"`   // リソースグループの定義
+	SakuraCloud    SakuraCloud      `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
+	CustomHandlers Handlers         `yaml:"handlers"`    // カスタムハンドラーの定義
+	Resources      *ResourceGroups  `yaml:"resources"`   // リソースグループの定義
+	AutoScaler     AutoScalerConfig `yaml:"autoscaler"`  // オートスケーラー自体の動作設定
 
 	clientOnce sync.Once
 	apiClient  sacloud.APICaller
@@ -105,4 +108,17 @@ func (c *Config) APIClient() sacloud.APICaller {
 
 func (c *Config) Handlers() Handlers {
 	return append(BuiltinHandlers, c.CustomHandlers...)
+}
+
+// AutoScalerConfig オートスケーラー自体の動作設定
+type AutoScalerConfig struct {
+	JobCoolingSec int `yaml:"job_cooling_sec"`
+}
+
+func (c *AutoScalerConfig) JobCoolingTime() time.Duration {
+	sec := c.JobCoolingSec
+	if sec <= 0 {
+		return defaults.JobCoolingTime
+	}
+	return time.Duration(sec) * time.Second
 }

@@ -14,6 +14,8 @@
 
 package defaults
 
+import "time"
+
 const (
 	CoreSocketAddr        = "unix:autoscaler.sock"               // CoreのデフォルトgRPCエンドポイント(Inputsから呼ばれる)
 	CoreConfigPath        = "autoscaler.yaml"                    // CoreのConfigurationのファイルパス
@@ -21,4 +23,6 @@ const (
 	ActionName            = "default"
 	ResourceGroupName     = "default"
 	SourceName            = "default"
+
+	JobCoolingTime = 10 * time.Minute // 同一ジョブの実行制御のための冷却期間
 )

@@ -259,7 +259,7 @@ func (h *Handler) handleHandlerResponse(receiver handlerResponseReceiver) error 
 
 type builtinResponseSender struct{}
 
-func (s *builtinResponseSender) Send(req *handler.HandleResponse) error {
-	log.Println("handler replied:", req.String())
+func (s *builtinResponseSender) Send(res *handler.HandleResponse) error {
+	log.Println("handler replied:", res.String())
 	return nil
 }

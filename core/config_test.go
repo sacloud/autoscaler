@@ -27,6 +27,7 @@ func TestConfig_Load(t *testing.T) {
 		SakuraCloud SakuraCloud
 		Handlers    Handlers
 		Resources   *ResourceGroups
+		AutoScaler  AutoScalerConfig
 	}
 	type args struct {
 		reader io.Reader
@@ -73,6 +74,9 @@ func TestConfig_Load(t *testing.T) {
 					rgs.Set("web", rg)
 					return rgs
 				}(),
+				AutoScaler: AutoScalerConfig{
+					JobCoolingSec: 30,
+				},
 			},
 			args: args{
 				reader: bytes.NewReader([]byte(`
@@ -93,6 +97,8 @@ resources:
         dedicated_cpu: true
         private_host_id: 123456789012
         zone: "is1a"
+autoscaler:
+  job_cooling_sec: 30
 `)),
 			},
 			wantErr: false,
@@ -104,6 +110,7 @@ resources:
 				SakuraCloud:    tt.fields.SakuraCloud,
 				CustomHandlers: tt.fields.Handlers,
 				Resources:      tt.fields.Resources,
+				AutoScaler:     tt.fields.AutoScaler,
 			}
 			c := &Config{}
 			if err := c.load(tt.args.reader); (err != nil) != tt.wantErr {

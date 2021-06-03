@@ -22,6 +22,7 @@ import (
 type Context struct {
 	ctx     context.Context
 	request *requestInfo
+	job     *JobStatus
 }
 
 func NewContext(parent context.Context, request *requestInfo) *Context {
@@ -29,6 +30,20 @@ func NewContext(parent context.Context, request *requestInfo) *Context {
 		ctx:     parent,
 		request: request,
 	}
+}
+
+// WithJobStatus JobStatusを持つContextを現在のContextを元に作成して返す
+//
+// 現在のContextが親Contextとなる
+func (c *Context) WithJobStatus(job *JobStatus) *Context {
+	ctx := NewContext(c, &requestInfo{
+		requestType:       c.request.requestType,
+		source:            c.request.source,
+		action:            c.request.action,
+		resourceGroupName: c.request.resourceGroupName,
+	})
+	ctx.job = job
+	return ctx
 }
 
 // ForRefresh リフレッシュのためのContextを現在のContextを元に作成して返す
@@ -44,8 +59,23 @@ func (c *Context) ForRefresh() *Context {
 	})
 }
 
+// Request 現在のコンテキストで受けたリクエストの情報を返す
 func (c *Context) Request() *requestInfo {
 	return c.request
+}
+
+// JobID 現在のコンテキストでのJobのIDを返す
+//
+// まだJobの実行決定が行われていない場合でも値を返す
+func (c *Context) JobID() string {
+	return c.request.ID()
+}
+
+// Job 現在のコンテキストで実行中のJobを返す
+//
+// まだJobの実行決定が行われていない場合はnilを返す
+func (c *Context) Job() *JobStatus {
+	return c.job
 }
 
 func (c *Context) init() {
