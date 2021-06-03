@@ -22,6 +22,7 @@ message ScalingRequest {
 message ScalingResponse {
   string scaling_job_id   = 1;
   ScalingJobStatus status = 2;
+  string message          = 3;
 }
 
 enum ScalingJobStatus {

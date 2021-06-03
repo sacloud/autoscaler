@@ -42,13 +42,14 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
 	})
-	job, err := s.instance.Up(serviceCtx)
+	job, message, err := s.instance.Up(serviceCtx)
 	if err != nil {
 		return nil, err
 	}
 	return &request.ScalingResponse{
 		ScalingJobId: job.ID(),
 		Status:       job.Status(),
+		Message:      message,
 	}, nil
 }
 
@@ -62,12 +63,13 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
 	})
-	job, err := s.instance.Down(serviceCtx)
+	job, message, err := s.instance.Down(serviceCtx)
 	if err != nil {
 		return nil, err
 	}
 	return &request.ScalingResponse{
 		ScalingJobId: job.ID(),
 		Status:       job.Status(),
+		Message:      message,
 	}, nil
 }

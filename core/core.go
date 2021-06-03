@@ -95,11 +95,11 @@ func (c *Core) run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (c *Core) Up(ctx *Context) (*JobStatus, error) {
+func (c *Core) Up(ctx *Context) (*JobStatus, string, error) {
 	return c.handle(ctx)
 }
 
-func (c *Core) Down(ctx *Context) (*JobStatus, error) {
+func (c *Core) Down(ctx *Context) (*JobStatus, string, error) {
 	return c.handle(ctx)
 }
 
@@ -112,10 +112,10 @@ func (c *Core) currentJob(ctx *Context) *JobStatus {
 	return job
 }
 
-func (c *Core) handle(ctx *Context) (*JobStatus, error) {
+func (c *Core) handle(ctx *Context) (*JobStatus, string, error) {
 	job := c.currentJob(ctx)
 	if !job.Acceptable() {
-		return job, nil
+		return job, "job is in an unacceptable state", nil
 	}
 
 	// 現在のコンテキスト(リクエストスコープ)にjobを保持しておく
@@ -125,18 +125,18 @@ func (c *Core) handle(ctx *Context) (*JobStatus, error) {
 	rg, err := c.targetResourceGroup(ctx)
 	if err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
-		return job, err
+		return job, "", err
 	}
 
 	if err := rg.ValidateHandlerFilters(c.config.Handlers()); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
-		return job, err
+		return job, "", err
 	}
 
 	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
-	return job, nil
+	return job, "", nil
 }
 
 func (c *Core) targetResourceGroup(ctx *Context) (*ResourceGroup, error) {
