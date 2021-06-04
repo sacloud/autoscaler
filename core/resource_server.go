@@ -37,13 +37,19 @@ var DefaultServerPlans = []ServerPlan{
 	{Core: 4, Memory: 8},
 }
 
+type ServerScalingOption struct {
+	ShutdownForce bool `yaml:"shutdown_force"`
+}
+
 type Server struct {
 	*ResourceBase `yaml:",inline"`
-	DedicatedCPU  bool         `yaml:"dedicated_cpu"`
-	PrivateHostID types.ID     `yaml:"private_host_id"`
-	Zone          string       `yaml:"zone"` // TODO 非公開にする
-	Plans         []ServerPlan `yaml:"plans"`
-	parent        Resource     `yaml:"-"`
+	DedicatedCPU  bool                `yaml:"dedicated_cpu"`
+	PrivateHostID types.ID            `yaml:"private_host_id"`
+	Zone          string              `yaml:"zone"` // TODO 非公開にする
+	Plans         []ServerPlan        `yaml:"plans"`
+	Option        ServerScalingOption `yaml:"option"`
+
+	parent Resource `yaml:"-"`
 }
 
 func (s *Server) Validate() error {
@@ -197,6 +203,9 @@ func (cs *computedServer) Current() *handler.Resource {
 					PrivateHostId:   cs.server.PrivateHostID.String(),
 					AssignedNetwork: cs.assignedNetwork(),
 					Parents:         cs.parents(),
+					Option: &handler.ServerScalingOption{
+						ShutdownForce: cs.resource.Option.ShutdownForce,
+					},
 				},
 			},
 		}
@@ -217,6 +226,9 @@ func (cs *computedServer) Desired() *handler.Resource {
 					PrivateHostId:   cs.server.PrivateHostID.String(),
 					AssignedNetwork: cs.assignedNetwork(),
 					Parents:         cs.parents(),
+					Option: &handler.ServerScalingOption{
+						ShutdownForce: cs.resource.Option.ShutdownForce,
+					},
 				},
 			},
 		}

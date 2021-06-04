@@ -96,6 +96,7 @@ message Server {
   string private_host_id                = 16;
   repeated NetworkInfo assigned_network = 17;
 
+  ServerScalingOption option            = 101;
   // TODO その他渡すパラメータを整理する
 }
 
@@ -162,4 +163,8 @@ message NetworkInfo {
   string ip_address = 1;
   uint32 netmask = 2;
   string gateway = 3;
+}
+
+message ServerScalingOption {
+  bool shutdown_force = 1;
 }
