@@ -181,35 +181,43 @@ func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, ha
 }
 
 func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, handlers Handlers) error {
-	allComputed, err := rg.computeAll(ctx, apiClient)
+	// TODO 並列化
+	err := rg.Resources.Walk(func(resource Resource) error {
+		computed, err := resource.Compute(ctx, apiClient)
+		if err != nil {
+			return err
+		}
+
+		// preHandle
+		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
+			return h.PreHandle(ctx, c)
+		}); err != nil {
+			return err
+		}
+
+		// handle
+		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
+			return h.Handle(ctx, c)
+		}); err != nil {
+			return err
+		}
+
+		// refresh
+		computed, err = resource.Compute(ctx.ForRefresh(), apiClient)
+		if err != nil {
+			return err
+		}
+
+		// postHandle
+		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
+			return h.PostHandle(ctx, c)
+		}); err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
-		return err
-	}
-
-	// preHandle
-	if err := rg.handleAllByFunc(allComputed, handlers, func(h *Handler, c Computed) error {
-		return h.PreHandle(ctx, c)
-	}); err != nil {
-		return err
-	}
-
-	// handle
-	if err := rg.handleAllByFunc(allComputed, handlers, func(h *Handler, c Computed) error {
-		return h.Handle(ctx, c)
-	}); err != nil {
-		return err
-	}
-
-	// refresh
-	allComputed, err = rg.computeAll(ctx.ForRefresh(), apiClient) // refresh
-	if err != nil {
-		return err
-	}
-
-	// postHandle
-	if err := rg.handleAllByFunc(allComputed, handlers, func(h *Handler, c Computed) error {
-		return h.PostHandle(ctx, c)
-	}); err != nil {
 		return err
 	}
 
@@ -228,20 +236,6 @@ func (rg *ResourceGroup) handleAllByFunc(allComputed []Computed, handlers Handle
 	return nil
 }
 
-func (rg *ResourceGroup) computeAll(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
-	// TODO 並列化
-	var allComputed []Computed
-	err := rg.Resources.Walk(func(resource Resource) error {
-		computed, err := resource.Compute(ctx, apiClient)
-		if err != nil {
-			return err
-		}
-		allComputed = append(allComputed, computed...)
-		return nil
-	})
-	return allComputed, err
-}
-
 func (rg *ResourceGroup) clearCacheAll() {
 	rg.Resources.Walk(func(resource Resource) error { // nolint 戻り値のerrorを無視しているがerrorが返ることはない
 		resource.ClearCache()
@@ -250,6 +244,8 @@ func (rg *ResourceGroup) clearCacheAll() {
 }
 
 // Handlers 引数で指定されたハンドラーのリストをHandlerConfigsに合致するハンドラだけにフィルタして返す
+//
+// TODO Configurationにactionsの定義を実装したらそちらも加味したハンドラーを返すようにする
 func (rg *ResourceGroup) handlers(allHandlers Handlers) (Handlers, error) {
 	if len(rg.HandlerConfigs) == 0 {
 		return allHandlers, nil
