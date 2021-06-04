@@ -19,27 +19,61 @@ type Resources []Resource
 
 type ResourceWalkFunc func(Resource) error
 
-// Walk 各リソースに対し順次fnを適用する
+// Walk 各リソースに対し順次forwardFn,backwardFnを適用する
 //
-// fnの適用は末端から行われる
-// fnがerrorを返した場合は即時リターンし以降のリソースに対する処理は行われない
-func (r *Resources) Walk(fn ResourceWalkFunc) error {
-	return r.walk(*r, fn)
+// forwardFnの適用は上から行われる
+// backwardFnは末端から行われる
+//
+// example:
+// resource1
+//  |
+//  |- resource2
+//      |
+//      |- resource3
+//      |- resource4
+//
+//  この場合は以下の処理順になる
+//    - forwardFn(resource1)
+//    - forwardFn(resource2)
+//    - forwardFn(resource3)
+//    - backwardFn(resource3)
+//    - forwardFn(resource4)
+//    - backwardFn(resource4)
+//    - backwardFn(resource2)
+//    - backwardFn(resource1)
+//
+// forwardFn, backwardFnがerrorを返した場合は即時リターンし以降のリソースに対する処理は行われない
+func (r *Resources) Walk(forwardFn, backwardFn ResourceWalkFunc) error {
+	return r.walk(*r, forwardFn, backwardFn)
 }
 
-func (r *Resources) walk(targets Resources, fn ResourceWalkFunc) error {
+func (r *Resources) walk(targets Resources, forwardFn, backwardFn ResourceWalkFunc) error {
+	noopFunc := func(_ Resource) error {
+		return nil
+	}
+	if forwardFn == nil {
+		forwardFn = noopFunc
+	}
+	if backwardFn == nil {
+		backwardFn = noopFunc
+	}
+
 	for _, target := range targets {
-		// 子リソースを優先
+		if err := forwardFn(target); err != nil {
+			return err
+		}
 		for _, child := range target.Resources() {
-			// 子リソースを優先
-			if err := r.walk(child.Resources(), fn); err != nil {
+			if err := forwardFn(child); err != nil {
 				return err
 			}
-			if err := fn(child); err != nil {
+			if err := r.walk(child.Resources(), forwardFn, backwardFn); err != nil {
+				return err
+			}
+			if err := backwardFn(child); err != nil {
 				return err
 			}
 		}
-		if err := fn(target); err != nil {
+		if err := backwardFn(target); err != nil {
 			return err
 		}
 	}

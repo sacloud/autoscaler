@@ -181,13 +181,28 @@ func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, ha
 }
 
 func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, handlers Handlers) error {
+	forwardFn, backwardFn := rg.resourceWalkFuncs(ctx, apiClient, handlers)
+	if err := rg.Resources.Walk(forwardFn, backwardFn); err != nil {
+		return err
+	}
+	rg.clearCacheAll()
+	return nil
+}
+
+func (rg *ResourceGroup) resourceWalkFuncs(ctx *Context, apiClient sacloud.APICaller, handlers Handlers) (ResourceWalkFunc, ResourceWalkFunc) {
 	// TODO 並列化
-	err := rg.Resources.Walk(func(resource Resource) error {
-		computed, err := resource.Compute(ctx, apiClient)
+	// NOTE: 並列化したときにforwardFnとbackwardFnでcomputedへの代入がコンフリクトする可能性がある
+	var computed []Computed
+	forwardFn := func(resource Resource) error {
+		c, err := resource.Compute(ctx, apiClient)
 		if err != nil {
 			return err
 		}
+		computed = c
+		return nil
+	}
 
+	backwardFn := func(resource Resource) error {
 		// preHandle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
 			return h.PreHandle(ctx, c)
@@ -203,10 +218,11 @@ func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, ha
 		}
 
 		// refresh
-		computed, err = resource.Compute(ctx.ForRefresh(), apiClient)
+		refreshed, err := resource.Compute(ctx.ForRefresh(), apiClient)
 		if err != nil {
 			return err
 		}
+		computed = refreshed
 
 		// postHandle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
@@ -216,13 +232,8 @@ func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, ha
 		}
 
 		return nil
-	})
-	if err != nil {
-		return err
 	}
-
-	rg.clearCacheAll()
-	return nil
+	return forwardFn, backwardFn
 }
 
 func (rg *ResourceGroup) handleAllByFunc(allComputed []Computed, handlers Handlers, fn func(*Handler, Computed) error) error {
@@ -240,7 +251,7 @@ func (rg *ResourceGroup) clearCacheAll() {
 	rg.Resources.Walk(func(resource Resource) error { // nolint 戻り値のerrorを無視しているがerrorが返ることはない
 		resource.ClearCache()
 		return nil
-	})
+	}, nil)
 }
 
 // Handlers 引数で指定されたハンドラーのリストをHandlerConfigsに合致するハンドラだけにフィルタして返す
