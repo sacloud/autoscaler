@@ -122,10 +122,6 @@ func newComputedELB(ctx *Context, resource *EnhancedLoadBalancer, elb *sacloud.P
 }
 
 func (cs *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans []ELBPlan) *ELBPlan {
-	if len(plans) == 0 {
-		plans = DefaultELBPlans
-	}
-
 	sort.Slice(plans, func(i, j int) bool {
 		return plans[i].CPS < plans[j].CPS
 	})
