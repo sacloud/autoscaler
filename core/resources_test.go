@@ -22,14 +22,16 @@ import (
 
 func TestResources_Walk(t *testing.T) {
 	type args struct {
-		fn ResourceWalkFunc
+		forwardFn  ResourceWalkFunc
+		backwardFn ResourceWalkFunc
 	}
 	var results []string
 	tests := []struct {
-		name    string
-		r       Resources
-		args    args
-		wantErr bool
+		name     string
+		r        Resources
+		args     args
+		expected []string
+		wantErr  bool
 	}{
 		{
 			name: "order",
@@ -38,14 +40,14 @@ func TestResources_Walk(t *testing.T) {
 					ResourceBase: &ResourceBase{
 						TypeName: "ELB",
 						TargetSelector: &ResourceSelector{
-							ID: 3,
+							ID: 1,
 						},
 						Children: Resources{
 							&Server{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
-										ID: 1,
+										ID: 2,
 									},
 								},
 							},
@@ -53,7 +55,7 @@ func TestResources_Walk(t *testing.T) {
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
-										ID: 2,
+										ID: 3,
 									},
 								},
 							},
@@ -64,14 +66,32 @@ func TestResources_Walk(t *testing.T) {
 					ResourceBase: &ResourceBase{
 						TypeName: "ELB",
 						TargetSelector: &ResourceSelector{
-							ID: 6,
+							ID: 4,
 						},
 						Children: Resources{
 							&Server{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
-										ID: 4,
+										ID: 5,
+									},
+									Children: Resources{
+										&Server{
+											ResourceBase: &ResourceBase{
+												TypeName: "Server",
+												TargetSelector: &ResourceSelector{
+													ID: 6,
+												},
+											},
+										},
+										&Server{
+											ResourceBase: &ResourceBase{
+												TypeName: "Server",
+												TargetSelector: &ResourceSelector{
+													ID: 7,
+												},
+											},
+										},
 									},
 								},
 							},
@@ -79,7 +99,7 @@ func TestResources_Walk(t *testing.T) {
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
-										ID: 5,
+										ID: 8,
 									},
 								},
 							},
@@ -88,20 +108,58 @@ func TestResources_Walk(t *testing.T) {
 				},
 			},
 			args: args{
-				fn: func(r Resource) error {
-					results = append(results, r.Selector().ID.String())
+				forwardFn: func(r Resource) error {
+					results = append(results, "forward"+r.Selector().ID.String())
 					return nil
 				},
+				backwardFn: func(r Resource) error {
+					results = append(results, "backward"+r.Selector().ID.String())
+					return nil
+				},
+			},
+			expected: []string{
+				// forwardは親から、backwardは子の処理後
+				"forward1",
+
+				// 末端なためforward/backwardが順に呼び出し
+				"forward2",
+				"backward2",
+
+				// 末端なためforward/backwardが順に呼び出し
+				"forward3",
+				"backward3",
+
+				// 子のbackwardの後で親のbackward
+				"backward1",
+
+				// ネストが深いパターン
+				"forward4", // 4
+
+				"forward5", // 4-5
+
+				"forward6", // 4-5-6
+				"backward6",
+
+				"forward7", // 4-5-7
+				"backward7",
+
+				"backward5", // 4-5
+
+				"forward8", // 4-8
+				"backward8",
+
+				"backward4", // 4
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.r.Walk(tt.args.fn); (err != nil) != tt.wantErr {
+			results = []string{}
+			if err := tt.r.Walk(tt.args.forwardFn, tt.args.backwardFn); (err != nil) != tt.wantErr {
 				t.Errorf("Walk() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			require.EqualValues(t, []string{"1", "2", "3", "4", "5", "6"}, results)
+			require.EqualValues(t, tt.expected, results)
 		})
 	}
 }

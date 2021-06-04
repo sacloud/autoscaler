@@ -265,4 +265,87 @@ func TestResourceGroup_handleAll(t *testing.T) {
 
 		require.Equal(t, expected, history)
 	})
+
+	t.Run("compute current/desired state with parent", func(t *testing.T) {
+		var history []string
+		rg := &ResourceGroup{
+			HandlerConfigs: nil,
+			Resources: Resources{
+				&stubResource{
+					ResourceBase: &ResourceBase{
+						Children: Resources{
+							&stubResource{
+								ResourceBase: &ResourceBase{
+									Children: Resources{
+										&stubResource{
+											ResourceBase: &ResourceBase{},
+											computeFunc: func(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+												history = append(history, "child2")
+												return []Computed{
+													&stubComputed{
+														instruction: handler.ResourceInstructions_NOOP,
+														current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "3"}}},
+														desired:     &handler.Resource{},
+													},
+												}, nil
+											},
+										},
+									},
+								},
+								computeFunc: func(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+									history = append(history, "child1")
+									return []Computed{
+										&stubComputed{
+											instruction: handler.ResourceInstructions_NOOP,
+											current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "2"}}},
+											desired:     &handler.Resource{},
+										},
+									}, nil
+								},
+							},
+						},
+					},
+					computeFunc: func(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+						history = append(history, "parent")
+						return []Computed{
+							&stubComputed{
+								instruction: handler.ResourceInstructions_NOOP,
+								current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "1"}}},
+								desired:     &handler.Resource{},
+							},
+						}, nil
+					},
+				},
+			},
+			Name: "test",
+		}
+
+		rg.handleAll(testContext(), testAPIClient, Handlers{ // nolint
+			{
+				Type: "stub",
+				Name: "stub",
+				BuiltinHandler: &stub.Handler{
+					PreHandleFunc: func(request *handler.PreHandleRequest, sender handlers.ResponseSender) error {
+						return nil
+					},
+					HandleFunc: func(request *handler.HandleRequest, sender handlers.ResponseSender) error {
+						return nil
+					},
+					PostHandleFunc: func(request *handler.PostHandleRequest, sender handlers.ResponseSender) error {
+						return nil
+					},
+				},
+			},
+		})
+
+		expected := []string{
+			"parent", // 親のCompute
+			"child1", // 子1のCompute
+			"child2", // 子2のCompute
+			"child2", // 子2のRefresh
+			"child1", // 子のRefresh
+			"parent", // 親のRefresh
+		}
+		require.Equal(t, expected, history)
+	})
 }
