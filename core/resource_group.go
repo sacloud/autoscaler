@@ -191,18 +191,13 @@ func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, ha
 
 func (rg *ResourceGroup) resourceWalkFuncs(ctx *Context, apiClient sacloud.APICaller, handlers Handlers) (ResourceWalkFunc, ResourceWalkFunc) {
 	// TODO 並列化
-	// NOTE: 並列化したときにforwardFnとbackwardFnでcomputedへの代入がコンフリクトする可能性がある
-	var computed []Computed
 	forwardFn := func(resource Resource) error {
-		c, err := resource.Compute(ctx, apiClient)
-		if err != nil {
-			return err
-		}
-		computed = c
-		return nil
+		_, err := resource.Compute(ctx, apiClient)
+		return err
 	}
 
 	backwardFn := func(resource Resource) error {
+		computed := resource.Computed()
 		// preHandle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
 			return h.PreHandle(ctx, c)
