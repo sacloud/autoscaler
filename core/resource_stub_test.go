@@ -30,7 +30,9 @@ func (r *stubResource) Validate() error {
 
 func (r *stubResource) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
 	if r.computeFunc != nil {
-		return r.computeFunc(ctx, apiClient)
+		computed, err := r.computeFunc(ctx, apiClient)
+		r.ComputedCache = computed
+		return computed, err
 	}
 	return nil, nil
 }
