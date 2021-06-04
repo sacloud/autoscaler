@@ -2,7 +2,6 @@
 resources:
   web:
     resources:
-      -
       # サーバ(垂直スケール)
       - type: Server
         selector:
@@ -26,6 +25,17 @@ resources:
       #     - cps: 100
       #     - cps: 500
       #     - cps: 1000
+
+      # ルータ(垂直スケール)
+      # - type: Router
+      #   selector:
+      #     names: ["example"]
+      #     zone: ["is1a"]
+      #   # プラン(省略可)
+      #   plans:
+      #     - band_width: 100
+      #     - band_width: 250
+      #     - band_width: 500
 
 # ハンドラーを限定したい場合はここで利用したいハンドラーを指定する
 #    handlers:
