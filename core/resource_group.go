@@ -137,6 +137,13 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 		}
 		v.Children = resources
 		resource = v
+	case "Router":
+		v := &Router{}
+		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+		}
+		v.Children = resources
+		resource = v
 	default:
 		return nil, fmt.Errorf("received unexpected type: %s", typeName)
 	}
