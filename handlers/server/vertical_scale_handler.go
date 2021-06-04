@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sacloud/libsacloud/v2/helper/power"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/version"
@@ -39,7 +41,7 @@ func (h *VerticalScaleHandler) Version() string {
 }
 
 func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
@@ -61,9 +63,48 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 }
 
 func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.HandleRequest, server *handler.Server, sender handlers.ResponseSender) error {
+	if err := sender.Send(&handler.HandleResponse{
+		ScalingJobId: req.ScalingJobId,
+		Status:       handler.HandleResponse_RUNNING,
+	}); err != nil {
+		return err
+	}
+
 	serverOp := sacloud.NewServerOp(h.APIClient())
 
-	// TODO サーバが起動していた場合はシャットダウン
+	current, err := serverOp.Read(ctx, server.Zone, types.StringID(server.Id))
+	if err != nil {
+		return err
+	}
+
+	shouldReboot := false
+	if current.InstanceStatus.IsUp() {
+		if err := sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_RUNNING,
+			Log:          fmt.Sprintf("shutting down server: %s", server.Id),
+		}); err != nil {
+			return err
+		}
+
+		force := false
+		if server.Option != nil {
+			force = server.Option.ShutdownForce
+		}
+
+		if err := power.ShutdownServer(ctx, serverOp, server.Zone, types.StringID(server.Id), force); err != nil {
+			return err
+		}
+		shouldReboot = true
+	}
+
+	if err := sender.Send(&handler.HandleResponse{
+		ScalingJobId: req.ScalingJobId,
+		Status:       handler.HandleResponse_RUNNING,
+		Log:          fmt.Sprintf("server plan changing - to {Core: %d, Memory: %d}", server.Core, server.Memory),
+	}); err != nil {
+		return err
+	}
 
 	commitment := types.Commitments.Standard
 	if server.DedicatedCpu {
@@ -78,9 +119,24 @@ func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.Ha
 	if err != nil {
 		return err
 	}
+
+	if shouldReboot {
+		if err := sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_RUNNING,
+			Log:          fmt.Sprintf("booting server: %s", server.Id),
+		}); err != nil {
+			return err
+		}
+
+		if err := power.BootServer(ctx, serverOp, server.Zone, updated.ID); err != nil { // NOTE: プラン変更でIDが変わっているためupdatedを使う
+			return err
+		}
+	}
+
 	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
+		Status:       handler.HandleResponse_DONE,
 		Log:          fmt.Sprintf("server plan changed - resource ID cahnged: from %s to %s", server.Id, updated.ID.String()),
 	})
 }

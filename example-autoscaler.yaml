@@ -7,7 +7,6 @@ resources:
         selector:
           names: ["example"]
           zone: ["is1a"]
-        zone: "is1a"
         # プラン(省略可)、省略した場合はデフォルトのプラン範囲内でスケールする
         plans:
           - core: 1
@@ -16,6 +15,10 @@ resources:
             memory: 4
           - core: 4
             memory: 8
+        # スケール時の動作オプション
+        option:
+          shutdown_force: true
+
       # エンハンスドロードバランサ(垂直スケール)
       # - type: ELB
       #   selector:

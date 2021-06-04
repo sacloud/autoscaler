@@ -34,7 +34,6 @@ func testServer() *Server {
 				Zones: testZones,
 			},
 		},
-		Zone: testZone,
 		Plans: []ServerPlan{
 			{Core: 1, Memory: 1},
 			{Core: 2, Memory: 4},
@@ -218,7 +217,6 @@ func TestServer_Computed(t *testing.T) {
 					Zones: testZones,
 				},
 			},
-			Zone: testZone,
 			Plans: []ServerPlan{
 				{Core: 1, Memory: 1},
 				{Core: 2, Memory: 4},
