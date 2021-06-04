@@ -31,10 +31,6 @@ func (d *DNS) Validate() error {
 }
 
 func (d *DNS) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
-	if len(d.ComputedCache) != 0 {
-		return d.ComputedCache, nil
-	}
-
 	if err := d.Validate(); err != nil {
 		return nil, err
 	}
