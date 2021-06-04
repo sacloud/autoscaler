@@ -24,9 +24,7 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/libsacloud/v2/helper/api"
-	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type fakeSender struct {
@@ -39,7 +37,7 @@ func (s *fakeSender) Send(res *handler.HandleResponse) error {
 }
 
 func TestHandler_Handle(t *testing.T) {
-	server, cleanup := initTestServer(t)
+	router, cleanup := initTestServer(t)
 	defer cleanup()
 
 	sender := &fakeSender{buf: bytes.NewBufferString("")}
@@ -63,13 +61,11 @@ func TestHandler_Handle(t *testing.T) {
 					ScalingJobId:      "1",
 					Instruction:       handler.ResourceInstructions_UPDATE,
 					Desired: &handler.Resource{
-						Resource: &handler.Resource_Server{
-							Server: &handler.Server{
-								Id:              server.ID.String(),
-								AssignedNetwork: nil,
-								Core:            4,
-								Memory:          8,
-								Zone:            testZone,
+						Resource: &handler.Resource_Router{
+							Router: &handler.Router{
+								Id:        router.ID.String(),
+								Zone:      testZone,
+								BandWidth: 250,
 							},
 						},
 					},
@@ -101,22 +97,17 @@ var (
 	})
 )
 
-func initTestServer(t *testing.T) (*sacloud.Server, func()) {
-	serverOp := sacloud.NewServerOp(testAPIClient)
-	server, err := serverOp.Create(context.Background(), testZone, &sacloud.ServerCreateRequest{
-		CPU:                  2,
-		MemoryMB:             4 * size.GiB,
-		ServerPlanCommitment: types.Commitments.Standard,
-		ServerPlanGeneration: types.PlanGenerations.Default,
-		ConnectedSwitches:    nil,
-		InterfaceDriver:      types.InterfaceDrivers.VirtIO,
-		Name:                 "test-server",
+func initTestServer(t *testing.T) (*sacloud.Internet, func()) {
+	routerOp := sacloud.NewInternetOp(testAPIClient)
+	router, err := routerOp.Create(context.Background(), testZone, &sacloud.InternetCreateRequest{
+		Name:          "test-server",
+		BandWidthMbps: 100,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return server, func() {
+	return router, func() {
 		// TODO プラン変更後のサーバのクリーンアップを行いたいが、プラン変更でIDが変わるためここでは行えない。
 		// fakeドライバの場合は不要だが以外の場合のも対応したいため、どこかで実装するようにする
 	}
