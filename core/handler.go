@@ -22,6 +22,7 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/handlers/elb"
+	"github.com/sacloud/autoscaler/handlers/logging"
 	"github.com/sacloud/autoscaler/handlers/router"
 	"github.com/sacloud/autoscaler/handlers/server"
 	"google.golang.org/grpc"
@@ -30,14 +31,14 @@ import (
 type Handlers []*Handler
 
 var BuiltinHandlers = Handlers{
-	// TODO ログの扱いを決めるまでコメントアウトしたまま残しておく
-	//{
-	//	Type: "logging",
-	//	Name: "logging",
-	//	BuiltinHandler: &builtins.Handler{
-	//		Builtin: &logging.Handler{},
-	//	},
-	//},
+	{
+		Type: "logging",
+		Name: "logging",
+		BuiltinHandler: &builtins.Handler{
+			Builtin: &logging.Handler{},
+		},
+		Disabled: true,
+	},
 	{
 		Type: "server-vertical-scaler",
 		Name: "server-vertical-scaler",
@@ -68,6 +69,7 @@ type Handler struct {
 	Name           string          `yaml:"name"`     // ハンドラーを識別するための名称 同一Typeで複数のハンドラーが存在する場合が存在するため、Nameで一意に識別する
 	Endpoint       string          `yaml:"endpoint"` // カスタムハンドラーの場合にのみ指定
 	BuiltinHandler handlers.Server `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
+	Disabled       bool            `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
 }
 
 func (h *Handler) isBuiltin() bool {

@@ -260,10 +260,17 @@ func (rg *ResourceGroup) clearCacheAll() {
 //
 // TODO Configurationにactionsの定義を実装したらそちらも加味したハンドラーを返すようにする
 func (rg *ResourceGroup) handlers(allHandlers Handlers) (Handlers, error) {
-	if len(rg.HandlerConfigs) == 0 {
-		return allHandlers, nil
-	}
 	var handlers Handlers
+
+	if len(rg.HandlerConfigs) == 0 {
+		for _, h := range allHandlers {
+			if !h.Disabled {
+				handlers = append(handlers, h)
+			}
+		}
+		return handlers, nil
+	}
+
 	for _, conf := range rg.HandlerConfigs {
 		var found *Handler
 		for _, h := range allHandlers {

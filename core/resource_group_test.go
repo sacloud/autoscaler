@@ -37,6 +37,11 @@ func TestResourceGroup_handlers(t *testing.T) {
 			Type: "dummy",
 			Name: "dummy2",
 		},
+		{
+			Type:     "dummy",
+			Name:     "dummy3",
+			Disabled: true,
+		},
 	}
 
 	type fields struct {
@@ -55,7 +60,7 @@ func TestResourceGroup_handlers(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "returns if HandlerConfigs is empty",
+			name: "returns all enabled handlers if HandlerConfigs is empty",
 			fields: fields{
 				HandlerConfigs: nil,
 				Name:           "empty",
@@ -63,7 +68,16 @@ func TestResourceGroup_handlers(t *testing.T) {
 			args: args{
 				allHandlers: allHandlers,
 			},
-			want:    allHandlers,
+			want: Handlers{
+				{
+					Type: "dummy",
+					Name: "dummy1",
+				},
+				{
+					Type: "dummy",
+					Name: "dummy2",
+				},
+			},
 			wantErr: false,
 		},
 		{
@@ -83,11 +97,11 @@ func TestResourceGroup_handlers(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "returns with filtering by HandlerConfigs",
+			name: "returns handler with filtering by HandlerConfigs even at Disabled:true",
 			fields: fields{
 				HandlerConfigs: []*ResourceHandlerConfig{
 					{
-						Name: "dummy1",
+						Name: "dummy3",
 					},
 				},
 				Name: "filter",
@@ -97,8 +111,9 @@ func TestResourceGroup_handlers(t *testing.T) {
 			},
 			want: Handlers{
 				{
-					Type: "dummy",
-					Name: "dummy1",
+					Type:     "dummy",
+					Name:     "dummy3",
+					Disabled: true,
 				},
 			},
 			wantErr: false,
