@@ -45,7 +45,6 @@ type Server struct {
 	*ResourceBase `yaml:",inline"`
 	DedicatedCPU  bool                `yaml:"dedicated_cpu"`
 	PrivateHostID types.ID            `yaml:"private_host_id"`
-	Zone          string              `yaml:"zone"` // TODO 非公開にする
 	Plans         []ServerPlan        `yaml:"plans"`
 	Option        ServerScalingOption `yaml:"option"`
 

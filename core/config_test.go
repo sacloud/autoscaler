@@ -68,7 +68,6 @@ func TestConfig_Load(t *testing.T) {
 							},
 							DedicatedCPU:  true,
 							PrivateHostID: 123456789012,
-							Zone:          "is1a",
 						},
 					}
 					rgs.Set("web", rg)
@@ -96,7 +95,6 @@ resources:
           zone: ["is1a"]
         dedicated_cpu: true
         private_host_id: 123456789012
-        zone: "is1a"
 autoscaler:
   job_cooling_sec: 30
 `)),
