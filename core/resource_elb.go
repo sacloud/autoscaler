@@ -190,7 +190,7 @@ func (c *computedELB) Current() *handler.Resource {
 					Plan:             uint32(c.elb.Plan.Int()),
 					VirtualIpAddress: c.elb.VirtualIPAddress,
 					Fqdn:             c.elb.FQDN,
-					Parents:          []*handler.Parent{c.parent()},
+					Parent:           c.parent(),
 				},
 			},
 		}
@@ -208,7 +208,7 @@ func (c *computedELB) Desired() *handler.Resource {
 					Plan:             uint32(c.newCPS),
 					VirtualIpAddress: c.elb.VirtualIPAddress,
 					Fqdn:             c.elb.FQDN,
-					Parents:          []*handler.Parent{c.parent()},
+					Parent:           c.parent(),
 				},
 			},
 		}

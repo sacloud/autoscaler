@@ -205,7 +205,7 @@ func (c *computedServer) Current() *handler.Resource {
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
 					PrivateHostId:   c.server.PrivateHostID.String(),
 					AssignedNetwork: c.assignedNetwork(),
-					Parents:         []*handler.Parent{c.parents()},
+					Parent:          c.parents(),
 					Option: &handler.ServerScalingOption{
 						ShutdownForce: c.resource.Option.ShutdownForce,
 					},
@@ -228,7 +228,7 @@ func (c *computedServer) Desired() *handler.Resource {
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
 					PrivateHostId:   c.server.PrivateHostID.String(),
 					AssignedNetwork: c.assignedNetwork(),
-					Parents:         []*handler.Parent{c.parents()},
+					Parent:          c.parents(),
 					Option: &handler.ServerScalingOption{
 						ShutdownForce: c.resource.Option.ShutdownForce,
 					},

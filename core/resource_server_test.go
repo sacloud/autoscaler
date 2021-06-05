@@ -229,7 +229,6 @@ func TestServer_Computed(t *testing.T) {
 		require.NotNil(t, computed)
 
 		current := computed.Current()
-		require.Len(t, current.GetServer().Parents, 1)
-		require.NotNil(t, current.GetServer().Parents[0])
+		require.NotNil(t, current.GetServer().Parent)
 	})
 }
