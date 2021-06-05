@@ -196,15 +196,18 @@ func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, ha
 	return nil
 }
 
-func (rg *ResourceGroup) resourceWalkFuncs(ctx *Context, apiClient sacloud.APICaller, handlers Handlers) (ResourceWalkFunc, ResourceWalkFunc) {
+func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud.APICaller, handlers Handlers) (ResourceWalkFunc, ResourceWalkFunc) {
 	// TODO 並列化
 	forwardFn := func(resource Resource) error {
-		_, err := resource.Compute(ctx, apiClient)
+		_, err := resource.Compute(parentCtx, apiClient)
 		return err
 	}
 
 	backwardFn := func(resource Resource) error {
 		computed := resource.Computed()
+
+		ctx := NewHandlingContext(parentCtx, computed)
+
 		// preHandle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
 			return h.PreHandle(ctx, c)
