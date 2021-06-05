@@ -53,13 +53,13 @@ var BuiltinHandlers = Handlers{
 			Builtin: &elb.VerticalScaleHandler{},
 		},
 	},
-	//{
-	//	Type: "elb-servers-handler",
-	//	Name: "elb-servers-handler",
-	//	BuiltinHandler: &builtins.Handler{
-	//		Builtin: &elb.ServersHandler{},
-	//	},
-	//},
+	{
+		Type: "elb-servers-handler",
+		Name: "elb-servers-handler",
+		BuiltinHandler: &builtins.Handler{
+			Builtin: &elb.ServersHandler{},
+		},
+	},
 	{
 		Type: "router-vertical-scaler",
 		Name: "router-vertical-scaler",
