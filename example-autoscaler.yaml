@@ -6,7 +6,7 @@ resources:
       - type: Server
         selector:
           names: ["example"]
-          zone: ["is1a"]
+          zone: "is1a"
         # プラン(省略可)、省略した場合はデフォルトのプラン範囲内でスケールする
         plans:
           - core: 1
@@ -33,7 +33,7 @@ resources:
       # - type: Router
       #   selector:
       #     names: ["example"]
-      #     zone: ["is1a"]
+      #     zone: "is1a"
       #   # プラン(省略可)
       #   plans:
       #     - band_width: 100
