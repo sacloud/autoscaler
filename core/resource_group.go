@@ -241,12 +241,10 @@ func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud
 	return forwardFn, backwardFn
 }
 
-func (rg *ResourceGroup) handleAllByFunc(allComputed []Computed, handlers Handlers, fn func(*Handler, Computed) error) error {
-	for _, computed := range allComputed {
-		for _, handler := range handlers {
-			if err := fn(handler, computed); err != nil {
-				return err
-			}
+func (rg *ResourceGroup) handleAllByFunc(computed Computed, handlers Handlers, fn func(*Handler, Computed) error) error {
+	for _, handler := range handlers {
+		if err := fn(handler, computed); err != nil {
+			return err
 		}
 	}
 	return nil

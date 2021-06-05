@@ -30,33 +30,32 @@ func (d *DNS) Validate() error {
 	return nil
 }
 
-func (d *DNS) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (d *DNS) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 	if err := d.Validate(); err != nil {
 		return nil, err
 	}
 
-	var allComputed []Computed
 	dnsOp := sacloud.NewDNSOp(apiClient)
 	selector := d.Selector()
 
 	found, err := dnsOp.Find(ctx, selector.FindCondition())
 	if err != nil {
-		return nil, fmt.Errorf("computing DNS status failed: %s", err)
+		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
-	for _, dns := range found.DNS {
-		computed, err := newComputedDNS(ctx, d, dns)
-		if err != nil {
-			return nil, err
-		}
-		allComputed = append(allComputed, computed)
+	if len(found.DNS) == 0 {
+		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
 	}
-
-	if len(allComputed) == 0 {
-		return nil, fmt.Errorf("dns resource not found with selector: %s", selector.String())
+	if len(found.DNS) > 1 {
+		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	d.ComputedCache = allComputed
-	return allComputed, nil
+	computed, err := newComputedDNS(ctx, d, found.DNS[0])
+	if err != nil {
+		return nil, err
+	}
+
+	d.ComputedCache = computed
+	return computed, nil
 }
 
 type computedDNS struct {

@@ -45,7 +45,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 						TypeName: "DNS",
 						TargetSelector: &ResourceSelector{
 							Names: []string{"test-name"},
-							Zones: []string{"is1a"},
+							Zone:  "is1a",
 						},
 					},
 				}
@@ -54,7 +54,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 						TypeName: "Server",
 						TargetSelector: &ResourceSelector{
 							Names: []string{"test-child"},
-							Zones: []string{"is1a"},
+							Zone:  "is1a",
 						},
 					},
 					PrivateHostID: 2,
@@ -68,7 +68,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "Server",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
+								Zone:  "is1a",
 							},
 						},
 						DedicatedCPU:  true,
@@ -79,7 +79,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "ServerGroup",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
+								Zone:  "is1a",
 							},
 						},
 					},
@@ -89,7 +89,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "GSLB",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
+								Zone:  "is1a",
 							},
 						},
 					},
@@ -98,7 +98,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "EnhancedLoadBalancer",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
+								Zone:  "is1a",
 							},
 						},
 					},
@@ -113,31 +113,31 @@ web:
     - type: Server
       selector:
         names: ["test-name"]
-        zone: ["is1a"]
+        zone: "is1a"
       dedicated_cpu: true
       private_host_id: 1
     - type: ServerGroup
       selector:
         names: ["test-name"]
-        zone: ["is1a"]
+        zone: "is1a"
     - type: DNS
       selector:
         names: ["test-name"]
-        zone: ["is1a"]
+        zone: "is1a"
       resources:
         - type: Server
           selector:
             names: ["test-child"]
-            zone: ["is1a"]
+            zone: "is1a"
           private_host_id: 2
     - type: GSLB 
       selector:
         names: ["test-name"]
-        zone: ["is1a"]
+        zone: "is1a"
     - type: ELB
       selector:
         names: ["test-name"]
-        zone: ["is1a"]
+        zone: "is1a"
   handlers:
     - fake
 `),

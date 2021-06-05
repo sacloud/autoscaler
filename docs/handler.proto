@@ -36,6 +36,15 @@ message HandleRequest {
 }
 
 message PostHandleRequest {
+  // Handleの結果を表す
+  enum ResourceHandleResults {
+    UNKNOWN   = 0;
+    CREATED   = 1;
+    UPDATED   = 2;
+    DELETED   = 3;
+    NO_CHANGE = 4;
+  }
+
   // Inputから引き渡し
   string source              = 1;
   string action              = 2;
@@ -43,7 +52,7 @@ message PostHandleRequest {
 
   // Coreからの指示情報
   string scaling_job_id            = 4;
-  ResourceInstructions instruction = 5;
+  ResourceHandleResults result     = 5;
   Resource current                 = 6;
   Resource desired                 = 7;
 }
@@ -71,6 +80,8 @@ enum ResourceInstructions {
   DELETE       = 3;
   NOOP         = 4; // 特に変更の必要がない状態を示す。参照用のリソースなどで利用される。
 }
+
+
 
 // リソース型
 message Resource {

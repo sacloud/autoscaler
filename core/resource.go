@@ -37,10 +37,10 @@ type Resource interface {
 	// Selector()の値によっては複数のComputedを返しても良い
 	// Computeの結果はキャッシュしておき、Computed()で参照可能にしておく
 	// キャッシュはClearCache()を呼ぶまで保持しておく
-	Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error)
+	Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error)
 
 	// Computed Compute()の結果のキャッシュ、Compute()呼び出し前はnilを返す
-	Computed() []Computed
+	Computed() Computed
 
 	// ClearCache Compute()の結果のキャッシュをクリアする
 	ClearCache()
@@ -62,7 +62,7 @@ type ResourceBase struct {
 	TargetSelector *ResourceSelector        `yaml:"selector"`
 	Children       Resources                `yaml:"-"`
 	TargetHandlers []*ResourceHandlerConfig `yaml:"handlers"`
-	ComputedCache  []Computed               `yaml:"-"`
+	ComputedCache  Computed                 `yaml:"-"`
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
@@ -91,25 +91,25 @@ func (r *ResourceBase) Resources() Resources {
 }
 
 // Computed 各リソースでのCompute()のキャッシュされた結果を返す
-func (r *ResourceBase) Computed() []Computed {
+func (r *ResourceBase) Computed() Computed {
 	return r.ComputedCache
 }
 
 // ClearCache Compute()の結果のキャッシュをクリア
 func (r *ResourceBase) ClearCache() {
-	r.ComputedCache = []Computed{}
+	r.ComputedCache = nil
 }
 
 // ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
 type ResourceSelector struct {
 	ID    types.ID `yaml:"id"`
 	Names []string `yaml:"names"`
-	Zones []string `yaml:"zone"` // グローバルリソースの場合はis1aまたは空とする TODO 要検討
+	Zone  string   `yaml:"zone"` // グローバルリソースの場合はis1aまたは空とする
 }
 
 func (rs *ResourceSelector) String() string {
 	if rs != nil {
-		return fmt.Sprintf("ID: %s, Names: %s, Zones: %s", rs.ID, rs.Names, rs.Zones)
+		return fmt.Sprintf("ID: %s, Names: %s, Zone: %s", rs.ID, rs.Names, rs.Zone)
 	}
 	return ""
 }

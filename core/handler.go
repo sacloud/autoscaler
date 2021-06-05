@@ -147,7 +147,7 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
 			ScalingJobId:      req.ID(),
-			Instruction:       computed.Instruction(),
+			Result:            ctx.ComputeResult(computed),
 			Current:           computed.Current(),
 			Desired:           computed.Desired(),
 		}); err != nil {

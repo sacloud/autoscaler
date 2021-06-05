@@ -30,33 +30,32 @@ func (d *GSLB) Validate() error {
 	return nil
 }
 
-func (d *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (d *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 	if err := d.Validate(); err != nil {
 		return nil, err
 	}
 
-	var allComputed []Computed
 	gslbOp := sacloud.NewGSLBOp(apiClient)
 	selector := d.Selector()
 
 	found, err := gslbOp.Find(ctx, selector.FindCondition())
 	if err != nil {
-		return nil, fmt.Errorf("computing GSLB status failed: %s", err)
+		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
-	for _, gslb := range found.GSLBs {
-		computed, err := newComputedGSLB(ctx, d, gslb)
-		if err != nil {
-			return nil, err
-		}
-		allComputed = append(allComputed, computed)
+	if len(found.GSLBs) == 0 {
+		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
 	}
-
-	if len(allComputed) == 0 {
-		return nil, fmt.Errorf("gslb resource not found with selector: %s", selector.String())
+	if len(found.GSLBs) > 1 {
+		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	d.ComputedCache = allComputed
-	return allComputed, nil
+	computed, err := newComputedGSLB(ctx, d, found.GSLBs[0])
+	if err != nil {
+		return nil, err
+	}
+
+	d.ComputedCache = computed
+	return computed, nil
 }
 
 type computedGSLB struct {

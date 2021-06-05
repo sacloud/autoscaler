@@ -26,7 +26,7 @@ func (s *ServerGroup) Validate() error {
 	return nil
 }
 
-func (s *ServerGroup) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (s *ServerGroup) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 	// TODO 実装
 	return nil, nil
 }

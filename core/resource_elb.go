@@ -50,8 +50,8 @@ func (e *EnhancedLoadBalancer) Validate() error {
 	if selector == nil {
 		return errors.New("selector: required")
 	}
-	if len(selector.Zones) != 0 {
-		return errors.New("selector.Zones: can not be specified for this resource")
+	if selector.Zone != "" {
+		return errors.New("selector.Zone: can not be specified for this resource")
 	}
 	return nil
 }
@@ -66,33 +66,32 @@ func (e *EnhancedLoadBalancer) SetParent(parent Resource) {
 	e.parent = parent
 }
 
-func (e *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (e *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 	if err := e.Validate(); err != nil {
 		return nil, err
 	}
 
-	var allComputed []Computed
 	elbOp := sacloud.NewProxyLBOp(apiClient)
 	selector := e.Selector()
 
 	found, err := elbOp.Find(ctx, selector.FindCondition())
 	if err != nil {
-		return nil, fmt.Errorf("computing ELB status failed: %s", err)
+		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
-	for _, elb := range found.ProxyLBs {
-		computed, err := newComputedELB(ctx, e, elb)
-		if err != nil {
-			return nil, err
-		}
-		allComputed = append(allComputed, computed)
+	if len(found.ProxyLBs) == 0 {
+		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
 	}
-
-	if len(allComputed) == 0 {
-		return nil, fmt.Errorf("server not found with selector: %s", selector.String())
+	if len(found.ProxyLBs) > 1 {
+		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	e.ComputedCache = allComputed
-	return allComputed, nil
+	computed, err := newComputedELB(ctx, e, found.ProxyLBs[0])
+	if err != nil {
+		return nil, err
+	}
+
+	e.ComputedCache = computed
+	return computed, nil
 }
 
 type computedELB struct {
@@ -174,7 +173,7 @@ func (c *computedELB) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }
 
-func (c *computedELB) parents() []*handler.Parent {
+func (c *computedELB) parent() *handler.Parent {
 	if c.resource.parent != nil {
 		return computedToParents(c.resource.parent.Computed())
 	}
@@ -191,7 +190,7 @@ func (c *computedELB) Current() *handler.Resource {
 					Plan:             uint32(c.elb.Plan.Int()),
 					VirtualIpAddress: c.elb.VirtualIPAddress,
 					Fqdn:             c.elb.FQDN,
-					Parents:          c.parents(),
+					Parents:          []*handler.Parent{c.parent()},
 				},
 			},
 		}
@@ -209,7 +208,7 @@ func (c *computedELB) Desired() *handler.Resource {
 					Plan:             uint32(c.newCPS),
 					VirtualIpAddress: c.elb.VirtualIPAddress,
 					Fqdn:             c.elb.FQDN,
-					Parents:          c.parents(),
+					Parents:          []*handler.Parent{c.parent()},
 				},
 			},
 		}

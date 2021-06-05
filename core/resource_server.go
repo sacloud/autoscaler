@@ -56,41 +56,38 @@ func (s *Server) Validate() error {
 	if selector == nil {
 		return errors.New("selector: required")
 	}
-	if len(selector.Zones) == 0 {
-		return errors.New("selector.Zones: least one value required")
+	if selector.Zone == "" {
+		return errors.New("selector.Zone: required")
 	}
 	return nil
 }
 
-func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 	if err := s.Validate(); err != nil {
 		return nil, err
 	}
 
-	var allComputed []Computed
 	serverOp := sacloud.NewServerOp(apiClient)
 	selector := s.Selector()
 
-	for _, zone := range selector.Zones {
-		found, err := serverOp.Find(ctx, zone, selector.FindCondition())
-		if err != nil {
-			return nil, fmt.Errorf("computing server status failed: %s", err)
-		}
-		for _, server := range found.Servers {
-			computed, err := newComputedServer(ctx, s, zone, server)
-			if err != nil {
-				return nil, err
-			}
-			allComputed = append(allComputed, computed)
-		}
+	found, err := serverOp.Find(ctx, selector.Zone, selector.FindCondition())
+	if err != nil {
+		return nil, fmt.Errorf("computing status failed: %s", err)
+	}
+	if len(found.Servers) == 0 {
+		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
+	}
+	if len(found.Servers) > 1 {
+		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	if len(allComputed) == 0 {
-		return nil, fmt.Errorf("server not found with selector: %s", selector.String())
+	computed, err := newComputedServer(ctx, s, selector.Zone, found.Servers[0])
+	if err != nil {
+		return nil, err
 	}
 
-	s.ComputedCache = allComputed
-	return allComputed, nil
+	s.ComputedCache = computed
+	return computed, nil
 }
 
 func (s *Server) Parent() Resource {
@@ -189,7 +186,7 @@ func (c *computedServer) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }
 
-func (c *computedServer) parents() []*handler.Parent {
+func (c *computedServer) parents() *handler.Parent {
 	if c.resource.parent != nil {
 		return computedToParents(c.resource.parent.Computed())
 	}
@@ -208,7 +205,7 @@ func (c *computedServer) Current() *handler.Resource {
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
 					PrivateHostId:   c.server.PrivateHostID.String(),
 					AssignedNetwork: c.assignedNetwork(),
-					Parents:         c.parents(),
+					Parents:         []*handler.Parent{c.parents()},
 					Option: &handler.ServerScalingOption{
 						ShutdownForce: c.resource.Option.ShutdownForce,
 					},
@@ -231,7 +228,7 @@ func (c *computedServer) Desired() *handler.Resource {
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
 					PrivateHostId:   c.server.PrivateHostID.String(),
 					AssignedNetwork: c.assignedNetwork(),
-					Parents:         c.parents(),
+					Parents:         []*handler.Parent{c.parents()},
 					Option: &handler.ServerScalingOption{
 						ShutdownForce: c.resource.Option.ShutdownForce,
 					},
