@@ -15,7 +15,6 @@
 package core
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -146,13 +145,13 @@ func TestResourceGroup_handleAll(t *testing.T) {
 			Resources: Resources{
 				&stubResource{
 					ResourceBase: &ResourceBase{},
-					computeFunc: func(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+					computeFunc: func(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 						called++
-						return []Computed{&stubComputed{
+						return &stubComputed{
 							instruction: handler.ResourceInstructions_NOOP,
 							current:     &handler.Resource{},
 							desired:     &handler.Resource{},
-						}}, nil
+						}, nil
 					},
 				},
 			},
@@ -183,104 +182,6 @@ func TestResourceGroup_handleAll(t *testing.T) {
 		require.Equal(t, 2, called)
 	})
 
-	t.Run("calls PreHandle/Handle/PostHandle for each Computed", func(t *testing.T) {
-		var history []string
-		rg := &ResourceGroup{
-			HandlerConfigs: nil,
-			Resources: Resources{
-				&stubResource{
-					ResourceBase: &ResourceBase{},
-					computeFunc: func(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
-						return []Computed{
-							&stubComputed{
-								instruction: handler.ResourceInstructions_NOOP,
-								current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "1"}}},
-								desired:     &handler.Resource{},
-							},
-							&stubComputed{
-								instruction: handler.ResourceInstructions_NOOP,
-								current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "2"}}},
-								desired:     &handler.Resource{},
-							},
-						}, nil
-					},
-				},
-				&stubResource{
-					ResourceBase: &ResourceBase{},
-					computeFunc: func(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
-						return []Computed{
-							&stubComputed{
-								instruction: handler.ResourceInstructions_NOOP,
-								current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "3"}}},
-								desired:     &handler.Resource{},
-							},
-						}, nil
-					},
-				},
-			},
-			Name: "test",
-		}
-
-		rg.handleAll(testContext(), testAPIClient, Handlers{ // nolint
-			{
-				Type: "stub",
-				Name: "stub",
-				BuiltinHandler: &stub.Handler{
-					PreHandleFunc: func(request *handler.PreHandleRequest, sender handlers.ResponseSender) error {
-						history = append(history, fmt.Sprintf("Handler1->PreHandle:%s", request.Current.GetServer().Id))
-						return nil
-					},
-					HandleFunc: func(request *handler.HandleRequest, sender handlers.ResponseSender) error {
-						history = append(history, fmt.Sprintf("Handler1->Handle:%s", request.Current.GetServer().Id))
-						return nil
-					},
-					PostHandleFunc: func(request *handler.PostHandleRequest, sender handlers.ResponseSender) error {
-						history = append(history, fmt.Sprintf("Handler1->PostHandle:%s", request.Current.GetServer().Id))
-						return nil
-					},
-				},
-			},
-			{
-				Type: "stub",
-				Name: "stub",
-				BuiltinHandler: &stub.Handler{
-					PreHandleFunc: func(request *handler.PreHandleRequest, sender handlers.ResponseSender) error {
-						history = append(history, fmt.Sprintf("Handler2->PreHandle:%s", request.Current.GetServer().Id))
-						return nil
-					},
-					HandleFunc: func(request *handler.HandleRequest, sender handlers.ResponseSender) error {
-						history = append(history, fmt.Sprintf("Handler2->Handle:%s", request.Current.GetServer().Id))
-						return nil
-					},
-					PostHandleFunc: func(request *handler.PostHandleRequest, sender handlers.ResponseSender) error {
-						history = append(history, fmt.Sprintf("Handler2->PostHandle:%s", request.Current.GetServer().Id))
-						return nil
-					},
-				},
-			},
-		})
-
-		expected := []string{
-			// PreHandle/PostHandleはCompute()が返した[]Computedごと
-			"Handler1->PreHandle:1", "Handler2->PreHandle:1",
-			"Handler1->PreHandle:2", "Handler2->PreHandle:2",
-
-			"Handler1->Handle:1", "Handler2->Handle:1",
-			"Handler1->Handle:2", "Handler2->Handle:2",
-
-			// PostHandleはその後
-			"Handler1->PostHandle:1", "Handler2->PostHandle:1",
-			"Handler1->PostHandle:2", "Handler2->PostHandle:2",
-
-			// 別Resourceが返した[]Computedはその後
-			"Handler1->PreHandle:3", "Handler2->PreHandle:3",
-			"Handler1->Handle:3", "Handler2->Handle:3",
-			"Handler1->PostHandle:3", "Handler2->PostHandle:3",
-		}
-
-		require.Equal(t, expected, history)
-	})
-
 	t.Run("compute current/desired state with parent", func(t *testing.T) {
 		var history []string
 		rg := &ResourceGroup{
@@ -294,40 +195,34 @@ func TestResourceGroup_handleAll(t *testing.T) {
 									Children: Resources{
 										&stubResource{
 											ResourceBase: &ResourceBase{},
-											computeFunc: func(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+											computeFunc: func(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 												history = append(history, "child2")
-												return []Computed{
-													&stubComputed{
-														instruction: handler.ResourceInstructions_NOOP,
-														current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "3"}}},
-														desired:     &handler.Resource{},
-													},
+												return &stubComputed{
+													instruction: handler.ResourceInstructions_NOOP,
+													current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "3"}}},
+													desired:     &handler.Resource{},
 												}, nil
 											},
 										},
 									},
 								},
-								computeFunc: func(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+								computeFunc: func(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 									history = append(history, "child1")
-									return []Computed{
-										&stubComputed{
-											instruction: handler.ResourceInstructions_NOOP,
-											current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "2"}}},
-											desired:     &handler.Resource{},
-										},
+									return &stubComputed{
+										instruction: handler.ResourceInstructions_NOOP,
+										current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "2"}}},
+										desired:     &handler.Resource{},
 									}, nil
 								},
 							},
 						},
 					},
-					computeFunc: func(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+					computeFunc: func(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 						history = append(history, "parent")
-						return []Computed{
-							&stubComputed{
-								instruction: handler.ResourceInstructions_NOOP,
-								current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "1"}}},
-								desired:     &handler.Resource{},
-							},
+						return &stubComputed{
+							instruction: handler.ResourceInstructions_NOOP,
+							current:     &handler.Resource{Resource: &handler.Resource_Server{Server: &handler.Server{Id: "1"}}},
+							desired:     &handler.Resource{},
 						}, nil
 					},
 				},

@@ -36,6 +36,15 @@ message HandleRequest {
 }
 
 message PostHandleRequest {
+  // Handleの結果を表す
+  enum ResourceHandleResults {
+    UNKNOWN   = 0;
+    CREATED   = 1;
+    UPDATED   = 2;
+    DELETED   = 3;
+    NO_CHANGE = 4;
+  }
+
   // Inputから引き渡し
   string source              = 1;
   string action              = 2;
@@ -43,7 +52,7 @@ message PostHandleRequest {
 
   // Coreからの指示情報
   string scaling_job_id            = 4;
-  ResourceInstructions instruction = 5;
+  ResourceHandleResults result     = 5;
   Resource current                 = 6;
   Resource desired                 = 7;
 }
@@ -72,6 +81,8 @@ enum ResourceInstructions {
   NOOP         = 4; // 特に変更の必要がない状態を示す。参照用のリソースなどで利用される。
 }
 
+
+
 // リソース型
 message Resource {
   oneof resource {
@@ -85,7 +96,7 @@ message Resource {
 }
 
 message Server {
-  repeated Parent parents               = 1;
+  Parent parent                         = 1;
   reserved 2 to 10;
 
   string id                             = 11;
@@ -101,14 +112,14 @@ message Server {
 }
 
 message ServerGroup {
-  repeated Parent parents          = 1;
+  Parent parent                    = 1;
   reserved 2 to 10;
 
   repeated Server servers          = 11;
 }
 
 message ELB {
-  repeated Parent parents          = 1;
+  Parent parent                    = 1;
   reserved 2 to 10;
 
   string id                        = 11;
@@ -163,6 +174,7 @@ message NetworkInfo {
   string ip_address = 1;
   uint32 netmask = 2;
   string gateway = 3;
+  uint32 index   = 4;
 }
 
 message ServerScalingOption {

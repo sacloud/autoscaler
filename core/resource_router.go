@@ -53,35 +53,32 @@ func (d *Router) Validate() error {
 	return nil
 }
 
-func (d *Router) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (d *Router) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 	if err := d.Validate(); err != nil {
 		return nil, err
 	}
 
-	var allComputed []Computed
 	routerOp := sacloud.NewInternetOp(apiClient)
 	selector := d.Selector()
 
-	for _, zone := range selector.Zones {
-		found, err := routerOp.Find(ctx, zone, selector.FindCondition())
-		if err != nil {
-			return nil, fmt.Errorf("computing Router status failed: %s", err)
-		}
-		for _, router := range found.Internet {
-			computed, err := newComputedRouter(ctx, d, zone, router)
-			if err != nil {
-				return nil, err
-			}
-			allComputed = append(allComputed, computed)
-		}
+	found, err := routerOp.Find(ctx, selector.Zone, selector.FindCondition())
+	if err != nil {
+		return nil, fmt.Errorf("computing state failed: %s", err)
+	}
+	if len(found.Internet) == 0 {
+		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
+	}
+	if len(found.Internet) > 1 {
+		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	if len(allComputed) == 0 {
-		return nil, fmt.Errorf("router resource not found with selector: %s", selector.String())
+	computed, err := newComputedRouter(ctx, d, selector.Zone, found.Internet[0])
+	if err != nil {
+		return nil, err
 	}
 
-	d.ComputedCache = allComputed
-	return allComputed, nil
+	d.ComputedCache = computed
+	return computed, nil
 }
 
 type computedRouter struct {
@@ -112,18 +109,25 @@ func newComputedRouter(ctx *Context, resource *Router, zone string, router *sacl
 	return computed, nil
 }
 
-func (cr *computedRouter) Instruction() handler.ResourceInstructions {
-	return cr.instruction
+func (c *computedRouter) ID() string {
+	if c.router != nil {
+		return c.router.ID.String()
+	}
+	return ""
 }
 
-func (cr *computedRouter) Current() *handler.Resource {
-	if cr.router != nil {
+func (c *computedRouter) Instruction() handler.ResourceInstructions {
+	return c.instruction
+}
+
+func (c *computedRouter) Current() *handler.Resource {
+	if c.router != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Router{
 				Router: &handler.Router{
-					Id:        cr.router.ID.String(),
-					Zone:      cr.zone,
-					BandWidth: uint32(cr.router.BandWidthMbps),
+					Id:        c.router.ID.String(),
+					Zone:      c.zone,
+					BandWidth: uint32(c.router.BandWidthMbps),
 				},
 			},
 		}
@@ -131,14 +135,14 @@ func (cr *computedRouter) Current() *handler.Resource {
 	return nil
 }
 
-func (cr *computedRouter) Desired() *handler.Resource {
-	if cr.router != nil {
+func (c *computedRouter) Desired() *handler.Resource {
+	if c.router != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Router{
 				Router: &handler.Router{
-					Id:        cr.router.ID.String(),
-					Zone:      cr.zone,
-					BandWidth: uint32(cr.newBandWidth),
+					Id:        c.router.ID.String(),
+					Zone:      c.zone,
+					BandWidth: uint32(c.newBandWidth),
 				},
 			},
 		}
@@ -146,7 +150,7 @@ func (cr *computedRouter) Desired() *handler.Resource {
 	return nil
 }
 
-func (cr *computedRouter) desiredPlan(ctx *Context, current *sacloud.Internet, plans []RouterPlan) *RouterPlan {
+func (c *computedRouter) desiredPlan(ctx *Context, current *sacloud.Internet, plans []RouterPlan) *RouterPlan {
 	var fn func(i int) *RouterPlan
 
 	if len(plans) == 0 {

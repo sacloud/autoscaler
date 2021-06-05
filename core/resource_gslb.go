@@ -30,33 +30,32 @@ func (d *GSLB) Validate() error {
 	return nil
 }
 
-func (d *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (d *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 	if err := d.Validate(); err != nil {
 		return nil, err
 	}
 
-	var allComputed []Computed
 	gslbOp := sacloud.NewGSLBOp(apiClient)
 	selector := d.Selector()
 
 	found, err := gslbOp.Find(ctx, selector.FindCondition())
 	if err != nil {
-		return nil, fmt.Errorf("computing GSLB status failed: %s", err)
+		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
-	for _, gslb := range found.GSLBs {
-		computed, err := newComputedGSLB(ctx, d, gslb)
-		if err != nil {
-			return nil, err
-		}
-		allComputed = append(allComputed, computed)
+	if len(found.GSLBs) == 0 {
+		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
 	}
-
-	if len(allComputed) == 0 {
-		return nil, fmt.Errorf("gslb resource not found with selector: %s", selector.String())
+	if len(found.GSLBs) > 1 {
+		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	d.ComputedCache = allComputed
-	return allComputed, nil
+	computed, err := newComputedGSLB(ctx, d, found.GSLBs[0])
+	if err != nil {
+		return nil, err
+	}
+
+	d.ComputedCache = computed
+	return computed, nil
 }
 
 type computedGSLB struct {
@@ -78,14 +77,21 @@ func newComputedGSLB(ctx *Context, resource *GSLB, gslb *sacloud.GSLB) (*compute
 	return computed, nil
 }
 
-func (cg *computedGSLB) Instruction() handler.ResourceInstructions {
-	return cg.instruction
+func (c *computedGSLB) ID() string {
+	if c.gslb != nil {
+		return c.gslb.ID.String()
+	}
+	return ""
 }
 
-func (cg *computedGSLB) Current() *handler.Resource {
-	if cg.gslb != nil {
+func (c *computedGSLB) Instruction() handler.ResourceInstructions {
+	return c.instruction
+}
+
+func (c *computedGSLB) Current() *handler.Resource {
+	if c.gslb != nil {
 		var servers []*handler.GSLBServer
-		for _, s := range cg.gslb.DestinationServers {
+		for _, s := range c.gslb.DestinationServers {
 			servers = append(servers, &handler.GSLBServer{
 				IpAddress: s.IPAddress,
 				Enabled:   s.Enabled.Bool(),
@@ -96,8 +102,8 @@ func (cg *computedGSLB) Current() *handler.Resource {
 		return &handler.Resource{
 			Resource: &handler.Resource_Gslb{
 				Gslb: &handler.GSLB{
-					Id:      cg.gslb.ID.String(),
-					Fqdn:    cg.gslb.FQDN,
+					Id:      c.gslb.ID.String(),
+					Fqdn:    c.gslb.FQDN,
 					Servers: servers,
 				},
 			},
@@ -106,7 +112,7 @@ func (cg *computedGSLB) Current() *handler.Resource {
 	return nil
 }
 
-func (cg *computedGSLB) Desired() *handler.Resource {
+func (c *computedGSLB) Desired() *handler.Resource {
 	// GSLBリソースは基本的に参照専用なため常にCurrentを返すのみ
-	return cg.Current()
+	return c.Current()
 }

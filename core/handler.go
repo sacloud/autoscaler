@@ -53,6 +53,13 @@ var BuiltinHandlers = Handlers{
 			Builtin: &elb.VerticalScaleHandler{},
 		},
 	},
+	//{
+	//	Type: "elb-servers-handler",
+	//	Name: "elb-servers-handler",
+	//	BuiltinHandler: &builtins.Handler{
+	//		Builtin: &elb.ServersHandler{},
+	//	},
+	//},
 	{
 		Type: "router-vertical-scaler",
 		Name: "router-vertical-scaler",
@@ -76,21 +83,21 @@ func (h *Handler) isBuiltin() bool {
 	return h.BuiltinHandler != nil
 }
 
-func (h *Handler) PreHandle(ctx *Context, computed Computed) error {
+func (h *Handler) PreHandle(ctx *HandlingContext, computed Computed) error {
 	if h.isBuiltin() {
 		return h.preHandleBuiltin(ctx, computed)
 	}
 	return h.preHandleExternal(ctx, computed)
 }
 
-func (h *Handler) Handle(ctx *Context, computed Computed) error {
+func (h *Handler) Handle(ctx *HandlingContext, computed Computed) error {
 	if h.isBuiltin() {
 		return h.handleBuiltin(ctx, computed)
 	}
 	return h.handleExternal(ctx, computed)
 }
 
-func (h *Handler) PostHandle(ctx *Context, computed Computed) error {
+func (h *Handler) PostHandle(ctx *HandlingContext, computed Computed) error {
 	if h.isBuiltin() {
 		return h.postHandleBuiltin(ctx, computed)
 	}
@@ -103,7 +110,7 @@ type handleArg struct {
 	postHandle func(request *handler.PostHandleRequest) error
 }
 
-func (h *Handler) handle(ctx *Context, computed Computed, handleArg *handleArg) error {
+func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *handleArg) error {
 	req := ctx.Request()
 
 	if handleArg.preHandle != nil {
@@ -140,7 +147,7 @@ func (h *Handler) handle(ctx *Context, computed Computed, handleArg *handleArg) 
 			Action:            req.action,
 			ResourceGroupName: req.resourceGroupName,
 			ScalingJobId:      req.ID(),
-			Instruction:       computed.Instruction(),
+			Result:            ctx.ComputeResult(computed),
 			Current:           computed.Current(),
 			Desired:           computed.Desired(),
 		}); err != nil {
@@ -151,7 +158,7 @@ func (h *Handler) handle(ctx *Context, computed Computed, handleArg *handleArg) 
 	return nil
 }
 
-func (h *Handler) preHandleBuiltin(ctx *Context, computed Computed) error {
+func (h *Handler) preHandleBuiltin(ctx *HandlingContext, computed Computed) error {
 	handleArg := &handleArg{}
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PreHandler); ok {
@@ -162,7 +169,7 @@ func (h *Handler) preHandleBuiltin(ctx *Context, computed Computed) error {
 	return h.handle(ctx, computed, handleArg)
 }
 
-func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
+func (h *Handler) handleBuiltin(ctx *HandlingContext, computed Computed) error {
 	handleArg := &handleArg{}
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.Handler); ok {
@@ -174,7 +181,7 @@ func (h *Handler) handleBuiltin(ctx *Context, computed Computed) error {
 	return h.handle(ctx, computed, handleArg)
 }
 
-func (h *Handler) postHandleBuiltin(ctx *Context, computed Computed) error {
+func (h *Handler) postHandleBuiltin(ctx *HandlingContext, computed Computed) error {
 	handleArg := &handleArg{}
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PostHandler); ok {
@@ -186,7 +193,7 @@ func (h *Handler) postHandleBuiltin(ctx *Context, computed Computed) error {
 	return h.handle(ctx, computed, handleArg)
 }
 
-func (h *Handler) preHandleExternal(ctx *Context, computed Computed) error {
+func (h *Handler) preHandleExternal(ctx *HandlingContext, computed Computed) error {
 	// TODO 簡易的な実装、後ほど整理&切り出し
 	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
 	if err != nil {
@@ -207,7 +214,7 @@ func (h *Handler) preHandleExternal(ctx *Context, computed Computed) error {
 	return h.handle(ctx, computed, handleArg)
 }
 
-func (h *Handler) handleExternal(ctx *Context, computed Computed) error {
+func (h *Handler) handleExternal(ctx *HandlingContext, computed Computed) error {
 	// TODO 簡易的な実装、後ほど整理&切り出し
 	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
 	if err != nil {
@@ -228,7 +235,7 @@ func (h *Handler) handleExternal(ctx *Context, computed Computed) error {
 	return h.handle(ctx, computed, handleArg)
 }
 
-func (h *Handler) postHandleExternal(ctx *Context, computed Computed) error {
+func (h *Handler) postHandleExternal(ctx *HandlingContext, computed Computed) error {
 	// TODO 簡易的な実装、後ほど整理&切り出し
 	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
 	if err != nil {

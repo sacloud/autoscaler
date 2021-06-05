@@ -22,7 +22,6 @@ import (
 
 var (
 	testZone      = "is1a"
-	testZones     = []string{testZone}
 	testAPIClient = api.NewCaller(&api.CallerOptions{
 		AccessToken:       "fake",
 		AccessTokenSecret: "fake",

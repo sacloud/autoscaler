@@ -31,7 +31,7 @@ func testServer() *Server {
 			TypeName: "Server",
 			TargetSelector: &ResourceSelector{
 				Names: []string{"test-server"},
-				Zones: testZones,
+				Zone:  testZone,
 			},
 		},
 		Plans: []ServerPlan{
@@ -101,7 +101,7 @@ func TestServer_Validate(t *testing.T) {
 		require.EqualError(t, err, "selector: required")
 	})
 
-	t.Run("returns error if selector.Zones is empty", func(t *testing.T) {
+	t.Run("returns error if selector.Zone is empty", func(t *testing.T) {
 		empty := &Server{
 			ResourceBase: &ResourceBase{
 				TypeName:       "Server",
@@ -110,7 +110,7 @@ func TestServer_Validate(t *testing.T) {
 		}
 		err := empty.Validate()
 		require.Error(t, err)
-		require.EqualError(t, err, "selector.Zones: least one value required")
+		require.EqualError(t, err, "selector.Zone: required")
 	})
 }
 
@@ -125,8 +125,8 @@ func TestServer_Computed(t *testing.T) {
 			ResourceBase: &ResourceBase{
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
-					ID:    123456789012,
-					Zones: testZones,
+					ID:   123456789012,
+					Zone: testZone,
 				},
 			},
 		}
@@ -141,7 +141,7 @@ func TestServer_Computed(t *testing.T) {
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
 					Names: []string{"test-server"},
-					Zones: testZones,
+					Zone:  testZone,
 				},
 			},
 			Plans: []ServerPlan{
@@ -154,13 +154,12 @@ func TestServer_Computed(t *testing.T) {
 		computed, err := running.Compute(ctx, testAPIClient)
 		require.NoError(t, err)
 		require.NotNil(t, computed)
-		require.Len(t, computed, 1)
-		require.Equal(t, handler.ResourceInstructions_UPDATE, computed[0].Instruction())
+		require.Equal(t, handler.ResourceInstructions_UPDATE, computed.Instruction())
 
-		current := computed[0].Current()
+		current := computed.Current()
 		require.NotNil(t, current)
 
-		desired := computed[0].Desired()
+		desired := computed.Desired()
 		require.NotNil(t, desired)
 	})
 
@@ -169,9 +168,8 @@ func TestServer_Computed(t *testing.T) {
 		server := testServer()
 		computed, err := server.Compute(ctx, testAPIClient)
 		require.NoError(t, err)
-		require.Len(t, computed, 1)
 
-		handlerReq := computed[0].Desired()
+		handlerReq := computed.Desired()
 		require.NotNil(t, handlerReq)
 
 		desiredServer := handlerReq.GetServer()
@@ -188,15 +186,13 @@ func TestServer_Computed(t *testing.T) {
 		server := testServer()
 		computed, err := server.Compute(ctx, testAPIClient)
 		require.NoError(t, err)
-		require.Len(t, computed, 1)
 
 		cached := server.Computed()
-		require.Len(t, cached, 1)
 		require.Equal(t, computed, cached)
 
 		server.ClearCache()
 		cached = server.Computed()
-		require.Len(t, cached, 0)
+		require.Nil(t, cached)
 	})
 
 	t.Run("with Parent", func(t *testing.T) {
@@ -214,7 +210,7 @@ func TestServer_Computed(t *testing.T) {
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
 					Names: []string{"test-server"},
-					Zones: testZones,
+					Zone:  testZone,
 				},
 			},
 			Plans: []ServerPlan{
@@ -230,10 +226,9 @@ func TestServer_Computed(t *testing.T) {
 
 		computed, err := server.Compute(ctx, testAPIClient)
 		require.NoError(t, err)
-		require.Len(t, computed, 1)
+		require.NotNil(t, computed)
 
-		current := computed[0].Current()
-		require.Len(t, current.GetServer().Parents, 1)
-		require.NotNil(t, current.GetServer().Parents[0])
+		current := computed.Current()
+		require.NotNil(t, current.GetServer().Parent)
 	})
 }

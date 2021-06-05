@@ -19,6 +19,7 @@ import (
 	"time"
 )
 
+// Context 1リクエストのスコープに対応するコンテキスト、context.Contextを実装し、リクエスト情報や現在のジョブの情報を保持する
 type Context struct {
 	ctx     context.Context
 	request *requestInfo

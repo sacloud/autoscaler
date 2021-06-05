@@ -63,7 +63,7 @@ func TestConfig_Load(t *testing.T) {
 								TypeName: "Server",
 								TargetSelector: &ResourceSelector{
 									Names: []string{"test-name"},
-									Zones: []string{"is1a"},
+									Zone:  "is1a",
 								},
 							},
 							DedicatedCPU:  true,
@@ -92,7 +92,7 @@ resources:
       - type: Server
         selector:
           names: ["test-name"]
-          zone: ["is1a"]
+          zone: "is1a"
         dedicated_cpu: true
         private_host_id: 123456789012
 autoscaler:

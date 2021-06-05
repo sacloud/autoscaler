@@ -50,8 +50,8 @@ func (e *EnhancedLoadBalancer) Validate() error {
 	if selector == nil {
 		return errors.New("selector: required")
 	}
-	if len(selector.Zones) != 0 {
-		return errors.New("selector.Zones: can not be specified for this resource")
+	if selector.Zone != "" {
+		return errors.New("selector.Zone: can not be specified for this resource")
 	}
 	return nil
 }
@@ -66,33 +66,32 @@ func (e *EnhancedLoadBalancer) SetParent(parent Resource) {
 	e.parent = parent
 }
 
-func (e *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (e *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 	if err := e.Validate(); err != nil {
 		return nil, err
 	}
 
-	var allComputed []Computed
 	elbOp := sacloud.NewProxyLBOp(apiClient)
 	selector := e.Selector()
 
 	found, err := elbOp.Find(ctx, selector.FindCondition())
 	if err != nil {
-		return nil, fmt.Errorf("computing ELB status failed: %s", err)
+		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
-	for _, elb := range found.ProxyLBs {
-		computed, err := newComputedELB(ctx, e, elb)
-		if err != nil {
-			return nil, err
-		}
-		allComputed = append(allComputed, computed)
+	if len(found.ProxyLBs) == 0 {
+		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
 	}
-
-	if len(allComputed) == 0 {
-		return nil, fmt.Errorf("server not found with selector: %s", selector.String())
+	if len(found.ProxyLBs) > 1 {
+		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	e.ComputedCache = allComputed
-	return allComputed, nil
+	computed, err := newComputedELB(ctx, e, found.ProxyLBs[0])
+	if err != nil {
+		return nil, err
+	}
+
+	e.ComputedCache = computed
+	return computed, nil
 }
 
 type computedELB struct {
@@ -121,7 +120,7 @@ func newComputedELB(ctx *Context, resource *EnhancedLoadBalancer, elb *sacloud.P
 	return computed, nil
 }
 
-func (cs *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans []ELBPlan) *ELBPlan {
+func (c *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans []ELBPlan) *ELBPlan {
 	sort.Slice(plans, func(i, j int) bool {
 		return plans[i].CPS < plans[j].CPS
 	})
@@ -163,28 +162,35 @@ func (cs *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans
 	return nil
 }
 
-func (cs *computedELB) Instruction() handler.ResourceInstructions {
-	return cs.instruction
+func (c *computedELB) ID() string {
+	if c.elb != nil {
+		return c.elb.ID.String()
+	}
+	return ""
 }
 
-func (cs *computedELB) parents() []*handler.Parent {
-	if cs.resource.parent != nil {
-		return computedToParents(cs.resource.parent.Computed())
+func (c *computedELB) Instruction() handler.ResourceInstructions {
+	return c.instruction
+}
+
+func (c *computedELB) parent() *handler.Parent {
+	if c.resource.parent != nil {
+		return computedToParents(c.resource.parent.Computed())
 	}
 	return nil
 }
 
-func (cs *computedELB) Current() *handler.Resource {
-	if cs.elb != nil {
+func (c *computedELB) Current() *handler.Resource {
+	if c.elb != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Elb{
 				Elb: &handler.ELB{
-					Id:               cs.elb.ID.String(),
-					Region:           cs.elb.Region.String(),
-					Plan:             uint32(cs.elb.Plan.Int()),
-					VirtualIpAddress: cs.elb.VirtualIPAddress,
-					Fqdn:             cs.elb.FQDN,
-					Parents:          cs.parents(),
+					Id:               c.elb.ID.String(),
+					Region:           c.elb.Region.String(),
+					Plan:             uint32(c.elb.Plan.Int()),
+					VirtualIpAddress: c.elb.VirtualIPAddress,
+					Fqdn:             c.elb.FQDN,
+					Parent:           c.parent(),
 				},
 			},
 		}
@@ -192,17 +198,17 @@ func (cs *computedELB) Current() *handler.Resource {
 	return nil
 }
 
-func (cs *computedELB) Desired() *handler.Resource {
-	if cs.elb != nil {
+func (c *computedELB) Desired() *handler.Resource {
+	if c.elb != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Elb{
 				Elb: &handler.ELB{
-					Id:               cs.elb.ID.String(),
-					Region:           cs.elb.Region.String(),
-					Plan:             uint32(cs.newCPS),
-					VirtualIpAddress: cs.elb.VirtualIPAddress,
-					Fqdn:             cs.elb.FQDN,
-					Parents:          cs.parents(),
+					Id:               c.elb.ID.String(),
+					Region:           c.elb.Region.String(),
+					Plan:             uint32(c.newCPS),
+					VirtualIpAddress: c.elb.VirtualIPAddress,
+					Fqdn:             c.elb.FQDN,
+					Parent:           c.parent(),
 				},
 			},
 		}

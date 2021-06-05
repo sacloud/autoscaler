@@ -16,14 +16,9 @@ package core
 
 import "github.com/sacloud/autoscaler/handler"
 
-func computedToParents(parentComputed []Computed) []*handler.Parent {
-	if len(parentComputed) == 0 {
-		return nil
-	}
-
-	var parents []*handler.Parent
-	for _, pc := range parentComputed {
-		current := pc.Current()
+func computedToParents(parentComputed Computed) *handler.Parent {
+	if parentComputed != nil {
+		current := parentComputed.Current()
 		if current != nil {
 			var parent *handler.Parent
 
@@ -50,10 +45,8 @@ func computedToParents(parentComputed []Computed) []*handler.Parent {
 				}
 			}
 
-			if parent != nil {
-				parents = append(parents, parent)
-			}
+			return parent
 		}
 	}
-	return parents
+	return nil
 }

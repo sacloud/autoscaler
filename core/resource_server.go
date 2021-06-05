@@ -56,41 +56,38 @@ func (s *Server) Validate() error {
 	if selector == nil {
 		return errors.New("selector: required")
 	}
-	if len(selector.Zones) == 0 {
-		return errors.New("selector.Zones: least one value required")
+	if selector.Zone == "" {
+		return errors.New("selector.Zone: required")
 	}
 	return nil
 }
 
-func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) ([]Computed, error) {
+func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
 	if err := s.Validate(); err != nil {
 		return nil, err
 	}
 
-	var allComputed []Computed
 	serverOp := sacloud.NewServerOp(apiClient)
 	selector := s.Selector()
 
-	for _, zone := range selector.Zones {
-		found, err := serverOp.Find(ctx, zone, selector.FindCondition())
-		if err != nil {
-			return nil, fmt.Errorf("computing server status failed: %s", err)
-		}
-		for _, server := range found.Servers {
-			computed, err := newComputedServer(ctx, s, zone, server)
-			if err != nil {
-				return nil, err
-			}
-			allComputed = append(allComputed, computed)
-		}
+	found, err := serverOp.Find(ctx, selector.Zone, selector.FindCondition())
+	if err != nil {
+		return nil, fmt.Errorf("computing status failed: %s", err)
+	}
+	if len(found.Servers) == 0 {
+		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
+	}
+	if len(found.Servers) > 1 {
+		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	if len(allComputed) == 0 {
-		return nil, fmt.Errorf("server not found with selector: %s", selector.String())
+	computed, err := newComputedServer(ctx, s, selector.Zone, found.Servers[0])
+	if err != nil {
+		return nil, err
 	}
 
-	s.ComputedCache = allComputed
-	return allComputed, nil
+	s.ComputedCache = computed
+	return computed, nil
 }
 
 func (s *Server) Parent() Resource {
@@ -131,7 +128,7 @@ func newComputedServer(ctx *Context, resource *Server, zone string, server *sacl
 	return computed, nil
 }
 
-func (cs *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans []ServerPlan) *ServerPlan {
+func (c *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans []ServerPlan) *ServerPlan {
 	var fn func(i int) *ServerPlan
 
 	if len(plans) == 0 {
@@ -178,32 +175,39 @@ func (cs *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, pla
 	return nil
 }
 
-func (cs *computedServer) Instruction() handler.ResourceInstructions {
-	return cs.instruction
+func (c *computedServer) ID() string {
+	if c.server != nil {
+		return c.server.ID.String()
+	}
+	return ""
 }
 
-func (cs *computedServer) parents() []*handler.Parent {
-	if cs.resource.parent != nil {
-		return computedToParents(cs.resource.parent.Computed())
+func (c *computedServer) Instruction() handler.ResourceInstructions {
+	return c.instruction
+}
+
+func (c *computedServer) parents() *handler.Parent {
+	if c.resource.parent != nil {
+		return computedToParents(c.resource.parent.Computed())
 	}
 	return nil
 }
 
-func (cs *computedServer) Current() *handler.Resource {
-	if cs.server != nil {
+func (c *computedServer) Current() *handler.Resource {
+	if c.server != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Server{
 				Server: &handler.Server{
-					Id:              cs.server.ID.String(),
-					Zone:            cs.zone,
-					Core:            uint32(cs.server.CPU),
-					Memory:          uint32(cs.server.GetMemoryGB()),
-					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
-					PrivateHostId:   cs.server.PrivateHostID.String(),
-					AssignedNetwork: cs.assignedNetwork(),
-					Parents:         cs.parents(),
+					Id:              c.server.ID.String(),
+					Zone:            c.zone,
+					Core:            uint32(c.server.CPU),
+					Memory:          uint32(c.server.GetMemoryGB()),
+					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
+					PrivateHostId:   c.server.PrivateHostID.String(),
+					AssignedNetwork: c.assignedNetwork(),
+					Parent:          c.parents(),
 					Option: &handler.ServerScalingOption{
-						ShutdownForce: cs.resource.Option.ShutdownForce,
+						ShutdownForce: c.resource.Option.ShutdownForce,
 					},
 				},
 			},
@@ -212,21 +216,21 @@ func (cs *computedServer) Current() *handler.Resource {
 	return nil
 }
 
-func (cs *computedServer) Desired() *handler.Resource {
-	if cs.server != nil {
+func (c *computedServer) Desired() *handler.Resource {
+	if c.server != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Server{
 				Server: &handler.Server{
-					Id:              cs.server.ID.String(),
-					Zone:            cs.zone,
-					Core:            uint32(cs.newCPU),
-					Memory:          uint32(cs.newMemory),
-					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
-					PrivateHostId:   cs.server.PrivateHostID.String(),
-					AssignedNetwork: cs.assignedNetwork(),
-					Parents:         cs.parents(),
+					Id:              c.server.ID.String(),
+					Zone:            c.zone,
+					Core:            uint32(c.newCPU),
+					Memory:          uint32(c.newMemory),
+					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
+					PrivateHostId:   c.server.PrivateHostID.String(),
+					AssignedNetwork: c.assignedNetwork(),
+					Parent:          c.parents(),
 					Option: &handler.ServerScalingOption{
-						ShutdownForce: cs.resource.Option.ShutdownForce,
+						ShutdownForce: c.resource.Option.ShutdownForce,
 					},
 				},
 			},
@@ -235,9 +239,9 @@ func (cs *computedServer) Desired() *handler.Resource {
 	return nil
 }
 
-func (cs *computedServer) assignedNetwork() []*handler.NetworkInfo {
+func (c *computedServer) assignedNetwork() []*handler.NetworkInfo {
 	var assignedNetwork []*handler.NetworkInfo
-	for _, nic := range cs.server.Interfaces {
+	for i, nic := range c.server.Interfaces {
 		var ipAddress string
 		if nic.SwitchScope == types.Scopes.Shared {
 			ipAddress = nic.IPAddress
@@ -248,6 +252,7 @@ func (cs *computedServer) assignedNetwork() []*handler.NetworkInfo {
 			IpAddress: ipAddress,
 			Netmask:   uint32(nic.UserSubnetNetworkMaskLen),
 			Gateway:   nic.UserSubnetDefaultRoute,
+			Index:     uint32(i),
 		})
 	}
 	return assignedNetwork
