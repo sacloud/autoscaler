@@ -237,7 +237,7 @@ func (cs *computedServer) Desired() *handler.Resource {
 
 func (cs *computedServer) assignedNetwork() []*handler.NetworkInfo {
 	var assignedNetwork []*handler.NetworkInfo
-	for _, nic := range cs.server.Interfaces {
+	for i, nic := range cs.server.Interfaces {
 		var ipAddress string
 		if nic.SwitchScope == types.Scopes.Shared {
 			ipAddress = nic.IPAddress
@@ -248,6 +248,7 @@ func (cs *computedServer) assignedNetwork() []*handler.NetworkInfo {
 			IpAddress: ipAddress,
 			Netmask:   uint32(nic.UserSubnetNetworkMaskLen),
 			Gateway:   nic.UserSubnetDefaultRoute,
+			Index:     uint32(i),
 		})
 	}
 	return assignedNetwork
