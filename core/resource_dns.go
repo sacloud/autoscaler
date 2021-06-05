@@ -78,18 +78,25 @@ func newComputedDNS(ctx *Context, resource *DNS, dns *sacloud.DNS) (*computedDNS
 	return computed, nil
 }
 
-func (cd *computedDNS) Instruction() handler.ResourceInstructions {
-	return cd.instruction
+func (c *computedDNS) ID() string {
+	if c.dns != nil {
+		return c.dns.ID.String()
+	}
+	return ""
 }
 
-func (cd *computedDNS) Current() *handler.Resource {
-	if cd.dns != nil {
+func (c *computedDNS) Instruction() handler.ResourceInstructions {
+	return c.instruction
+}
+
+func (c *computedDNS) Current() *handler.Resource {
+	if c.dns != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Dns{
 				Dns: &handler.DNS{
-					Id:         cd.dns.ID.String(),
-					Zone:       cd.dns.DNSZone,
-					DnsServers: cd.dns.DNSNameServers,
+					Id:         c.dns.ID.String(),
+					Zone:       c.dns.DNSZone,
+					DnsServers: c.dns.DNSNameServers,
 				},
 			},
 		}
@@ -97,7 +104,7 @@ func (cd *computedDNS) Current() *handler.Resource {
 	return nil
 }
 
-func (cd *computedDNS) Desired() *handler.Resource {
+func (c *computedDNS) Desired() *handler.Resource {
 	// DNSリソースは基本的に参照専用なため常にCurrentを返すのみ
-	return cd.Current()
+	return c.Current()
 }

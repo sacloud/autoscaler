@@ -121,7 +121,7 @@ func newComputedELB(ctx *Context, resource *EnhancedLoadBalancer, elb *sacloud.P
 	return computed, nil
 }
 
-func (cs *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans []ELBPlan) *ELBPlan {
+func (c *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans []ELBPlan) *ELBPlan {
 	sort.Slice(plans, func(i, j int) bool {
 		return plans[i].CPS < plans[j].CPS
 	})
@@ -163,28 +163,35 @@ func (cs *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans
 	return nil
 }
 
-func (cs *computedELB) Instruction() handler.ResourceInstructions {
-	return cs.instruction
+func (c *computedELB) ID() string {
+	if c.elb != nil {
+		return c.elb.ID.String()
+	}
+	return ""
 }
 
-func (cs *computedELB) parents() []*handler.Parent {
-	if cs.resource.parent != nil {
-		return computedToParents(cs.resource.parent.Computed())
+func (c *computedELB) Instruction() handler.ResourceInstructions {
+	return c.instruction
+}
+
+func (c *computedELB) parents() []*handler.Parent {
+	if c.resource.parent != nil {
+		return computedToParents(c.resource.parent.Computed())
 	}
 	return nil
 }
 
-func (cs *computedELB) Current() *handler.Resource {
-	if cs.elb != nil {
+func (c *computedELB) Current() *handler.Resource {
+	if c.elb != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Elb{
 				Elb: &handler.ELB{
-					Id:               cs.elb.ID.String(),
-					Region:           cs.elb.Region.String(),
-					Plan:             uint32(cs.elb.Plan.Int()),
-					VirtualIpAddress: cs.elb.VirtualIPAddress,
-					Fqdn:             cs.elb.FQDN,
-					Parents:          cs.parents(),
+					Id:               c.elb.ID.String(),
+					Region:           c.elb.Region.String(),
+					Plan:             uint32(c.elb.Plan.Int()),
+					VirtualIpAddress: c.elb.VirtualIPAddress,
+					Fqdn:             c.elb.FQDN,
+					Parents:          c.parents(),
 				},
 			},
 		}
@@ -192,17 +199,17 @@ func (cs *computedELB) Current() *handler.Resource {
 	return nil
 }
 
-func (cs *computedELB) Desired() *handler.Resource {
-	if cs.elb != nil {
+func (c *computedELB) Desired() *handler.Resource {
+	if c.elb != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Elb{
 				Elb: &handler.ELB{
-					Id:               cs.elb.ID.String(),
-					Region:           cs.elb.Region.String(),
-					Plan:             uint32(cs.newCPS),
-					VirtualIpAddress: cs.elb.VirtualIPAddress,
-					Fqdn:             cs.elb.FQDN,
-					Parents:          cs.parents(),
+					Id:               c.elb.ID.String(),
+					Region:           c.elb.Region.String(),
+					Plan:             uint32(c.newCPS),
+					VirtualIpAddress: c.elb.VirtualIPAddress,
+					Fqdn:             c.elb.FQDN,
+					Parents:          c.parents(),
 				},
 			},
 		}

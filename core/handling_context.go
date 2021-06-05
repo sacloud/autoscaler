@@ -30,6 +30,6 @@ func NewHandlingContext(parent *Context, computed []Computed) *HandlingContext {
 }
 
 // CurrentComputed 現在処理中の[]Computedを返す
-func (c *HandlingContext) CurrentComputed() []Computed{
+func (c *HandlingContext) CurrentComputed() []Computed {
 	return c.currentComputed
 }

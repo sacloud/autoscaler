@@ -131,7 +131,7 @@ func newComputedServer(ctx *Context, resource *Server, zone string, server *sacl
 	return computed, nil
 }
 
-func (cs *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans []ServerPlan) *ServerPlan {
+func (c *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans []ServerPlan) *ServerPlan {
 	var fn func(i int) *ServerPlan
 
 	if len(plans) == 0 {
@@ -178,32 +178,39 @@ func (cs *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, pla
 	return nil
 }
 
-func (cs *computedServer) Instruction() handler.ResourceInstructions {
-	return cs.instruction
+func (c *computedServer) ID() string {
+	if c.server != nil {
+		return c.server.ID.String()
+	}
+	return ""
 }
 
-func (cs *computedServer) parents() []*handler.Parent {
-	if cs.resource.parent != nil {
-		return computedToParents(cs.resource.parent.Computed())
+func (c *computedServer) Instruction() handler.ResourceInstructions {
+	return c.instruction
+}
+
+func (c *computedServer) parents() []*handler.Parent {
+	if c.resource.parent != nil {
+		return computedToParents(c.resource.parent.Computed())
 	}
 	return nil
 }
 
-func (cs *computedServer) Current() *handler.Resource {
-	if cs.server != nil {
+func (c *computedServer) Current() *handler.Resource {
+	if c.server != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Server{
 				Server: &handler.Server{
-					Id:              cs.server.ID.String(),
-					Zone:            cs.zone,
-					Core:            uint32(cs.server.CPU),
-					Memory:          uint32(cs.server.GetMemoryGB()),
-					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
-					PrivateHostId:   cs.server.PrivateHostID.String(),
-					AssignedNetwork: cs.assignedNetwork(),
-					Parents:         cs.parents(),
+					Id:              c.server.ID.String(),
+					Zone:            c.zone,
+					Core:            uint32(c.server.CPU),
+					Memory:          uint32(c.server.GetMemoryGB()),
+					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
+					PrivateHostId:   c.server.PrivateHostID.String(),
+					AssignedNetwork: c.assignedNetwork(),
+					Parents:         c.parents(),
 					Option: &handler.ServerScalingOption{
-						ShutdownForce: cs.resource.Option.ShutdownForce,
+						ShutdownForce: c.resource.Option.ShutdownForce,
 					},
 				},
 			},
@@ -212,21 +219,21 @@ func (cs *computedServer) Current() *handler.Resource {
 	return nil
 }
 
-func (cs *computedServer) Desired() *handler.Resource {
-	if cs.server != nil {
+func (c *computedServer) Desired() *handler.Resource {
+	if c.server != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Server{
 				Server: &handler.Server{
-					Id:              cs.server.ID.String(),
-					Zone:            cs.zone,
-					Core:            uint32(cs.newCPU),
-					Memory:          uint32(cs.newMemory),
-					DedicatedCpu:    cs.server.ServerPlanCommitment.IsDedicatedCPU(),
-					PrivateHostId:   cs.server.PrivateHostID.String(),
-					AssignedNetwork: cs.assignedNetwork(),
-					Parents:         cs.parents(),
+					Id:              c.server.ID.String(),
+					Zone:            c.zone,
+					Core:            uint32(c.newCPU),
+					Memory:          uint32(c.newMemory),
+					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
+					PrivateHostId:   c.server.PrivateHostID.String(),
+					AssignedNetwork: c.assignedNetwork(),
+					Parents:         c.parents(),
 					Option: &handler.ServerScalingOption{
-						ShutdownForce: cs.resource.Option.ShutdownForce,
+						ShutdownForce: c.resource.Option.ShutdownForce,
 					},
 				},
 			},
@@ -235,9 +242,9 @@ func (cs *computedServer) Desired() *handler.Resource {
 	return nil
 }
 
-func (cs *computedServer) assignedNetwork() []*handler.NetworkInfo {
+func (c *computedServer) assignedNetwork() []*handler.NetworkInfo {
 	var assignedNetwork []*handler.NetworkInfo
-	for i, nic := range cs.server.Interfaces {
+	for i, nic := range c.server.Interfaces {
 		var ipAddress string
 		if nic.SwitchScope == types.Scopes.Shared {
 			ipAddress = nic.IPAddress

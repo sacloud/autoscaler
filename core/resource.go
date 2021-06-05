@@ -128,6 +128,8 @@ func (rs *ResourceSelector) FindCondition() *sacloud.FindCondition {
 }
 
 type Computed interface {
+	// ID このComputedが表すさくらのクラウド上のリソースのID、まだ存在しないリソースの場合は空文字を返す
+	ID() string
 	// Instruction 現在のリソースの状態から算出されたハンドラーへの指示の種類
 	Instruction() handler.ResourceInstructions
 	// Current ハンドラーに渡すパラメータ、現在の状態を示す 現在存在しないリソースの場合はnilを返す

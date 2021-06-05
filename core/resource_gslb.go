@@ -78,14 +78,21 @@ func newComputedGSLB(ctx *Context, resource *GSLB, gslb *sacloud.GSLB) (*compute
 	return computed, nil
 }
 
-func (cg *computedGSLB) Instruction() handler.ResourceInstructions {
-	return cg.instruction
+func (c *computedGSLB) ID() string {
+	if c.gslb != nil {
+		return c.gslb.ID.String()
+	}
+	return ""
 }
 
-func (cg *computedGSLB) Current() *handler.Resource {
-	if cg.gslb != nil {
+func (c *computedGSLB) Instruction() handler.ResourceInstructions {
+	return c.instruction
+}
+
+func (c *computedGSLB) Current() *handler.Resource {
+	if c.gslb != nil {
 		var servers []*handler.GSLBServer
-		for _, s := range cg.gslb.DestinationServers {
+		for _, s := range c.gslb.DestinationServers {
 			servers = append(servers, &handler.GSLBServer{
 				IpAddress: s.IPAddress,
 				Enabled:   s.Enabled.Bool(),
@@ -96,8 +103,8 @@ func (cg *computedGSLB) Current() *handler.Resource {
 		return &handler.Resource{
 			Resource: &handler.Resource_Gslb{
 				Gslb: &handler.GSLB{
-					Id:      cg.gslb.ID.String(),
-					Fqdn:    cg.gslb.FQDN,
+					Id:      c.gslb.ID.String(),
+					Fqdn:    c.gslb.FQDN,
 					Servers: servers,
 				},
 			},
@@ -106,7 +113,7 @@ func (cg *computedGSLB) Current() *handler.Resource {
 	return nil
 }
 
-func (cg *computedGSLB) Desired() *handler.Resource {
+func (c *computedGSLB) Desired() *handler.Resource {
 	// GSLBリソースは基本的に参照専用なため常にCurrentを返すのみ
-	return cg.Current()
+	return c.Current()
 }
