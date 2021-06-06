@@ -42,11 +42,12 @@ import (
 )
 
 func main() {
-	var dest, action, group, source string
+	var dest, action, group, source, desiredStateName string
 	flag.StringVar(&dest, "dest", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
 	flag.StringVar(&action, "action", defaults.ActionName, "Name of the action to perform")
 	flag.StringVar(&group, "group", defaults.ResourceGroupName, "Name of the target resource group")
 	flag.StringVar(&source, "source", defaults.SourceName, "A string representing the request source, passed to AutoScaler Core")
+	flag.StringVar(&desiredStateName, "desired-state-name", defaults.SourceName, "Name of the desired state defined in Core's configuration file")
 
 	var showHelp, showVersion bool
 	flag.BoolVar(&showHelp, "help", false, "Show help")
@@ -98,6 +99,7 @@ func main() {
 			Source:            source,
 			Action:            action,
 			ResourceGroupName: group,
+			DesiredStateName:  desiredStateName,
 		})
 		if err != nil {
 			log.Fatal(err)

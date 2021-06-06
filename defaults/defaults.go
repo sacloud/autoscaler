@@ -17,12 +17,13 @@ package defaults
 import "time"
 
 const (
-	CoreSocketAddr        = "unix:autoscaler.sock"               // CoreのデフォルトgRPCエンドポイント(Inputsから呼ばれる)
-	CoreConfigPath        = "autoscaler.yaml"                    // CoreのConfigurationのファイルパス
-	HandlerFakeSocketAddr = "unix:autoscaler-handlers-fake.sock" // Fake HanderのデフォルトgRPCエンドポイント(Coreから呼ばれる)
-	ActionName            = "default"
-	ResourceGroupName     = "default"
-	SourceName            = "default"
+	CoreSocketAddr = "unix:autoscaler.sock" // CoreのデフォルトgRPCエンドポイント(Inputsから呼ばれる)
+	CoreConfigPath = "autoscaler.yaml"      // CoreのConfigurationのファイルパス
+
+	ActionName        = "default"
+	ResourceGroupName = "default"
+	SourceName        = "default"
+	DesiredStateName  = "default"
 
 	JobCoolingTime = 10 * time.Minute // 同一ジョブの実行制御のための冷却期間
 )

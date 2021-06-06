@@ -170,11 +170,17 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*scalingRe
 	if groupName == "" {
 		groupName = defaults.ResourceGroupName
 	}
+	desiredStateName := queryStrings.Get("desired_state_name")
+	if desiredStateName == "" {
+		desiredStateName = defaults.DesiredStateName
+	}
+
 	return &scalingRequest{
-		source:      source,
-		action:      action,
-		groupName:   groupName,
-		requestType: requestType,
+		source:           source,
+		action:           action,
+		groupName:        groupName,
+		requestType:      requestType,
+		desiredStateName: desiredStateName,
 	}, nil
 }
 
@@ -206,6 +212,7 @@ func (s *server) send(scalingReq *scalingRequest) error {
 		Source:            scalingReq.source,
 		Action:            scalingReq.action,
 		ResourceGroupName: scalingReq.groupName,
+		DesiredStateName:  scalingReq.desiredStateName,
 	})
 	if err != nil {
 		return err
@@ -215,8 +222,9 @@ func (s *server) send(scalingReq *scalingRequest) error {
 }
 
 type scalingRequest struct {
-	source      string
-	action      string
-	groupName   string
-	requestType string
+	source           string
+	action           string
+	groupName        string
+	requestType      string
+	desiredStateName string
 }
