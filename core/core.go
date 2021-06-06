@@ -128,7 +128,8 @@ func (c *Core) handle(ctx *Context) (*JobStatus, string, error) {
 		return job, "", err
 	}
 
-	if err := rg.ValidateHandlerFilters(c.config.Handlers()); err != nil {
+	// TODO バリデーションは起動時に行えるので移動すべき
+	if err := rg.ValidateActions(ctx.Request().action, c.config.Handlers()); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
 		return job, "", err
 	}

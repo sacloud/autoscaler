@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sacloud/autoscaler/defaults"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
@@ -44,11 +46,12 @@ func TestResourceGroup_handlers(t *testing.T) {
 	}
 
 	type fields struct {
-		HandlerConfigs []*ResourceHandlerConfig
-		Resources      Resources
-		Name           string
+		Actions   Actions
+		Resources Resources
+		Name      string
 	}
 	type args struct {
+		actionName  string
 		allHandlers Handlers
 	}
 	tests := []struct {
@@ -59,12 +62,13 @@ func TestResourceGroup_handlers(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "returns all enabled handlers if HandlerConfigs is empty",
+			name: "returns all enabled handlers if Actions is empty",
 			fields: fields{
-				HandlerConfigs: nil,
-				Name:           "empty",
+				Name:    "empty",
+				Actions: Actions{},
 			},
 			args: args{
+				actionName:  defaults.ActionName,
 				allHandlers: allHandlers,
 			},
 			want: Handlers{
@@ -80,33 +84,47 @@ func TestResourceGroup_handlers(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "returns error if invalid HandlerConfigs is specified",
+			name: "returns error if invalid ActionName is specified",
 			fields: fields{
-				HandlerConfigs: []*ResourceHandlerConfig{
-					{
-						Name: "not-exists",
-					},
+				Actions: Actions{
+					"foobar":   []string{"dummy1", "dummy2"},
+					"disabled": []string{"dummy1", "dummy2", "dummy3"},
 				},
 				Name: "not-exists",
 			},
 			args: args{
 				allHandlers: allHandlers,
+				actionName:  "not-exists",
 			},
 			want:    nil,
 			wantErr: true,
 		},
 		{
-			name: "returns handler with filtering by HandlerConfigs even at Disabled:true",
+			name: "returns error with invalid definition of Actions",
 			fields: fields{
-				HandlerConfigs: []*ResourceHandlerConfig{
-					{
-						Name: "dummy3",
-					},
+				Actions: Actions{
+					"foobar": []string{},
+				},
+				Name: "foobar",
+			},
+			args: args{
+				allHandlers: allHandlers,
+				actionName:  "foobar",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "returns handlers even at Disabled:true",
+			fields: fields{
+				Actions: Actions{
+					"filter": []string{"dummy3"},
 				},
 				Name: "filter",
 			},
 			args: args{
 				allHandlers: allHandlers,
+				actionName:  "filter",
 			},
 			want: Handlers{
 				{
@@ -117,15 +135,55 @@ func TestResourceGroup_handlers(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "returns first handlers if action name is empty",
+			fields: fields{
+				Actions: Actions{
+					"action1": []string{"dummy2"},
+				},
+				Name: "filter",
+			},
+			args: args{
+				allHandlers: allHandlers,
+				actionName:  "",
+			},
+			want: Handlers{
+				{
+					Type: "dummy",
+					Name: "dummy2",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "returns first handlers if action name is default value",
+			fields: fields{
+				Actions: Actions{
+					"action1": []string{"dummy2"},
+				},
+				Name: "filter",
+			},
+			args: args{
+				allHandlers: allHandlers,
+				actionName:  defaults.ActionName,
+			},
+			want: Handlers{
+				{
+					Type: "dummy",
+					Name: "dummy2",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rg := &ResourceGroup{
-				HandlerConfigs: tt.fields.HandlerConfigs,
-				Resources:      tt.fields.Resources,
-				Name:           tt.fields.Name,
+				Actions:   tt.fields.Actions,
+				Resources: tt.fields.Resources,
+				Name:      tt.fields.Name,
 			}
-			got, err := rg.handlers(tt.args.allHandlers)
+			got, err := rg.handlers(tt.args.actionName, tt.args.allHandlers)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("handlers() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -141,7 +199,6 @@ func TestResourceGroup_handleAll(t *testing.T) {
 	t.Run("calls Compute() func twice", func(t *testing.T) {
 		called := 0
 		rg := &ResourceGroup{
-			HandlerConfigs: nil,
 			Resources: Resources{
 				&stubResource{
 					ResourceBase: &ResourceBase{},
@@ -185,7 +242,6 @@ func TestResourceGroup_handleAll(t *testing.T) {
 	t.Run("compute current/desired state with parent", func(t *testing.T) {
 		var history []string
 		rg := &ResourceGroup{
-			HandlerConfigs: nil,
 			Resources: Resources{
 				&stubResource{
 					ResourceBase: &ResourceBase{

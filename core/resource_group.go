@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/sacloud/autoscaler/defaults"
+
 	"github.com/sacloud/autoscaler/request"
 
 	"github.com/goccy/go-yaml"
@@ -25,15 +27,10 @@ import (
 )
 
 type ResourceGroup struct {
-	HandlerConfigs []*ResourceHandlerConfig `yaml:"handlers"`
-	Resources      Resources                `yaml:"resources"`
-	Name           string
-}
+	Name string `yaml:"-"` // ResourceGroupsのアンマーシャル時に設定される
 
-type ResourceHandlerConfig struct {
-	Name string `yaml:"name"`
-	// TODO 未実装
-	//Selector *ResourceSelector `yaml:"selector"`
+	Actions   Actions   `yaml:"actions"`
+	Resources Resources `yaml:"resources"`
 }
 
 func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
@@ -55,12 +52,21 @@ func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
 		resourceGroup.Resources = append(resourceGroup.Resources, resource)
 	}
 
-	if rawHandlers, ok := rawMap["handlers"]; ok {
-		handlers := rawHandlers.([]interface{})
-		for _, name := range handlers {
-			if n, ok := name.(string); ok {
-				resourceGroup.HandlerConfigs = append(resourceGroup.HandlerConfigs, &ResourceHandlerConfig{Name: n})
+	if rawActions, ok := rawMap["actions"]; ok {
+		resourceGroup.Actions = Actions{}
+
+		actions := rawActions.(map[string]interface{})
+		for k, v := range actions {
+			var handlers []string
+
+			v := v.([]interface{})
+			for _, v := range v {
+				if v, ok := v.(string); ok {
+					handlers = append(handlers, v)
+				}
 			}
+
+			resourceGroup.Actions[k] = handlers
 		}
 	}
 
@@ -162,8 +168,8 @@ func (rg *ResourceGroup) setParentResource(parent, r Resource) {
 	}
 }
 
-func (rg *ResourceGroup) ValidateHandlerFilters(handlerFilters Handlers) error {
-	_, err := rg.handlers(handlerFilters)
+func (rg *ResourceGroup) ValidateActions(actionName string, handlerFilters Handlers) error {
+	_, err := rg.handlers(actionName, handlerFilters)
 	return err
 }
 
@@ -171,7 +177,7 @@ func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, ha
 	job := ctx.Job()
 	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
 
-	handlers, err := rg.handlers(handlerFilters)
+	handlers, err := rg.handlers(ctx.Request().action, handlerFilters)
 	if err != nil { // 事前にValidateHandlerFiltersで検証しておくため基本的にありえないはず
 		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
 		log.Printf("[FATAL] %s\n", err)
@@ -257,33 +263,48 @@ func (rg *ResourceGroup) clearCacheAll() {
 	}, nil)
 }
 
-// Handlers 引数で指定されたハンドラーのリストをHandlerConfigsに合致するハンドラだけにフィルタして返す
-//
-// TODO Configurationにactionsの定義を実装したらそちらも加味したハンドラーを返すようにする
-func (rg *ResourceGroup) handlers(allHandlers Handlers) (Handlers, error) {
-	var handlers Handlers
+// Handlers 引数で指定されたハンドラーのリストをActionsの定義に合致するハンドラだけにフィルタして返す
+func (rg *ResourceGroup) handlers(actionName string, allHandlers Handlers) (Handlers, error) {
+	var results Handlers
 
-	if len(rg.HandlerConfigs) == 0 {
+	if len(rg.Actions) == 0 {
 		for _, h := range allHandlers {
 			if !h.Disabled {
-				handlers = append(handlers, h)
+				results = append(results, h)
 			}
 		}
-		return handlers, nil
+		return results, nil
 	}
 
-	for _, conf := range rg.HandlerConfigs {
+	if actionName == "" || actionName == defaults.ActionName {
+		// Actionsが定義されている時にActionNameが省略 or デフォルトの場合はActionsの最初のキーを利用
+		// YAMLでの定義順とは限らないため注意
+		for k := range rg.Actions {
+			actionName = k
+			break
+		}
+	}
+
+	handlers, ok := rg.Actions[actionName]
+	if !ok {
+		return nil, fmt.Errorf("action %q not found", actionName)
+	}
+	if len(handlers) == 0 {
+		return nil, fmt.Errorf("action %q is empty", actionName)
+	}
+
+	for _, name := range handlers {
 		var found *Handler
 		for _, h := range allHandlers {
-			if h.Name == conf.Name {
+			if h.Name == name {
 				found = h
 				break
 			}
 		}
 		if found == nil {
-			return nil, fmt.Errorf("handler %q not found", conf.Name)
+			return nil, fmt.Errorf("handler %q not found", name)
 		}
-		handlers = append(handlers, found)
+		results = append(results, found)
 	}
-	return handlers, nil
+	return results, nil
 }
