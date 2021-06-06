@@ -22,6 +22,7 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/handlers/elb"
+	"github.com/sacloud/autoscaler/handlers/gslb"
 	"github.com/sacloud/autoscaler/handlers/logging"
 	"github.com/sacloud/autoscaler/handlers/router"
 	"github.com/sacloud/autoscaler/handlers/server"
@@ -40,13 +41,6 @@ var BuiltinHandlers = Handlers{
 		Disabled: true,
 	},
 	{
-		Type: "server-vertical-scaler",
-		Name: "server-vertical-scaler",
-		BuiltinHandler: &builtins.Handler{
-			Builtin: &server.VerticalScaleHandler{},
-		},
-	},
-	{
 		Type: "elb-vertical-scaler",
 		Name: "elb-vertical-scaler",
 		BuiltinHandler: &builtins.Handler{
@@ -61,10 +55,24 @@ var BuiltinHandlers = Handlers{
 		},
 	},
 	{
+		Type: "gslb-servers-handler",
+		Name: "gslb-servers-handler",
+		BuiltinHandler: &builtins.Handler{
+			Builtin: &gslb.ServersHandler{},
+		},
+	},
+	{
 		Type: "router-vertical-scaler",
 		Name: "router-vertical-scaler",
 		BuiltinHandler: &builtins.Handler{
 			Builtin: &router.VerticalScaleHandler{},
+		},
+	},
+	{
+		Type: "server-vertical-scaler",
+		Name: "server-vertical-scaler",
+		BuiltinHandler: &builtins.Handler{
+			Builtin: &server.VerticalScaleHandler{},
 		},
 	},
 	// TODO その他ビルトインを追加

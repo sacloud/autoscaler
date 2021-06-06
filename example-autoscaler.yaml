@@ -29,6 +29,36 @@ resources:
       #     - cps: 500
       #     - cps: 1000
 
+      # エンハンスドロードバランサ + サーバ(垂直スケール)
+      # サーバの垂直スケール時にELBからのデタッチ/アタッチを行う
+      # - type: ELB
+      #   selector:
+      #     names: ["example"]
+      #   resources:
+      #     - type: Server
+      #       selector:
+      #         names: ["example1"]
+      #         zone: "is1a"
+      #     - type: Server
+      #       selector:
+      #         names: ["example2"]
+      #         zone: "is1a"
+
+      # GSLB + サーバ(垂直スケール)
+      # サーバの垂直スケール時にGSLBからのデタッチ/アタッチを行う
+      # - type: GSLB
+      #   selector:
+      #     names: ["example"]
+      #   resources:
+      #     - type: Server
+      #       selector:
+      #         names: ["example1"]
+      #         zone: "is1a"
+      #     - type: Server
+      #       selector:
+      #         names: ["example2"]
+      #         zone: "is1a"
+
       # ルータ(垂直スケール)
       # - type: Router
       #   selector:
