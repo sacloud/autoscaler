@@ -45,7 +45,7 @@ type requestInfo struct {
 }
 
 func (r *requestInfo) String() string {
-	return fmt.Sprintf("%s_%s-%s-%s-%s", r.requestType.String(), r.source, r.action, r.resourceGroupName, r.desiredStateName)
+	return fmt.Sprintf("%#v", r)
 }
 
 // ID リクエストのSource/Action/ResourceGroupNameの組み合わせで一意に決まるID

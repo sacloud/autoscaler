@@ -47,7 +47,7 @@ func main() {
 	flag.StringVar(&action, "action", defaults.ActionName, "Name of the action to perform")
 	flag.StringVar(&group, "group", defaults.ResourceGroupName, "Name of the target resource group")
 	flag.StringVar(&source, "source", defaults.SourceName, "A string representing the request source, passed to AutoScaler Core")
-	flag.StringVar(&desiredStateName, "desired-state-name", defaults.SourceName, "Name of the desired state defined in Core's configuration file")
+	flag.StringVar(&desiredStateName, "desired-state-name", defaults.DesiredStateName, "Name of the desired state defined in Core's configuration file")
 
 	var showHelp, showVersion bool
 	flag.BoolVar(&showHelp, "help", false, "Show help")
@@ -57,12 +57,12 @@ func main() {
 
 	// TODO add flag validation
 
-	if len(os.Args) != 2 {
+	if flag.NArg() != 1 {
 		showUsage()
 		return
 	}
 
-	command := os.Args[1]
+	command := flag.Args()[0]
 	if command != "up" && command != "down" {
 		showUsage()
 		os.Exit(1)

@@ -42,6 +42,7 @@ func (c *Context) WithJobStatus(job *JobStatus) *Context {
 		source:            c.request.source,
 		action:            c.request.action,
 		resourceGroupName: c.request.resourceGroupName,
+		desiredStateName:  c.request.desiredStateName,
 	})
 	ctx.job = job
 	return ctx
@@ -56,6 +57,7 @@ func (c *Context) ForRefresh() *Context {
 		source:            c.request.source,
 		action:            c.request.action,
 		resourceGroupName: c.request.resourceGroupName,
+		desiredStateName:  c.request.desiredStateName,
 		refresh:           true,
 	})
 }

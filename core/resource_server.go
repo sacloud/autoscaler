@@ -17,15 +17,18 @@ package core
 import (
 	"errors"
 	"fmt"
+	"sort"
 
+	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type ServerPlan struct {
-	Core   int `yaml:"core"`   // コア数
-	Memory int `yaml:"memory"` // メモリサイズ(GiB)
+	Name   string `yaml:"name"`
+	Core   int    `yaml:"core"`   // コア数
+	Memory int    `yaml:"memory"` // メモリサイズ(GiB)
 }
 
 // DefaultServerPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
@@ -118,7 +121,10 @@ func newComputedServer(ctx *Context, resource *Server, zone string, server *sacl
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan := computed.desiredPlan(ctx, server, resource.Plans)
+	plan, err := computed.desiredPlan(ctx, server, resource.Plans)
+	if err != nil {
+		return nil, fmt.Errorf("computing desired plan failed: %s", err)
+	}
 
 	if plan != nil {
 		computed.newCPU = plan.Core
@@ -128,21 +134,59 @@ func newComputedServer(ctx *Context, resource *Server, zone string, server *sacl
 	return computed, nil
 }
 
-func (c *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans []ServerPlan) *ServerPlan {
-	var fn func(i int) *ServerPlan
+func (c *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans []ServerPlan) (*ServerPlan, error) {
+	// コア/メモリの順で昇順に
+	sort.Slice(plans, func(i, j int) bool {
+		if plans[i].Core != plans[j].Core {
+			return plans[i].Core < plans[j].Core
+		}
+		return plans[i].Memory < plans[j].Memory
+	})
 
 	if len(plans) == 0 {
 		plans = DefaultServerPlans
 	}
 
-	// TODO s.Plansの並べ替えを考慮する
-
-	if ctx.Request().refresh {
+	req := ctx.Request()
+	if req.refresh {
 		// リフレッシュ時はプラン変更しない
-		return nil
+		return nil, nil
 	}
 
-	switch ctx.Request().requestType {
+	// DesiredStateNameが指定されていたら該当プランを探す
+	if req.desiredStateName != "" && req.desiredStateName != defaults.DesiredStateName {
+		var found *ServerPlan
+		for _, plan := range plans {
+			if plan.Name == req.desiredStateName {
+				found = &plan
+				break
+			}
+		}
+		if found == nil {
+			return nil, fmt.Errorf("desired plan %q not found: request: %s", req.desiredStateName, req.String())
+		}
+
+		switch req.requestType {
+		case requestTypeUp:
+			// foundとcurrentが同じ場合はOK
+			if found.Core < current.CPU && found.Memory < current.GetMemoryGB() {
+				// Upリクエストなのに指定の名前のプランの方が小さいためプラン変更しない
+				return nil, fmt.Errorf("desired plan %q is smaller than current plan", req.desiredStateName)
+			}
+		case requestTypeDown:
+			// foundとcurrentが同じ場合はOK
+			if found.Core > current.CPU && found.Memory > current.GetMemoryGB() {
+				// Downリクエストなのに指定の名前のプランの方が大きいためプラン変更しない
+				return nil, fmt.Errorf("desired plan %q is larger than current plan", req.desiredStateName)
+			}
+		default:
+			return nil, nil // 到達しない
+		}
+		return found, nil
+	}
+
+	var fn func(i int) *ServerPlan
+	switch req.requestType {
 	case requestTypeUp:
 		fn = func(i int) *ServerPlan {
 			if i < len(plans)-1 {
@@ -164,15 +208,15 @@ func (c *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plan
 			return nil
 		}
 	default:
-		return nil // 到達しないはず
+		return nil, nil // 到達しないはず
 	}
 
 	for i, plan := range plans {
 		if plan.Core == current.CPU && plan.Memory == current.GetMemoryGB() {
-			return fn(i)
+			return fn(i), nil
 		}
 	}
-	return nil
+	return nil, fmt.Errorf("desired plan not found: request: %s", req.String())
 }
 
 func (c *computedServer) ID() string {
