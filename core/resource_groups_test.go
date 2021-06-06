@@ -35,9 +35,10 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 			name: "resource group",
 			r: func() *ResourceGroups {
 				rgs := newResourceGroups()
-				rg := &ResourceGroup{}
-				rg.HandlerConfigs = []*ResourceHandlerConfig{
-					{Name: "fake"},
+				rg := &ResourceGroup{
+					Actions: Actions{
+						"foobar": []string{"handler1", "handler2"},
+					},
 				}
 
 				dns := &DNS{
@@ -138,8 +139,10 @@ web:
       selector:
         names: ["test-name"]
         zone: "is1a"
-  handlers:
-    - fake
+  actions:
+    foobar:
+      - handler1
+      - handler2
 `),
 			},
 			wantErr: false,

@@ -1,6 +1,17 @@
 # 操作対象のリソースの定義
 resources:
   web:
+
+    # アクションの定義: Up/Downリクエスト時に指定するアクション名をここで定義する
+    # アクションごとにハンドラーを限定したい場合に利用したいハンドラーを指定する
+    #  actions:
+    #    server-vertical-scaling:
+    #      - server-vertical-scaler
+    #      - elb-servers-handler
+    #    elb-vertical-scaling:
+    #      - elb-vertical-scaler
+
+    # スケールさせたいリソース群をここで定義する
     resources:
       # サーバ(垂直スケール)
       - type: Server
@@ -69,11 +80,6 @@ resources:
       #     - band_width: 100
       #     - band_width: 250
       #     - band_width: 500
-
-# ハンドラーを限定したい場合はここで利用したいハンドラーを指定する
-#    handlers:
-#      - logging
-#      - server-vertical-scaler
 
 # カスタムハンドラーの定義
 # handlers:

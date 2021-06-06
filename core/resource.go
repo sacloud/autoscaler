@@ -58,11 +58,10 @@ type ChildResource interface {
 //
 // Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceBase struct {
-	TypeName       string                   `yaml:"type"` // TODO enumにすべきか?
-	TargetSelector *ResourceSelector        `yaml:"selector"`
-	Children       Resources                `yaml:"-"`
-	TargetHandlers []*ResourceHandlerConfig `yaml:"handlers"`
-	ComputedCache  Computed                 `yaml:"-"`
+	TypeName       string            `yaml:"type"` // TODO enumにすべきか?
+	TargetSelector *ResourceSelector `yaml:"selector"`
+	Children       Resources         `yaml:"-"`
+	ComputedCache  Computed          `yaml:"-"`
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
