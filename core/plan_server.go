@@ -37,7 +37,10 @@ func (p *ServerPlan) LessThan(resource interface{}) bool {
 	if !ok {
 		return false
 	}
-	return p.Core < server.CPU && p.Memory < server.GetMemoryGB()
+	if p.Core != server.CPU {
+		return p.Core < server.CPU
+	}
+	return p.Memory < server.GetMemoryGB()
 }
 
 func (p *ServerPlan) GreaterThan(resource interface{}) bool {
@@ -45,12 +48,18 @@ func (p *ServerPlan) GreaterThan(resource interface{}) bool {
 	if !ok {
 		return false
 	}
-	return server.CPU < p.Core && server.GetMemoryGB() < p.Memory
+	if p.Core != server.CPU {
+		return server.CPU < p.Core
+	}
+	return server.GetMemoryGB() < p.Memory
 }
 func (p *ServerPlan) LessThanPlan(plan ResourcePlan) bool {
 	serverPlan, ok := plan.(*ServerPlan)
 	if !ok {
 		return false
 	}
-	return p.Core < serverPlan.Core && p.Memory < serverPlan.Memory
+	if p.Core != serverPlan.Core {
+		return p.Core < serverPlan.Core
+	}
+	return p.Memory < serverPlan.Memory
 }
