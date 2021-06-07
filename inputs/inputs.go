@@ -16,15 +16,15 @@ package inputs
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"os"
 
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/request"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"google.golang.org/grpc"
 )
 
@@ -35,60 +35,37 @@ type Input interface {
 }
 
 type FlagCustomizer interface {
-	CustomizeFlags(fs *flag.FlagSet)
-}
-
-func showUsage(name string, fs *flag.FlagSet) {
-	fmt.Printf("usage: %s [flags]\n", name)
-	fs.Usage()
+	CustomizeFlags(fs *pflag.FlagSet)
 }
 
 func FullName(input Input) string {
 	return fmt.Sprintf("autoscaler-inputs-%s", input.Name())
 }
 
-func Serve(input Input) {
-	name := FullName(input)
+var (
+	dest    string
+	address string
+	debug   bool
+)
 
-	fs := flag.CommandLine
-	var dest, address string
-	flag.StringVar(&dest, "dest", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
-	flag.StringVar(&address, "addr", ":3001", "the TCP address for the server to listen on")
-
-	var showHelp, showVersion, debug bool
-	fs.BoolVar(&showHelp, "help", false, "Show help")
-	fs.BoolVar(&showVersion, "version", false, "Show version")
-	fs.BoolVar(&debug, "debug", false, "Show debug logs")
-
+func Init(cmd *cobra.Command, input Input) {
+	cmd.Flags().StringVarP(&dest, "dest", "", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
+	cmd.Flags().StringVarP(&address, "addr", "", ":3001", "the TCP address for the server to listen on")
+	cmd.Flags().BoolVarP(&debug, "debug", "", false, "Show debug logs")
 	// 各Handlerでのカスタマイズ
 	if fc, ok := input.(FlagCustomizer); ok {
-		fc.CustomizeFlags(fs)
+		fc.CustomizeFlags(cmd.Flags())
 	}
+}
 
-	// TODO add flag validation
-
-	if err := fs.Parse(os.Args[1:]); err != nil {
-		log.Fatal(err)
+func Serve(input Input) error {
+	server := &server{
+		coreAddress:   dest,
+		listenAddress: address,
+		input:         input,
+		debug:         debug,
 	}
-
-	switch {
-	case showHelp:
-		showUsage(name, fs)
-		return
-	case showVersion:
-		fmt.Println(input.Version())
-		return
-	default:
-		server := &server{
-			coreAddress:   dest,
-			listenAddress: address,
-			input:         input,
-			debug:         debug,
-		}
-		if err := server.listenAndServe(); err != nil {
-			log.Fatal(err)
-		}
-	}
+	return server.listenAndServe()
 }
 
 type server struct {
