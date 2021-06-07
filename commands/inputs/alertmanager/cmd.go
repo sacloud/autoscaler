@@ -12,27 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// AutoScaler Inputs: Direct
-//
-// Usage:
-//   autoscaler-inputs-direct [flags] up|down|status
-//
-// Arguments:
-//   up: run the Up func
-//   down: run the Down func
-//
-// Flags:
-//   -dest: (optional) URL of gRPC endpoint of AutoScaler Core. default:`unix:autoscaler.sock`
-//   -action: (optional) Name of the action to perform. default:`default`
-//   -group: (optional) Name of the target resource group. default:`default`
-//   -source: (optional) A string representing the request source, passed to AutoScaler Core. default:`default`
-package main
+package alertmanager
 
 import (
 	"github.com/sacloud/autoscaler/inputs"
-	"github.com/sacloud/autoscaler/inputs/grafana"
+	"github.com/sacloud/autoscaler/inputs/alertmanager"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	inputs.Serve(&grafana.Input{})
+var Command = &cobra.Command{
+	Use:   "alertmanager",
+	Short: "Start web server for handle webhooks from AlertManager",
+	RunE:  run,
+}
+
+var server = &alertmanager.Input{}
+
+func init() {
+	inputs.Init(Command, server)
+}
+
+func run(cmd *cobra.Command, args []string) error {
+	return inputs.Serve(server)
 }
