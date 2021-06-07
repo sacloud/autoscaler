@@ -13,6 +13,7 @@ message ScalingRequest {
   string source              = 1;
   string action              = 2;
   string resource_group_name = 3;
+  string desired_state_name  = 4; // 希望するスケール(プランなど)につけた名前
 }
 
 //message StatusRequest {

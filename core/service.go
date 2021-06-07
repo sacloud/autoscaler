@@ -41,6 +41,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 		source:            req.Source,
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
+		desiredStateName:  req.DesiredStateName,
 	})
 	job, message, err := s.instance.Up(serviceCtx)
 	if err != nil {
@@ -62,6 +63,7 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 		source:            req.Source,
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
+		desiredStateName:  req.DesiredStateName,
 	})
 	job, message, err := s.instance.Down(serviceCtx)
 	if err != nil {

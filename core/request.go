@@ -40,16 +40,17 @@ type requestInfo struct {
 	source            string
 	action            string
 	resourceGroupName string
+	desiredStateName  string
 	refresh           bool
 }
 
 func (r *requestInfo) String() string {
-	return fmt.Sprintf("%s_%s-%s-%s", r.requestType.String(), r.source, r.action, r.resourceGroupName)
+	return fmt.Sprintf("%#v", r)
 }
 
 // ID リクエストのSource/Action/ResourceGroupNameの組み合わせで一意に決まるID
 //
-// RequestTypesがUp/Downを問わずに値を決めるため、ジョブが実行中かの判定に利用できる
+// RequestTypesのUp/Downの違いやDesiredStateNameの違いを問わずに値を決めるため、同一リソースに対する同一アクションが実行中かの判定に利用できる
 func (r *requestInfo) ID() string {
 	return fmt.Sprintf("%s-%s-%s", r.source, r.action, r.resourceGroupName)
 }

@@ -17,32 +17,35 @@ package core
 import (
 	"errors"
 	"fmt"
-	"sort"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type ELBPlan struct {
-	CPS int `yaml:"cps"`
-}
-
 // DefaultELBPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
-var DefaultELBPlans = []ELBPlan{
-	{CPS: 100},
-	{CPS: 500},
-	{CPS: 1_000},
-	{CPS: 5_000},
-	{CPS: 10_000},
-	{CPS: 50_000},
-	{CPS: 100_000},
-	{CPS: 400_000},
+var DefaultELBPlans = ResourcePlans{
+	&ELBPlan{CPS: 100},
+	&ELBPlan{CPS: 500},
+	&ELBPlan{CPS: 1_000},
+	&ELBPlan{CPS: 5_000},
+	&ELBPlan{CPS: 10_000},
+	&ELBPlan{CPS: 50_000},
+	&ELBPlan{CPS: 100_000},
+	&ELBPlan{CPS: 400_000},
 }
 
 type EnhancedLoadBalancer struct {
 	*ResourceBase `yaml:",inline"`
-	Plans         []ELBPlan `yaml:"plans"`
+	Plans         []*ELBPlan `yaml:"plans"`
 	parent        Resource
+}
+
+func (e *EnhancedLoadBalancer) resourcePlans() ResourcePlans {
+	var plans ResourcePlans
+	for _, p := range e.Plans {
+		plans = append(plans, p)
+	}
+	return plans
 }
 
 func (e *EnhancedLoadBalancer) Validate() error {
@@ -111,7 +114,10 @@ func newComputedELB(ctx *Context, resource *EnhancedLoadBalancer, elb *sacloud.P
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan := computed.desiredPlan(ctx, elb, resource.Plans)
+	plan, err := computed.desiredPlan(ctx, elb, resource.resourcePlans())
+	if err != nil {
+		return nil, fmt.Errorf("computing desired plan failed: %s", err)
+	}
 
 	if plan != nil {
 		computed.newCPS = plan.CPS
@@ -120,46 +126,21 @@ func newComputedELB(ctx *Context, resource *EnhancedLoadBalancer, elb *sacloud.P
 	return computed, nil
 }
 
-func (c *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans []ELBPlan) *ELBPlan {
-	sort.Slice(plans, func(i, j int) bool {
-		return plans[i].CPS < plans[j].CPS
-	})
-
-	if ctx.Request().refresh {
-		// リフレッシュ時はプラン変更しない
-		return nil
+func (c *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans ResourcePlans) (*ELBPlan, error) {
+	if len(plans) == 0 {
+		plans = DefaultELBPlans
 	}
-
-	var fn func(i int) *ELBPlan
-	switch ctx.Request().requestType {
-	case requestTypeUp:
-		fn = func(i int) *ELBPlan {
-			if i < len(plans)-1 {
-				return &ELBPlan{
-					CPS: plans[i+1].CPS,
-				}
-			}
-			return nil
-		}
-	case requestTypeDown:
-		fn = func(i int) *ELBPlan {
-			if i > 0 {
-				return &ELBPlan{
-					CPS: plans[i-1].CPS,
-				}
-			}
-			return nil
-		}
-	default:
-		return nil // 到達しないはず
+	plan, err := desiredPlan(ctx, current, plans)
+	if err != nil {
+		return nil, err
 	}
-
-	for i, plan := range plans {
-		if plan.CPS == current.Plan.Int() {
-			return fn(i)
+	if plan != nil {
+		if v, ok := plan.(*ELBPlan); ok {
+			return v, nil
 		}
+		return nil, fmt.Errorf("invalid plan: %#v", plan)
 	}
-	return nil
+	return nil, nil
 }
 
 func (c *computedELB) ID() string {

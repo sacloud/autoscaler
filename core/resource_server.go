@@ -23,18 +23,13 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
-type ServerPlan struct {
-	Core   int `yaml:"core"`   // コア数
-	Memory int `yaml:"memory"` // メモリサイズ(GiB)
-}
-
 // DefaultServerPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
 //
 // TODO 要検討
-var DefaultServerPlans = []ServerPlan{
-	{Core: 1, Memory: 1},
-	{Core: 2, Memory: 4},
-	{Core: 4, Memory: 8},
+var DefaultServerPlans = ResourcePlans{
+	&ServerPlan{Core: 1, Memory: 1},
+	&ServerPlan{Core: 2, Memory: 4},
+	&ServerPlan{Core: 4, Memory: 8},
 }
 
 type ServerScalingOption struct {
@@ -45,10 +40,18 @@ type Server struct {
 	*ResourceBase `yaml:",inline"`
 	DedicatedCPU  bool                `yaml:"dedicated_cpu"`
 	PrivateHostID types.ID            `yaml:"private_host_id"`
-	Plans         []ServerPlan        `yaml:"plans"`
+	Plans         []*ServerPlan       `yaml:"plans"`
 	Option        ServerScalingOption `yaml:"option"`
 
 	parent Resource `yaml:"-"`
+}
+
+func (s *Server) resourcePlans() ResourcePlans {
+	var plans ResourcePlans
+	for _, p := range s.Plans {
+		plans = append(plans, p)
+	}
+	return plans
 }
 
 func (s *Server) Validate() error {
@@ -118,7 +121,10 @@ func newComputedServer(ctx *Context, resource *Server, zone string, server *sacl
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan := computed.desiredPlan(ctx, server, resource.Plans)
+	plan, err := computed.desiredPlan(ctx, server, resource.resourcePlans())
+	if err != nil {
+		return nil, fmt.Errorf("computing desired plan failed: %s", err)
+	}
 
 	if plan != nil {
 		computed.newCPU = plan.Core
@@ -128,51 +134,21 @@ func newComputedServer(ctx *Context, resource *Server, zone string, server *sacl
 	return computed, nil
 }
 
-func (c *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans []ServerPlan) *ServerPlan {
-	var fn func(i int) *ServerPlan
-
+func (c *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans ResourcePlans) (*ServerPlan, error) {
 	if len(plans) == 0 {
 		plans = DefaultServerPlans
 	}
-
-	// TODO s.Plansの並べ替えを考慮する
-
-	if ctx.Request().refresh {
-		// リフレッシュ時はプラン変更しない
-		return nil
+	plan, err := desiredPlan(ctx, current, plans)
+	if err != nil {
+		return nil, err
 	}
-
-	switch ctx.Request().requestType {
-	case requestTypeUp:
-		fn = func(i int) *ServerPlan {
-			if i < len(plans)-1 {
-				return &ServerPlan{
-					Core:   plans[i+1].Core,
-					Memory: plans[i+1].Memory,
-				}
-			}
-			return nil
+	if plan != nil {
+		if v, ok := plan.(*ServerPlan); ok {
+			return v, nil
 		}
-	case requestTypeDown:
-		fn = func(i int) *ServerPlan {
-			if i > 0 {
-				return &ServerPlan{
-					Core:   plans[i-1].Core,
-					Memory: plans[i-1].Memory,
-				}
-			}
-			return nil
-		}
-	default:
-		return nil // 到達しないはず
+		return nil, fmt.Errorf("invalid plan: %#v", plan)
 	}
-
-	for i, plan := range plans {
-		if plan.Core == current.CPU && plan.Memory == current.GetMemoryGB() {
-			return fn(i)
-		}
-	}
-	return nil
+	return nil, nil
 }
 
 func (c *computedServer) ID() string {
