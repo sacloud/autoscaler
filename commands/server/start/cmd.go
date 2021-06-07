@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package start
 
 import (
 	"context"
@@ -30,14 +30,12 @@ var (
 )
 
 func init() {
-	runCmd.Flags().StringVar(&address, "address", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
-	runCmd.Flags().StringVar(&configPath, "config", defaults.CoreConfigPath, "File path of configuration of AutoScaler Core")
-
-	Command.AddCommand(runCmd)
+	Command.Flags().StringVar(&address, "address", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
+	Command.Flags().StringVar(&configPath, "config", defaults.CoreConfigPath, "File path of configuration of AutoScaler Core")
 }
 
-var runCmd = &cobra.Command{
-	Use:   "run",
+var Command = &cobra.Command{
+	Use:   "start [flags]...",
 	Short: "start autoscaler's core server",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

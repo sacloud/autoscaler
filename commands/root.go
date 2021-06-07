@@ -17,6 +17,7 @@ package commands
 import (
 	"os"
 
+	"github.com/sacloud/autoscaler/commands/completion"
 	"github.com/sacloud/autoscaler/commands/inputs"
 	"github.com/sacloud/autoscaler/commands/server"
 	"github.com/sacloud/autoscaler/commands/version"
@@ -31,6 +32,7 @@ var rootCmd = &cobra.Command{
 }
 
 var subCommands = []*cobra.Command{
+	completion.Command,
 	inputs.Command,
 	server.Command,
 	version.Command,

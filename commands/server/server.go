@@ -15,28 +15,20 @@
 package server
 
 import (
-	"fmt"
-
+	"github.com/sacloud/autoscaler/commands/server/start"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
-
-const defaultCommandName = "run"
 
 var Command = &cobra.Command{
 	Use:           "server",
 	Short:         "A set of sub commands to manage autoscaler's core server",
 	SilenceErrors: true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		args = append([]string{cmd.Use, defaultCommandName}, args...)
-		cmd.Flags().VisitAll(func(f *pflag.Flag) {
-			if f.Changed {
-				args = append(args, fmt.Sprintf("--%s=%s", f.Name, f.Value.String()))
-			}
-		})
+}
 
-		root := cmd.Root()
-		root.SetArgs(args)
-		return root.Execute()
-	},
+var subCommands = []*cobra.Command{
+	start.Command,
+}
+
+func init() {
+	Command.AddCommand(subCommands...)
 }
