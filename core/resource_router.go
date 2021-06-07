@@ -16,53 +16,54 @@ package core
 
 import (
 	"fmt"
-	"sort"
 
-	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type RouterPlan struct {
-	Name      string `yaml:"string"`
-	BandWidth int    `yaml:"band_width"` // メモリサイズ(GiB)
-}
-
 // DefaultRouterPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
 //
 // TODO 要検討
-var DefaultRouterPlans = []RouterPlan{
-	{BandWidth: 100},
-	{BandWidth: 250},
-	{BandWidth: 500},
-	{BandWidth: 1000},
-	{BandWidth: 1500},
-	{BandWidth: 2000},
-	{BandWidth: 2500},
-	{BandWidth: 3000},
-	{BandWidth: 3500},
-	{BandWidth: 4000},
-	{BandWidth: 4500},
-	{BandWidth: 5000},
+var DefaultRouterPlans = ResourcePlans{
+	&RouterPlan{BandWidth: 100},
+	&RouterPlan{BandWidth: 250},
+	&RouterPlan{BandWidth: 500},
+	&RouterPlan{BandWidth: 1000},
+	&RouterPlan{BandWidth: 1500},
+	&RouterPlan{BandWidth: 2000},
+	&RouterPlan{BandWidth: 2500},
+	&RouterPlan{BandWidth: 3000},
+	&RouterPlan{BandWidth: 3500},
+	&RouterPlan{BandWidth: 4000},
+	&RouterPlan{BandWidth: 4500},
+	&RouterPlan{BandWidth: 5000},
 }
 
 type Router struct {
 	*ResourceBase `yaml:",inline"`
-	Plans         []RouterPlan `yaml:"plans"`
+	Plans         []*RouterPlan `yaml:"plans"`
 }
 
-func (d *Router) Validate() error {
+func (r *Router) resourcePlans() ResourcePlans {
+	var plans ResourcePlans
+	for _, p := range r.Plans {
+		plans = append(plans, p)
+	}
+	return plans
+}
+
+func (r *Router) Validate() error {
 	// TODO 実装
 	return nil
 }
 
-func (d *Router) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
-	if err := d.Validate(); err != nil {
+func (r *Router) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+	if err := r.Validate(); err != nil {
 		return nil, err
 	}
 
 	routerOp := sacloud.NewInternetOp(apiClient)
-	selector := d.Selector()
+	selector := r.Selector()
 
 	found, err := routerOp.Find(ctx, selector.Zone, selector.FindCondition())
 	if err != nil {
@@ -75,12 +76,12 @@ func (d *Router) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, e
 		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	computed, err := newComputedRouter(ctx, d, selector.Zone, found.Internet[0])
+	computed, err := newComputedRouter(ctx, r, selector.Zone, found.Internet[0])
 	if err != nil {
 		return nil, err
 	}
 
-	d.ComputedCache = computed
+	r.ComputedCache = computed
 	return computed, nil
 }
 
@@ -103,7 +104,7 @@ func newComputedRouter(ctx *Context, resource *Router, zone string, router *sacl
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan, err := computed.desiredPlan(ctx, router, resource.Plans)
+	plan, err := computed.desiredPlan(ctx, router, resource.resourcePlans())
 	if err != nil {
 		return nil, fmt.Errorf("computing desired plan failed: %s", err)
 	}
@@ -156,81 +157,19 @@ func (c *computedRouter) Desired() *handler.Resource {
 	return nil
 }
 
-func (c *computedRouter) desiredPlan(ctx *Context, current *sacloud.Internet, plans []RouterPlan) (*RouterPlan, error) {
-	sort.Slice(plans, func(i, j int) bool {
-		return plans[i].BandWidth < plans[j].BandWidth
-	})
-
+func (c *computedRouter) desiredPlan(ctx *Context, current *sacloud.Internet, plans ResourcePlans) (*RouterPlan, error) {
 	if len(plans) == 0 {
 		plans = DefaultRouterPlans
 	}
-
-	req := ctx.Request()
-	if req.refresh {
-		// リフレッシュ時はプラン変更しない
-		return nil, nil
+	plan, err := desiredPlan(ctx, current, plans)
+	if err != nil {
+		return nil, err
 	}
-
-	// DesiredStateNameが指定されていたら該当プランを探す
-	if req.desiredStateName != "" && req.desiredStateName != defaults.DesiredStateName {
-		var found *RouterPlan
-		for _, plan := range plans {
-			if plan.Name == req.desiredStateName {
-				found = &plan
-				break
-			}
+	if plan != nil {
+		if v, ok := plan.(*RouterPlan); ok {
+			return v, nil
 		}
-		if found == nil {
-			return nil, fmt.Errorf("desired plan %q not found: request: %s", req.desiredStateName, req.String())
-		}
-
-		switch req.requestType {
-		case requestTypeUp:
-			// foundとcurrentが同じ場合はOK
-			if found.BandWidth < current.BandWidthMbps {
-				// Upリクエストなのに指定の名前のプランの方が小さいためプラン変更しない
-				return nil, fmt.Errorf("desired plan %q is smaller than current plan", req.desiredStateName)
-			}
-		case requestTypeDown:
-			// foundとcurrentが同じ場合はOK
-			if found.BandWidth > current.BandWidthMbps {
-				// Downリクエストなのに指定の名前のプランの方が大きいためプラン変更しない
-				return nil, fmt.Errorf("desired plan %q is larger than current plan", req.desiredStateName)
-			}
-		default:
-			return nil, nil // 到達しない
-		}
-		return found, nil
+		return nil, fmt.Errorf("invalid plan: %#v", plan)
 	}
-
-	var fn func(i int) *RouterPlan
-	switch req.requestType {
-	case requestTypeUp:
-		fn = func(i int) *RouterPlan {
-			if i < len(plans)-1 {
-				return &RouterPlan{
-					BandWidth: plans[i+1].BandWidth,
-				}
-			}
-			return nil
-		}
-	case requestTypeDown:
-		fn = func(i int) *RouterPlan {
-			if i > 0 {
-				return &RouterPlan{
-					BandWidth: plans[i-1].BandWidth,
-				}
-			}
-			return nil
-		}
-	default:
-		return nil, nil // 到達しないはず
-	}
-
-	for i, plan := range plans {
-		if plan.BandWidth == current.BandWidthMbps {
-			return fn(i), nil
-		}
-	}
-	return nil, fmt.Errorf("desired plan not found: request: %s", req.String())
+	return nil, nil
 }
