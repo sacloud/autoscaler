@@ -3,6 +3,7 @@ module github.com/sacloud/autoscaler
 go 1.16
 
 require (
+	github.com/go-playground/validator/v10 v10.4.1
 	github.com/goccy/go-yaml v1.8.9
 	github.com/sacloud/libsacloud/v2 v2.18.1
 	github.com/spf13/cobra v1.1.3
