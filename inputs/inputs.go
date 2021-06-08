@@ -28,6 +28,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+var webhookBodyMaxLen = int64(64 * 1024) // 64KB
+
 type Input interface {
 	Name() string
 	Version() string
@@ -94,13 +96,18 @@ func (s *server) listenAndServe() error {
 }
 
 func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Request) {
+	// bodyをwebhookBodyMaxLenまでに制限
+	req.Body = http.MaxBytesReader(w, req.Body, webhookBodyMaxLen)
+
 	scalingReq, err := s.parseRequest(requestType, req)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error())) // nolint
 		return
 	}
 	if scalingReq == nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ignored")) // nolint
 		return
 	}
 
@@ -111,10 +118,10 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok")) // nolint
+	w.Write([]byte("accepted")) // nolint
 }
 
-func (s *server) parseRequest(requestType string, req *http.Request) (*scalingRequest, error) {
+func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRequest, error) {
 	log.Println("webhook received")
 	if s.debug {
 		dump, err := httputil.DumpRequest(req, true)
@@ -133,7 +140,6 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*scalingRe
 		return nil, nil
 	}
 
-	// TODO 外部からの入力となるため厳しめのバリデーションを実装する
 	queryStrings := req.URL.Query()
 	source := queryStrings.Get("source")
 	if source == "" {
@@ -143,25 +149,29 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*scalingRe
 	if action == "" {
 		action = defaults.ActionName
 	}
-	groupName := queryStrings.Get("resource_group_name")
+	groupName := queryStrings.Get("resource-group-name")
 	if groupName == "" {
 		groupName = defaults.ResourceGroupName
 	}
-	desiredStateName := queryStrings.Get("desired_state_name")
+	desiredStateName := queryStrings.Get("desired-state-name")
 	if desiredStateName == "" {
 		desiredStateName = defaults.DesiredStateName
 	}
 
-	return &scalingRequest{
-		source:           source,
-		action:           action,
-		groupName:        groupName,
-		requestType:      requestType,
-		desiredStateName: desiredStateName,
-	}, nil
+	scalingReq := &ScalingRequest{
+		Source:           source,
+		Action:           action,
+		GroupName:        groupName,
+		RequestType:      requestType,
+		DesiredStateName: desiredStateName,
+	}
+	if err := scalingReq.Validate(); err != nil {
+		return nil, err
+	}
+	return scalingReq, nil
 }
 
-func (s *server) send(scalingReq *scalingRequest) error {
+func (s *server) send(scalingReq *ScalingRequest) error {
 	if scalingReq == nil {
 		return nil
 	}
@@ -177,31 +187,23 @@ func (s *server) send(scalingReq *scalingRequest) error {
 	req := request.NewScalingServiceClient(conn)
 	var f func(ctx context.Context, in *request.ScalingRequest, opts ...grpc.CallOption) (*request.ScalingResponse, error)
 
-	switch scalingReq.requestType {
+	switch scalingReq.RequestType {
 	case "up":
 		f = req.Up
 	case "down":
 		f = req.Down
 	default:
-		return fmt.Errorf("invalid request type: %s", scalingReq.requestType)
+		return fmt.Errorf("invalid request type: %s", scalingReq.RequestType)
 	}
 	res, err := f(ctx, &request.ScalingRequest{
-		Source:            scalingReq.source,
-		Action:            scalingReq.action,
-		ResourceGroupName: scalingReq.groupName,
-		DesiredStateName:  scalingReq.desiredStateName,
+		Source:            scalingReq.Source,
+		Action:            scalingReq.Action,
+		ResourceGroupName: scalingReq.GroupName,
+		DesiredStateName:  scalingReq.DesiredStateName,
 	})
 	if err != nil {
 		return err
 	}
 	fmt.Printf("status: %s, job-id: %s\n", res.Status, res.ScalingJobId)
 	return nil
-}
-
-type scalingRequest struct {
-	source           string
-	action           string
-	groupName        string
-	requestType      string
-	desiredStateName string
 }
