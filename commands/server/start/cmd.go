@@ -19,6 +19,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/core"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/spf13/cobra"
@@ -40,6 +41,6 @@ var Command = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer stop()
-		return core.Start(ctx, configPath)
+		return core.Start(ctx, configPath, flags.NewLogger())
 	},
 }

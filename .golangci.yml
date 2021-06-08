@@ -31,4 +31,4 @@ linters:
 
 linters-settings:
   errcheck:
-    ignore: fmt:.*,io:Close
+    ignore: fmt:.*,io:Close,github.com/sacloud/autoscaler/logging:.*

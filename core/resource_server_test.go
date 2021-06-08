@@ -48,7 +48,7 @@ func testContext() *Context {
 		source:            "default",
 		action:            "default",
 		resourceGroupName: "web",
-	})
+	}, testLogger)
 }
 
 func initTestServer(t *testing.T) func() {

@@ -16,14 +16,12 @@ package core
 
 import (
 	"io"
-	"log"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/handlers/elb"
 	"github.com/sacloud/autoscaler/handlers/gslb"
-	"github.com/sacloud/autoscaler/handlers/logging"
 	"github.com/sacloud/autoscaler/handlers/router"
 	"github.com/sacloud/autoscaler/handlers/server"
 	"google.golang.org/grpc"
@@ -31,51 +29,45 @@ import (
 
 type Handlers []*Handler
 
-var BuiltinHandlers = Handlers{
-	{
-		Type: "logging",
-		Name: "logging",
-		BuiltinHandler: &builtins.Handler{
-			Builtin: &logging.Handler{},
+func BuiltinHandlers(ctx *Context) Handlers {
+	return Handlers{
+		{
+			Type: "elb-vertical-scaler",
+			Name: "elb-vertical-scaler",
+			BuiltinHandler: &builtins.Handler{
+				Builtin: &elb.VerticalScaleHandler{Logger: ctx.Logger().With("handler", "elb-vertical-scaler")},
+			},
 		},
-		Disabled: true,
-	},
-	{
-		Type: "elb-vertical-scaler",
-		Name: "elb-vertical-scaler",
-		BuiltinHandler: &builtins.Handler{
-			Builtin: &elb.VerticalScaleHandler{},
+		{
+			Type: "elb-servers-handler",
+			Name: "elb-servers-handler",
+			BuiltinHandler: &builtins.Handler{
+				Builtin: &elb.ServersHandler{Logger: ctx.Logger().With("handler", "elb-servers-handler")},
+			},
 		},
-	},
-	{
-		Type: "elb-servers-handler",
-		Name: "elb-servers-handler",
-		BuiltinHandler: &builtins.Handler{
-			Builtin: &elb.ServersHandler{},
+		{
+			Type: "gslb-servers-handler",
+			Name: "gslb-servers-handler",
+			BuiltinHandler: &builtins.Handler{
+				Builtin: &gslb.ServersHandler{Logger: ctx.Logger().With("handler", "gslb-servers-handler")},
+			},
 		},
-	},
-	{
-		Type: "gslb-servers-handler",
-		Name: "gslb-servers-handler",
-		BuiltinHandler: &builtins.Handler{
-			Builtin: &gslb.ServersHandler{},
+		{
+			Type: "router-vertical-scaler",
+			Name: "router-vertical-scaler",
+			BuiltinHandler: &builtins.Handler{
+				Builtin: &router.VerticalScaleHandler{Logger: ctx.Logger().With("handler", "router-vertical-scaler")},
+			},
 		},
-	},
-	{
-		Type: "router-vertical-scaler",
-		Name: "router-vertical-scaler",
-		BuiltinHandler: &builtins.Handler{
-			Builtin: &router.VerticalScaleHandler{},
+		{
+			Type: "server-vertical-scaler",
+			Name: "server-vertical-scaler",
+			BuiltinHandler: &builtins.Handler{
+				Builtin: &server.VerticalScaleHandler{Logger: ctx.Logger().With("handler", "server-vertical-scaler")},
+			},
 		},
-	},
-	{
-		Type: "server-vertical-scaler",
-		Name: "server-vertical-scaler",
-		BuiltinHandler: &builtins.Handler{
-			Builtin: &server.VerticalScaleHandler{},
-		},
-	},
-	// TODO その他ビルトインを追加
+		// TODO その他ビルトインを追加
+	}
 }
 
 // Handler カスタムハンドラーの定義
@@ -171,7 +163,7 @@ func (h *Handler) preHandleBuiltin(ctx *HandlingContext, computed Computed) erro
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PreHandler); ok {
 		handleArg.preHandle = func(req *handler.PreHandleRequest) error {
-			return actualHandler.PreHandle(req, &builtinResponseSender{})
+			return actualHandler.PreHandle(req, &builtinResponseSender{ctx: ctx})
 		}
 	}
 	return h.handle(ctx, computed, handleArg)
@@ -182,7 +174,7 @@ func (h *Handler) handleBuiltin(ctx *HandlingContext, computed Computed) error {
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.Handler); ok {
 		handleArg.handle = func(req *handler.HandleRequest) error {
-			return actualHandler.Handle(req, &builtinResponseSender{})
+			return actualHandler.Handle(req, &builtinResponseSender{ctx: ctx})
 		}
 	}
 
@@ -194,7 +186,7 @@ func (h *Handler) postHandleBuiltin(ctx *HandlingContext, computed Computed) err
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PostHandler); ok {
 		handleArg.postHandle = func(req *handler.PostHandleRequest) error {
-			return actualHandler.PostHandle(req, &builtinResponseSender{})
+			return actualHandler.PostHandle(req, &builtinResponseSender{ctx: ctx})
 		}
 	}
 
@@ -216,7 +208,7 @@ func (h *Handler) preHandleExternal(ctx *HandlingContext, computed Computed) err
 			if err != nil {
 				return err
 			}
-			return h.handleHandlerResponse(res)
+			return h.handleHandlerResponse(ctx, res)
 		},
 	}
 	return h.handle(ctx, computed, handleArg)
@@ -237,7 +229,7 @@ func (h *Handler) handleExternal(ctx *HandlingContext, computed Computed) error 
 			if err != nil {
 				return err
 			}
-			return h.handleHandlerResponse(res)
+			return h.handleHandlerResponse(ctx, res)
 		},
 	}
 	return h.handle(ctx, computed, handleArg)
@@ -258,7 +250,7 @@ func (h *Handler) postHandleExternal(ctx *HandlingContext, computed Computed) er
 			if err != nil {
 				return err
 			}
-			return h.handleHandlerResponse(res)
+			return h.handleHandlerResponse(ctx, res)
 		},
 	}
 	return h.handle(ctx, computed, handleArg)
@@ -268,7 +260,7 @@ type handlerResponseReceiver interface {
 	Recv() (*handler.HandleResponse, error)
 }
 
-func (h *Handler) handleHandlerResponse(receiver handlerResponseReceiver) error {
+func (h *Handler) handleHandlerResponse(ctx *HandlingContext, receiver handlerResponseReceiver) error {
 	for {
 		stat, err := receiver.Recv()
 		if err == io.EOF {
@@ -277,14 +269,17 @@ func (h *Handler) handleHandlerResponse(receiver handlerResponseReceiver) error 
 		if err != nil {
 			return err
 		}
-		log.Println("handler replied:", stat.String())
+		if err := ctx.Logger().Info("message", "handler replied", "replay", stat.String()); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-type builtinResponseSender struct{}
+type builtinResponseSender struct {
+	ctx *HandlingContext
+}
 
 func (s *builtinResponseSender) Send(res *handler.HandleResponse) error {
-	log.Println("handler replied:", res.String())
-	return nil
+	return s.ctx.Logger().Info("message", "handler replied", "reply", res.String())
 }

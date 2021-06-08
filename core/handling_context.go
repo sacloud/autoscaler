@@ -31,6 +31,12 @@ func NewHandlingContext(parent *Context, computed Computed) *HandlingContext {
 	}
 }
 
+func (c *HandlingContext) WithLogger(keyvals ...interface{}) *HandlingContext {
+	ctx := NewHandlingContext(c.Context, c.cachedComputed)
+	ctx.logger = ctx.logger.With(keyvals...)
+	return ctx
+}
+
 // CurrentComputed 現在処理中の[]Computedを返す
 func (c *HandlingContext) CurrentComputed() Computed {
 	return c.cachedComputed

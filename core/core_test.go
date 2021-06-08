@@ -17,6 +17,8 @@ package core
 import (
 	"os"
 
+	"github.com/sacloud/autoscaler/log"
+
 	"github.com/sacloud/libsacloud/v2/helper/api"
 )
 
@@ -29,5 +31,12 @@ var (
 		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
 		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
 		FakeMode:          true,
+	})
+	testLogger = log.NewLogger(&log.LoggerOption{
+		Writer:    os.Stderr,
+		JSON:      false,
+		TimeStamp: true,
+		Caller:    true,
+		Level:     log.LevelDebug,
 	})
 )

@@ -16,7 +16,6 @@ package core
 
 import (
 	"context"
-	"log"
 
 	"github.com/sacloud/autoscaler/request"
 )
@@ -33,7 +32,9 @@ func NewScalingService(instance *Core) request.ScalingServiceServer {
 }
 
 func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	log.Println("Core.ScalingService: Up:", req)
+	if err := s.instance.logger.Info("message", "Core.ScalingService: Up", "request", req); err != nil {
+		return nil, err
+	}
 
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
 	serviceCtx := NewContext(context.Background(), &requestInfo{
@@ -42,7 +43,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
 		desiredStateName:  req.DesiredStateName,
-	})
+	}, s.instance.logger)
 	job, message, err := s.instance.Up(serviceCtx)
 	if err != nil {
 		return nil, err
@@ -55,7 +56,9 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 }
 
 func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	log.Println("Core.ScalingService: Down:", req)
+	if err := s.instance.logger.Info("message", "Core.ScalingService: Down", "request", req.String()); err != nil {
+		return nil, err
+	}
 
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
 	serviceCtx := NewContext(context.Background(), &requestInfo{
@@ -64,7 +67,7 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
 		desiredStateName:  req.DesiredStateName,
-	})
+	}, s.instance.logger)
 	job, message, err := s.instance.Down(serviceCtx)
 	if err != nil {
 		return nil, err

@@ -30,13 +30,13 @@ type Logger struct {
 }
 
 // Level ログレベル
-type Level int
+type Level string
 
 const (
-	LevelError Level = iota
-	LevelWarn
-	LevelInfo
-	LevelDebug
+	LevelError = Level("error")
+	LevelWarn  = Level("warn")
+	LevelInfo  = Level("info")
+	LevelDebug = Level("debug")
 )
 
 // LoggerOption ログ出力のオプション
@@ -75,7 +75,7 @@ func (l *Logger) initLogger(opt *LoggerOption) {
 	}
 
 	if opt.TimeStamp {
-		logger = log.With(logger, "ts", log.TimestampFormat(time.Now, time.RFC3339))
+		logger = log.With(logger, "timestamp", log.TimestampFormat(time.Now, time.RFC3339))
 	}
 	if opt.Caller {
 		logger = log.With(logger, "caller", log.DefaultCaller)
@@ -108,7 +108,7 @@ func (l *Logger) Reset() {
 // see: https://pkg.go.dev/github.com/go-kit/log
 func (l *Logger) With(keyvals ...interface{}) *Logger {
 	logger := NewLogger(l.opt)
-	logger.internal = log.With(logger.internal, keyvals...)
+	logger.internal = log.With(l.internal, keyvals...)
 	return logger
 }
 
@@ -117,7 +117,7 @@ func (l *Logger) With(keyvals ...interface{}) *Logger {
 // see: https://pkg.go.dev/github.com/go-kit/log
 func (l *Logger) WithPrefix(keyvals ...interface{}) *Logger {
 	logger := NewLogger(l.opt)
-	logger.internal = log.WithPrefix(logger.internal, keyvals...)
+	logger.internal = log.WithPrefix(l.internal, keyvals...)
 	return logger
 }
 
@@ -126,8 +126,13 @@ func (l *Logger) WithPrefix(keyvals ...interface{}) *Logger {
 // see: https://pkg.go.dev/github.com/go-kit/log
 func (l *Logger) WithSuffix(keyvals ...interface{}) *Logger {
 	logger := NewLogger(l.opt)
-	logger.internal = log.WithSuffix(logger.internal, keyvals...)
+	logger.internal = log.WithSuffix(l.internal, keyvals...)
 	return logger
+}
+
+func (l *Logger) Fatal(keyvals ...interface{}) {
+	l.Error(keyvals...) // nolint
+	os.Exit(1)
 }
 
 // Error レベルErrorでログ出力

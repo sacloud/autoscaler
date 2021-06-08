@@ -15,10 +15,9 @@
 package builtins
 
 import (
-	"log"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
+	"github.com/sacloud/autoscaler/log"
 )
 
 // Handler builtinハンドラーをラップし、リクエスト受付時のログ出力を担当するハンドラー
@@ -36,32 +35,39 @@ func (h *Handler) Version() string {
 	return h.Builtin.Version()
 }
 
+func (h *Handler) GetLogger() *log.Logger {
+	return h.Builtin.GetLogger()
+}
+
 func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
 	if builtin, ok := h.Builtin.(handlers.PreHandler); ok {
-		log.Printf("%s: PreHandle request received: %s", handlers.HandlerFullName(h.Builtin), req.String())
+		if err := h.GetLogger().Info("message", "PreHandle request received", "request", req.String()); err != nil {
+			return err
+		}
 		return builtin.PreHandle(req, sender)
 	}
 
-	log.Printf("%s: PreHandle request ignored: %s", handlers.HandlerFullName(h.Builtin), req.String())
-	return nil
+	return h.GetLogger().Info("message", "PreHandle request ignored", "request", req.String())
 }
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	if builtin, ok := h.Builtin.(handlers.Handler); ok {
-		log.Printf("%s: Handle request received: %s", handlers.HandlerFullName(h.Builtin), req.String())
+		if err := h.GetLogger().Info("message", "Handle request received", "request", req.String()); err != nil {
+			return err
+		}
 		return builtin.Handle(req, sender)
 	}
 
-	log.Printf("%s: Handle request ignored: %s", handlers.HandlerFullName(h.Builtin), req.String())
-	return nil
+	return h.GetLogger().Info("message", "Handle request ignored", "request", req.String())
 }
 
 func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	if builtin, ok := h.Builtin.(handlers.PostHandler); ok {
-		log.Printf("%s: PostHandle request received: %s", handlers.HandlerFullName(h.Builtin), req.String())
+		if err := h.GetLogger().Info("message", "PostHandle request received", "request", req.String()); err != nil {
+			return err
+		}
 		return builtin.PostHandle(req, sender)
 	}
 
-	log.Printf("%s: PostHandle request ignored: %s", handlers.HandlerFullName(h.Builtin), req.String())
-	return nil
+	return h.GetLogger().Info("message", "PostHandle request ignored", "request", req.String())
 }

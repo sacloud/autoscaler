@@ -20,6 +20,7 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
+	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -36,6 +37,7 @@ import (
 // もしGSLBにサーバが1台しか登録されていない場合はサービス停止が発生するため注意が必要
 type ServersHandler struct {
 	handlers.SakuraCloudFlagCustomizer
+	Logger *log.Logger
 }
 
 func (h *ServersHandler) Name() string {
@@ -44,6 +46,10 @@ func (h *ServersHandler) Name() string {
 
 func (h *ServersHandler) Version() string {
 	return version.FullVersion()
+}
+
+func (h *ServersHandler) GetLogger() *log.Logger {
+	return h.Logger
 }
 
 func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
