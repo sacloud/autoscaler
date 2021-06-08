@@ -79,6 +79,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// 単発の出力のためlog(標準エラー)ではなく標準出力に書く
 	fmt.Printf("status: %s, job-id: %s", res.Status, res.ScalingJobId)
 	if res.Message != "" {
 		fmt.Printf(", message: %s", res.Message)

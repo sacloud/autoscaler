@@ -204,6 +204,7 @@ func (s *server) send(scalingReq *ScalingRequest) error {
 	if err != nil {
 		return err
 	}
+	// TODO logに出力
 	fmt.Printf("status: %s, job-id: %s\n", res.Status, res.ScalingJobId)
 	return nil
 }
