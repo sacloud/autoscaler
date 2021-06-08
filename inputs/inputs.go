@@ -101,11 +101,13 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 
 	scalingReq, err := s.parseRequest(requestType, req)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error())) // nolint
 		return
 	}
 	if scalingReq == nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ignored")) // nolint
 		return
 	}
 
@@ -116,7 +118,7 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok")) // nolint
+	w.Write([]byte("accepted")) // nolint
 }
 
 func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRequest, error) {
