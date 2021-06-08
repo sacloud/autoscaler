@@ -16,13 +16,10 @@ package core
 
 import (
 	"fmt"
-	"log"
-
-	"github.com/sacloud/autoscaler/defaults"
-
-	"github.com/sacloud/autoscaler/request"
 
 	"github.com/goccy/go-yaml"
+	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/request"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
@@ -180,13 +177,12 @@ func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, ha
 	handlers, err := rg.handlers(ctx.Request().action, handlerFilters)
 	if err != nil { // 事前にValidateHandlerFiltersで検証しておくため基本的にありえないはず
 		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
-		log.Printf("[FATAL] %s\n", err)
-		return
+		ctx.Logger().Error("fatal", err) // nolint
 	}
 
 	if err := rg.handleAll(ctx, apiClient, handlers); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
-		log.Printf("[WARN] %s\n", err)
+		ctx.Logger().Warn("error", err) // nolint
 		return
 	}
 
@@ -216,6 +212,7 @@ func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud
 
 		// preHandle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
+			ctx = ctx.WithLogger("step", "PreHandle")
 			return h.PreHandle(ctx, c)
 		}); err != nil {
 			return err
@@ -223,6 +220,7 @@ func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud
 
 		// handle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
+			ctx = ctx.WithLogger("step", "Handle")
 			return h.Handle(ctx, c)
 		}); err != nil {
 			return err
@@ -237,6 +235,7 @@ func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud
 
 		// postHandle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
+			ctx = ctx.WithLogger("step", "PostHandle")
 			return h.PostHandle(ctx, c)
 		}); err != nil {
 			return err

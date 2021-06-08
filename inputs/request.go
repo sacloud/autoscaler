@@ -15,10 +15,7 @@
 package inputs
 
 import (
-	"reflect"
-	"strings"
-
-	"github.com/go-playground/validator/v10"
+	"github.com/sacloud/autoscaler/validate"
 )
 
 // ScalingRequest Inputsからのリクエストを表す
@@ -31,18 +28,5 @@ type ScalingRequest struct {
 }
 
 func (r *ScalingRequest) Validate() error {
-	validate := r.newValidator()
 	return validate.Struct(r)
-}
-
-func (r *ScalingRequest) newValidator() *validator.Validate {
-	validate := validator.New()
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get("name"), ",", 2)[0]
-		if name == "-" {
-			return ""
-		}
-		return name
-	})
-	return validate
 }

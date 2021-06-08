@@ -15,6 +15,8 @@
 package grafana
 
 import (
+	"github.com/sacloud/autoscaler/commands/flags"
+	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/inputs"
 	"github.com/sacloud/autoscaler/inputs/grafana"
 	"github.com/spf13/cobra"
@@ -26,12 +28,16 @@ var Command = &cobra.Command{
 	RunE:  run,
 }
 
-var server = &grafana.Input{}
+var (
+	dest    string
+	address string
+)
 
 func init() {
-	inputs.Init(Command, server)
+	Command.Flags().StringVarP(&dest, "dest", "", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
+	Command.Flags().StringVarP(&address, "addr", "", ":3001", "the TCP address for the server to listen on")
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	return inputs.Serve(server)
+	return inputs.Serve(grafana.NewInput(dest, address, flags.NewLogger()))
 }

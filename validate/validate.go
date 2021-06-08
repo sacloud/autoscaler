@@ -12,27 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package logging
+package validate
 
 import (
-	"log"
+	"reflect"
+	"strings"
 
-	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/version"
+	"github.com/go-playground/validator/v10"
 )
 
-type Handler struct{}
-
-func (h *Handler) Name() string {
-	return "logging"
-}
-
-func (h *Handler) Version() string {
-	return version.FullVersion()
-}
-
-func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	log.Printf("autoscaler-handlers-%s: received: %s", h.Name(), req.String())
-	return nil
+func Struct(v interface{}) error {
+	validate := validator.New()
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("name"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+	// TODO エラーメッセージのカスタマイズ
+	return validate.Struct(v)
 }

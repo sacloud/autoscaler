@@ -18,6 +18,7 @@ import (
 	"os"
 
 	"github.com/sacloud/autoscaler/commands/completion"
+	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/commands/inputs"
 	"github.com/sacloud/autoscaler/commands/server"
 	"github.com/sacloud/autoscaler/commands/version"
@@ -25,10 +26,11 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "autoscaler",
-	Short:         "autoscaler is a tool for managing the scale of resources on SAKURA cloud",
-	SilenceUsage:  true,
-	SilenceErrors: false,
+	Use:               "autoscaler",
+	Short:             "autoscaler is a tool for managing the scale of resources on SAKURA cloud",
+	PersistentPreRunE: flags.ValidateFlags,
+	SilenceUsage:      true,
+	SilenceErrors:     false,
 }
 
 var subCommands = []*cobra.Command{
@@ -39,6 +41,7 @@ var subCommands = []*cobra.Command{
 }
 
 func init() {
+	flags.SetFlags(rootCmd)
 	rootCmd.AddCommand(subCommands...)
 }
 

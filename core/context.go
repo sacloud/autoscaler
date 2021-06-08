@@ -17,6 +17,8 @@ package core
 import (
 	"context"
 	"time"
+
+	"github.com/sacloud/autoscaler/log"
 )
 
 // Context 1リクエストのスコープに対応するコンテキスト、context.Contextを実装し、リクエスト情報や現在のジョブの情報を保持する
@@ -24,12 +26,15 @@ type Context struct {
 	ctx     context.Context
 	request *requestInfo
 	job     *JobStatus
+	logger  *log.Logger
 }
 
-func NewContext(parent context.Context, request *requestInfo) *Context {
+func NewContext(parent context.Context, request *requestInfo, logger *log.Logger) *Context {
+	logger = logger.With("request", request.String())
 	return &Context{
 		ctx:     parent,
 		request: request,
+		logger:  logger,
 	}
 }
 
@@ -43,7 +48,7 @@ func (c *Context) WithJobStatus(job *JobStatus) *Context {
 		action:            c.request.action,
 		resourceGroupName: c.request.resourceGroupName,
 		desiredStateName:  c.request.desiredStateName,
-	})
+	}, c.logger)
 	ctx.job = job
 	return ctx
 }
@@ -59,12 +64,17 @@ func (c *Context) ForRefresh() *Context {
 		resourceGroupName: c.request.resourceGroupName,
 		desiredStateName:  c.request.desiredStateName,
 		refresh:           true,
-	})
+	}, c.logger)
 }
 
 // Request 現在のコンテキストで受けたリクエストの情報を返す
 func (c *Context) Request() *requestInfo {
 	return c.request
+}
+
+// Logger 現在のコンテキストのロガーを返す
+func (c *Context) Logger() *log.Logger {
+	return c.logger
 }
 
 // JobID 現在のコンテキストでのJobのIDを返す

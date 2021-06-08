@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -26,12 +25,14 @@ import (
 	"syscall"
 
 	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/autoscaler/log"
 	"google.golang.org/grpc"
 )
 
 type Server interface {
 	Name() string
 	Version() string
+	GetLogger() *log.Logger
 }
 
 type Handler interface {
@@ -55,9 +56,10 @@ type FlagCustomizer interface {
 }
 
 func Serve(server Server) {
-	validateHandlerInterfaces(server)
-
 	handlerName := HandlerFullName(server)
+	logger := server.GetLogger().With("from", handlerName)
+
+	validateHandlerInterfaces(server, logger)
 
 	fs := flag.CommandLine
 	var address string
@@ -73,7 +75,7 @@ func Serve(server Server) {
 	}
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
-		log.Fatal(err)
+		logger.Fatal("fatal", err)
 	}
 
 	// TODO add flag validation
@@ -94,7 +96,7 @@ func Serve(server Server) {
 		filename := strings.Replace(address, "unix:", "", -1)
 		lis, err := net.Listen("unix", filename)
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal("fatal", err)
 		}
 
 		grpcServer := grpc.NewServer()
@@ -108,13 +110,15 @@ func Serve(server Server) {
 			lis.Close()
 			if _, err := os.Stat(filename); err == nil {
 				if err := os.RemoveAll(filename); err != nil {
-					log.Fatal(err)
+					logger.Fatal("fatal", err) // nolint
 				}
 			}
 		}()
 
 		go func() {
-			log.Printf("%s started with: %s\n", handlerName, lis.Addr().String())
+			if err := logger.Info("message", "started", "address", lis.Addr().String()); err != nil {
+				errCh <- err
+			}
 			if err := grpcServer.Serve(lis); err != nil {
 				errCh <- err
 			}
@@ -122,14 +126,14 @@ func Serve(server Server) {
 
 		select {
 		case err := <-errCh:
-			log.Fatalln("Fatal error: ", err)
+			logger.Fatal("fatal", err)
 		case <-ctx.Done():
-			log.Println("shutting down with:", ctx.Err())
+			logger.Info("message", "shutting down", "error", ctx.Err()) // nolint
 		}
 	}
 }
 
-func validateHandlerInterfaces(server Server) {
+func validateHandlerInterfaces(server Server, logger *log.Logger) {
 	if _, ok := server.(PreHandler); ok {
 		return
 	}
@@ -139,7 +143,7 @@ func validateHandlerInterfaces(server Server) {
 	if _, ok := server.(PostHandler); ok {
 		return
 	}
-	log.Fatalf("%s: At least one of the following must be implemented: PreHandler or Handler or PostHandler", HandlerFullName(server))
+	logger.Fatal("fatal", "At least one of the following must be implemented: PreHandler or Handler or PostHandler") // nolint
 }
 
 func showUsage(name string, fs *flag.FlagSet) {
@@ -156,34 +160,38 @@ var _ handler.HandleServiceServer = (*HandleService)(nil)
 type HandleService struct {
 	handler.UnimplementedHandleServiceServer
 	Handler Server
+	logger  *log.Logger
 }
 
 func (h *HandleService) PreHandle(req *handler.PreHandleRequest, server handler.HandleService_PreHandleServer) error {
 	if handler, ok := h.Handler.(PreHandler); ok {
-		log.Printf("%s: PreHandle request received: %s", HandlerFullName(h.Handler), req.String())
+		if err := h.logger.Info("message", "PreHandle request received", "request", req.String()); err != nil {
+			return err
+		}
 		return handler.PreHandle(req, server)
 	}
 
-	log.Printf("%s: PreHandle request ignored: %s", HandlerFullName(h.Handler), req.String())
-	return nil
+	return h.logger.Info("message", "PreHandle request ignored", "request", req.String())
 }
 
 func (h *HandleService) Handle(req *handler.HandleRequest, server handler.HandleService_HandleServer) error {
 	if handler, ok := h.Handler.(Handler); ok {
-		log.Printf("%s: Handle request received: %s", HandlerFullName(h.Handler), req.String())
+		if err := h.logger.Info("message", "Handle request received", "request", req.String()); err != nil {
+			return err
+		}
 		return handler.Handle(req, server)
 	}
 
-	log.Printf("%s: Handle request ignored: %s", HandlerFullName(h.Handler), req.String())
-	return nil
+	return h.logger.Info("message", "Handle request ignored", "request", req.String())
 }
 
 func (h *HandleService) PostHandle(req *handler.PostHandleRequest, server handler.HandleService_PostHandleServer) error {
 	if handler, ok := h.Handler.(PostHandler); ok {
-		log.Printf("%s: PostHandle request received: %s", HandlerFullName(h.Handler), req.String())
+		if err := h.logger.Info("message", "PostHandle request received", "request", req.String()); err != nil {
+			return err
+		}
 		return handler.PostHandle(req, server)
 	}
 
-	log.Printf("%s: PostHandle request ignored: %s", HandlerFullName(h.Handler), req.String())
-	return nil
+	return h.logger.Info("message", "PostHandle request ignored", "request", req.String())
 }

@@ -106,8 +106,8 @@ func (c *Config) APIClient() sacloud.APICaller {
 
 // TODO Validateの実装
 
-func (c *Config) Handlers() Handlers {
-	return append(BuiltinHandlers, c.CustomHandlers...)
+func (c *Config) Handlers(ctx *Context) Handlers {
+	return append(BuiltinHandlers(ctx), c.CustomHandlers...)
 }
 
 // AutoScalerConfig オートスケーラー自体の動作設定

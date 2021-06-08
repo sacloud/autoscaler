@@ -19,10 +19,23 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 )
 
-type Input struct{}
+type Input struct {
+	dest   string
+	addr   string
+	logger *log.Logger
+}
+
+func NewInput(dest, addr string, logger *log.Logger) *Input {
+	return &Input{
+		dest:   dest,
+		addr:   addr,
+		logger: logger,
+	}
+}
 
 func (in *Input) Name() string {
 	return "alertmanager"
@@ -30,6 +43,18 @@ func (in *Input) Name() string {
 
 func (in *Input) Version() string {
 	return version.FullVersion()
+}
+
+func (in *Input) Destination() string {
+	return in.dest
+}
+
+func (in *Input) ListenAddress() string {
+	return in.addr
+}
+
+func (in *Input) GetLogger() *log.Logger {
+	return in.logger
 }
 
 func (in *Input) ShouldAccept(req *http.Request) (bool, error) {

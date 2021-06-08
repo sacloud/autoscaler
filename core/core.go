@@ -17,12 +17,12 @@ package core
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"strings"
 
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/request"
 	"google.golang.org/grpc"
 )
@@ -31,23 +31,25 @@ import (
 type Core struct {
 	config *Config
 	jobs   map[string]*JobStatus
+	logger *log.Logger
 }
 
-func newCoreInstance(c *Config) (*Core, error) {
+func newCoreInstance(c *Config, logger *log.Logger) (*Core, error) {
 	// TODO バリデーションの実装
 	return &Core{
 		config: c,
 		jobs:   make(map[string]*JobStatus),
+		logger: logger.With("from", "autoscaler-core-server"),
 	}, nil
 }
 
-func Start(ctx context.Context, configPath string) error {
+func Start(ctx context.Context, configPath string, logger *log.Logger) error {
 	config, err := NewConfigFromPath(configPath)
 	if err != nil {
 		return err
 	}
 
-	instance, err := newCoreInstance(config)
+	instance, err := newCoreInstance(config, logger)
 	if err != nil {
 		return err
 	}
@@ -74,13 +76,15 @@ func (c *Core) run(ctx context.Context) error {
 		lis.Close() // ignore error
 		if _, err := os.Stat(filename); err == nil {
 			if err := os.RemoveAll(filename); err != nil {
-				log.Printf("cleanup failed: %s\n", err)
+				c.logger.Error("error", "cleanup failed: %s", err) // nolint
 			}
 		}
 	}()
 
 	go func() {
-		log.Printf("autoscaler started with: %s\n", lis.Addr().String())
+		if err := c.logger.Info("message", "autoscaler started", "address", lis.Addr().String()); err != nil {
+			errCh <- err
+		}
 		if err := server.Serve(lis); err != nil {
 			errCh <- err
 		}
@@ -90,7 +94,7 @@ func (c *Core) run(ctx context.Context) error {
 	case err := <-errCh:
 		return fmt.Errorf("core service failed: %s", err)
 	case <-ctx.Done():
-		log.Println("shutting down with:", ctx.Err())
+		c.logger.Info("message", "shutting down", "error", ctx.Err()) // nolint
 	}
 	return ctx.Err()
 }
@@ -129,12 +133,12 @@ func (c *Core) handle(ctx *Context) (*JobStatus, string, error) {
 	}
 
 	// TODO バリデーションは起動時に行えるので移動すべき
-	if err := rg.ValidateActions(ctx.Request().action, c.config.Handlers()); err != nil {
+	if err := rg.ValidateActions(ctx.Request().action, c.config.Handlers(ctx)); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
 		return job, "", err
 	}
 
-	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
+	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers(ctx))
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
 	return job, "", nil
