@@ -135,7 +135,7 @@ func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handl
 				if err := sender.Send(&handler.HandleResponse{
 					ScalingJobId: jobID,
 					Status:       handler.HandleResponse_RUNNING,
-					Log:          fmt.Sprintf("found target server: %#v", s),
+					Log:          fmt.Sprintf("found target server: %s", s.IPAddress),
 				}); err != nil {
 					return err
 				}
