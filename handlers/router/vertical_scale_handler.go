@@ -20,7 +20,6 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -28,7 +27,7 @@ import (
 
 type VerticalScaleHandler struct {
 	handlers.SakuraCloudFlagCustomizer
-	Logger *log.Logger
+	handlers.HandlerLogger
 }
 
 func (h *VerticalScaleHandler) Name() string {
@@ -37,10 +36,6 @@ func (h *VerticalScaleHandler) Name() string {
 
 func (h *VerticalScaleHandler) Version() string {
 	return version.FullVersion()
-}
-
-func (h *VerticalScaleHandler) GetLogger() *log.Logger {
-	return h.Logger
 }
 
 func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {

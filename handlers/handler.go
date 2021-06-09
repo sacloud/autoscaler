@@ -33,6 +33,7 @@ type Server interface {
 	Name() string
 	Version() string
 	GetLogger() *log.Logger
+	SetLogger(logger *log.Logger)
 }
 
 type Handler interface {
@@ -102,6 +103,14 @@ func Serve(server Server) {
 		grpcServer := grpc.NewServer()
 		srv := &HandleService{
 			Handler: server,
+			// TODO ロガーの設定
+			logger: log.NewLogger(&log.LoggerOption{
+				Writer:    nil,
+				JSON:      false,
+				TimeStamp: true,
+				Caller:    false,
+				Level:     log.LevelInfo,
+			}),
 		}
 		handler.RegisterHandleServiceServer(grpcServer, srv)
 

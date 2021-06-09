@@ -39,8 +39,12 @@ func (h *Handler) GetLogger() *log.Logger {
 	return h.Builtin.GetLogger()
 }
 
+func (h *Handler) SetLogger(logger *log.Logger) {
+	h.Builtin.SetLogger(logger)
+}
+
 func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
-	logger := h.Builtin.GetLogger().With("step", "PreHandle", "handler", h.Name())
+	logger := h.Builtin.GetLogger()
 	if builtin, ok := h.Builtin.(handlers.PreHandler); ok {
 		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
 			return err
@@ -58,7 +62,7 @@ func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.Respo
 }
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	logger := h.Builtin.GetLogger().With("step", "Handle", "handler", h.Name())
+	logger := h.Builtin.GetLogger()
 	if builtin, ok := h.Builtin.(handlers.Handler); ok {
 		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
 			return err
@@ -76,7 +80,7 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 }
 
 func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
-	logger := h.Builtin.GetLogger().With("step", "PostHandle", "handler", h.Name())
+	logger := h.Builtin.GetLogger()
 	if builtin, ok := h.Builtin.(handlers.PostHandler); ok {
 		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
 			return err

@@ -84,6 +84,14 @@ func (c *computedGSLB) ID() string {
 	return ""
 }
 
+func (c *computedGSLB) Type() ResourceTypes {
+	return ResourceTypeGSLB
+}
+
+func (c *computedGSLB) Zone() string {
+	return ""
+}
+
 func (c *computedGSLB) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }

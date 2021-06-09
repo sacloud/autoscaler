@@ -35,35 +35,35 @@ func BuiltinHandlers(ctx *Context) Handlers {
 			Type: "elb-vertical-scaler",
 			Name: "elb-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &elb.VerticalScaleHandler{Logger: ctx.Logger()},
+				Builtin: &elb.VerticalScaleHandler{},
 			},
 		},
 		{
 			Type: "elb-servers-handler",
 			Name: "elb-servers-handler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &elb.ServersHandler{Logger: ctx.Logger()},
+				Builtin: &elb.ServersHandler{},
 			},
 		},
 		{
 			Type: "gslb-servers-handler",
 			Name: "gslb-servers-handler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &gslb.ServersHandler{Logger: ctx.Logger()},
+				Builtin: &gslb.ServersHandler{},
 			},
 		},
 		{
 			Type: "router-vertical-scaler",
 			Name: "router-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &router.VerticalScaleHandler{Logger: ctx.Logger()},
+				Builtin: &router.VerticalScaleHandler{},
 			},
 		},
 		{
 			Type: "server-vertical-scaler",
 			Name: "server-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &server.VerticalScaleHandler{Logger: ctx.Logger()},
+				Builtin: &server.VerticalScaleHandler{},
 			},
 		},
 		// TODO その他ビルトインを追加

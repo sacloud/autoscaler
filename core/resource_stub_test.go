@@ -39,6 +39,8 @@ func (r *stubResource) Compute(ctx *Context, apiClient sacloud.APICaller) (Compu
 
 type stubComputed struct {
 	id          string
+	zone        string
+	typ         ResourceTypes
 	instruction handler.ResourceInstructions
 	current     *handler.Resource
 	desired     *handler.Resource
@@ -46,6 +48,14 @@ type stubComputed struct {
 
 func (c *stubComputed) ID() string {
 	return c.id
+}
+
+func (c *stubComputed) Type() ResourceTypes {
+	return c.typ
+}
+
+func (c *stubComputed) Zone() string {
+	return c.zone
 }
 
 func (c *stubComputed) Instruction() handler.ResourceInstructions {

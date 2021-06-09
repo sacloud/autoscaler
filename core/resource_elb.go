@@ -150,6 +150,14 @@ func (c *computedELB) ID() string {
 	return ""
 }
 
+func (c *computedELB) Type() ResourceTypes {
+	return ResourceTypeEnhancedLoadBalancer
+}
+
+func (c *computedELB) Zone() string {
+	return ""
+}
+
 func (c *computedELB) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }

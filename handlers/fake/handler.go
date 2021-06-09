@@ -19,12 +19,11 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 )
 
 type Handler struct {
-	Logger *log.Logger
+	handlers.HandlerLogger
 }
 
 func (h *Handler) Name() string {
@@ -33,10 +32,6 @@ func (h *Handler) Name() string {
 
 func (h *Handler) Version() string {
 	return version.FullVersion()
-}
-
-func (h *Handler) GetLogger() *log.Logger {
-	return h.Logger
 }
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {

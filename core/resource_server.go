@@ -158,6 +158,14 @@ func (c *computedServer) ID() string {
 	return ""
 }
 
+func (c *computedServer) Type() ResourceTypes {
+	return ResourceTypeServer
+}
+
+func (c *computedServer) Zone() string {
+	return c.zone
+}
+
 func (c *computedServer) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }
