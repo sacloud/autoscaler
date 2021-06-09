@@ -15,10 +15,12 @@
 package validate
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/go-multierror"
 )
 
 func Struct(v interface{}) error {
@@ -31,5 +33,44 @@ func Struct(v interface{}) error {
 		return name
 	})
 	// TODO エラーメッセージのカスタマイズ
-	return validate.Struct(v)
+	err := validate.Struct(v)
+	if err != nil {
+		if err != nil {
+			// see https://github.com/go-playground/validator/blob/f6584a41c8acc5dfc0b62f7962811f5231c11530/_examples/simple/main.go#L59-L65
+			if _, ok := err.(*validator.InvalidValidationError); ok {
+				return err
+			}
+
+			errors := &multierror.Error{}
+			for _, err := range err.(validator.ValidationErrors) {
+				errors = multierror.Append(errors, errorFromValidationErr(v, err))
+			}
+			return errors.ErrorOrNil()
+		}
+	}
+
+	return nil
+}
+
+func errorFromValidationErr(target interface{}, err validator.FieldError) error {
+	namespaces := strings.Split(err.Namespace(), ".")
+	actualName := strings.Join(namespaces[1:], ".") // .で区切った先頭を除いたもの
+
+	param := err.Param()
+	detail := err.ActualTag()
+	if param != "" {
+		detail += "=" + param
+	}
+
+	// detailがvalidatorのタグ名だけの場合の対応をここで行う。
+	switch detail {
+	case "file":
+		detail = fmt.Sprintf("invalid file path: %v", err.Value())
+	}
+
+	return newError(actualName, detail)
+}
+
+func newError(name, message string) error {
+	return fmt.Errorf("%s: %s", name, message)
 }

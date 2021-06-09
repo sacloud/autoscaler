@@ -15,18 +15,16 @@
 package flags
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/sacloud/autoscaler/log"
-
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
 
 type flags struct {
-	LogLevel  string `name:"log-level" validate:"required,oneof=error warn info debug"`
-	LogFormat string `name:"log-format" validate:"required,oneof=logfmt json"`
+	LogLevel  string `name:"--log-level" validate:"required,oneof=error warn info debug"`
+	LogFormat string `name:"--log-format" validate:"required,oneof=logfmt json"`
 }
 
 var global = &flags{
@@ -40,11 +38,7 @@ func SetFlags(cmd *cobra.Command) {
 }
 
 func ValidateFlags(cmd *cobra.Command, args []string) error {
-	err := validate.Struct(global)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return err
+	return validate.Struct(global)
 }
 
 func NewLogger() *log.Logger {
