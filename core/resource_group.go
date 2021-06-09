@@ -173,20 +173,22 @@ func (rg *ResourceGroup) ValidateActions(actionName string, handlerFilters Handl
 func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, handlerFilters Handlers) {
 	job := ctx.Job()
 	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) // nolint
 
 	handlers, err := rg.handlers(ctx.Request().action, handlerFilters)
 	if err != nil { // 事前にValidateHandlerFiltersで検証しておくため基本的にありえないはず
 		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
-		ctx.Logger().Error("fatal", err) // nolint
+		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "fatal", err) // nolint
 	}
 
 	if err := rg.handleAll(ctx, apiClient, handlers); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
-		ctx.Logger().Warn("error", err) // nolint
+		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "error", err) // nolint
 		return
 	}
 
 	job.SetStatus(request.ScalingJobStatus_JOB_DONE)
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_DONE) // nolint
 }
 
 func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, handlers Handlers) error {
@@ -208,11 +210,18 @@ func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud
 	backwardFn := func(resource Resource) error {
 		computed := resource.Computed()
 
-		ctx := NewHandlingContext(parentCtx, computed)
+		zone := computed.Zone()
+		if zone == "" {
+			zone = "global"
+		}
+		handlingCtx := NewHandlingContext(parentCtx, computed).WithLogger("type", computed.Type(), "zone", zone, "id", computed.ID())
 
 		// preHandle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
-			ctx = ctx.WithLogger("step", "PreHandle")
+			ctx := handlingCtx.WithLogger("step", "PreHandle", "handler", h.Name)
+			if h.BuiltinHandler != nil {
+				h.BuiltinHandler.SetLogger(ctx.Logger())
+			}
 			return h.PreHandle(ctx, c)
 		}); err != nil {
 			return err
@@ -220,14 +229,17 @@ func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud
 
 		// handle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
-			ctx = ctx.WithLogger("step", "Handle")
+			ctx := handlingCtx.WithLogger("step", "Handle", "handler", h.Name)
+			if h.BuiltinHandler != nil {
+				h.BuiltinHandler.SetLogger(ctx.Logger())
+			}
 			return h.Handle(ctx, c)
 		}); err != nil {
 			return err
 		}
 
 		// refresh
-		refreshed, err := resource.Compute(ctx.ForRefresh(), apiClient)
+		refreshed, err := resource.Compute(handlingCtx.ForRefresh(), apiClient)
 		if err != nil {
 			return err
 		}
@@ -235,7 +247,10 @@ func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud
 
 		// postHandle
 		if err := rg.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
-			ctx = ctx.WithLogger("step", "PostHandle")
+			ctx := handlingCtx.WithLogger("step", "PostHandle", "handler", h.Name)
+			if h.BuiltinHandler != nil {
+				h.BuiltinHandler.SetLogger(ctx.Logger())
+			}
 			return h.PostHandle(ctx, c)
 		}); err != nil {
 			return err

@@ -123,6 +123,14 @@ func (c *computedRouter) ID() string {
 	return ""
 }
 
+func (c *computedRouter) Type() ResourceTypes {
+	return ResourceTypeRouter
+}
+
+func (c *computedRouter) Zone() string {
+	return c.zone
+}
+
 func (c *computedRouter) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }

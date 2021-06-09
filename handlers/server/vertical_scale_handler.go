@@ -20,7 +20,6 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/libsacloud/v2/helper/power"
 	"github.com/sacloud/libsacloud/v2/pkg/size"
@@ -30,7 +29,7 @@ import (
 
 type VerticalScaleHandler struct {
 	handlers.SakuraCloudFlagCustomizer
-	Logger *log.Logger
+	handlers.HandlerLogger
 }
 
 func (h *VerticalScaleHandler) Name() string {
@@ -41,17 +40,12 @@ func (h *VerticalScaleHandler) Version() string {
 	return version.FullVersion()
 }
 
-func (h *VerticalScaleHandler) GetLogger() *log.Logger {
-	return h.Logger
-}
-
 func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	ctx := context.Background()
 
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          fmt.Sprintf("%s: accepted: %s", h.Name(), req.String()),
 	}); err != nil {
 		return err
 	}
@@ -62,6 +56,11 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 		if err := h.handleServer(ctx, req, server, sender); err != nil {
 			return err
 		}
+	} else {
+		return sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_IGNORED,
+		})
 	}
 
 	return nil
@@ -142,6 +141,6 @@ func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.Ha
 	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_DONE,
-		Log:          fmt.Sprintf("server plan changed - resource ID cahnged: from %s to %s", server.Id, updated.ID.String()),
+		Log:          fmt.Sprintf("server plan changed - resource ID changed: from %s to %s", server.Id, updated.ID.String()),
 	})
 }

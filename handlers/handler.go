@@ -33,6 +33,7 @@ type Server interface {
 	Name() string
 	Version() string
 	GetLogger() *log.Logger
+	SetLogger(logger *log.Logger)
 }
 
 type Handler interface {
@@ -102,6 +103,14 @@ func Serve(server Server) {
 		grpcServer := grpc.NewServer()
 		srv := &HandleService{
 			Handler: server,
+			// TODO ロガーの設定
+			logger: log.NewLogger(&log.LoggerOption{
+				Writer:    nil,
+				JSON:      false,
+				TimeStamp: true,
+				Caller:    false,
+				Level:     log.LevelInfo,
+			}),
 		}
 		handler.RegisterHandleServiceServer(grpcServer, srv)
 
@@ -164,34 +173,52 @@ type HandleService struct {
 }
 
 func (h *HandleService) PreHandle(req *handler.PreHandleRequest, server handler.HandleService_PreHandleServer) error {
-	if handler, ok := h.Handler.(PreHandler); ok {
-		if err := h.logger.Info("message", "PreHandle request received", "request", req.String()); err != nil {
+	if impl, ok := h.Handler.(PreHandler); ok {
+		if err := h.logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
 			return err
 		}
-		return handler.PreHandle(req, server)
+		if err := h.logger.Debug("request", req.String()); err != nil {
+			return err
+		}
+		return impl.PreHandle(req, server)
 	}
 
-	return h.logger.Info("message", "PreHandle request ignored", "request", req.String())
+	if err := h.logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
+		return err
+	}
+	return h.logger.Debug("request", req.String())
 }
 
 func (h *HandleService) Handle(req *handler.HandleRequest, server handler.HandleService_HandleServer) error {
-	if handler, ok := h.Handler.(Handler); ok {
-		if err := h.logger.Info("message", "Handle request received", "request", req.String()); err != nil {
+	if impl, ok := h.Handler.(Handler); ok {
+		if err := h.logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
 			return err
 		}
-		return handler.Handle(req, server)
+		if err := h.logger.Debug("request", req.String()); err != nil {
+			return err
+		}
+		return impl.Handle(req, server)
 	}
 
-	return h.logger.Info("message", "Handle request ignored", "request", req.String())
+	if err := h.logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
+		return err
+	}
+	return h.logger.Debug("request", req.String())
 }
 
 func (h *HandleService) PostHandle(req *handler.PostHandleRequest, server handler.HandleService_PostHandleServer) error {
-	if handler, ok := h.Handler.(PostHandler); ok {
-		if err := h.logger.Info("message", "PostHandle request received", "request", req.String()); err != nil {
+	if impl, ok := h.Handler.(PostHandler); ok {
+		if err := h.logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
 			return err
 		}
-		return handler.PostHandle(req, server)
+		if err := h.logger.Debug("request", req.String()); err != nil {
+			return err
+		}
+		return impl.PostHandle(req, server)
 	}
 
-	return h.logger.Info("message", "PostHandle request ignored", "request", req.String())
+	if err := h.logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
+		return err
+	}
+	return h.logger.Debug("request", req.String())
 }

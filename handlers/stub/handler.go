@@ -52,6 +52,10 @@ func (h *Handler) GetLogger() *log.Logger {
 	})
 }
 
+func (h *Handler) SetLogger(logger *log.Logger) {
+	h.Logger = logger
+}
+
 func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
 	if h.PreHandleFunc != nil {
 		return h.PreHandleFunc(req, sender)

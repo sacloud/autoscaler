@@ -84,6 +84,14 @@ func (c *computedDNS) ID() string {
 	return ""
 }
 
+func (c *computedDNS) Type() ResourceTypes {
+	return ResourceTypeDNS
+}
+
+func (c *computedDNS) Zone() string {
+	return ""
+}
+
 func (c *computedDNS) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }

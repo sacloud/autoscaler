@@ -20,7 +20,6 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -37,7 +36,7 @@ import (
 // もしGSLBにサーバが1台しか登録されていない場合はサービス停止が発生するため注意が必要
 type ServersHandler struct {
 	handlers.SakuraCloudFlagCustomizer
-	Logger *log.Logger
+	handlers.HandlerLogger
 }
 
 func (h *ServersHandler) Name() string {
@@ -48,17 +47,12 @@ func (h *ServersHandler) Version() string {
 	return version.FullVersion()
 }
 
-func (h *ServersHandler) GetLogger() *log.Logger {
-	return h.Logger
-}
-
 func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
 	ctx := context.Background()
 
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          fmt.Sprintf("%s: accepted: %s", h.Name(), req.String()),
 	}); err != nil {
 		return err
 	}
@@ -70,6 +64,11 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 		if err := h.handle(ctx, req.ScalingJobId, server, gslb, sender, false); err != nil {
 			return err
 		}
+	} else {
+		return sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_IGNORED,
+		})
 	}
 	return nil
 }
@@ -80,7 +79,6 @@ func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handl
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          fmt.Sprintf("%s: accepted: %s", h.Name(), req.String()),
 	}); err != nil {
 		return err
 	}
@@ -92,6 +90,11 @@ func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handl
 		if err := h.handle(ctx, req.ScalingJobId, server, gslb, sender, true); err != nil {
 			return err
 		}
+	} else {
+		return sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_IGNORED,
+		})
 	}
 	return nil
 }
@@ -132,7 +135,7 @@ func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handl
 				if err := sender.Send(&handler.HandleResponse{
 					ScalingJobId: jobID,
 					Status:       handler.HandleResponse_RUNNING,
-					Log:          fmt.Sprintf("found target server: %#v", s),
+					Log:          fmt.Sprintf("found target server: %s", s.IPAddress),
 				}); err != nil {
 					return err
 				}

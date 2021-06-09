@@ -19,12 +19,11 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 )
 
 type Handler struct {
-	Logger *log.Logger
+	handlers.HandlerLogger
 }
 
 func (h *Handler) Name() string {
@@ -35,16 +34,11 @@ func (h *Handler) Version() string {
 	return version.FullVersion()
 }
 
-func (h *Handler) GetLogger() *log.Logger {
-	return h.Logger
-}
-
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	// 受付メッセージ送信
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          "",
 	}); err != nil {
 		return err
 	}
@@ -54,7 +48,6 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 		if err := sender.Send(&handler.HandleResponse{
 			ScalingJobId: req.ScalingJobId,
 			Status:       handler.HandleResponse_RUNNING,
-			Log:          "",
 		}); err != nil {
 			return err
 		}
@@ -65,6 +58,5 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_DONE,
-		Log:          "",
 	})
 }

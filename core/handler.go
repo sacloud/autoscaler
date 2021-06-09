@@ -35,35 +35,35 @@ func BuiltinHandlers(ctx *Context) Handlers {
 			Type: "elb-vertical-scaler",
 			Name: "elb-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &elb.VerticalScaleHandler{Logger: ctx.Logger().With("handler", "elb-vertical-scaler")},
+				Builtin: &elb.VerticalScaleHandler{},
 			},
 		},
 		{
 			Type: "elb-servers-handler",
 			Name: "elb-servers-handler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &elb.ServersHandler{Logger: ctx.Logger().With("handler", "elb-servers-handler")},
+				Builtin: &elb.ServersHandler{},
 			},
 		},
 		{
 			Type: "gslb-servers-handler",
 			Name: "gslb-servers-handler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &gslb.ServersHandler{Logger: ctx.Logger().With("handler", "gslb-servers-handler")},
+				Builtin: &gslb.ServersHandler{},
 			},
 		},
 		{
 			Type: "router-vertical-scaler",
 			Name: "router-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &router.VerticalScaleHandler{Logger: ctx.Logger().With("handler", "router-vertical-scaler")},
+				Builtin: &router.VerticalScaleHandler{},
 			},
 		},
 		{
 			Type: "server-vertical-scaler",
 			Name: "server-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &server.VerticalScaleHandler{Logger: ctx.Logger().With("handler", "server-vertical-scaler")},
+				Builtin: &server.VerticalScaleHandler{},
 			},
 		},
 		// TODO その他ビルトインを追加
@@ -269,8 +269,13 @@ func (h *Handler) handleHandlerResponse(ctx *HandlingContext, receiver handlerRe
 		if err != nil {
 			return err
 		}
-		if err := ctx.Logger().Info("message", "handler replied", "replay", stat.String()); err != nil {
+		if err := ctx.Logger().Info("status", stat.Status); err != nil {
 			return err
+		}
+		if stat.Log != "" {
+			if err := ctx.Logger().Debug("log", stat.Log); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -281,5 +286,11 @@ type builtinResponseSender struct {
 }
 
 func (s *builtinResponseSender) Send(res *handler.HandleResponse) error {
-	return s.ctx.Logger().Info("message", "handler replied", "reply", res.String())
+	if err := s.ctx.Logger().Info("status", res.Status); err != nil {
+		return err
+	}
+	if res.Log != "" {
+		return s.ctx.Logger().Info("log", res.Log)
+	}
+	return nil
 }

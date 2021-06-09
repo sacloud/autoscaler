@@ -30,7 +30,7 @@ type Context struct {
 }
 
 func NewContext(parent context.Context, request *requestInfo, logger *log.Logger) *Context {
-	logger = logger.With("request", request.String())
+	logger = logger.With("request-type", request.requestType, "scaling-job-id", request.ID())
 	return &Context{
 		ctx:     parent,
 		request: request,
@@ -42,15 +42,18 @@ func NewContext(parent context.Context, request *requestInfo, logger *log.Logger
 //
 // 現在のContextが親Contextとなる
 func (c *Context) WithJobStatus(job *JobStatus) *Context {
-	ctx := NewContext(c, &requestInfo{
-		requestType:       c.request.requestType,
-		source:            c.request.source,
-		action:            c.request.action,
-		resourceGroupName: c.request.resourceGroupName,
-		desiredStateName:  c.request.desiredStateName,
-	}, c.logger)
-	ctx.job = job
-	return ctx
+	return &Context{
+		ctx: c,
+		request: &requestInfo{
+			requestType:       c.request.requestType,
+			source:            c.request.source,
+			action:            c.request.action,
+			resourceGroupName: c.request.resourceGroupName,
+			desiredStateName:  c.request.desiredStateName,
+		},
+		logger: c.logger,
+		job:    job,
+	}
 }
 
 // ForRefresh リフレッシュのためのContextを現在のContextを元に作成して返す

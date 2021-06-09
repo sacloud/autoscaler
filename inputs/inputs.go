@@ -102,6 +102,8 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 		return
 	}
 
+	s.logger.Info("message", "sending request to the Core server", "request-type", scalingReq.RequestType) // nolint
+
 	if err := s.send(scalingReq); err != nil {
 		s.logger.Error("error", err) // nolint
 		w.WriteHeader(http.StatusInternalServerError)

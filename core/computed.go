@@ -26,8 +26,12 @@ import (
 //
 // 一部の例外を除き1つのComputedに対し1つのさくらのクラウド上のリソースが対応する
 type Computed interface {
+	// Type このComputedが表すさくらのクラウド上のリソースの種別
+	Type() ResourceTypes
 	// ID このComputedが表すさくらのクラウド上のリソースのID、まだ存在しないリソースの場合は空文字を返す
 	ID() string
+	// Zone このComputedが表すさくらのクラウド上のリソースが属するゾーン名、グローバルリソースの場合は空文字を返す
+	Zone() string
 	// Instruction 現在のリソースの状態から算出されたハンドラーへの指示の種類
 	Instruction() handler.ResourceInstructions
 	// Current ハンドラーに渡すパラメータ、現在の状態を示す 現在存在しないリソースの場合はnilを返す
