@@ -44,7 +44,7 @@ type ResourcePlan interface {
 	PlanName() string
 	Equals(resource interface{}) bool
 	LessThan(resource interface{}) bool
-	GreaterThan(resource interface{}) bool
+	GreaterThan(resource interface{}) bool // TODO Equals+LessThanがあれば不要なはず
 	LessThanPlan(plans ResourcePlan) bool
 }
 

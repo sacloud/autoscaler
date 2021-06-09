@@ -15,27 +15,24 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/goccy/go-yaml"
+	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/defaults"
-	"github.com/sacloud/libsacloud/v2/helper/api"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
 type Config struct {
-	SakuraCloud    SakuraCloud      `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
+	SakuraCloud    *SakuraCloud     `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
 	CustomHandlers Handlers         `yaml:"handlers"`    // カスタムハンドラーの定義
 	Resources      *ResourceGroups  `yaml:"resources"`   // リソースグループの定義
 	AutoScaler     AutoScalerConfig `yaml:"autoscaler"`  // オートスケーラー自体の動作設定
-
-	clientOnce sync.Once
-	apiClient  sacloud.APICaller
 }
 
 func NewConfigFromPath(filePath string) (*Config, error) {
@@ -66,12 +63,8 @@ func (c *Config) load(reader io.Reader) error {
 		return fmt.Errorf("unmarshalling of config values failed: %s", err)
 	}
 
-	// APIキーが未設定の場合環境変数を読む
-	if c.SakuraCloud.Token == "" {
-		c.SakuraCloud.Token = os.Getenv("SAKURACLOUD_ACCESS_TOKEN")
-	}
-	if c.SakuraCloud.Secret == "" {
-		c.SakuraCloud.Secret = os.Getenv("SAKURACLOUD_ACCESS_TOKEN_SECRET")
+	if c.SakuraCloud == nil {
+		c.SakuraCloud = &SakuraCloud{}
 	}
 	return nil
 }
@@ -80,34 +73,26 @@ func (c *Config) load(reader io.Reader) error {
 //
 // シングルトンなインスタンスを返す
 func (c *Config) APIClient() sacloud.APICaller {
-	c.clientOnce.Do(func() {
-		c.apiClient = api.NewCaller(&api.CallerOptions{
-			AccessToken:       c.SakuraCloud.Token,
-			AccessTokenSecret: c.SakuraCloud.Secret,
-			//APIRootURL:           "",
-			//DefaultZone:          "",
-			//AcceptLanguage:       "",
-			//HTTPClient:           nil,
-			//HTTPRequestTimeout:   0,
-			//HTTPRequestRateLimit: 0,
-			//RetryMax:             0,
-			//RetryWaitMax:         0,
-			//RetryWaitMin:         0,
-			//UserAgent:            "",
-			//TraceAPI:             false,
-			//TraceHTTP:            false,
-			//OpenTelemetry:        false,
-			//OpenTelemetryOptions: nil,
-			FakeMode: os.Getenv("FAKE_MODE") != "",
-		})
-	})
-	return c.apiClient
+	return c.SakuraCloud.APIClient()
 }
 
-// TODO Validateの実装
+func (c *Config) Handlers() Handlers {
+	return append(BuiltinHandlers(), c.CustomHandlers...)
+}
 
-func (c *Config) Handlers(ctx *Context) Handlers {
-	return append(BuiltinHandlers(ctx), c.CustomHandlers...)
+func (c *Config) Validate(ctx context.Context) error {
+	// API Client
+	if err := c.SakuraCloud.Validate(ctx); err != nil {
+		return err
+	}
+
+	// Resources
+	errors := &multierror.Error{}
+	if errs := c.Resources.Validate(ctx, c.APIClient(), c.Handlers()); len(errs) > 0 {
+		errors = multierror.Append(errors, errs...)
+	}
+
+	return errors.ErrorOrNil()
 }
 
 // AutoScalerConfig オートスケーラー自体の動作設定

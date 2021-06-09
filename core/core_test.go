@@ -18,20 +18,12 @@ import (
 	"os"
 
 	"github.com/sacloud/autoscaler/log"
-
 	"github.com/sacloud/libsacloud/v2/helper/api"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 var (
-	testZone      = "is1a"
-	testAPIClient = api.NewCaller(&api.CallerOptions{
-		AccessToken:       "fake",
-		AccessTokenSecret: "fake",
-		UserAgent:         "sacloud/autoscaler/fake",
-		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
-		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
-		FakeMode:          true,
-	})
+	testZone   = "is1a"
 	testLogger = log.NewLogger(&log.LoggerOption{
 		Writer:    os.Stderr,
 		JSON:      false,
@@ -40,3 +32,14 @@ var (
 		Level:     log.LevelDebug,
 	})
 )
+
+func testAPIClient() sacloud.APICaller {
+	return api.NewCaller(&api.CallerOptions{
+		AccessToken:       "fake",
+		AccessTokenSecret: "fake",
+		UserAgent:         "sacloud/autoscaler/fake",
+		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
+		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
+		FakeMode:          true,
+	})
+}

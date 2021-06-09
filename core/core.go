@@ -36,7 +36,6 @@ type Core struct {
 }
 
 func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) {
-	// TODO バリデーションの実装
 	return &Core{
 		listenAddress: addr,
 		config:        c,
@@ -48,6 +47,10 @@ func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) 
 func Start(ctx context.Context, addr, configPath string, logger *log.Logger) error {
 	config, err := NewConfigFromPath(configPath)
 	if err != nil {
+		return err
+	}
+
+	if err := config.Validate(ctx); err != nil {
 		return err
 	}
 
@@ -135,14 +138,13 @@ func (c *Core) handle(ctx *Context) (*JobStatus, string, error) {
 		return job, "", err
 	}
 
-	// TODO バリデーションは起動時に行えるので移動すべき
-	if err := rg.ValidateActions(ctx.Request().action, c.config.Handlers(ctx)); err != nil {
+	if err := rg.ValidateActions(ctx.Request().action, c.config.Handlers()); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
 		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
 		return job, "", err
 	}
 
-	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers(ctx))
+	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) // nolint
@@ -156,11 +158,12 @@ func (c *Core) targetResourceGroup(ctx *Context) (*ResourceGroup, error) {
 	}
 
 	if groupName == defaults.ResourceGroupName {
-		// デフォルトではmap内の先頭のリソースグループを返すようにする(yamlでの定義順とは限らない点に注意)
-		// TODO 要検討
-		for _, v := range c.config.Resources.All() {
-			return v, nil
+		resourceGroups := c.config.Resources.All()
+		if len(resourceGroups) > 1 {
+			return nil, fmt.Errorf("resource group name %q cannot be specified when multiple groups are defined", defaults.ResourceGroupName)
 		}
+
+		return resourceGroups[0], nil
 	}
 
 	rg, ok := c.config.Resources.GetOk(groupName)

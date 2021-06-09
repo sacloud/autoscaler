@@ -52,7 +52,7 @@ func testContext() *Context {
 }
 
 func initTestServer(t *testing.T) func() {
-	serverOp := sacloud.NewServerOp(testAPIClient)
+	serverOp := sacloud.NewServerOp(testAPIClient())
 	server, err := serverOp.Create(context.Background(), testZone, &sacloud.ServerCreateRequest{
 		CPU:                  2,
 		MemoryMB:             4 * size.GiB,
@@ -74,7 +74,7 @@ func initTestServer(t *testing.T) func() {
 }
 
 func initTestDNS(t *testing.T) func() {
-	dnsOp := sacloud.NewDNSOp(testAPIClient)
+	dnsOp := sacloud.NewDNSOp(testAPIClient())
 	dns, err := dnsOp.Create(context.Background(), &sacloud.DNSCreateRequest{
 		Name: "test-dns.com",
 	})
@@ -96,9 +96,9 @@ func TestServer_Validate(t *testing.T) {
 		empty := &Server{
 			ResourceBase: &ResourceBase{TypeName: "Server"},
 		}
-		err := empty.Validate()
-		require.Error(t, err)
-		require.EqualError(t, err, "selector: required")
+		errs := empty.Validate(context.Background(), testAPIClient())
+		require.Len(t, errs, 1)
+		require.EqualError(t, errs[0], "resource=Server: selector: required")
 	})
 
 	t.Run("returns error if selector.Zone is empty", func(t *testing.T) {
@@ -108,9 +108,9 @@ func TestServer_Validate(t *testing.T) {
 				TargetSelector: &ResourceSelector{},
 			},
 		}
-		err := empty.Validate()
-		require.Error(t, err)
-		require.EqualError(t, err, "selector.Zone: required")
+		errs := empty.Validate(context.Background(), testAPIClient())
+		require.Len(t, errs, 1)
+		require.EqualError(t, errs[0], "resource=Server: selector.Zone: required")
 	})
 }
 
@@ -131,7 +131,7 @@ func TestServer_Computed(t *testing.T) {
 			},
 		}
 
-		_, err := notFound.Compute(ctx, testAPIClient)
+		_, err := notFound.Compute(ctx, testAPIClient())
 		require.Error(t, err)
 	})
 
@@ -151,7 +151,7 @@ func TestServer_Computed(t *testing.T) {
 			},
 		}
 
-		computed, err := running.Compute(ctx, testAPIClient)
+		computed, err := running.Compute(ctx, testAPIClient())
 		require.NoError(t, err)
 		require.NotNil(t, computed)
 		require.Equal(t, handler.ResourceInstructions_UPDATE, computed.Instruction())
@@ -166,7 +166,7 @@ func TestServer_Computed(t *testing.T) {
 	t.Run("returns desired state that can convert to the request parameter", func(t *testing.T) {
 		ctx := testContext()
 		server := testServer()
-		computed, err := server.Compute(ctx, testAPIClient)
+		computed, err := server.Compute(ctx, testAPIClient())
 		require.NoError(t, err)
 
 		handlerReq := computed.Desired()
@@ -184,7 +184,7 @@ func TestServer_Computed(t *testing.T) {
 	t.Run("stores results to own cache", func(t *testing.T) {
 		ctx := testContext()
 		server := testServer()
-		computed, err := server.Compute(ctx, testAPIClient)
+		computed, err := server.Compute(ctx, testAPIClient())
 		require.NoError(t, err)
 
 		cached := server.Computed()
@@ -221,10 +221,10 @@ func TestServer_Computed(t *testing.T) {
 			parent: dns,
 		}
 
-		_, err := dns.Compute(ctx, testAPIClient)
+		_, err := dns.Compute(ctx, testAPIClient())
 		require.NoError(t, err)
 
-		computed, err := server.Compute(ctx, testAPIClient)
+		computed, err := server.Compute(ctx, testAPIClient())
 		require.NoError(t, err)
 		require.NotNil(t, computed)
 

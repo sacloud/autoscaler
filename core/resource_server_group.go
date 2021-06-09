@@ -14,14 +14,18 @@
 
 package core
 
-import "github.com/sacloud/libsacloud/v2/sacloud"
+import (
+	"context"
+
+	"github.com/sacloud/libsacloud/v2/sacloud"
+)
 
 type ServerGroup struct {
 	*ResourceBase `yaml:",inline"`
 	wrapper       Resource
 }
 
-func (s *ServerGroup) Validate() error {
+func (s *ServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	// TODO 実装
 	return nil
 }

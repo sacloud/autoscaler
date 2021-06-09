@@ -58,7 +58,6 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 	}
 
 	if req.Instruction == handler.ResourceInstructions_UPDATE && h.shouldHandle(req.Desired) {
-		// TODO 入力値のバリデーション
 		server := req.Desired.GetServer()
 		elb := server.Parent.GetElb() // バリデーション済みなためnilチェック不要
 		if err := h.handle(ctx, req.ScalingJobId, server, elb, sender, false); err != nil {
@@ -84,7 +83,6 @@ func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handl
 	}
 
 	if req.Result == handler.PostHandleRequest_UPDATED && h.shouldHandle(req.Desired) {
-		// TODO 入力値のバリデーション
 		server := req.Desired.GetServer()
 		elb := server.Parent.GetElb() // バリデーション済みなためnilチェック不要
 		if err := h.handle(ctx, req.ScalingJobId, server, elb, sender, true); err != nil {

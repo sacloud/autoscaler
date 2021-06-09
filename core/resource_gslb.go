@@ -15,8 +15,10 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
@@ -25,18 +27,45 @@ type GSLB struct {
 	*ResourceBase `yaml:",inline"`
 }
 
-func (d *GSLB) Validate() error {
-	// TODO 実装
-	return nil
+func (g *GSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+	errors := &multierror.Error{}
+	selector := g.Selector()
+	if selector == nil {
+		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+	}
+	if errors.Len() == 0 {
+		if selector.Zone != "" {
+			errors = multierror.Append(fmt.Errorf("selector.Zone: can not be specified for this resource"))
+		}
+
+		if _, err := g.findCloudResource(ctx, apiClient); err != nil {
+			errors = multierror.Append(errors, err)
+		}
+	}
+
+	// set prefix
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", g.Type().String())).(*multierror.Error)
+	return errors.Errors
 }
 
-func (d *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
-	if err := d.Validate(); err != nil {
+func (g *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+	cloudResource, err := g.findCloudResource(ctx, apiClient)
+	if err != nil {
 		return nil, err
 	}
 
+	computed, err := newComputedGSLB(ctx, g, cloudResource)
+	if err != nil {
+		return nil, err
+	}
+
+	g.ComputedCache = computed
+	return computed, nil
+}
+
+func (g *GSLB) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.GSLB, error) {
 	gslbOp := sacloud.NewGSLBOp(apiClient)
-	selector := d.Selector()
+	selector := g.Selector()
 
 	found, err := gslbOp.Find(ctx, selector.FindCondition())
 	if err != nil {
@@ -49,13 +78,7 @@ func (d *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, err
 		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	computed, err := newComputedGSLB(ctx, d, found.GSLBs[0])
-	if err != nil {
-		return nil, err
-	}
-
-	d.ComputedCache = computed
-	return computed, nil
+	return found.GSLBs[0], nil
 }
 
 type computedGSLB struct {

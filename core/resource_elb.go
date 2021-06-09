@@ -15,11 +15,13 @@
 package core
 
 import (
-	"errors"
+	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 // DefaultELBPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
@@ -48,15 +50,55 @@ func (e *EnhancedLoadBalancer) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (e *EnhancedLoadBalancer) Validate() error {
+func (e *EnhancedLoadBalancer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+	errors := &multierror.Error{}
 	selector := e.Selector()
 	if selector == nil {
-		return errors.New("selector: required")
+		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
 	}
-	if selector.Zone != "" {
-		return errors.New("selector.Zone: can not be specified for this resource")
+	if errors.Len() == 0 {
+		if selector.Zone != "" {
+			errors = multierror.Append(fmt.Errorf("selector.Zone: can not be specified for this resource"))
+		}
+
+		if errs := e.validatePlans(ctx, apiClient); len(errs) > 0 {
+			errors = multierror.Append(errors, errs...)
+		}
+
+		if _, err := e.findCloudResource(ctx, apiClient); err != nil {
+			errors = multierror.Append(errors, err)
+		}
 	}
-	return nil
+
+	// set prefix
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", e.Type().String())).(*multierror.Error)
+	return errors.Errors
+}
+
+func (e *EnhancedLoadBalancer) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
+	var errors []error
+	names := map[string]struct{}{}
+
+	for _, p := range e.Plans {
+		if p.Name != "" {
+			if _, ok := names[p.Name]; ok {
+				errors = append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
+			}
+			names[p.Name] = struct{}{}
+		}
+
+		if p.CPS != types.ProxyLBPlans.CPS100.Int() &&
+			p.CPS != types.ProxyLBPlans.CPS500.Int() &&
+			p.CPS != types.ProxyLBPlans.CPS1000.Int() &&
+			p.CPS != types.ProxyLBPlans.CPS5000.Int() &&
+			p.CPS != types.ProxyLBPlans.CPS10000.Int() &&
+			p.CPS != types.ProxyLBPlans.CPS50000.Int() &&
+			p.CPS != types.ProxyLBPlans.CPS100000.Int() &&
+			p.CPS != types.EProxyLBPlan(400_000).Int() { // TODO 400_000CPSプランはlibsacloud側が対応したら修正
+			errors = append(errors, fmt.Errorf("plan{CPS:%d} not found", p.CPS))
+		}
+	}
+	return errors
 }
 
 // Parent ChildResourceインターフェースの実装
@@ -70,10 +112,20 @@ func (e *EnhancedLoadBalancer) SetParent(parent Resource) {
 }
 
 func (e *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
-	if err := e.Validate(); err != nil {
+	cloudResource, err := e.findCloudResource(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+	computed, err := newComputedELB(ctx, e, cloudResource)
+	if err != nil {
 		return nil, err
 	}
 
+	e.ComputedCache = computed
+	return computed, nil
+}
+
+func (e *EnhancedLoadBalancer) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.ProxyLB, error) {
 	elbOp := sacloud.NewProxyLBOp(apiClient)
 	selector := e.Selector()
 
@@ -87,14 +139,7 @@ func (e *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller
 	if len(found.ProxyLBs) > 1 {
 		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
-
-	computed, err := newComputedELB(ctx, e, found.ProxyLBs[0])
-	if err != nil {
-		return nil, err
-	}
-
-	e.ComputedCache = computed
-	return computed, nil
+	return found.ProxyLBs[0], nil
 }
 
 type computedELB struct {

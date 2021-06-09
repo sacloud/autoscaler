@@ -14,7 +14,43 @@
 
 package core
 
+import (
+	"context"
+	"fmt"
+)
+
 // Actions 任意の名称とハンドラー名のリストのマップ
 //
 // Up/Downリクエスト時にアクション名を指定することで任意のハンドラーだけ実行したい場合に利用する
 type Actions map[string][]string
+
+// Validate ハンドラーが実在するか確認する
+func (a *Actions) Validate(ctx context.Context, handlers Handlers) []error {
+	invalidHandlers := make(map[string]struct{})
+	var names []string
+
+	for _, handlerNames := range *a {
+		for _, handlerName := range handlerNames {
+			exists := false
+			for _, h := range handlers {
+				if h.Name == handlerName {
+					exists = true
+					break
+				}
+			}
+			// 同じハンドラ名が複数登場することがあるがエラーは一つにまとめる
+			if !exists {
+				if _, ok := invalidHandlers[handlerName]; !ok {
+					names = append(names, handlerName)
+				}
+				invalidHandlers[handlerName] = struct{}{}
+			}
+		}
+	}
+
+	var errors []error
+	for _, name := range names {
+		errors = append(errors, fmt.Errorf("handler %q is not defined", name))
+	}
+	return errors
+}

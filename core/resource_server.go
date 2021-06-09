@@ -15,9 +15,10 @@
 package core
 
 import (
-	"errors"
+	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -54,22 +55,88 @@ func (s *Server) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (s *Server) Validate() error {
+func (s *Server) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+	errors := &multierror.Error{}
+
 	selector := s.Selector()
 	if selector == nil {
-		return errors.New("selector: required")
+		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
 	}
-	if selector.Zone == "" {
-		return errors.New("selector.Zone: required")
+	if errors.Len() == 0 {
+		if selector.Zone == "" {
+			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: required"))
+		}
+	}
+
+	if errors.Len() == 0 {
+		if errs := s.validatePlans(ctx, apiClient); len(errs) > 0 {
+			errors = multierror.Append(errors, errs...)
+		}
+
+		if _, err := s.findCloudResource(ctx, apiClient); err != nil {
+			errors = multierror.Append(errors, err)
+		}
+	}
+
+	// set prefix
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", s.Type().String())).(*multierror.Error)
+	return errors.Errors
+}
+
+func (s *Server) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
+	if len(s.Plans) > 0 {
+		availablePlans, err := sacloud.NewServerPlanOp(apiClient).Find(ctx, s.Selector().Zone, nil)
+		if err != nil {
+			return []error{fmt.Errorf("validating server plan failed: %s", err)}
+		}
+
+		// for unique check: plan name
+		names := map[string]struct{}{}
+
+		errors := &multierror.Error{}
+		for _, p := range s.Plans {
+			if p.Name != "" {
+				if _, ok := names[p.Name]; ok {
+					errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
+				}
+				names[p.Name] = struct{}{}
+			}
+
+			exists := false
+			for _, available := range availablePlans.ServerPlans {
+				dedicatedCPU := available.Commitment == types.Commitments.DedicatedCPU
+				if available.Availability.IsAvailable() && dedicatedCPU == s.DedicatedCPU &&
+					available.CPU == p.Core && available.GetMemoryGB() == p.Memory {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				errors = multierror.Append(errors,
+					fmt.Errorf("plan{zone:%s, core:%d, memory:%d, dedicated_cpu:%t} not exists", s.Selector().Zone, p.Core, p.Memory, s.DedicatedCPU))
+			}
+		}
+
+		return errors.Errors
 	}
 	return nil
 }
 
 func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
-	if err := s.Validate(); err != nil {
+	cloudResource, err := s.findCloudResource(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+	computed, err := newComputedServer(ctx, s, s.Selector().Zone, cloudResource)
+	if err != nil {
 		return nil, err
 	}
 
+	s.ComputedCache = computed
+	return computed, nil
+}
+
+func (s *Server) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.Server, error) {
 	serverOp := sacloud.NewServerOp(apiClient)
 	selector := s.Selector()
 
@@ -84,13 +151,7 @@ func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, e
 		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	computed, err := newComputedServer(ctx, s, selector.Zone, found.Servers[0])
-	if err != nil {
-		return nil, err
-	}
-
-	s.ComputedCache = computed
-	return computed, nil
+	return found.Servers[0], nil
 }
 
 func (s *Server) Parent() Resource {

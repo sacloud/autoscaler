@@ -18,7 +18,7 @@ import "github.com/sacloud/libsacloud/v2/sacloud"
 
 type RouterPlan struct {
 	Name      string `yaml:"name"`
-	BandWidth int    `yaml:"cps"`
+	BandWidth int    `yaml:"band_width"`
 }
 
 func (p *RouterPlan) PlanName() string {
