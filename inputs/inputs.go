@@ -19,14 +19,21 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/request"
 	"google.golang.org/grpc"
 )
 
-var webhookBodyMaxLen = int64(64 * 1024) // 64KB
+var (
+	webhookBodyMaxLen      = int64(64 * 1024) // 64KB
+	allowedQueryStringKeys = []string{
+		"source", "action", "resource-group-name", "desired-state-name",
+	}
+)
 
 type Input interface {
 	Name() string
@@ -130,6 +137,10 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRe
 	}
 
 	queryStrings := req.URL.Query()
+	if err := s.validateQueryString(queryStrings); err != nil {
+		return nil, err
+	}
+
 	source := queryStrings.Get("source")
 	if source == "" {
 		source = defaults.SourceName
@@ -158,6 +169,26 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRe
 		return nil, err
 	}
 	return scalingReq, nil
+}
+
+func (s *server) validateQueryString(query url.Values) error {
+	errors := &multierror.Error{}
+	for k := range query {
+		found := false
+		for _, allowed := range allowedQueryStringKeys {
+			if k == allowed {
+				found = true
+				break
+			}
+		}
+		if !found {
+			errors = multierror.Append(errors, fmt.Errorf("invalid parameter key: %s", k))
+		}
+	}
+	if err := errors.ErrorOrNil(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *server) send(scalingReq *ScalingRequest) error {
