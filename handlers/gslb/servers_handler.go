@@ -58,7 +58,6 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          fmt.Sprintf("%s: accepted: %s", h.Name(), req.String()),
 	}); err != nil {
 		return err
 	}
@@ -80,7 +79,6 @@ func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handl
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          fmt.Sprintf("%s: accepted: %s", h.Name(), req.String()),
 	}); err != nil {
 		return err
 	}

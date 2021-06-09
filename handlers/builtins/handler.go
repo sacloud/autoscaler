@@ -40,34 +40,55 @@ func (h *Handler) GetLogger() *log.Logger {
 }
 
 func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
+	logger := h.Builtin.GetLogger().With("step", "PreHandle", "handler", h.Name())
 	if builtin, ok := h.Builtin.(handlers.PreHandler); ok {
-		if err := h.GetLogger().Info("message", "PreHandle request received", "request", req.String()); err != nil {
+		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
+			return err
+		}
+		if err := logger.Debug("request", req.String()); err != nil {
 			return err
 		}
 		return builtin.PreHandle(req, sender)
 	}
 
-	return h.GetLogger().Info("message", "PreHandle request ignored", "request", req.String())
+	if err := logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
+		return err
+	}
+	return logger.Debug("request", req.String())
 }
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
+	logger := h.Builtin.GetLogger().With("step", "Handle", "handler", h.Name())
 	if builtin, ok := h.Builtin.(handlers.Handler); ok {
-		if err := h.GetLogger().Info("message", "Handle request received", "request", req.String()); err != nil {
+		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
+			return err
+		}
+		if err := logger.Debug("request", req.String()); err != nil {
 			return err
 		}
 		return builtin.Handle(req, sender)
 	}
 
-	return h.GetLogger().Info("message", "Handle request ignored", "request", req.String())
+	if err := logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
+		return err
+	}
+	return logger.Debug("request", req.String())
 }
 
 func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
+	logger := h.Builtin.GetLogger().With("step", "PostHandle", "handler", h.Name())
 	if builtin, ok := h.Builtin.(handlers.PostHandler); ok {
-		if err := h.GetLogger().Info("message", "PostHandle request received", "request", req.String()); err != nil {
+		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
+			return err
+		}
+		if err := logger.Debug("request", req.String()); err != nil {
 			return err
 		}
 		return builtin.PostHandle(req, sender)
 	}
 
-	return h.GetLogger().Info("message", "PostHandle request ignored", "request", req.String())
+	if err := logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
+		return err
+	}
+	return logger.Debug("request", req.String())
 }

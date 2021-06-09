@@ -59,12 +59,16 @@ message PostHandleRequest {
 
 message HandleResponse {
   enum Status {
+    reserved 5 to 10;
+
     UNKNOWN         = 0;
-    ACCEPTED        = 1;
-    RUNNING         = 2;
-    DONE            = 3;
-    CANCELED        = 4;
-    FAILED          = 5;
+    RECEIVED        = 1;
+    ACCEPTED        = 2;
+    RUNNING         = 3;
+    DONE            = 4;
+    IGNORED         = 11;
+    CANCELED        = 12;
+    FAILED          = 13;
   }
 
   string scaling_job_id   = 1;

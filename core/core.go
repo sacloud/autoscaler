@@ -39,7 +39,7 @@ func newCoreInstance(c *Config, logger *log.Logger) (*Core, error) {
 	return &Core{
 		config: c,
 		jobs:   make(map[string]*JobStatus),
-		logger: logger.With("from", "autoscaler-core-server"),
+		logger: logger,
 	}, nil
 }
 
@@ -128,19 +128,22 @@ func (c *Core) handle(ctx *Context) (*JobStatus, string, error) {
 	//対象リソースグループを取得
 	rg, err := c.targetResourceGroup(ctx)
 	if err != nil {
-		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
+		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
+		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
 		return job, "", err
 	}
 
 	// TODO バリデーションは起動時に行えるので移動すべき
 	if err := rg.ValidateActions(ctx.Request().action, c.config.Handlers(ctx)); err != nil {
-		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
+		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
+		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
 		return job, "", err
 	}
 
 	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers(ctx))
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) // nolint
 	return job, "", nil
 }
 

@@ -51,7 +51,6 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          fmt.Sprintf("%s: accepted: %s", h.Name(), req.String()),
 	}); err != nil {
 		return err
 	}

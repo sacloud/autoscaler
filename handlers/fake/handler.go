@@ -44,7 +44,6 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_ACCEPTED,
-		Log:          "",
 	}); err != nil {
 		return err
 	}
@@ -54,7 +53,6 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 		if err := sender.Send(&handler.HandleResponse{
 			ScalingJobId: req.ScalingJobId,
 			Status:       handler.HandleResponse_RUNNING,
-			Log:          "",
 		}); err != nil {
 			return err
 		}
@@ -65,6 +63,5 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_DONE,
-		Log:          "",
 	})
 }

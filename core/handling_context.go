@@ -32,7 +32,12 @@ func NewHandlingContext(parent *Context, computed Computed) *HandlingContext {
 }
 
 func (c *HandlingContext) WithLogger(keyvals ...interface{}) *HandlingContext {
-	ctx := NewHandlingContext(c.Context, c.cachedComputed)
+	ctx := NewHandlingContext(&Context{
+		ctx:     c.Context.ctx,
+		request: c.Context.request,
+		job:     c.Context.job,
+		logger:  c.Context.logger,
+	}, c.cachedComputed)
 	ctx.logger = ctx.logger.With(keyvals...)
 	return ctx
 }
