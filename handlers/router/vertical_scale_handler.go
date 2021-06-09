@@ -84,6 +84,6 @@ func (h *VerticalScaleHandler) handleRouter(ctx context.Context, req *handler.Ha
 	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_DONE,
-		Log:          fmt.Sprintf("router plan changed - resource ID cahnged: from %s to %s", router.Id, updated.ID.String()),
+		Log:          fmt.Sprintf("router plan changed - resource ID changed: from %s to %s", router.Id, updated.ID.String()),
 	})
 }

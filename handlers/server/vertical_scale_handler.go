@@ -141,6 +141,6 @@ func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.Ha
 	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_DONE,
-		Log:          fmt.Sprintf("server plan changed - resource ID cahnged: from %s to %s", server.Id, updated.ID.String()),
+		Log:          fmt.Sprintf("server plan changed - resource ID changed: from %s to %s", server.Id, updated.ID.String()),
 	})
 }
