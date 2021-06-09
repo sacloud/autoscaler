@@ -69,6 +69,11 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 		if err := h.handle(ctx, req.ScalingJobId, server, gslb, sender, false); err != nil {
 			return err
 		}
+	} else {
+		return sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_IGNORED,
+		})
 	}
 	return nil
 }
@@ -90,6 +95,11 @@ func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handl
 		if err := h.handle(ctx, req.ScalingJobId, server, gslb, sender, true); err != nil {
 			return err
 		}
+	} else {
+		return sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_IGNORED,
+		})
 	}
 	return nil
 }

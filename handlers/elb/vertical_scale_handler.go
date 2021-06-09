@@ -58,6 +58,11 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 		if err := h.handleELB(ctx, req, elb, sender); err != nil {
 			return err
 		}
+	} else {
+		return sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_IGNORED,
+		})
 	}
 
 	return nil
