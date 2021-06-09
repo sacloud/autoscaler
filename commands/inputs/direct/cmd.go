@@ -20,6 +20,7 @@ import (
 
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/request"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
@@ -27,32 +28,43 @@ import (
 var Command = &cobra.Command{
 	Use:       "direct {up | down} [flags]...",
 	Short:     "Send Up/Down request directly to Core server",
-	RunE:      run,
 	ValidArgs: []string{"up", "down"},
 	Args:      cobra.ExactValidArgs(1),
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return validate.Struct(param)
+	},
+	RunE: run,
 }
 
-var (
-	dest             string
-	action           string
-	group            string
-	source           string
-	desiredStateName string
-)
+type parameter struct {
+	Destination       string `name:"--dest" validate:"required,printascii,max=1024"`
+	Source            string `name:"--source" validate:"required,printascii,max=1024"`
+	Action            string `name:"--action" validate:"required,printascii,max=1024"`
+	ResourceGroupname string `name:"--resource-group-name" validate:"required,printascii,max=1024"`
+	DesiredStateName  string `name:"--desired-state-name" validate:"omitempty,printascii,max=1024"`
+}
+
+var param = &parameter{
+	Destination:       defaults.CoreSocketAddr,
+	Source:            defaults.SourceName,
+	Action:            defaults.ActionName,
+	ResourceGroupname: defaults.ResourceGroupName,
+	DesiredStateName:  "",
+}
 
 func init() {
-	Command.Flags().StringVarP(&dest, "dest", "", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
-	Command.Flags().StringVarP(&action, "action", "", defaults.ActionName, "Name of the action to perform")
-	Command.Flags().StringVarP(&group, "group", "", defaults.ResourceGroupName, "Name of the target resource group")
-	Command.Flags().StringVarP(&source, "source", "", defaults.SourceName, "A string representing the request source, passed to AutoScaler Core")
-	Command.Flags().StringVarP(&desiredStateName, "desired-state-name", "", defaults.DesiredStateName, "Name of the desired state defined in Core's configuration file")
+	Command.Flags().StringVarP(&param.Destination, "dest", "", param.Destination, "URL of gRPC endpoint of AutoScaler Core")
+	Command.Flags().StringVarP(&param.Action, "action", "", param.Action, "Name of the action to perform")
+	Command.Flags().StringVarP(&param.ResourceGroupname, "resource-group-name", "", param.ResourceGroupname, "Name of the target resource group")
+	Command.Flags().StringVarP(&param.Source, "source", "", param.Source, "A string representing the request source, passed to AutoScaler Core")
+	Command.Flags().StringVarP(&param.DesiredStateName, "desired-state-name", "", param.DesiredStateName, "Name of the desired state defined in Core's configuration file")
 }
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
 	// TODO 簡易的な実装、後ほど整理&切り出し
-	conn, err := grpc.DialContext(ctx, dest, grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, param.Destination, grpc.WithInsecure())
 	if err != nil {
 		return err
 	}
@@ -70,10 +82,10 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid args: %v", args)
 	}
 	res, err := f(ctx, &request.ScalingRequest{
-		Source:            source,
-		Action:            action,
-		ResourceGroupName: group,
-		DesiredStateName:  desiredStateName,
+		Source:            param.Source,
+		Action:            param.Action,
+		ResourceGroupName: param.ResourceGroupname,
+		DesiredStateName:  param.DesiredStateName,
 	})
 	if err != nil {
 		return err

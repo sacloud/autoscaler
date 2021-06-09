@@ -29,27 +29,29 @@ import (
 
 // Core AutoScaler Coreのインスタンス
 type Core struct {
-	config *Config
-	jobs   map[string]*JobStatus
-	logger *log.Logger
+	listenAddress string
+	config        *Config
+	jobs          map[string]*JobStatus
+	logger        *log.Logger
 }
 
-func newCoreInstance(c *Config, logger *log.Logger) (*Core, error) {
+func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) {
 	// TODO バリデーションの実装
 	return &Core{
-		config: c,
-		jobs:   make(map[string]*JobStatus),
-		logger: logger,
+		listenAddress: addr,
+		config:        c,
+		jobs:          make(map[string]*JobStatus),
+		logger:        logger,
 	}, nil
 }
 
-func Start(ctx context.Context, configPath string, logger *log.Logger) error {
+func Start(ctx context.Context, addr, configPath string, logger *log.Logger) error {
 	config, err := NewConfigFromPath(configPath)
 	if err != nil {
 		return err
 	}
 
-	instance, err := newCoreInstance(config, logger)
+	instance, err := newCoreInstance(addr, config, logger)
 	if err != nil {
 		return err
 	}
@@ -61,7 +63,7 @@ func (c *Core) run(ctx context.Context) error {
 	errCh := make(chan error)
 
 	// TODO 簡易的な実装、後ほど整理&切り出し
-	filename := strings.Replace(defaults.CoreSocketAddr, "unix:", "", -1)
+	filename := strings.Replace(c.listenAddress, "unix:", "", -1)
 	lis, err := net.Listen("unix", filename)
 	if err != nil {
 		return fmt.Errorf("starting Core service failed: %s", err)
