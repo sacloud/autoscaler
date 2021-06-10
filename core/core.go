@@ -25,6 +25,7 @@ import (
 	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/request"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 // Core AutoScaler Coreのインスタンス
@@ -75,6 +76,7 @@ func (c *Core) run(ctx context.Context) error {
 	server := grpc.NewServer()
 	srv := NewScalingService(c)
 	request.RegisterScalingServiceServer(server, srv)
+	reflection.Register(server)
 
 	defer func() {
 		server.GracefulStop()

@@ -27,6 +27,7 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type Server interface {
@@ -113,6 +114,7 @@ func Serve(server Server) {
 			}),
 		}
 		handler.RegisterHandleServiceServer(grpcServer, srv)
+		reflection.Register(grpcServer)
 
 		defer func() {
 			grpcServer.GracefulStop()
