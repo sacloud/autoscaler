@@ -22,25 +22,36 @@ import (
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/core"
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
-
-var (
-	address    string
-	configPath string
-)
-
-func init() {
-	Command.Flags().StringVar(&address, "address", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
-	Command.Flags().StringVar(&configPath, "config", defaults.CoreConfigPath, "File path of configuration of AutoScaler Core")
-}
 
 var Command = &cobra.Command{
 	Use:   "start [flags]...",
 	Short: "start autoscaler's core server",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-		defer stop()
-		return core.Start(ctx, configPath, flags.NewLogger())
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return validate.Struct(param)
 	},
+	RunE: run,
+}
+
+type parameter struct {
+	ListenAddress string `name:"--addr" validate:"required"`
+	ConfigPath    string `name:"--config" validate:"required,file"`
+}
+
+var param = &parameter{
+	ListenAddress: defaults.CoreSocketAddr,
+	ConfigPath:    defaults.CoreConfigPath,
+}
+
+func init() {
+	Command.Flags().StringVar(&param.ListenAddress, "addr", param.ListenAddress, "URL of gRPC endpoint of AutoScaler Core")
+	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
+}
+
+func run(cmd *cobra.Command, args []string) error {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	return core.Start(ctx, param.ListenAddress, param.ConfigPath, flags.NewLogger())
 }

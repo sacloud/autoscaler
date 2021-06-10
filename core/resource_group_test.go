@@ -215,7 +215,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 			Name: "test",
 		}
 
-		rg.handleAll(testContext(), testAPIClient, Handlers{ // nolint
+		rg.handleAll(testContext(), testAPIClient(), Handlers{ // nolint
 			{
 				Type: "stub",
 				Name: "stub",
@@ -286,7 +286,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 			Name: "test",
 		}
 
-		rg.handleAll(testContext(), testAPIClient, Handlers{ // nolint
+		rg.handleAll(testContext(), testAPIClient(), Handlers{ // nolint
 			{
 				Type: "stub",
 				Name: "stub",

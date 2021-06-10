@@ -15,6 +15,8 @@
 package core
 
 import (
+	"context"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
@@ -24,7 +26,7 @@ type stubResource struct {
 	computeFunc   func(ctx *Context, apiClient sacloud.APICaller) (Computed, error)
 }
 
-func (r *stubResource) Validate() error {
+func (r *stubResource) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	return nil
 }
 

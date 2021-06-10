@@ -15,9 +15,11 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/goccy/go-yaml"
+	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/request"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -148,7 +150,7 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 		v.Children = resources
 		resource = v
 	default:
-		return nil, fmt.Errorf("received unexpected type: %s", typeName)
+		return nil, fmt.Errorf("unexpected type: %s", typeName)
 	}
 
 	return resource, nil
@@ -168,6 +170,20 @@ func (rg *ResourceGroup) setParentResource(parent, r Resource) {
 func (rg *ResourceGroup) ValidateActions(actionName string, handlerFilters Handlers) error {
 	_, err := rg.handlers(actionName, handlerFilters)
 	return err
+}
+
+func (rg *ResourceGroup) Validate(ctx context.Context, apiClient sacloud.APICaller, handlers Handlers) []error {
+	errors := &multierror.Error{}
+
+	// Actions
+	errors = multierror.Append(errors, rg.Actions.Validate(ctx, handlers)...)
+	// Resources
+	errors = multierror.Append(errors, rg.Resources.Validate(ctx, apiClient)...)
+
+	// set group name prefix
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource group=%s:", rg.Name)).(*multierror.Error)
+
+	return errors.Errors
 }
 
 func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, handlerFilters Handlers) {
@@ -201,7 +217,6 @@ func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, ha
 }
 
 func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud.APICaller, handlers Handlers) (ResourceWalkFunc, ResourceWalkFunc) {
-	// TODO 並列化
 	forwardFn := func(resource Resource) error {
 		_, err := resource.Compute(parentCtx, apiClient)
 		return err

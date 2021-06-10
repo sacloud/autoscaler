@@ -15,7 +15,10 @@
 package core
 
 import (
+	"context"
+
 	"github.com/goccy/go-yaml"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 // ResourceGroups 一意な名前をキーとするリソースのリスト
@@ -62,4 +65,14 @@ func (rg *ResourceGroups) UnmarshalYAML(data []byte) error {
 	}
 	*rg = ResourceGroups{groups: loaded}
 	return nil
+}
+
+func (rg *ResourceGroups) Validate(ctx context.Context, apiClient sacloud.APICaller, handlers Handlers) []error {
+	var errors []error
+	for _, group := range rg.groups {
+		if errs := group.Validate(ctx, apiClient, handlers); len(errs) > 0 {
+			errors = append(errors, errs...)
+		}
+	}
+	return errors
 }

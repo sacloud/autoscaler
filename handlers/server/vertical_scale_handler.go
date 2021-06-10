@@ -52,7 +52,6 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 
 	server := req.Desired.GetServer()
 	if server != nil && req.Instruction == handler.ResourceInstructions_UPDATE {
-		// TODO 入力値のバリデーション
 		if err := h.handleServer(ctx, req, server, sender); err != nil {
 			return err
 		}

@@ -15,6 +15,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -28,7 +29,7 @@ import (
 type Resource interface {
 	Type() ResourceTypes // リソースの型
 	Selector() *ResourceSelector
-	Validate() error
+	Validate(ctx context.Context, apiClient sacloud.APICaller) []error
 
 	// Compute 現在/あるべき姿を算出する
 	//
@@ -57,7 +58,7 @@ type ChildResource interface {
 //
 // Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceBase struct {
-	TypeName       string            `yaml:"type"` // TODO enumにすべきか?
+	TypeName       string            `yaml:"type"`
 	TargetSelector *ResourceSelector `yaml:"selector"`
 	Children       Resources         `yaml:"-"`
 	ComputedCache  Computed          `yaml:"-"`
@@ -76,7 +77,7 @@ func (r *ResourceBase) Type() ResourceTypes {
 	case ResourceTypeDNS.String():
 		return ResourceTypeDNS
 	}
-	return ResourceTypeUnknown // TODO バリデーションなどで到達させないようにする
+	return ResourceTypeUnknown
 }
 
 func (r *ResourceBase) Selector() *ResourceSelector {

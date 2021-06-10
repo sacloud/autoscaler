@@ -15,15 +15,17 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 // DefaultRouterPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
 //
-// TODO 要検討
+// 東京第2ゾーンでのみ利用可能なプランは定義されていないため、利用したい場合は各リソース定義内で個別に定義する
 var DefaultRouterPlans = ResourcePlans{
 	&RouterPlan{BandWidth: 100},
 	&RouterPlan{BandWidth: 250},
@@ -52,16 +54,84 @@ func (r *Router) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (r *Router) Validate() error {
-	// TODO 実装
+func (r *Router) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+	errors := &multierror.Error{}
+
+	selector := r.Selector()
+	if selector == nil {
+		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+	}
+	if errors.Len() == 0 {
+		if selector.Zone == "" {
+			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: required"))
+		}
+	}
+
+	if errors.Len() == 0 {
+		if errs := r.validatePlans(ctx, apiClient); len(errs) > 0 {
+			errors = multierror.Append(errors, errs...)
+		}
+
+		if _, err := r.findCloudResource(ctx, apiClient); err != nil {
+			errors = multierror.Append(errors, err)
+		}
+	}
+
+	// set prefix
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", r.Type().String())).(*multierror.Error)
+	return errors.Errors
+}
+
+func (r *Router) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
+	if len(r.Plans) > 0 {
+		availablePlans, err := sacloud.NewInternetPlanOp(apiClient).Find(ctx, r.Selector().Zone, nil)
+		if err != nil {
+			return []error{fmt.Errorf("validating router plan failed: %s", err)}
+		}
+
+		// for unique check: plan name
+		names := map[string]struct{}{}
+
+		errors := &multierror.Error{}
+		for _, p := range r.Plans {
+			if p.Name != "" {
+				if _, ok := names[p.Name]; ok {
+					errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
+				}
+				names[p.Name] = struct{}{}
+			}
+
+			exists := false
+			for _, available := range availablePlans.InternetPlans {
+				if available.Availability.IsAvailable() && available.BandWidthMbps == p.BandWidth {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				errors = multierror.Append(errors, fmt.Errorf("plan{band_width:%d} not exists", p.BandWidth))
+			}
+		}
+		return errors.Errors
+	}
 	return nil
 }
 
 func (r *Router) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
-	if err := r.Validate(); err != nil {
+	cloudResource, err := r.findCloudResource(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+	computed, err := newComputedRouter(ctx, r, r.Selector().Zone, cloudResource)
+	if err != nil {
 		return nil, err
 	}
 
+	r.ComputedCache = computed
+	return computed, nil
+}
+
+func (r *Router) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.Internet, error) {
 	routerOp := sacloud.NewInternetOp(apiClient)
 	selector := r.Selector()
 
@@ -76,13 +146,7 @@ func (r *Router) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, e
 		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
 
-	computed, err := newComputedRouter(ctx, r, selector.Zone, found.Internet[0])
-	if err != nil {
-		return nil, err
-	}
-
-	r.ComputedCache = computed
-	return computed, nil
+	return found.Internet[0], nil
 }
 
 type computedRouter struct {

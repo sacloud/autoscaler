@@ -14,8 +14,28 @@
 
 package core
 
+import (
+	"context"
+
+	"github.com/sacloud/libsacloud/v2/sacloud"
+)
+
 // Resources リソースのリスト
 type Resources []Resource
+
+func (r *Resources) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+	var errors []error
+
+	fn := func(r Resource) error {
+		if errs := r.Validate(ctx, apiClient); len(errs) > 0 {
+			errors = append(errors, errs...)
+		}
+		return nil
+	}
+
+	r.Walk(fn, nil) // nolint
+	return errors
+}
 
 type ResourceWalkFunc func(Resource) error
 

@@ -15,8 +15,10 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
@@ -25,16 +27,42 @@ type DNS struct {
 	*ResourceBase `yaml:",inline"`
 }
 
-func (d *DNS) Validate() error {
-	// TODO 実装
-	return nil
+func (d *DNS) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+	errors := &multierror.Error{}
+	selector := d.Selector()
+	if selector == nil {
+		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+	}
+	if errors.Len() == 0 {
+		if selector.Zone != "" {
+			errors = multierror.Append(fmt.Errorf("selector.Zone: can not be specified for this resource"))
+		}
+
+		if _, err := d.findCloudResource(ctx, apiClient); err != nil {
+			errors = multierror.Append(errors, err)
+		}
+	}
+
+	// set prefix
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", d.Type().String())).(*multierror.Error)
+	return errors.Errors
 }
 
 func (d *DNS) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
-	if err := d.Validate(); err != nil {
+	cloudResource, err := d.findCloudResource(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+	computed, err := newComputedDNS(ctx, d, cloudResource)
+	if err != nil {
 		return nil, err
 	}
 
+	d.ComputedCache = computed
+	return computed, nil
+}
+
+func (d *DNS) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.DNS, error) {
 	dnsOp := sacloud.NewDNSOp(apiClient)
 	selector := d.Selector()
 
@@ -48,14 +76,7 @@ func (d *DNS) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, erro
 	if len(found.DNS) > 1 {
 		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
 	}
-
-	computed, err := newComputedDNS(ctx, d, found.DNS[0])
-	if err != nil {
-		return nil, err
-	}
-
-	d.ComputedCache = computed
-	return computed, nil
+	return found.DNS[0], nil
 }
 
 type computedDNS struct {

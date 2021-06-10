@@ -50,7 +50,6 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 
 	router := req.Desired.GetRouter()
 	if router != nil && req.Instruction == handler.ResourceInstructions_UPDATE {
-		// TODO 入力値のバリデーション
 		if err := h.handleRouter(ctx, req, router, sender); err != nil {
 			return err
 		}

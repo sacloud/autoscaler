@@ -29,27 +29,32 @@ import (
 
 // Core AutoScaler Coreのインスタンス
 type Core struct {
-	config *Config
-	jobs   map[string]*JobStatus
-	logger *log.Logger
+	listenAddress string
+	config        *Config
+	jobs          map[string]*JobStatus
+	logger        *log.Logger
 }
 
-func newCoreInstance(c *Config, logger *log.Logger) (*Core, error) {
-	// TODO バリデーションの実装
+func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) {
 	return &Core{
-		config: c,
-		jobs:   make(map[string]*JobStatus),
-		logger: logger,
+		listenAddress: addr,
+		config:        c,
+		jobs:          make(map[string]*JobStatus),
+		logger:        logger,
 	}, nil
 }
 
-func Start(ctx context.Context, configPath string, logger *log.Logger) error {
+func Start(ctx context.Context, addr, configPath string, logger *log.Logger) error {
 	config, err := NewConfigFromPath(configPath)
 	if err != nil {
 		return err
 	}
 
-	instance, err := newCoreInstance(config, logger)
+	if err := config.Validate(ctx); err != nil {
+		return err
+	}
+
+	instance, err := newCoreInstance(addr, config, logger)
 	if err != nil {
 		return err
 	}
@@ -61,7 +66,7 @@ func (c *Core) run(ctx context.Context) error {
 	errCh := make(chan error)
 
 	// TODO 簡易的な実装、後ほど整理&切り出し
-	filename := strings.Replace(defaults.CoreSocketAddr, "unix:", "", -1)
+	filename := strings.Replace(c.listenAddress, "unix:", "", -1)
 	lis, err := net.Listen("unix", filename)
 	if err != nil {
 		return fmt.Errorf("starting Core service failed: %s", err)
@@ -133,14 +138,13 @@ func (c *Core) handle(ctx *Context) (*JobStatus, string, error) {
 		return job, "", err
 	}
 
-	// TODO バリデーションは起動時に行えるので移動すべき
-	if err := rg.ValidateActions(ctx.Request().action, c.config.Handlers(ctx)); err != nil {
+	if err := rg.ValidateActions(ctx.Request().action, c.config.Handlers()); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
 		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
 		return job, "", err
 	}
 
-	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers(ctx))
+	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) // nolint
@@ -154,11 +158,12 @@ func (c *Core) targetResourceGroup(ctx *Context) (*ResourceGroup, error) {
 	}
 
 	if groupName == defaults.ResourceGroupName {
-		// デフォルトではmap内の先頭のリソースグループを返すようにする(yamlでの定義順とは限らない点に注意)
-		// TODO 要検討
-		for _, v := range c.config.Resources.All() {
-			return v, nil
+		resourceGroups := c.config.Resources.All()
+		if len(resourceGroups) > 1 {
+			return nil, fmt.Errorf("resource group name %q cannot be specified when multiple groups are defined", defaults.ResourceGroupName)
 		}
+
+		return resourceGroups[0], nil
 	}
 
 	rg, ok := c.config.Resources.GetOk(groupName)

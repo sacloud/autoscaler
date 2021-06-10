@@ -19,25 +19,34 @@ import (
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/inputs"
 	"github.com/sacloud/autoscaler/inputs/alertmanager"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
 
 var Command = &cobra.Command{
 	Use:   "alertmanager",
 	Short: "Start web server for handle webhooks from AlertManager",
-	RunE:  run,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return validate.Struct(param)
+	},
+	RunE: run,
 }
 
-var (
-	dest    string
-	address string
-)
+type parameter struct {
+	Destination string `name:"--dest" validate:"required"`
+	ListenAddr  string `name:"--addr" validate:"required"`
+}
+
+var param = &parameter{
+	Destination: defaults.CoreSocketAddr,
+	ListenAddr:  ":3001",
+}
 
 func init() {
-	Command.Flags().StringVarP(&dest, "dest", "", defaults.CoreSocketAddr, "URL of gRPC endpoint of AutoScaler Core")
-	Command.Flags().StringVarP(&address, "addr", "", ":3001", "the TCP address for the server to listen on")
+	Command.Flags().StringVarP(&param.Destination, "dest", "", param.Destination, "URL of gRPC endpoint of AutoScaler Core")
+	Command.Flags().StringVarP(&param.ListenAddr, "addr", "", param.ListenAddr, "the TCP address for the server to listen on")
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	return inputs.Serve(alertmanager.NewInput(dest, address, flags.NewLogger()))
+	return inputs.Serve(alertmanager.NewInput(param.Destination, param.ListenAddr, flags.NewLogger()))
 }

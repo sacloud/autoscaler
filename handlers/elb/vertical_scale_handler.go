@@ -49,7 +49,6 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 
 	elb := req.Desired.GetElb()
 	if elb != nil && req.Instruction == handler.ResourceInstructions_UPDATE {
-		// TODO 入力値のバリデーション
 		if err := h.handleELB(ctx, req, elb, sender); err != nil {
 			return err
 		}

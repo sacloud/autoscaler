@@ -32,7 +32,6 @@ func Struct(v interface{}) error {
 		}
 		return name
 	})
-	// TODO エラーメッセージのカスタマイズ
 	err := validate.Struct(v)
 	if err != nil {
 		if err != nil {
