@@ -17,6 +17,7 @@ package core
 import (
 	"io"
 
+	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
@@ -24,7 +25,6 @@ import (
 	"github.com/sacloud/autoscaler/handlers/gslb"
 	"github.com/sacloud/autoscaler/handlers/router"
 	"github.com/sacloud/autoscaler/handlers/server"
-	"google.golang.org/grpc"
 )
 
 type Handlers []*Handler
@@ -193,12 +193,11 @@ func (h *Handler) postHandleBuiltin(ctx *HandlingContext, computed Computed) err
 }
 
 func (h *Handler) preHandleExternal(ctx *HandlingContext, computed Computed) error {
-	// TODO 簡易的な実装、後ほど整理&切り出し
-	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
+	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: h.Endpoint})
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer cleanup()
 
 	client := handler.NewHandleServiceClient(conn)
 	handleArg := &handleArg{
@@ -214,12 +213,11 @@ func (h *Handler) preHandleExternal(ctx *HandlingContext, computed Computed) err
 }
 
 func (h *Handler) handleExternal(ctx *HandlingContext, computed Computed) error {
-	// TODO 簡易的な実装、後ほど整理&切り出し
-	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
+	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: h.Endpoint})
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer cleanup()
 
 	client := handler.NewHandleServiceClient(conn)
 	handleArg := &handleArg{
@@ -235,12 +233,11 @@ func (h *Handler) handleExternal(ctx *HandlingContext, computed Computed) error 
 }
 
 func (h *Handler) postHandleExternal(ctx *HandlingContext, computed Computed) error {
-	// TODO 簡易的な実装、後ほど整理&切り出し
-	conn, err := grpc.DialContext(ctx, h.Endpoint, grpc.WithInsecure())
+	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: h.Endpoint})
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer cleanup()
 
 	client := handler.NewHandleServiceClient(conn)
 	handleArg := &handleArg{

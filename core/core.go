@@ -17,11 +17,9 @@ package core
 import (
 	"context"
 	"fmt"
-	"net"
-	"os"
-	"strings"
 
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/request"
 	"google.golang.org/grpc"
@@ -66,11 +64,11 @@ func Start(ctx context.Context, addr, configPath string, logger *log.Logger) err
 func (c *Core) run(ctx context.Context) error {
 	errCh := make(chan error)
 
-	// TODO 簡易的な実装、後ほど整理&切り出し
-	filename := strings.Replace(c.listenAddress, "unix:", "", -1)
-	lis, err := net.Listen("unix", filename)
+	listener, cleanup, err := grpcutil.Listener(&grpcutil.ListenerOption{
+		Address: c.listenAddress,
+	})
 	if err != nil {
-		return fmt.Errorf("starting Core service failed: %s", err)
+		return err
 	}
 
 	server := grpc.NewServer()
@@ -80,19 +78,14 @@ func (c *Core) run(ctx context.Context) error {
 
 	defer func() {
 		server.GracefulStop()
-		lis.Close() // ignore error
-		if _, err := os.Stat(filename); err == nil {
-			if err := os.RemoveAll(filename); err != nil {
-				c.logger.Error("error", "cleanup failed: %s", err) // nolint
-			}
-		}
+		cleanup()
 	}()
 
 	go func() {
-		if err := c.logger.Info("message", "autoscaler started", "address", lis.Addr().String()); err != nil {
+		if err := c.logger.Info("message", "autoscaler started", "address", listener.Addr().String()); err != nil {
 			errCh <- err
 		}
-		if err := server.Serve(lis); err != nil {
+		if err := server.Serve(listener); err != nil {
 			errCh <- err
 		}
 	}()
