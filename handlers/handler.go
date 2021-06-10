@@ -18,12 +18,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
+	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/log"
 	"google.golang.org/grpc"
@@ -94,9 +93,9 @@ func Serve(server Server) {
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer stop()
 
-		// TODO 簡易的な実装、後ほど整理&切り出し
-		filename := strings.Replace(address, "unix:", "", -1)
-		lis, err := net.Listen("unix", filename)
+		listener, cleanup, err := grpcutil.Listener(&grpcutil.ListenerOption{
+			Address: address,
+		})
 		if err != nil {
 			logger.Fatal("fatal", err)
 		}
@@ -118,19 +117,14 @@ func Serve(server Server) {
 
 		defer func() {
 			grpcServer.GracefulStop()
-			lis.Close()
-			if _, err := os.Stat(filename); err == nil {
-				if err := os.RemoveAll(filename); err != nil {
-					logger.Fatal("fatal", err) // nolint
-				}
-			}
+			cleanup()
 		}()
 
 		go func() {
-			if err := logger.Info("message", "started", "address", lis.Addr().String()); err != nil {
+			if err := logger.Info("message", "started", "address", listener.Addr().String()); err != nil {
 				errCh <- err
 			}
-			if err := grpcServer.Serve(lis); err != nil {
+			if err := grpcServer.Serve(listener); err != nil {
 				errCh <- err
 			}
 		}()

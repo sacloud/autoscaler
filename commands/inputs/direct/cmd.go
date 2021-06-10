@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/request"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
@@ -63,12 +64,11 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	// TODO 簡易的な実装、後ほど整理&切り出し
-	conn, err := grpc.DialContext(ctx, param.Destination, grpc.WithInsecure())
+	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: param.Destination})
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer cleanup()
 
 	req := request.NewScalingServiceClient(conn)
 	var f func(ctx context.Context, in *request.ScalingRequest, opts ...grpc.CallOption) (*request.ScalingResponse, error)
