@@ -39,14 +39,6 @@ func (p *ELBPlan) LessThan(resource interface{}) bool {
 	return p.CPS < v.Plan.Int()
 }
 
-func (p *ELBPlan) GreaterThan(resource interface{}) bool {
-	v, ok := resource.(*sacloud.ProxyLB)
-	if !ok {
-		return false
-	}
-	return v.Plan.Int() < p.CPS
-}
-
 func (p *ELBPlan) LessThanPlan(plan ResourcePlan) bool {
 	elbPlan, ok := plan.(*ELBPlan)
 	if !ok {

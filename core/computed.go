@@ -44,7 +44,6 @@ type ResourcePlan interface {
 	PlanName() string
 	Equals(resource interface{}) bool
 	LessThan(resource interface{}) bool
-	GreaterThan(resource interface{}) bool // TODO Equals+LessThanがあれば不要なはず
 	LessThanPlan(plans ResourcePlan) bool
 }
 
@@ -114,7 +113,7 @@ func desiredPlan(ctx *Context, current interface{}, plans ResourcePlans) (Resour
 			}
 		case requestTypeDown:
 			// foundとcurrentが同じ場合はOK
-			if found.GreaterThan(current) {
+			if !(found.Equals(current) || found.LessThan(current)) {
 				// Downリクエストなのに指定の名前のプランの方が大きいためプラン変更しない
 				return nil, fmt.Errorf("desired plan %q is larger than current plan", req.desiredStateName)
 			}
