@@ -25,12 +25,14 @@ import (
 )
 
 // DefaultServerPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
-//
-// TODO 要検討
 var DefaultServerPlans = ResourcePlans{
-	&ServerPlan{Core: 1, Memory: 1},
 	&ServerPlan{Core: 2, Memory: 4},
 	&ServerPlan{Core: 4, Memory: 8},
+	&ServerPlan{Core: 4, Memory: 16},
+	&ServerPlan{Core: 8, Memory: 16},
+	&ServerPlan{Core: 10, Memory: 24},
+	&ServerPlan{Core: 10, Memory: 32},
+	&ServerPlan{Core: 10, Memory: 48},
 }
 
 type ServerScalingOption struct {
