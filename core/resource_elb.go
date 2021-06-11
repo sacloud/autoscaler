@@ -94,7 +94,7 @@ func (e *EnhancedLoadBalancer) validatePlans(ctx context.Context, apiClient sacl
 			p.CPS != types.ProxyLBPlans.CPS10000.Int() &&
 			p.CPS != types.ProxyLBPlans.CPS50000.Int() &&
 			p.CPS != types.ProxyLBPlans.CPS100000.Int() &&
-			p.CPS != types.EProxyLBPlan(400_000).Int() { // TODO 400_000CPSプランはlibsacloud側が対応したら修正
+			p.CPS != types.ProxyLBPlans.CPS400000.Int() {
 			errors = append(errors, fmt.Errorf("plan{CPS:%d} not found", p.CPS))
 		}
 	}
