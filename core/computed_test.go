@@ -101,6 +101,25 @@ func Test_desiredPlan(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "Up returns next plan if resource has unknown and lesser plan",
+			args: args{
+				ctx: &Context{
+					ctx: context.Background(),
+					request: &requestInfo{
+						requestType: requestTypeUp,
+					},
+				},
+				current: 2,
+				plans: ResourcePlans{
+					&stubResourcePlan{memorySize: 1},
+					&stubResourcePlan{memorySize: 3},
+					&stubResourcePlan{memorySize: 4},
+				},
+			},
+			want:    &stubResourcePlan{memorySize: 3},
+			wantErr: false,
+		},
+		{
 			name: "Down returns prev plan",
 			args: args{
 				ctx: &Context{
@@ -129,11 +148,31 @@ func Test_desiredPlan(t *testing.T) {
 				},
 				current: 1,
 				plans: ResourcePlans{
-					&stubResourcePlan{memorySize: 2},
 					&stubResourcePlan{memorySize: 1},
+					&stubResourcePlan{memorySize: 2},
 				},
 			},
 			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "Down returns prev plan if resource has unknown and larger plan",
+			args: args{
+				ctx: &Context{
+					ctx: context.Background(),
+					request: &requestInfo{
+						requestType: requestTypeDown,
+					},
+				},
+				current: 3,
+				plans: ResourcePlans{
+					&stubResourcePlan{memorySize: 1},
+					&stubResourcePlan{memorySize: 2},
+					&stubResourcePlan{memorySize: 4},
+					&stubResourcePlan{memorySize: 5},
+				},
+			},
+			want:    &stubResourcePlan{memorySize: 2},
 			wantErr: false,
 		},
 		{
