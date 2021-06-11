@@ -79,6 +79,11 @@ func (e *EnhancedLoadBalancer) validatePlans(ctx context.Context, apiClient sacl
 	var errors []error
 	names := map[string]struct{}{}
 
+	if len(e.Plans) == 1 {
+		errors = append(errors, fmt.Errorf("at least two plans must be specified"))
+		return errors
+	}
+
 	for _, p := range e.Plans {
 		if p.Name != "" {
 			if _, ok := names[p.Name]; ok {

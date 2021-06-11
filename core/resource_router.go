@@ -84,6 +84,10 @@ func (r *Router) Validate(ctx context.Context, apiClient sacloud.APICaller) []er
 
 func (r *Router) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
 	if len(r.Plans) > 0 {
+		if len(r.Plans) == 1 {
+			return []error{fmt.Errorf("at least two plans must be specified")}
+		}
+
 		availablePlans, err := sacloud.NewInternetPlanOp(apiClient).Find(ctx, r.Selector().Zone, nil)
 		if err != nil {
 			return []error{fmt.Errorf("validating router plan failed: %s", err)}
