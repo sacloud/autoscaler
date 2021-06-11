@@ -12,25 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package handlers
 
 import (
-	"github.com/sacloud/autoscaler/commands/server/handlers"
-	"github.com/sacloud/autoscaler/commands/server/start"
+	"fmt"
+
+	"github.com/sacloud/autoscaler/core"
 	"github.com/spf13/cobra"
 )
 
 var Command = &cobra.Command{
-	Use:           "server",
-	Short:         "A set of sub commands to manage autoscaler's core server",
-	SilenceErrors: true,
+	Use:   "handlers [flags]...",
+	Short: "list builtin handlers",
+	RunE:  run,
 }
 
-var subCommands = []*cobra.Command{
-	start.Command,
-	handlers.Command,
-}
-
-func init() {
-	Command.AddCommand(subCommands...)
+func run(cmd *cobra.Command, args []string) error {
+	for _, h := range core.BuiltinHandlers() {
+		fmt.Println(h.Name)
+	}
+	return nil
 }
