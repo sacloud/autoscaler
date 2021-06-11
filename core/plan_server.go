@@ -43,16 +43,6 @@ func (p *ServerPlan) LessThan(resource interface{}) bool {
 	return p.Memory < server.GetMemoryGB()
 }
 
-func (p *ServerPlan) GreaterThan(resource interface{}) bool {
-	server, ok := resource.(*sacloud.Server)
-	if !ok {
-		return false
-	}
-	if p.Core != server.CPU {
-		return server.CPU < p.Core
-	}
-	return server.GetMemoryGB() < p.Memory
-}
 func (p *ServerPlan) LessThanPlan(plan ResourcePlan) bool {
 	serverPlan, ok := plan.(*ServerPlan)
 	if !ok {

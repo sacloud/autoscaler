@@ -39,14 +39,6 @@ func (p *RouterPlan) LessThan(resource interface{}) bool {
 	return p.BandWidth < v.BandWidthMbps
 }
 
-func (p *RouterPlan) GreaterThan(resource interface{}) bool {
-	v, ok := resource.(*sacloud.Internet)
-	if !ok {
-		return false
-	}
-	return v.BandWidthMbps < p.BandWidth
-}
-
 func (p *RouterPlan) LessThanPlan(plan ResourcePlan) bool {
 	elbPlan, ok := plan.(*RouterPlan)
 	if !ok {
