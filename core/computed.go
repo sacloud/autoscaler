@@ -60,7 +60,7 @@ func (p *ResourcePlans) Sort() {
 func (p *ResourcePlans) Next(resource interface{}) ResourcePlan {
 	next := false
 	for _, plan := range *p {
-		if plan.Equals(resource) {
+		if plan.Equals(resource) || plan.LessThan(resource) {
 			next = true
 			continue
 		}
@@ -74,10 +74,13 @@ func (p *ResourcePlans) Prev(resource interface{}) ResourcePlan {
 	plans := *p
 	var prev ResourcePlan
 	for i, plan := range plans {
-		if i > 0 && plan.Equals(resource) {
+		if i > 0 && (plan.Equals(resource) || !plan.LessThan(resource)) {
 			prev = plans[i-1]
 			break
 		}
+	}
+	if prev != nil && prev.Equals(resource) {
+		return nil
 	}
 	return prev
 }
