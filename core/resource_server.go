@@ -87,6 +87,10 @@ func (s *Server) Validate(ctx context.Context, apiClient sacloud.APICaller) []er
 
 func (s *Server) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
 	if len(s.Plans) > 0 {
+		if len(s.Plans) == 1 {
+			return []error{fmt.Errorf("at least two plans must be specified")}
+		}
+
 		availablePlans, err := sacloud.NewServerPlanOp(apiClient).Find(ctx, s.Selector().Zone, nil)
 		if err != nil {
 			return []error{fmt.Errorf("validating server plan failed: %s", err)}
