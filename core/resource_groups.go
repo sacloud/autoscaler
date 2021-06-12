@@ -51,7 +51,7 @@ func (rg *ResourceGroups) All() []*ResourceGroup {
 }
 
 func (rg *ResourceGroups) Set(key string, group *ResourceGroup) {
-	group.Name = key
+	group.name = key
 	rg.groups[key] = group
 }
 
@@ -61,7 +61,7 @@ func (rg *ResourceGroups) UnmarshalYAML(data []byte) error {
 		return err
 	}
 	for k, v := range loaded {
-		v.Name = k
+		v.name = k
 	}
 	*rg = ResourceGroups{groups: loaded}
 	return nil

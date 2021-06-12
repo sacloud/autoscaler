@@ -26,10 +26,10 @@ import (
 )
 
 type ResourceGroup struct {
-	Name string `yaml:"-"` // ResourceGroupsのアンマーシャル時に設定される
-
 	Actions   Actions   `yaml:"actions"`
 	Resources Resources `yaml:"resources"`
+
+	name string // ResourceGroupsのアンマーシャル時に設定される
 }
 
 func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
@@ -181,7 +181,7 @@ func (rg *ResourceGroup) Validate(ctx context.Context, apiClient sacloud.APICall
 	errors = multierror.Append(errors, rg.Resources.Validate(ctx, apiClient)...)
 
 	// set group name prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource group=%s:", rg.Name)).(*multierror.Error)
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource group=%s:", rg.name)).(*multierror.Error)
 
 	return errors.Errors
 }
