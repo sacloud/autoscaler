@@ -28,7 +28,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:               "autoscaler",
 	Short:             "autoscaler is a tool for managing the scale of resources on SAKURA cloud",
-	PersistentPreRunE: flags.ValidateFlags,
+	PersistentPreRunE: flags.ValidateLogFlags,
 	SilenceUsage:      true,
 	SilenceErrors:     false,
 }
@@ -41,7 +41,7 @@ var subCommands = []*cobra.Command{
 }
 
 func init() {
-	flags.SetFlags(rootCmd)
+	flags.SetLogFlags(rootCmd)
 	rootCmd.AddCommand(subCommands...)
 }
 

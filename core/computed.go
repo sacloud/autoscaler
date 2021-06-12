@@ -40,15 +40,22 @@ type Computed interface {
 	Desired() *handler.Resource
 }
 
+// ResourcePlan 垂直スケールをサポートするリソースでのプランを表すインターフェース
 type ResourcePlan interface {
+	// PlanName プラン名、Configurationで任意のプランに任意の名前をつけるために利用する
 	PlanName() string
+	// Equals 指定のリソースが該当プランと同じ値を持っているか判定する
 	Equals(resource interface{}) bool
+	// LessThan 指定のリソースが該当プランより小さい値であるかを判定する(境界は含めない)
 	LessThan(resource interface{}) bool
+	// LessThanPlan 指定のプランが該当プランより小さい値であるかを判定する(境界は含めない)
 	LessThanPlan(plans ResourcePlan) bool
 }
 
+// ResourcePlans 垂直スケールをサポートするリソースでのプラン一覧を表すインターフェース
 type ResourcePlans []ResourcePlan
 
+// Sort ResourcePlan.LessThanPlanを用いて昇順にソートする
 func (p *ResourcePlans) Sort() {
 	plans := *p
 	sort.Slice(plans, func(i, j int) bool {
@@ -57,6 +64,9 @@ func (p *ResourcePlans) Sort() {
 	*p = plans
 }
 
+// Next スケールアップ後のプランを取得する
+//
+// 該当プランが存在しない場合はnilを返す
 func (p *ResourcePlans) Next(resource interface{}) ResourcePlan {
 	next := false
 	for _, plan := range *p {
@@ -70,6 +80,10 @@ func (p *ResourcePlans) Next(resource interface{}) ResourcePlan {
 	}
 	return nil
 }
+
+// Prev スケールダウン後のプランを取得する
+//
+// 該当プランが存在しない場合はnilを返す
 func (p *ResourcePlans) Prev(resource interface{}) ResourcePlan {
 	plans := *p
 	var prev ResourcePlan
@@ -85,7 +99,7 @@ func (p *ResourcePlans) Prev(resource interface{}) ResourcePlan {
 	return prev
 }
 
-func desiredPlan(ctx *Context, current interface{}, plans ResourcePlans) (ResourcePlan, error) {
+func desiredPlan(ctx *RequestContext, current interface{}, plans ResourcePlans) (ResourcePlan, error) {
 	plans.Sort()
 
 	req := ctx.Request()

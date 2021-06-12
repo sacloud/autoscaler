@@ -37,7 +37,7 @@ type Resource interface {
 	// Selector()の値によっては複数のComputedを返しても良い
 	// Computeの結果はキャッシュしておき、Computed()で参照可能にしておく
 	// キャッシュはClearCache()を呼ぶまで保持しておく
-	Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error)
+	Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error)
 
 	// Computed Compute()の結果のキャッシュ、Compute()呼び出し前はnilを返す
 	Computed() Computed
@@ -113,7 +113,7 @@ func (rs *ResourceSelector) String() string {
 	return ""
 }
 
-func (rs *ResourceSelector) FindCondition() *sacloud.FindCondition {
+func (rs *ResourceSelector) findCondition() *sacloud.FindCondition {
 	fc := &sacloud.FindCondition{
 		Filter: search.Filter{},
 	}

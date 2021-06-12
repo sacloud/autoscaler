@@ -27,43 +27,48 @@ import (
 	"github.com/sacloud/autoscaler/handlers/server"
 )
 
+// Handlers Handlerのリスト
 type Handlers []*Handler
 
+// BuiltinHandlers ビルトインハンドラのリスト
+//
+// この段階では各ハンドラにAPIクライアントは注入されない
+// Config.Handlersも参照
 func BuiltinHandlers() Handlers {
 	return Handlers{
 		{
 			Type: "elb-vertical-scaler",
 			Name: "elb-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &elb.VerticalScaleHandler{},
+				Builtin: elb.NewVerticalScaleHandler(),
 			},
 		},
 		{
 			Type: "elb-servers-handler",
 			Name: "elb-servers-handler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &elb.ServersHandler{},
+				Builtin: elb.NewServersHandler(),
 			},
 		},
 		{
 			Type: "gslb-servers-handler",
 			Name: "gslb-servers-handler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &gslb.ServersHandler{},
+				Builtin: gslb.NewServersHandler(),
 			},
 		},
 		{
 			Type: "router-vertical-scaler",
 			Name: "router-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &router.VerticalScaleHandler{},
+				Builtin: router.NewVerticalScaleHandler(),
 			},
 		},
 		{
 			Type: "server-vertical-scaler",
 			Name: "server-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &server.VerticalScaleHandler{},
+				Builtin: server.NewVerticalScaleHandler(),
 			},
 		},
 	}
@@ -71,11 +76,11 @@ func BuiltinHandlers() Handlers {
 
 // Handler カスタムハンドラーの定義
 type Handler struct {
-	Type           string          `yaml:"type"`     // ハンドラー種別
-	Name           string          `yaml:"name"`     // ハンドラーを識別するための名称 同一Typeで複数のハンドラーが存在する場合が存在するため、Nameで一意に識別する
-	Endpoint       string          `yaml:"endpoint"` // カスタムハンドラーの場合にのみ指定
-	BuiltinHandler handlers.Server `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
-	Disabled       bool            `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
+	Type           string               `yaml:"type"`     // ハンドラー種別
+	Name           string               `yaml:"name"`     // ハンドラーを識別するための名称 同一Typeで複数のハンドラーが存在する場合が存在するため、Nameで一意に識別する
+	Endpoint       string               `yaml:"endpoint"` // カスタムハンドラーの場合にのみ指定
+	BuiltinHandler handlers.HandlerMeta `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
+	Disabled       bool                 `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
 }
 
 func (h *Handler) isBuiltin() bool {

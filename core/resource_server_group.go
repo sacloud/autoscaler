@@ -30,7 +30,7 @@ func (s *ServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller)
 	return nil
 }
 
-func (s *ServerGroup) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+func (s *ServerGroup) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	// TODO 実装
 	return nil, nil
 }

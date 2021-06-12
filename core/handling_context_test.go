@@ -22,7 +22,7 @@ import (
 
 func TestHandlingContext_ComputeResult(t *testing.T) {
 	type fields struct {
-		Context         *Context
+		Context         *RequestContext
 		currentComputed Computed
 	}
 	type args struct {
@@ -102,7 +102,7 @@ func TestHandlingContext_ComputeResult(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &HandlingContext{
-				Context:        tt.fields.Context,
+				RequestContext: tt.fields.Context,
 				cachedComputed: tt.fields.currentComputed,
 			}
 			if got := c.ComputeResult(tt.args.computed); got != tt.want {

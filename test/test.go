@@ -12,20 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// AutoScaler Core
-//
-// Usage:
-//   autoscaler-handlers-fake [flags]
-//
-// Flags:
-//   -address: (optional) URL of gRPC endpoint of the handler. default:`unix:autoscaler-handlers-fake.sock`
-package main
+package test
 
 import (
-	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/handlers/fake"
+	"os"
+
+	"github.com/sacloud/autoscaler/log"
+
+	"github.com/sacloud/libsacloud/v2/helper/api"
 )
 
-func main() {
-	handlers.Serve(&fake.Handler{})
-}
+var (
+	Zone      = "is1a"
+	APIClient = api.NewCaller(&api.CallerOptions{
+		AccessToken:       "fake",
+		AccessTokenSecret: "fake",
+		UserAgent:         "sacloud/autoscaler/fake/test",
+		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
+		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
+		FakeMode:          true,
+	})
+	Logger = log.NewLogger(&log.LoggerOption{
+		Writer:    os.Stderr,
+		JSON:      false,
+		TimeStamp: true,
+		Caller:    true,
+		Level:     log.LevelDebug,
+	})
+)

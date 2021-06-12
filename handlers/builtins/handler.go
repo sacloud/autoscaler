@@ -18,13 +18,14 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/log"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 // Handler builtinハンドラーをラップし、リクエスト受付時のログ出力を担当するハンドラー
 //
 // 全ての処理をBuiltinに設定されたハンドラーに委譲する
 type Handler struct {
-	Builtin handlers.Server
+	Builtin handlers.HandlerMeta
 }
 
 func (h *Handler) Name() string {
@@ -41,6 +42,19 @@ func (h *Handler) GetLogger() *log.Logger {
 
 func (h *Handler) SetLogger(logger *log.Logger) {
 	h.Builtin.SetLogger(logger)
+}
+
+func (h *Handler) APICaller() sacloud.APICaller {
+	if h, ok := h.Builtin.(SakuraCloudAPICaller); ok {
+		return h.APICaller()
+	}
+	return nil
+}
+
+func (h *Handler) SetAPICaller(caller sacloud.APICaller) {
+	if h, ok := h.Builtin.(SakuraCloudAPICaller); ok {
+		h.SetAPICaller(caller)
+	}
 }
 
 func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {

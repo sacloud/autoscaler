@@ -22,31 +22,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type flags struct {
+type logFlags struct {
 	LogLevel  string `name:"--log-level" validate:"required,oneof=error warn info debug"`
 	LogFormat string `name:"--log-format" validate:"required,oneof=logfmt json"`
 }
 
-var global = &flags{
+var logs = &logFlags{
 	LogLevel:  "info",
 	LogFormat: "logfmt",
 }
 
-func SetFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&global.LogLevel, "log-level", "", global.LogLevel, "Level of logging to be output. options: [ error | warn | info | debug ]")
-	cmd.PersistentFlags().StringVarP(&global.LogFormat, "log-format", "", global.LogFormat, "Format of logging to be output. options: [ logfmt | json ]")
+func SetLogFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVarP(&logs.LogLevel, "log-level", "", logs.LogLevel, "Level of logging to be output. options: [ error | warn | info | debug ]")
+	cmd.PersistentFlags().StringVarP(&logs.LogFormat, "log-format", "", logs.LogFormat, "Format of logging to be output. options: [ logfmt | json ]")
 }
 
-func ValidateFlags(cmd *cobra.Command, args []string) error {
-	return validate.Struct(global)
+func ValidateLogFlags(cmd *cobra.Command, args []string) error {
+	return validate.Struct(logs)
 }
 
 func NewLogger() *log.Logger {
 	return log.NewLogger(&log.LoggerOption{
 		Writer:    os.Stderr,
-		JSON:      global.LogFormat == "json",
+		JSON:      logs.LogFormat == "json",
 		TimeStamp: true,
 		Caller:    false,
-		Level:     log.Level(global.LogLevel),
+		Level:     log.Level(logs.LogLevel),
 	})
 }

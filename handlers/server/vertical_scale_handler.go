@@ -20,6 +20,7 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
+	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/libsacloud/v2/helper/power"
 	"github.com/sacloud/libsacloud/v2/pkg/size"
@@ -28,8 +29,14 @@ import (
 )
 
 type VerticalScaleHandler struct {
-	handlers.SakuraCloudFlagCustomizer
 	handlers.HandlerLogger
+	*builtins.SakuraCloudAPIClient
+}
+
+func NewVerticalScaleHandler() *VerticalScaleHandler {
+	return &VerticalScaleHandler{
+		SakuraCloudAPIClient: &builtins.SakuraCloudAPIClient{},
+	}
 }
 
 func (h *VerticalScaleHandler) Name() string {
@@ -73,7 +80,7 @@ func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.Ha
 		return err
 	}
 
-	serverOp := sacloud.NewServerOp(h.APIClient())
+	serverOp := sacloud.NewServerOp(h.APICaller())
 
 	current, err := serverOp.Read(ctx, server.Zone, types.StringID(server.Id))
 	if err != nil {

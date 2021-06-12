@@ -12,30 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alertmanager
+package flags
 
 import (
-	"github.com/sacloud/autoscaler/commands/flags"
-	"github.com/sacloud/autoscaler/inputs"
-	"github.com/sacloud/autoscaler/inputs/alertmanager"
+	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
 
-var Command = &cobra.Command{
-	Use:   "alertmanager",
-	Short: "Start web server for handle webhooks from AlertManager",
-	PreRunE: flags.ValidateMultiFunc(true,
-		flags.ValidateDestinationFlags,
-		flags.ValidateListenerFlags,
-	),
-	RunE: run,
+type destinationFlags struct {
+	Destination string `name:"--dest" validate:"required,printascii"`
 }
 
-func init() {
-	flags.SetDestinationFlag(Command)
-	flags.SetListenerFlag(Command)
+var destination = &destinationFlags{
+	Destination: defaults.CoreSocketAddr,
 }
 
-func run(cmd *cobra.Command, args []string) error {
-	return inputs.Serve(alertmanager.NewInput(flags.Destination(), flags.ListenAddr(), flags.NewLogger()))
+func SetDestinationFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&destination.Destination, "dest", "", destination.Destination, "Address of the gRPC endpoint of AutoScaler Core")
+}
+
+func ValidateDestinationFlags(cmd *cobra.Command, args []string) error {
+	return validate.Struct(destination)
+}
+
+func Destination() string {
+	return destination.Destination
 }

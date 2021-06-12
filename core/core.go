@@ -43,6 +43,7 @@ func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) 
 	}, nil
 }
 
+// Start 指定のファイルパスからコンフィグを読み込み、gRPCサーバとしてリッスンを開始する
 func Start(ctx context.Context, addr, configPath string, logger *log.Logger) error {
 	config, err := NewConfigFromPath(configPath)
 	if err != nil {
@@ -99,15 +100,15 @@ func (c *Core) run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (c *Core) Up(ctx *Context) (*JobStatus, string, error) {
+func (c *Core) Up(ctx *RequestContext) (*JobStatus, string, error) {
 	return c.handle(ctx)
 }
 
-func (c *Core) Down(ctx *Context) (*JobStatus, string, error) {
+func (c *Core) Down(ctx *RequestContext) (*JobStatus, string, error) {
 	return c.handle(ctx)
 }
 
-func (c *Core) currentJob(ctx *Context) *JobStatus {
+func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 	job, ok := c.jobs[ctx.JobID()]
 	if !ok {
 		job = NewJobStatus(ctx.Request(), c.config.AutoScaler.JobCoolingTime())
@@ -116,7 +117,7 @@ func (c *Core) currentJob(ctx *Context) *JobStatus {
 	return job
 }
 
-func (c *Core) handle(ctx *Context) (*JobStatus, string, error) {
+func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	job := c.currentJob(ctx)
 	if !job.Acceptable() {
 		return job, "job is in an unacceptable state", nil
@@ -146,7 +147,7 @@ func (c *Core) handle(ctx *Context) (*JobStatus, string, error) {
 	return job, "", nil
 }
 
-func (c *Core) targetResourceGroup(ctx *Context) (*ResourceGroup, error) {
+func (c *Core) targetResourceGroup(ctx *RequestContext) (*ResourceGroup, error) {
 	groupName := ctx.Request().resourceGroupName
 	if groupName == "" {
 		groupName = defaults.ResourceGroupName

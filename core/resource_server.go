@@ -128,7 +128,7 @@ func (s *Server) validatePlans(ctx context.Context, apiClient sacloud.APICaller)
 	return nil
 }
 
-func (s *Server) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+func (s *Server) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := s.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func (s *Server) findCloudResource(ctx context.Context, apiClient sacloud.APICal
 	serverOp := sacloud.NewServerOp(apiClient)
 	selector := s.Selector()
 
-	found, err := serverOp.Find(ctx, selector.Zone, selector.FindCondition())
+	found, err := serverOp.Find(ctx, selector.Zone, selector.findCondition())
 	if err != nil {
 		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
@@ -177,7 +177,7 @@ type computedServer struct {
 	resource    *Server // 算出元のResourceへの参照
 }
 
-func newComputedServer(ctx *Context, resource *Server, zone string, server *sacloud.Server) (*computedServer, error) {
+func newComputedServer(ctx *RequestContext, resource *Server, zone string, server *sacloud.Server) (*computedServer, error) {
 	computed := &computedServer{
 		instruction: handler.ResourceInstructions_NOOP,
 		server:      &sacloud.Server{},
@@ -201,7 +201,7 @@ func newComputedServer(ctx *Context, resource *Server, zone string, server *sacl
 	return computed, nil
 }
 
-func (c *computedServer) desiredPlan(ctx *Context, current *sacloud.Server, plans ResourcePlans) (*ServerPlan, error) {
+func (c *computedServer) desiredPlan(ctx *RequestContext, current *sacloud.Server, plans ResourcePlans) (*ServerPlan, error) {
 	if len(plans) == 0 {
 		plans = DefaultServerPlans
 	}

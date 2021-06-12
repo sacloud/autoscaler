@@ -36,6 +36,7 @@ var (
 	}
 )
 
+// Inputs Webhookを受け取りCoreへのリクエストを行うInputsが備えるべきインターフェース
 type Input interface {
 	Name() string
 	Version() string

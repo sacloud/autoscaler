@@ -20,23 +20,23 @@ import "github.com/sacloud/autoscaler/handler"
 //
 // context.Contextを実装し、core.Contextに加えて現在処理中の[]Computedを保持する
 type HandlingContext struct {
-	*Context
+	*RequestContext
 	cachedComputed Computed
 }
 
-func NewHandlingContext(parent *Context, computed Computed) *HandlingContext {
+func NewHandlingContext(parent *RequestContext, computed Computed) *HandlingContext {
 	return &HandlingContext{
-		Context:        parent,
+		RequestContext: parent,
 		cachedComputed: computed,
 	}
 }
 
 func (c *HandlingContext) WithLogger(keyvals ...interface{}) *HandlingContext {
-	ctx := NewHandlingContext(&Context{
-		ctx:     c.Context.ctx,
-		request: c.Context.request,
-		job:     c.Context.job,
-		logger:  c.Context.logger,
+	ctx := NewHandlingContext(&RequestContext{
+		ctx:     c.RequestContext.ctx,
+		request: c.RequestContext.request,
+		job:     c.RequestContext.job,
+		logger:  c.RequestContext.logger,
 	}, c.cachedComputed)
 	ctx.logger = ctx.logger.With(keyvals...)
 	return ctx

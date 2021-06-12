@@ -18,12 +18,11 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"testing"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/libsacloud/v2/helper/api"
+	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -69,7 +68,7 @@ func TestHandler_Handle(t *testing.T) {
 								AssignedNetwork: nil,
 								Core:            4,
 								Memory:          8,
-								Zone:            testZone,
+								Zone:            test.Zone,
 							},
 						},
 					},
@@ -81,7 +80,9 @@ func TestHandler_Handle(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &VerticalScaleHandler{}
+			h := NewVerticalScaleHandler()
+			h.SetAPICaller(test.APIClient)
+
 			if err := h.Handle(tt.args.req, tt.args.sender); (err != nil) != tt.wantErr {
 				t.Errorf("Handle() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -89,21 +90,9 @@ func TestHandler_Handle(t *testing.T) {
 	}
 }
 
-var (
-	testZone      = "is1a"
-	testAPIClient = api.NewCaller(&api.CallerOptions{
-		AccessToken:       "fake",
-		AccessTokenSecret: "fake",
-		UserAgent:         "sacloud/autoscaler/fake",
-		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
-		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
-		FakeMode:          true,
-	})
-)
-
 func initTestServer(t *testing.T) (*sacloud.Server, func()) {
-	serverOp := sacloud.NewServerOp(testAPIClient)
-	server, err := serverOp.Create(context.Background(), testZone, &sacloud.ServerCreateRequest{
+	serverOp := sacloud.NewServerOp(test.APIClient)
+	server, err := serverOp.Create(context.Background(), test.Zone, &sacloud.ServerCreateRequest{
 		CPU:                  2,
 		MemoryMB:             4 * size.GiB,
 		ServerPlanCommitment: types.Commitments.Standard,

@@ -20,14 +20,21 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
+	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type VerticalScaleHandler struct {
-	handlers.SakuraCloudFlagCustomizer
 	handlers.HandlerLogger
+	*builtins.SakuraCloudAPIClient
+}
+
+func NewVerticalScaleHandler() *VerticalScaleHandler {
+	return &VerticalScaleHandler{
+		SakuraCloudAPIClient: &builtins.SakuraCloudAPIClient{},
+	}
 }
 
 func (h *VerticalScaleHandler) Name() string {
@@ -72,7 +79,7 @@ func (h *VerticalScaleHandler) handleRouter(ctx context.Context, req *handler.Ha
 		return err
 	}
 
-	routerOp := sacloud.NewInternetOp(h.APIClient())
+	routerOp := sacloud.NewInternetOp(h.APICaller())
 
 	updated, err := routerOp.UpdateBandWidth(ctx, router.Zone, types.StringID(router.Id), &sacloud.InternetUpdateBandWidthRequest{
 		BandWidthMbps: int(router.BandWidth),

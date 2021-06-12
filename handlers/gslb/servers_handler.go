@@ -20,6 +20,7 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
+	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -35,8 +36,14 @@ import (
 // アタッチ/デタッチは各サーバのEnabledを制御することで行う
 // もしGSLBにサーバが1台しか登録されていない場合はサービス停止が発生するため注意が必要
 type ServersHandler struct {
-	handlers.SakuraCloudFlagCustomizer
 	handlers.HandlerLogger
+	*builtins.SakuraCloudAPIClient
+}
+
+func NewServersHandler() *ServersHandler {
+	return &ServersHandler{
+		SakuraCloudAPIClient: &builtins.SakuraCloudAPIClient{},
+	}
 }
 
 func (h *ServersHandler) Name() string {
@@ -116,7 +123,7 @@ func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handl
 		return err
 	}
 
-	gslbOp := sacloud.NewGSLBOp(h.APIClient())
+	gslbOp := sacloud.NewGSLBOp(h.APICaller())
 	current, err := gslbOp.Read(ctx, types.StringID(gslb.Id))
 	if err != nil {
 		return err

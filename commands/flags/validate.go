@@ -12,30 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package grafana
+package flags
 
 import (
-	"github.com/sacloud/autoscaler/commands/flags"
-	"github.com/sacloud/autoscaler/inputs"
-	"github.com/sacloud/autoscaler/inputs/grafana"
+	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
 
-var Command = &cobra.Command{
-	Use:   "grafana",
-	Short: "Start web server for handle webhooks from Grafana",
-	PreRunE: flags.ValidateMultiFunc(true,
-		flags.ValidateDestinationFlags,
-		flags.ValidateListenerFlags,
-	),
-	RunE: run,
-}
-
-func init() {
-	flags.SetDestinationFlag(Command)
-	flags.SetListenerFlag(Command)
-}
-
-func run(cmd *cobra.Command, args []string) error {
-	return inputs.Serve(grafana.NewInput(flags.Destination(), flags.ListenAddr(), flags.NewLogger()))
+// ValidateMultiFunc 指定のfuncを順次適用するfuncを返す、mergeがfalseの場合、funcがerrorを返したら即時リターンする
+func ValidateMultiFunc(merge bool, funcs ...func(*cobra.Command, []string) error) func(*cobra.Command, []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		errors := &multierror.Error{}
+		for _, fn := range funcs {
+			if err := fn(cmd, args); err != nil {
+				if !merge {
+					return err
+				}
+				errors = multierror.Append(errors, err)
+			}
+		}
+		return errors.ErrorOrNil()
+	}
 }

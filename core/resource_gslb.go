@@ -48,7 +48,7 @@ func (g *GSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []erro
 	return errors.Errors
 }
 
-func (g *GSLB) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+func (g *GSLB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := g.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (g *GSLB) findCloudResource(ctx context.Context, apiClient sacloud.APICalle
 	gslbOp := sacloud.NewGSLBOp(apiClient)
 	selector := g.Selector()
 
-	found, err := gslbOp.Find(ctx, selector.FindCondition())
+	found, err := gslbOp.Find(ctx, selector.findCondition())
 	if err != nil {
 		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
@@ -87,7 +87,7 @@ type computedGSLB struct {
 	resource    *GSLB // 算出元のResourceへの参照
 }
 
-func newComputedGSLB(ctx *Context, resource *GSLB, gslb *sacloud.GSLB) (*computedGSLB, error) {
+func newComputedGSLB(ctx *RequestContext, resource *GSLB, gslb *sacloud.GSLB) (*computedGSLB, error) {
 	computed := &computedGSLB{
 		instruction: handler.ResourceInstructions_NOOP,
 		gslb:        &sacloud.GSLB{},

@@ -21,6 +21,15 @@ type HandlerLogger struct {
 }
 
 func (l *HandlerLogger) GetLogger() *log.Logger {
+	if l.Logger == nil {
+		l.Logger = log.NewLogger(&log.LoggerOption{
+			Writer:    nil,
+			JSON:      false,
+			TimeStamp: true,
+			Caller:    false,
+			Level:     log.LevelInfo,
+		})
+	}
 	return l.Logger
 }
 

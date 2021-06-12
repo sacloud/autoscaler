@@ -24,6 +24,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
@@ -35,6 +36,7 @@ type Config struct {
 	AutoScaler     AutoScalerConfig `yaml:"autoscaler"`  // オートスケーラー自体の動作設定
 }
 
+// NewConfigFromPath 指定のファイルパスからコンフィギュレーションを読み取ってConfigを作成する
 func NewConfigFromPath(filePath string) (*Config, error) {
 	reader, err := os.Open(filePath)
 	if err != nil {
@@ -45,6 +47,7 @@ func NewConfigFromPath(filePath string) (*Config, error) {
 	return NewConfigFromReader(reader)
 }
 
+// NewConfigFromReader 指定のio.Readerからコンフィギュレーションを読み取ってConfigを作成する
 func NewConfigFromReader(reader io.Reader) (*Config, error) {
 	c := &Config{}
 	if err := c.load(reader); err != nil {
@@ -53,7 +56,6 @@ func NewConfigFromReader(reader io.Reader) (*Config, error) {
 	return c, nil
 }
 
-// Load 指定のreaderからYAMLを読み取りConfigへ値を設定する
 func (c *Config) load(reader io.Reader) error {
 	data, err := io.ReadAll(reader)
 	if err != nil {
@@ -76,10 +78,20 @@ func (c *Config) APIClient() sacloud.APICaller {
 	return c.SakuraCloud.APIClient()
 }
 
+// Handlers ビルトインハンドラ+カスタムハンドラのリストを返す
+//
+// ビルトインハンドラはAPIクライアントが注入された状態で返される
 func (c *Config) Handlers() Handlers {
-	return append(BuiltinHandlers(), c.CustomHandlers...)
+	handlers := BuiltinHandlers()
+	for _, h := range handlers {
+		if h, ok := h.BuiltinHandler.(builtins.SakuraCloudAPICaller); ok {
+			h.SetAPICaller(c.SakuraCloud.APIClient())
+		}
+	}
+	return append(handlers, c.CustomHandlers...)
 }
 
+// Validate 現在のConfig値のバリデーション
 func (c *Config) Validate(ctx context.Context) error {
 	// API Client
 	if err := c.SakuraCloud.Validate(ctx); err != nil {
@@ -97,7 +109,7 @@ func (c *Config) Validate(ctx context.Context) error {
 
 // AutoScalerConfig オートスケーラー自体の動作設定
 type AutoScalerConfig struct {
-	JobCoolingSec int `yaml:"job_cooling_sec"`
+	JobCoolingSec int `yaml:"job_cooling_sec"` // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
 }
 
 func (c *AutoScalerConfig) JobCoolingTime() time.Duration {

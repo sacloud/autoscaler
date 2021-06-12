@@ -16,129 +16,30 @@ package handlers
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/sacloud/autoscaler/grpcutil"
-	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/autoscaler/log"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
-type Server interface {
-	Name() string
-	Version() string
-	GetLogger() *log.Logger
-	SetLogger(logger *log.Logger)
+// Serve 指定のハンドラでgRPCサーバをスタート/リッスンする
+func Serve(parentCtx context.Context, server HandlerMeta) error {
+	server.SetLogger(server.GetLogger().With("from", handlerFullName(server)))
+
+	validateHandlerInterfaces(server)
+
+	service := &handleService{
+		Handler: server,
+	}
+	return service.listenAndServe(parentCtx)
 }
 
-type Handler interface {
-	Handle(*handler.HandleRequest, ResponseSender) error
+func handlerFullName(server HandlerMeta) string {
+	return fmt.Sprintf("autoscaler-handlers-%s", server.Name())
 }
 
-type PreHandler interface {
-	PreHandle(*handler.PreHandleRequest, ResponseSender) error
-}
-
-type PostHandler interface {
-	PostHandle(*handler.PostHandleRequest, ResponseSender) error
-}
-
-type ResponseSender interface {
-	Send(*handler.HandleResponse) error
-}
-
-type FlagCustomizer interface {
-	CustomizeFlags(fs *flag.FlagSet)
-}
-
-func Serve(server Server) {
-	handlerName := HandlerFullName(server)
-	logger := server.GetLogger().With("from", handlerName)
-
-	validateHandlerInterfaces(server, logger)
-
-	fs := flag.CommandLine
-	var address string
-	fs.StringVar(&address, "address", fmt.Sprintf("%s.sock", handlerName), "URL of gRPC endpoint of the handler")
-
-	var showHelp, showVersion bool
-	fs.BoolVar(&showHelp, "help", false, "Show help")
-	fs.BoolVar(&showVersion, "version", false, "Show version")
-
-	// 各Handlerでのカスタマイズ
-	if fc, ok := server.(FlagCustomizer); ok {
-		fc.CustomizeFlags(fs)
+func validateHandlerInterfaces(server HandlerMeta) {
+	if _, ok := server.(Listener); !ok {
+		server.GetLogger().Fatal("fatal", "Handler must be implemented Listener interface") // nolint
 	}
 
-	if err := fs.Parse(os.Args[1:]); err != nil {
-		logger.Fatal("fatal", err)
-	}
-
-	// TODO add flag validation
-
-	switch {
-	case showHelp:
-		showUsage(handlerName, fs)
-		return
-	case showVersion:
-		fmt.Println(server.Version())
-		return
-	default:
-		errCh := make(chan error)
-		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-		defer stop()
-
-		listener, cleanup, err := grpcutil.Listener(&grpcutil.ListenerOption{
-			Address: address,
-		})
-		if err != nil {
-			logger.Fatal("fatal", err)
-		}
-
-		grpcServer := grpc.NewServer()
-		srv := &HandleService{
-			Handler: server,
-			// TODO ロガーの設定
-			logger: log.NewLogger(&log.LoggerOption{
-				Writer:    nil,
-				JSON:      false,
-				TimeStamp: true,
-				Caller:    false,
-				Level:     log.LevelInfo,
-			}),
-		}
-		handler.RegisterHandleServiceServer(grpcServer, srv)
-		reflection.Register(grpcServer)
-
-		defer func() {
-			grpcServer.GracefulStop()
-			cleanup()
-		}()
-
-		go func() {
-			if err := logger.Info("message", "started", "address", listener.Addr().String()); err != nil {
-				errCh <- err
-			}
-			if err := grpcServer.Serve(listener); err != nil {
-				errCh <- err
-			}
-		}()
-
-		select {
-		case err := <-errCh:
-			logger.Fatal("fatal", err)
-		case <-ctx.Done():
-			logger.Info("message", "shutting down", "error", ctx.Err()) // nolint
-		}
-	}
-}
-
-func validateHandlerInterfaces(server Server, logger *log.Logger) {
 	if _, ok := server.(PreHandler); ok {
 		return
 	}
@@ -148,73 +49,5 @@ func validateHandlerInterfaces(server Server, logger *log.Logger) {
 	if _, ok := server.(PostHandler); ok {
 		return
 	}
-	logger.Fatal("fatal", "At least one of the following must be implemented: PreHandler or Handler or PostHandler") // nolint
-}
-
-func showUsage(name string, fs *flag.FlagSet) {
-	fmt.Printf("usage: %s [flags]\n", name)
-	fs.Usage()
-}
-
-func HandlerFullName(server Server) string {
-	return fmt.Sprintf("autoscaler-handlers-%s", server.Name())
-}
-
-var _ handler.HandleServiceServer = (*HandleService)(nil)
-
-type HandleService struct {
-	handler.UnimplementedHandleServiceServer
-	Handler Server
-	logger  *log.Logger
-}
-
-func (h *HandleService) PreHandle(req *handler.PreHandleRequest, server handler.HandleService_PreHandleServer) error {
-	if impl, ok := h.Handler.(PreHandler); ok {
-		if err := h.logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
-			return err
-		}
-		if err := h.logger.Debug("request", req.String()); err != nil {
-			return err
-		}
-		return impl.PreHandle(req, server)
-	}
-
-	if err := h.logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
-		return err
-	}
-	return h.logger.Debug("request", req.String())
-}
-
-func (h *HandleService) Handle(req *handler.HandleRequest, server handler.HandleService_HandleServer) error {
-	if impl, ok := h.Handler.(Handler); ok {
-		if err := h.logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
-			return err
-		}
-		if err := h.logger.Debug("request", req.String()); err != nil {
-			return err
-		}
-		return impl.Handle(req, server)
-	}
-
-	if err := h.logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
-		return err
-	}
-	return h.logger.Debug("request", req.String())
-}
-
-func (h *HandleService) PostHandle(req *handler.PostHandleRequest, server handler.HandleService_PostHandleServer) error {
-	if impl, ok := h.Handler.(PostHandler); ok {
-		if err := h.logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
-			return err
-		}
-		if err := h.logger.Debug("request", req.String()); err != nil {
-			return err
-		}
-		return impl.PostHandle(req, server)
-	}
-
-	if err := h.logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
-		return err
-	}
-	return h.logger.Debug("request", req.String())
+	server.GetLogger().Fatal("fatal", "At least one of the following must be implemented: PreHandler or Handler or PostHandler") // nolint
 }

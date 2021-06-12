@@ -54,7 +54,7 @@ func (p *stubResourcePlan) LessThanPlan(plan ResourcePlan) bool {
 
 func Test_desiredPlan(t *testing.T) {
 	type args struct {
-		ctx     *Context
+		ctx     *RequestContext
 		current interface{}
 		plans   ResourcePlans
 	}
@@ -67,7 +67,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Up returns next plan",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType: requestTypeUp,
@@ -85,7 +85,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Up returns nil if resource has greater plan",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType: requestTypeUp,
@@ -103,7 +103,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Up returns next plan if resource has unknown and lesser plan",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType: requestTypeUp,
@@ -122,7 +122,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Down returns prev plan",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType: requestTypeDown,
@@ -140,7 +140,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Down returns nil if resource has lesser plan",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType: requestTypeDown,
@@ -158,7 +158,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Down returns prev plan if resource has unknown and larger plan",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType: requestTypeDown,
@@ -178,7 +178,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Up returns named plan",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType:      requestTypeUp,
@@ -198,7 +198,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Up returns error when greater plan not exists",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType:      requestTypeUp,
@@ -218,7 +218,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Down returns named plan",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType:      requestTypeDown,
@@ -238,7 +238,7 @@ func Test_desiredPlan(t *testing.T) {
 		{
 			name: "Down returns error when greater plan not exists",
 			args: args{
-				ctx: &Context{
+				ctx: &RequestContext{
 					ctx: context.Background(),
 					request: &requestInfo{
 						requestType:      requestTypeDown,

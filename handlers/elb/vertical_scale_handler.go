@@ -19,14 +19,21 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
+	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type VerticalScaleHandler struct {
-	handlers.SakuraCloudFlagCustomizer
 	handlers.HandlerLogger
+	*builtins.SakuraCloudAPIClient
+}
+
+func NewVerticalScaleHandler() *VerticalScaleHandler {
+	return &VerticalScaleHandler{
+		SakuraCloudAPIClient: &builtins.SakuraCloudAPIClient{},
+	}
 }
 
 func (h *VerticalScaleHandler) Name() string {
@@ -63,7 +70,7 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 }
 
 func (h *VerticalScaleHandler) handleELB(ctx context.Context, req *handler.HandleRequest, elb *handler.ELB, sender handlers.ResponseSender) error {
-	elbOp := sacloud.NewProxyLBOp(h.APIClient())
+	elbOp := sacloud.NewProxyLBOp(h.APICaller())
 
 	_, err := elbOp.ChangePlan(ctx, types.StringID(elb.Id), &sacloud.ProxyLBChangePlanRequest{
 		ServiceClass: types.ProxyLBServiceClass(types.EProxyLBPlan(elb.Plan), types.EProxyLBRegion(elb.Region)),

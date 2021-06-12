@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -31,7 +32,7 @@ func testServer() *Server {
 			TypeName: "Server",
 			TargetSelector: &ResourceSelector{
 				Names: []string{"test-server"},
-				Zone:  testZone,
+				Zone:  test.Zone,
 			},
 		},
 		Plans: []*ServerPlan{
@@ -42,18 +43,18 @@ func testServer() *Server {
 	}
 }
 
-func testContext() *Context {
-	return NewContext(context.Background(), &requestInfo{
+func testContext() *RequestContext {
+	return NewRequestContext(context.Background(), &requestInfo{
 		requestType:       requestTypeUp,
 		source:            "default",
 		action:            "default",
 		resourceGroupName: "web",
-	}, testLogger)
+	}, test.Logger)
 }
 
 func initTestServer(t *testing.T) func() {
-	serverOp := sacloud.NewServerOp(testAPIClient())
-	server, err := serverOp.Create(context.Background(), testZone, &sacloud.ServerCreateRequest{
+	serverOp := sacloud.NewServerOp(test.APIClient)
+	server, err := serverOp.Create(context.Background(), test.Zone, &sacloud.ServerCreateRequest{
 		CPU:                  2,
 		MemoryMB:             4 * size.GiB,
 		ServerPlanCommitment: types.Commitments.Standard,
@@ -67,14 +68,14 @@ func initTestServer(t *testing.T) func() {
 	}
 
 	return func() {
-		if err := serverOp.Delete(context.Background(), testZone, server.ID); err != nil {
+		if err := serverOp.Delete(context.Background(), test.Zone, server.ID); err != nil {
 			t.Logf("[WARN] deleting server failed: %s", err)
 		}
 	}
 }
 
 func initTestDNS(t *testing.T) func() {
-	dnsOp := sacloud.NewDNSOp(testAPIClient())
+	dnsOp := sacloud.NewDNSOp(test.APIClient)
 	dns, err := dnsOp.Create(context.Background(), &sacloud.DNSCreateRequest{
 		Name: "test-dns.com",
 	})
@@ -96,7 +97,7 @@ func TestServer_Validate(t *testing.T) {
 		empty := &Server{
 			ResourceBase: &ResourceBase{TypeName: "Server"},
 		}
-		errs := empty.Validate(context.Background(), testAPIClient())
+		errs := empty.Validate(context.Background(), test.APIClient)
 		require.Len(t, errs, 1)
 		require.EqualError(t, errs[0], "resource=Server: selector: required")
 	})
@@ -108,7 +109,7 @@ func TestServer_Validate(t *testing.T) {
 				TargetSelector: &ResourceSelector{},
 			},
 		}
-		errs := empty.Validate(context.Background(), testAPIClient())
+		errs := empty.Validate(context.Background(), test.APIClient)
 		require.Len(t, errs, 1)
 		require.EqualError(t, errs[0], "resource=Server: selector.Zone: required")
 	})
@@ -126,12 +127,12 @@ func TestServer_Computed(t *testing.T) {
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
 					ID:   123456789012,
-					Zone: testZone,
+					Zone: test.Zone,
 				},
 			},
 		}
 
-		_, err := notFound.Compute(ctx, testAPIClient())
+		_, err := notFound.Compute(ctx, test.APIClient)
 		require.Error(t, err)
 	})
 
@@ -141,7 +142,7 @@ func TestServer_Computed(t *testing.T) {
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
 					Names: []string{"test-server"},
-					Zone:  testZone,
+					Zone:  test.Zone,
 				},
 			},
 			Plans: []*ServerPlan{
@@ -151,7 +152,7 @@ func TestServer_Computed(t *testing.T) {
 			},
 		}
 
-		computed, err := running.Compute(ctx, testAPIClient())
+		computed, err := running.Compute(ctx, test.APIClient)
 		require.NoError(t, err)
 		require.NotNil(t, computed)
 		require.Equal(t, handler.ResourceInstructions_UPDATE, computed.Instruction())
@@ -166,7 +167,7 @@ func TestServer_Computed(t *testing.T) {
 	t.Run("returns desired state that can convert to the request parameter", func(t *testing.T) {
 		ctx := testContext()
 		server := testServer()
-		computed, err := server.Compute(ctx, testAPIClient())
+		computed, err := server.Compute(ctx, test.APIClient)
 		require.NoError(t, err)
 
 		handlerReq := computed.Desired()
@@ -184,7 +185,7 @@ func TestServer_Computed(t *testing.T) {
 	t.Run("stores results to own cache", func(t *testing.T) {
 		ctx := testContext()
 		server := testServer()
-		computed, err := server.Compute(ctx, testAPIClient())
+		computed, err := server.Compute(ctx, test.APIClient)
 		require.NoError(t, err)
 
 		cached := server.Computed()
@@ -210,7 +211,7 @@ func TestServer_Computed(t *testing.T) {
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
 					Names: []string{"test-server"},
-					Zone:  testZone,
+					Zone:  test.Zone,
 				},
 			},
 			Plans: []*ServerPlan{
@@ -221,10 +222,10 @@ func TestServer_Computed(t *testing.T) {
 			parent: dns,
 		}
 
-		_, err := dns.Compute(ctx, testAPIClient())
+		_, err := dns.Compute(ctx, test.APIClient)
 		require.NoError(t, err)
 
-		computed, err := server.Compute(ctx, testAPIClient())
+		computed, err := server.Compute(ctx, test.APIClient)
 		require.NoError(t, err)
 		require.NotNil(t, computed)
 
