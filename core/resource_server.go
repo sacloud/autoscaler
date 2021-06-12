@@ -42,7 +42,6 @@ type ServerScalingOption struct {
 type Server struct {
 	*ResourceBase `yaml:",inline"`
 	DedicatedCPU  bool                `yaml:"dedicated_cpu"`
-	PrivateHostID types.ID            `yaml:"private_host_id"`
 	Plans         []*ServerPlan       `yaml:"plans"`
 	Option        ServerScalingOption `yaml:"option"`
 
@@ -254,7 +253,6 @@ func (c *computedServer) Current() *handler.Resource {
 					Core:            uint32(c.server.CPU),
 					Memory:          uint32(c.server.GetMemoryGB()),
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
-					PrivateHostId:   c.server.PrivateHostID.String(),
 					AssignedNetwork: c.assignedNetwork(),
 					Parent:          c.parents(),
 					Option: &handler.ServerScalingOption{
@@ -277,7 +275,6 @@ func (c *computedServer) Desired() *handler.Resource {
 					Core:            uint32(c.newCPU),
 					Memory:          uint32(c.newMemory),
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
-					PrivateHostId:   c.server.PrivateHostID.String(),
 					AssignedNetwork: c.assignedNetwork(),
 					Parent:          c.parents(),
 					Option: &handler.ServerScalingOption{

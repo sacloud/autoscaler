@@ -108,8 +108,7 @@ message Server {
   uint32 core                           = 13;
   uint32 memory                         = 14;
   bool dedicated_cpu                    = 15;
-  string private_host_id                = 16;
-  repeated NetworkInfo assigned_network = 17;
+  repeated NetworkInfo assigned_network = 16;
 
   ServerScalingOption option            = 101;
   // TODO その他渡すパラメータを整理する

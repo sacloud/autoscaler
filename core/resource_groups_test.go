@@ -58,7 +58,6 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							Zone:  "is1a",
 						},
 					},
-					PrivateHostID: 2,
 				}
 				childServer.SetParent(dns)
 				dns.Children = Resources{childServer}
@@ -72,8 +71,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 								Zone:  "is1a",
 							},
 						},
-						DedicatedCPU:  true,
-						PrivateHostID: 1,
+						DedicatedCPU: true,
 					},
 					&ServerGroup{
 						ResourceBase: &ResourceBase{
@@ -116,7 +114,6 @@ web:
         names: ["test-name"]
         zone: "is1a"
       dedicated_cpu: true
-      private_host_id: 1
     - type: ServerGroup
       selector:
         names: ["test-name"]
@@ -130,7 +127,6 @@ web:
           selector:
             names: ["test-child"]
             zone: "is1a"
-          private_host_id: 2
     - type: GSLB 
       selector:
         names: ["test-name"]
