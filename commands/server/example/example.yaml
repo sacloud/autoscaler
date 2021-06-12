@@ -83,9 +83,9 @@ resources:
 
 # カスタムハンドラーの定義
 # handlers:
-#   - type: "fake"
-#     name: "fake"
-#     endpoint: "unix:autoscaler-handlers-fake.sock"
+#   - type: "example"
+#     name: "example"
+#     endpoint: "unix:autoscaler-handlers-example.sock"
 
 # オートスケーラーの動作設定
 autoscaler:
