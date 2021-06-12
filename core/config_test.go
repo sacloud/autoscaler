@@ -49,7 +49,6 @@ func TestConfig_Load(t *testing.T) {
 				},
 				Handlers: Handlers{
 					{
-						Type:     "fake",
 						Name:     "fake",
 						Endpoint: "unix:autoscaler-handlers-fake.sock",
 					},
@@ -82,8 +81,7 @@ sakuracloud:
   token: token
   secret: secret
 handlers:
-  - type: "fake"
-    name: "fake"
+  - name: "fake"
     endpoint: "unix:autoscaler-handlers-fake.sock"
 resources:
   web: 
