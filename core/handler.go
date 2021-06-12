@@ -71,11 +71,11 @@ func BuiltinHandlers() Handlers {
 
 // Handler カスタムハンドラーの定義
 type Handler struct {
-	Type           string          `yaml:"type"`     // ハンドラー種別
-	Name           string          `yaml:"name"`     // ハンドラーを識別するための名称 同一Typeで複数のハンドラーが存在する場合が存在するため、Nameで一意に識別する
-	Endpoint       string          `yaml:"endpoint"` // カスタムハンドラーの場合にのみ指定
-	BuiltinHandler handlers.Server `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
-	Disabled       bool            `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
+	Type           string               `yaml:"type"`     // ハンドラー種別
+	Name           string               `yaml:"name"`     // ハンドラーを識別するための名称 同一Typeで複数のハンドラーが存在する場合が存在するため、Nameで一意に識別する
+	Endpoint       string               `yaml:"endpoint"` // カスタムハンドラーの場合にのみ指定
+	BuiltinHandler handlers.HandlerMeta `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
+	Disabled       bool                 `yaml:"-"`        // ビルトインハンドラーの場合のみ指定
 }
 
 func (h *Handler) isBuiltin() bool {

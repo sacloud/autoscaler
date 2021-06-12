@@ -12,28 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fake
+package example
 
 import (
-	"time"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
+	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 )
 
+// Handler ハンドラーの実装例
 type Handler struct {
 	handlers.HandlerLogger
+	listenAddress string
 }
 
+// NewHandler .
+func NewHandler(listenAddr string, logger *log.Logger) *Handler {
+	return &Handler{
+		HandlerLogger: handlers.HandlerLogger{Logger: logger},
+		listenAddress: listenAddr,
+	}
+}
+
+// Name ハンドラ名、"autoscaler-handlers-"というプレフィックスをつけない短い名前を返す
 func (h *Handler) Name() string {
-	return "fake"
+	return "example"
 }
 
+// Version .
 func (h *Handler) Version() string {
 	return version.FullVersion()
 }
 
+// ListenAddress Listenerインターフェースの実装
+func (h *Handler) ListenAddress() string {
+	return h.listenAddress
+}
+
+/*
+	必要に応じてPreHandle/Handle/PostHandleを実装する
+*/
+
+// Handle Coreからのメッセージのハンドリング
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	// 受付メッセージ送信
 	if err := sender.Send(&handler.HandleResponse{
@@ -43,15 +64,9 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 		return err
 	}
 
-	// 数回ほど処理中ステータスを返しておく
-	for i := 0; i < 3; i++ {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-		}); err != nil {
-			return err
-		}
-		time.Sleep(5 * time.Millisecond)
+	// TODO ここで実際の処理を実装する
+	if err := h.GetLogger().Debug("request", req); err != nil {
+		return err
 	}
 
 	// 完了メッセージ
@@ -60,3 +75,16 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 		Status:       handler.HandleResponse_DONE,
 	})
 }
+
+//// PreHandle Coreからのメッセージのハンドリング
+//func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
+//	// 必要に応じて実装
+//	return nil
+//}
+//
+
+//// PostHandle Coreからのメッセージのハンドリング
+//func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
+//	// 必要に応じて実装
+//	return nil
+//}

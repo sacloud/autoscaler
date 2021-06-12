@@ -24,7 +24,7 @@ import (
 //
 // 全ての処理をBuiltinに設定されたハンドラーに委譲する
 type Handler struct {
-	Builtin handlers.Server
+	Builtin handlers.HandlerMeta
 }
 
 func (h *Handler) Name() string {
