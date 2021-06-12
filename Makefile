@@ -44,10 +44,10 @@ tools:
 .PHONY: gen
 gen: gen-request gen-handler
 gen-request:
-	(cd docs; protoc --go_out=../request --go_opt=paths=source_relative --go-grpc_out=../request --go-grpc_opt=paths=source_relative request.proto)
+	(cd protos; protoc --go_out=../request --go_opt=paths=source_relative --go-grpc_out=../request --go-grpc_opt=paths=source_relative request.proto)
 
 gen-handler:
-	(cd docs; protoc --go_out=../handler --go_opt=paths=source_relative --go-grpc_out=../handler --go-grpc_opt=paths=source_relative handler.proto)
+	(cd protos; protoc --go_out=../handler --go_opt=paths=source_relative --go-grpc_out=../handler --go-grpc_opt=paths=source_relative handler.proto)
 
 .PHONY: build build-handlers-fake
 
