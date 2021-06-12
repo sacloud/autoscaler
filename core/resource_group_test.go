@@ -202,7 +202,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 			Resources: Resources{
 				&stubResource{
 					ResourceBase: &ResourceBase{},
-					computeFunc: func(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+					computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 						called++
 						return &stubComputed{
 							instruction: handler.ResourceInstructions_NOOP,
@@ -251,7 +251,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 									Children: Resources{
 										&stubResource{
 											ResourceBase: &ResourceBase{},
-											computeFunc: func(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+											computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 												history = append(history, "child2")
 												return &stubComputed{
 													instruction: handler.ResourceInstructions_NOOP,
@@ -262,7 +262,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 										},
 									},
 								},
-								computeFunc: func(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+								computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 									history = append(history, "child1")
 									return &stubComputed{
 										instruction: handler.ResourceInstructions_NOOP,
@@ -273,7 +273,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 							},
 						},
 					},
-					computeFunc: func(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+					computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 						history = append(history, "parent")
 						return &stubComputed{
 							instruction: handler.ResourceInstructions_NOOP,

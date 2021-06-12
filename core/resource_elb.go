@@ -116,7 +116,7 @@ func (e *EnhancedLoadBalancer) SetParent(parent Resource) {
 	e.parent = parent
 }
 
-func (e *EnhancedLoadBalancer) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+func (e *EnhancedLoadBalancer) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := e.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (e *EnhancedLoadBalancer) findCloudResource(ctx context.Context, apiClient 
 	elbOp := sacloud.NewProxyLBOp(apiClient)
 	selector := e.Selector()
 
-	found, err := elbOp.Find(ctx, selector.FindCondition())
+	found, err := elbOp.Find(ctx, selector.findCondition())
 	if err != nil {
 		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
@@ -154,7 +154,7 @@ type computedELB struct {
 	resource    *EnhancedLoadBalancer // 算出元のResourceへの参照
 }
 
-func newComputedELB(ctx *Context, resource *EnhancedLoadBalancer, elb *sacloud.ProxyLB) (*computedELB, error) {
+func newComputedELB(ctx *RequestContext, resource *EnhancedLoadBalancer, elb *sacloud.ProxyLB) (*computedELB, error) {
 	computed := &computedELB{
 		instruction: handler.ResourceInstructions_NOOP,
 		elb:         &sacloud.ProxyLB{},
@@ -176,7 +176,7 @@ func newComputedELB(ctx *Context, resource *EnhancedLoadBalancer, elb *sacloud.P
 	return computed, nil
 }
 
-func (c *computedELB) desiredPlan(ctx *Context, current *sacloud.ProxyLB, plans ResourcePlans) (*ELBPlan, error) {
+func (c *computedELB) desiredPlan(ctx *RequestContext, current *sacloud.ProxyLB, plans ResourcePlans) (*ELBPlan, error) {
 	if len(plans) == 0 {
 		plans = DefaultELBPlans
 	}

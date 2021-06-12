@@ -40,7 +40,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 	}
 
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
-	serviceCtx := NewContext(context.Background(), &requestInfo{
+	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
 		requestType:       requestTypeUp,
 		source:            req.Source,
 		action:            req.Action,
@@ -67,7 +67,7 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 	}
 
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
-	serviceCtx := NewContext(context.Background(), &requestInfo{
+	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
 		requestType:       requestTypeDown,
 		source:            req.Source,
 		action:            req.Action,

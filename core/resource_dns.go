@@ -48,7 +48,7 @@ func (d *DNS) Validate(ctx context.Context, apiClient sacloud.APICaller) []error
 	return errors.Errors
 }
 
-func (d *DNS) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+func (d *DNS) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := d.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (d *DNS) findCloudResource(ctx context.Context, apiClient sacloud.APICaller
 	dnsOp := sacloud.NewDNSOp(apiClient)
 	selector := d.Selector()
 
-	found, err := dnsOp.Find(ctx, selector.FindCondition())
+	found, err := dnsOp.Find(ctx, selector.findCondition())
 	if err != nil {
 		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
@@ -85,7 +85,7 @@ type computedDNS struct {
 	resource    *DNS // 算出元のResourceへの参照
 }
 
-func newComputedDNS(ctx *Context, resource *DNS, dns *sacloud.DNS) (*computedDNS, error) {
+func newComputedDNS(ctx *RequestContext, resource *DNS, dns *sacloud.DNS) (*computedDNS, error) {
 	computed := &computedDNS{
 		instruction: handler.ResourceInstructions_NOOP,
 		dns:         &sacloud.DNS{},

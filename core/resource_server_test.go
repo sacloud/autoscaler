@@ -43,8 +43,8 @@ func testServer() *Server {
 	}
 }
 
-func testContext() *Context {
-	return NewContext(context.Background(), &requestInfo{
+func testContext() *RequestContext {
+	return NewRequestContext(context.Background(), &requestInfo{
 		requestType:       requestTypeUp,
 		source:            "default",
 		action:            "default",

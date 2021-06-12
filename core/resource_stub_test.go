@@ -23,14 +23,14 @@ import (
 
 type stubResource struct {
 	*ResourceBase `yaml:",inline"`
-	computeFunc   func(ctx *Context, apiClient sacloud.APICaller) (Computed, error)
+	computeFunc   func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error)
 }
 
 func (r *stubResource) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	return nil
 }
 
-func (r *stubResource) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+func (r *stubResource) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	if r.computeFunc != nil {
 		computed, err := r.computeFunc(ctx, apiClient)
 		r.ComputedCache = computed

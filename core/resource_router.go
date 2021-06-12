@@ -121,7 +121,7 @@ func (r *Router) validatePlans(ctx context.Context, apiClient sacloud.APICaller)
 	return nil
 }
 
-func (r *Router) Compute(ctx *Context, apiClient sacloud.APICaller) (Computed, error) {
+func (r *Router) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := r.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (r *Router) findCloudResource(ctx context.Context, apiClient sacloud.APICal
 	routerOp := sacloud.NewInternetOp(apiClient)
 	selector := r.Selector()
 
-	found, err := routerOp.Find(ctx, selector.Zone, selector.FindCondition())
+	found, err := routerOp.Find(ctx, selector.Zone, selector.findCondition())
 	if err != nil {
 		return nil, fmt.Errorf("computing state failed: %s", err)
 	}
@@ -161,7 +161,7 @@ type computedRouter struct {
 	newBandWidth int
 }
 
-func newComputedRouter(ctx *Context, resource *Router, zone string, router *sacloud.Internet) (*computedRouter, error) {
+func newComputedRouter(ctx *RequestContext, resource *Router, zone string, router *sacloud.Internet) (*computedRouter, error) {
 	computed := &computedRouter{
 		instruction: handler.ResourceInstructions_NOOP,
 		router:      &sacloud.Internet{},
@@ -233,7 +233,7 @@ func (c *computedRouter) Desired() *handler.Resource {
 	return nil
 }
 
-func (c *computedRouter) desiredPlan(ctx *Context, current *sacloud.Internet, plans ResourcePlans) (*RouterPlan, error) {
+func (c *computedRouter) desiredPlan(ctx *RequestContext, current *sacloud.Internet, plans ResourcePlans) (*RouterPlan, error) {
 	if len(plans) == 0 {
 		plans = DefaultRouterPlans
 	}

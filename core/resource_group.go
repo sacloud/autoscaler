@@ -186,7 +186,7 @@ func (rg *ResourceGroup) Validate(ctx context.Context, apiClient sacloud.APICall
 	return errors.Errors
 }
 
-func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, handlerFilters Handlers) {
+func (rg *ResourceGroup) HandleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlerFilters Handlers) {
 	job := ctx.Job()
 	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) // nolint
@@ -207,7 +207,7 @@ func (rg *ResourceGroup) HandleAll(ctx *Context, apiClient sacloud.APICaller, ha
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_DONE) // nolint
 }
 
-func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, handlers Handlers) error {
+func (rg *ResourceGroup) handleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers) error {
 	forwardFn, backwardFn := rg.resourceWalkFuncs(ctx, apiClient, handlers)
 	if err := rg.Resources.Walk(forwardFn, backwardFn); err != nil {
 		return err
@@ -216,7 +216,7 @@ func (rg *ResourceGroup) handleAll(ctx *Context, apiClient sacloud.APICaller, ha
 	return nil
 }
 
-func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *Context, apiClient sacloud.APICaller, handlers Handlers) (ResourceWalkFunc, ResourceWalkFunc) {
+func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *RequestContext, apiClient sacloud.APICaller, handlers Handlers) (ResourceWalkFunc, ResourceWalkFunc) {
 	forwardFn := func(resource Resource) error {
 		_, err := resource.Compute(parentCtx, apiClient)
 		return err

@@ -27,8 +27,13 @@ import (
 	"github.com/sacloud/autoscaler/handlers/server"
 )
 
+// Handlers Handlerのリスト
 type Handlers []*Handler
 
+// BuiltinHandlers ビルトインハンドラのリスト
+//
+// この段階では各ハンドラにAPIクライアントは注入されない
+// Config.Handlersも参照
 func BuiltinHandlers() Handlers {
 	return Handlers{
 		{

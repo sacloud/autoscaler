@@ -21,17 +21,18 @@ import (
 	"github.com/sacloud/autoscaler/log"
 )
 
-// Context 1リクエストのスコープに対応するコンテキスト、context.Contextを実装し、リクエスト情報や現在のジョブの情報を保持する
-type Context struct {
+// RequestContext 1リクエストのスコープに対応するコンテキスト、context.Contextを実装し、リクエスト情報や現在のジョブの情報を保持する
+type RequestContext struct {
 	ctx     context.Context
 	request *requestInfo
 	job     *JobStatus
 	logger  *log.Logger
 }
 
-func NewContext(parent context.Context, request *requestInfo, logger *log.Logger) *Context {
+// NewRequestContext 新しいリクエストコンテキストを生成する
+func NewRequestContext(parent context.Context, request *requestInfo, logger *log.Logger) *RequestContext {
 	logger = logger.With("request-type", request.requestType, "scaling-job-id", request.ID())
-	return &Context{
+	return &RequestContext{
 		ctx:     parent,
 		request: request,
 		logger:  logger,
@@ -41,8 +42,8 @@ func NewContext(parent context.Context, request *requestInfo, logger *log.Logger
 // WithJobStatus JobStatusを持つContextを現在のContextを元に作成して返す
 //
 // 現在のContextが親Contextとなる
-func (c *Context) WithJobStatus(job *JobStatus) *Context {
-	return &Context{
+func (c *RequestContext) WithJobStatus(job *JobStatus) *RequestContext {
+	return &RequestContext{
 		ctx: c,
 		request: &requestInfo{
 			requestType:       c.request.requestType,
@@ -59,8 +60,8 @@ func (c *Context) WithJobStatus(job *JobStatus) *Context {
 // ForRefresh リフレッシュのためのContextを現在のContextを元に作成して返す
 //
 // 現在のContextが親Contextとなる
-func (c *Context) ForRefresh() *Context {
-	return NewContext(c, &requestInfo{
+func (c *RequestContext) ForRefresh() *RequestContext {
+	return NewRequestContext(c, &requestInfo{
 		requestType:       c.request.requestType,
 		source:            c.request.source,
 		action:            c.request.action,
@@ -71,55 +72,55 @@ func (c *Context) ForRefresh() *Context {
 }
 
 // Request 現在のコンテキストで受けたリクエストの情報を返す
-func (c *Context) Request() *requestInfo {
+func (c *RequestContext) Request() *requestInfo {
 	return c.request
 }
 
 // Logger 現在のコンテキストのロガーを返す
-func (c *Context) Logger() *log.Logger {
+func (c *RequestContext) Logger() *log.Logger {
 	return c.logger
 }
 
 // JobID 現在のコンテキストでのJobのIDを返す
 //
 // まだJobの実行決定が行われていない場合でも値を返す
-func (c *Context) JobID() string {
+func (c *RequestContext) JobID() string {
 	return c.request.ID()
 }
 
 // Job 現在のコンテキストで実行中のJobを返す
 //
 // まだJobの実行決定が行われていない場合はnilを返す
-func (c *Context) Job() *JobStatus {
+func (c *RequestContext) Job() *JobStatus {
 	return c.job
 }
 
-func (c *Context) init() {
+func (c *RequestContext) init() {
 	if c.ctx == nil {
 		c.ctx = context.Background()
 	}
 }
 
 // Deadline context.Contextの実装、内部で保持しているcontextに処理を委譲している
-func (c *Context) Deadline() (deadline time.Time, ok bool) {
+func (c *RequestContext) Deadline() (deadline time.Time, ok bool) {
 	c.init()
 	return c.ctx.Deadline()
 }
 
 // Done context.Contextの実装、内部で保持しているcontextに処理を委譲している
-func (c *Context) Done() <-chan struct{} {
+func (c *RequestContext) Done() <-chan struct{} {
 	c.init()
 	return c.ctx.Done()
 }
 
 // Err context.Contextの実装、内部で保持しているcontextに処理を委譲している
-func (c *Context) Err() error {
+func (c *RequestContext) Err() error {
 	c.init()
 	return c.ctx.Err()
 }
 
 // Value context.Contextの実装、内部で保持しているcontextに処理を委譲している
-func (c *Context) Value(key interface{}) interface{} {
+func (c *RequestContext) Value(key interface{}) interface{} {
 	c.init()
 	return c.ctx.Value(key)
 }
