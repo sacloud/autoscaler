@@ -12,27 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package example
 
 import (
-	"github.com/sacloud/autoscaler/commands/server/example"
-	"github.com/sacloud/autoscaler/commands/server/handlers"
-	"github.com/sacloud/autoscaler/commands/server/start"
+	_ "embed"
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
 var Command = &cobra.Command{
-	Use:           "server",
-	Short:         "A set of sub commands to manage autoscaler's core server",
-	SilenceErrors: true,
+	Use:   "example [flags]...",
+	Short: "show configuration example",
+	RunE:  run,
 }
 
-var subCommands = []*cobra.Command{
-	example.Command,
-	start.Command,
-	handlers.Command,
-}
+//go:embed example.yaml
+var exampleBody []byte
 
-func init() {
-	Command.AddCommand(subCommands...)
+func run(cmd *cobra.Command, args []string) error {
+	fmt.Println(string(exampleBody))
+	return nil
 }
