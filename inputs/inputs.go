@@ -36,7 +36,7 @@ var (
 	}
 )
 
-// Inputs Webhookを受け取りCoreへのリクエストを行うInputsが備えるべきインターフェース
+// Input Webhookを受け取りCoreへのリクエストを行うInputsが備えるべきインターフェース
 type Input interface {
 	Name() string
 	Version() string
@@ -112,6 +112,7 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 		return
 	}
 
+	w.Header().Add("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("accepted")) // nolint
 }
