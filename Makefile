@@ -69,6 +69,19 @@ shasum:
 test: 
 	go test $(TESTARGS) -v ./...
 
+.PHONY: e2e-docker-image e2e-test
+e2e-docker-image:
+	docker build -f e2e/Dockerfile -t sacloud/autoscaler-e2e-test:dev .
+
+e2e-test:
+	docker run -it --rm \
+	    -v $$(PWD):/work \
+	    -w /work/e2e \
+	    -e SAKURACLOUD_ACCESS_TOKEN \
+	    -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
+	    -e SKIP_CLEANUP \
+	    sacloud/autoscaler-e2e-test:dev ./run.sh
+
 .PHONY: lint
 lint:
 	golangci-lint run ./... --modules-download-mode=readonly

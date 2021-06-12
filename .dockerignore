@@ -1,0 +1,5 @@
+.env
+.mailmap
+e2e/
+.git
+bin/
