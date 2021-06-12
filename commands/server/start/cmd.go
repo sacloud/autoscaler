@@ -46,7 +46,7 @@ var param = &parameter{
 }
 
 func init() {
-	Command.Flags().StringVar(&param.ListenAddress, "addr", param.ListenAddress, "URL of gRPC endpoint of AutoScaler Core")
+	Command.Flags().StringVar(&param.ListenAddress, "addr", param.ListenAddress, "Address of the gRPC endpoint to listen to")
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
 }
 

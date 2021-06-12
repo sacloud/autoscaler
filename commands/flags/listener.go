@@ -12,30 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alertmanager
+package flags
 
 import (
-	"github.com/sacloud/autoscaler/commands/flags"
-	"github.com/sacloud/autoscaler/inputs"
-	"github.com/sacloud/autoscaler/inputs/alertmanager"
+	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
 
-var Command = &cobra.Command{
-	Use:   "alertmanager",
-	Short: "Start web server for handle webhooks from AlertManager",
-	PreRunE: flags.ValidateMultiFunc(true,
-		flags.ValidateDestinationFlags,
-		flags.ValidateListenerFlags,
-	),
-	RunE: run,
+type listenerFlags struct {
+	ListenAddr string `name:"--addr" validate:"required,printascii"`
 }
 
-func init() {
-	flags.SetDestinationFlag(Command)
-	flags.SetListenerFlag(Command)
+var listener = &listenerFlags{
+	ListenAddr: defaults.ListenAddress,
 }
 
-func run(cmd *cobra.Command, args []string) error {
-	return inputs.Serve(alertmanager.NewInput(flags.Destination(), flags.ListenAddr(), flags.NewLogger()))
+func SetListenerFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&listener.ListenAddr, "addr", "", listener.ListenAddr, "the TCP address for the server to listen on")
+}
+
+func ValidateListenerFlags(cmd *cobra.Command, args []string) error {
+	return validate.Struct(listener)
+}
+
+func ListenAddr() string {
+	return listener.ListenAddr
 }

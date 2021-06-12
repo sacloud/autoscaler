@@ -19,6 +19,7 @@ import "time"
 const (
 	CoreSocketAddr = "unix:autoscaler.sock" // CoreのデフォルトgRPCエンドポイント(Inputsから呼ばれる)
 	CoreConfigPath = "autoscaler.yaml"      // CoreのConfigurationのファイルパス
+	ListenAddress  = ":8080"                // Inputsがリッスンするデフォルトのアドレス
 
 	ActionName        = "default"
 	ResourceGroupName = "default"

@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sacloud/autoscaler/commands/flags"
+
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/request"
@@ -31,14 +33,16 @@ var Command = &cobra.Command{
 	Short:     "Send Up/Down request directly to Core server",
 	ValidArgs: []string{"up", "down"},
 	Args:      cobra.ExactValidArgs(1),
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return validate.Struct(param)
-	},
+	PreRunE: flags.ValidateMultiFunc(true,
+		flags.ValidateDestinationFlags,
+		func(cmd *cobra.Command, args []string) error {
+			return validate.Struct(param)
+		},
+	),
 	RunE: run,
 }
 
 type parameter struct {
-	Destination       string `name:"--dest" validate:"required,printascii,max=1024"`
 	Source            string `name:"--source" validate:"required,printascii,max=1024"`
 	Action            string `name:"--action" validate:"required,printascii,max=1024"`
 	ResourceGroupname string `name:"--resource-group-name" validate:"required,printascii,max=1024"`
@@ -46,7 +50,6 @@ type parameter struct {
 }
 
 var param = &parameter{
-	Destination:       defaults.CoreSocketAddr,
 	Source:            defaults.SourceName,
 	Action:            defaults.ActionName,
 	ResourceGroupname: defaults.ResourceGroupName,
@@ -54,7 +57,7 @@ var param = &parameter{
 }
 
 func init() {
-	Command.Flags().StringVarP(&param.Destination, "dest", "", param.Destination, "URL of gRPC endpoint of AutoScaler Core")
+	flags.SetDestinationFlag(Command)
 	Command.Flags().StringVarP(&param.Action, "action", "", param.Action, "Name of the action to perform")
 	Command.Flags().StringVarP(&param.ResourceGroupname, "resource-group-name", "", param.ResourceGroupname, "Name of the target resource group")
 	Command.Flags().StringVarP(&param.Source, "source", "", param.Source, "A string representing the request source, passed to AutoScaler Core")
@@ -64,7 +67,7 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: param.Destination})
+	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: flags.Destination()})
 	if err != nil {
 		return err
 	}

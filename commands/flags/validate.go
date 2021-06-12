@@ -14,16 +14,23 @@
 
 package flags
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/hashicorp/go-multierror"
+	"github.com/spf13/cobra"
+)
 
-// ValidateMultiFunc 指定のfuncを順次適用するfuncを返す、funcがerrorを返したら即時リターンする
-func ValidateMultiFunc(funcs ...func(*cobra.Command, []string) error) func(*cobra.Command, []string) error {
+// ValidateMultiFunc 指定のfuncを順次適用するfuncを返す、mergeがfalseの場合、funcがerrorを返したら即時リターンする
+func ValidateMultiFunc(merge bool, funcs ...func(*cobra.Command, []string) error) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		errors := &multierror.Error{}
 		for _, fn := range funcs {
 			if err := fn(cmd, args); err != nil {
-				return err
+				if !merge {
+					return err
+				}
+				errors = multierror.Append(errors, err)
 			}
 		}
-		return nil
+		return errors.ErrorOrNil()
 	}
 }

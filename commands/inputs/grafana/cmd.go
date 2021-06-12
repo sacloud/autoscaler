@@ -16,37 +16,26 @@ package grafana
 
 import (
 	"github.com/sacloud/autoscaler/commands/flags"
-	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/inputs"
 	"github.com/sacloud/autoscaler/inputs/grafana"
-	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
 
 var Command = &cobra.Command{
 	Use:   "grafana",
 	Short: "Start web server for handle webhooks from Grafana",
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return validate.Struct(param)
-	},
+	PreRunE: flags.ValidateMultiFunc(true,
+		flags.ValidateDestinationFlags,
+		flags.ValidateListenerFlags,
+	),
 	RunE: run,
 }
 
-type parameter struct {
-	Destination string `name:"--dest" validate:"required"`
-	ListenAddr  string `name:"--addr" validate:"required"`
-}
-
-var param = &parameter{
-	Destination: defaults.CoreSocketAddr,
-	ListenAddr:  ":3001",
-}
-
 func init() {
-	Command.Flags().StringVarP(&param.Destination, "dest", "", param.Destination, "URL of gRPC endpoint of AutoScaler Core")
-	Command.Flags().StringVarP(&param.ListenAddr, "addr", "", param.ListenAddr, "the TCP address for the server to listen on")
+	flags.SetDestinationFlag(Command)
+	flags.SetListenerFlag(Command)
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	return inputs.Serve(grafana.NewInput(param.Destination, param.ListenAddr, flags.NewLogger()))
+	return inputs.Serve(grafana.NewInput(flags.Destination(), flags.ListenAddr(), flags.NewLogger()))
 }
