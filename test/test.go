@@ -12,19 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package core
+package test
 
 import (
 	"os"
 
 	"github.com/sacloud/autoscaler/log"
+
 	"github.com/sacloud/libsacloud/v2/helper/api"
-	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 var (
-	testZone   = "is1a"
-	testLogger = log.NewLogger(&log.LoggerOption{
+	Zone      = "is1a"
+	APIClient = api.NewCaller(&api.CallerOptions{
+		AccessToken:       "fake",
+		AccessTokenSecret: "fake",
+		UserAgent:         "sacloud/autoscaler/fake/test",
+		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
+		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
+		FakeMode:          true,
+	})
+	Logger = log.NewLogger(&log.LoggerOption{
 		Writer:    os.Stderr,
 		JSON:      false,
 		TimeStamp: true,
@@ -32,14 +40,3 @@ var (
 		Level:     log.LevelDebug,
 	})
 )
-
-func testAPIClient() sacloud.APICaller {
-	return api.NewCaller(&api.CallerOptions{
-		AccessToken:       "fake",
-		AccessTokenSecret: "fake",
-		UserAgent:         "sacloud/autoscaler/fake",
-		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
-		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
-		FakeMode:          true,
-	})
-}

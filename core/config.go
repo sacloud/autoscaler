@@ -24,6 +24,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
@@ -77,7 +78,13 @@ func (c *Config) APIClient() sacloud.APICaller {
 }
 
 func (c *Config) Handlers() Handlers {
-	return append(BuiltinHandlers(), c.CustomHandlers...)
+	handlers := BuiltinHandlers()
+	for _, h := range handlers {
+		if h, ok := h.BuiltinHandler.(builtins.SakuraCloudAPICaller); ok {
+			h.SetAPICaller(c.SakuraCloud.APIClient())
+		}
+	}
+	return append(handlers, c.CustomHandlers...)
 }
 
 func (c *Config) Validate(ctx context.Context) error {

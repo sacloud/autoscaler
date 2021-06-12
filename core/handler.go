@@ -35,35 +35,35 @@ func BuiltinHandlers() Handlers {
 			Type: "elb-vertical-scaler",
 			Name: "elb-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &elb.VerticalScaleHandler{},
+				Builtin: elb.NewVerticalScaleHandler(),
 			},
 		},
 		{
 			Type: "elb-servers-handler",
 			Name: "elb-servers-handler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &elb.ServersHandler{},
+				Builtin: elb.NewServersHandler(),
 			},
 		},
 		{
 			Type: "gslb-servers-handler",
 			Name: "gslb-servers-handler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &gslb.ServersHandler{},
+				Builtin: gslb.NewServersHandler(),
 			},
 		},
 		{
 			Type: "router-vertical-scaler",
 			Name: "router-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &router.VerticalScaleHandler{},
+				Builtin: router.NewVerticalScaleHandler(),
 			},
 		},
 		{
 			Type: "server-vertical-scaler",
 			Name: "server-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
-				Builtin: &server.VerticalScaleHandler{},
+				Builtin: server.NewVerticalScaleHandler(),
 			},
 		},
 	}

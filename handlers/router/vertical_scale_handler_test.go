@@ -18,12 +18,11 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"testing"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/libsacloud/v2/helper/api"
+	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
@@ -64,7 +63,7 @@ func TestHandler_Handle(t *testing.T) {
 						Resource: &handler.Resource_Router{
 							Router: &handler.Router{
 								Id:        router.ID.String(),
-								Zone:      testZone,
+								Zone:      test.Zone,
 								BandWidth: 250,
 							},
 						},
@@ -77,7 +76,9 @@ func TestHandler_Handle(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &VerticalScaleHandler{}
+			h := NewVerticalScaleHandler()
+			h.SetAPICaller(test.APIClient)
+
 			if err := h.Handle(tt.args.req, tt.args.sender); (err != nil) != tt.wantErr {
 				t.Errorf("Handle() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -85,21 +86,9 @@ func TestHandler_Handle(t *testing.T) {
 	}
 }
 
-var (
-	testZone      = "is1a"
-	testAPIClient = api.NewCaller(&api.CallerOptions{
-		AccessToken:       "fake",
-		AccessTokenSecret: "fake",
-		UserAgent:         "sacloud/autoscaler/fake",
-		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
-		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
-		FakeMode:          true,
-	})
-)
-
 func initTestServer(t *testing.T) (*sacloud.Internet, func()) {
-	routerOp := sacloud.NewInternetOp(testAPIClient)
-	router, err := routerOp.Create(context.Background(), testZone, &sacloud.InternetCreateRequest{
+	routerOp := sacloud.NewInternetOp(test.APIClient)
+	router, err := routerOp.Create(context.Background(), test.Zone, &sacloud.InternetCreateRequest{
 		Name:          "test-server",
 		BandWidthMbps: 100,
 	})

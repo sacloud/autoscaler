@@ -19,11 +19,11 @@ import (
 	"testing"
 
 	"github.com/sacloud/autoscaler/defaults"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/handlers/stub"
+	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/stretchr/testify/require"
 )
@@ -215,7 +215,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 			Name: "test",
 		}
 
-		rg.handleAll(testContext(), testAPIClient(), Handlers{ // nolint
+		rg.handleAll(testContext(), test.APIClient, Handlers{ // nolint
 			{
 				Type: "stub",
 				Name: "stub",
@@ -286,7 +286,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 			Name: "test",
 		}
 
-		rg.handleAll(testContext(), testAPIClient(), Handlers{ // nolint
+		rg.handleAll(testContext(), test.APIClient, Handlers{ // nolint
 			{
 				Type: "stub",
 				Name: "stub",

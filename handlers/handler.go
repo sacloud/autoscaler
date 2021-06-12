@@ -51,4 +51,3 @@ func validateHandlerInterfaces(server HandlerMeta) {
 	}
 	server.GetLogger().Fatal("fatal", "At least one of the following must be implemented: PreHandler or Handler or PostHandler") // nolint
 }
-
