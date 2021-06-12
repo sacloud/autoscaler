@@ -29,7 +29,7 @@ var rootCmd = &cobra.Command{
 	Use:               "autoscaler-handlers-example",
 	SilenceErrors:     true,
 	SilenceUsage:      true,
-	PersistentPreRunE: flags.ValidateFlags,
+	PersistentPreRunE: flags.ValidateLogFlags,
 }
 
 var serveCmd = &cobra.Command{
@@ -42,7 +42,7 @@ var serveCmd = &cobra.Command{
 }
 
 func init() {
-	flags.SetFlags(rootCmd)
+	flags.SetLogFlags(rootCmd)
 	serveCmd.Flags().StringVar(&listenAddr, "addr", listenAddr, "Address of the gRPC endpoint to listen to")
 
 	rootCmd.AddCommand(
