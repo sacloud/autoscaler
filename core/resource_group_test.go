@@ -31,15 +31,12 @@ import (
 func TestResourceGroup_handlers(t *testing.T) {
 	allHandlers := Handlers{
 		{
-			Type: "dummy",
 			Name: "dummy1",
 		},
 		{
-			Type: "dummy",
 			Name: "dummy2",
 		},
 		{
-			Type:     "dummy",
 			Name:     "dummy3",
 			Disabled: true,
 		},
@@ -73,11 +70,9 @@ func TestResourceGroup_handlers(t *testing.T) {
 			},
 			want: Handlers{
 				{
-					Type: "dummy",
 					Name: "dummy1",
 				},
 				{
-					Type: "dummy",
 					Name: "dummy2",
 				},
 			},
@@ -128,7 +123,6 @@ func TestResourceGroup_handlers(t *testing.T) {
 			},
 			want: Handlers{
 				{
-					Type:     "dummy",
 					Name:     "dummy3",
 					Disabled: true,
 				},
@@ -149,7 +143,6 @@ func TestResourceGroup_handlers(t *testing.T) {
 			},
 			want: Handlers{
 				{
-					Type: "dummy",
 					Name: "dummy2",
 				},
 			},
@@ -169,7 +162,6 @@ func TestResourceGroup_handlers(t *testing.T) {
 			},
 			want: Handlers{
 				{
-					Type: "dummy",
 					Name: "dummy2",
 				},
 			},
@@ -217,7 +209,6 @@ func TestResourceGroup_handleAll(t *testing.T) {
 
 		rg.handleAll(testContext(), test.APIClient, Handlers{ // nolint
 			{
-				Type: "stub",
 				Name: "stub",
 				BuiltinHandler: &builtins.Handler{
 					Builtin: &stub.Handler{
@@ -288,7 +279,6 @@ func TestResourceGroup_handleAll(t *testing.T) {
 
 		rg.handleAll(testContext(), test.APIClient, Handlers{ // nolint
 			{
-				Type: "stub",
 				Name: "stub",
 				BuiltinHandler: &stub.Handler{
 					PreHandleFunc: func(request *handler.PreHandleRequest, sender handlers.ResponseSender) error {
