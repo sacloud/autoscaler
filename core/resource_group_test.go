@@ -173,7 +173,7 @@ func TestResourceGroup_handlers(t *testing.T) {
 			rg := &ResourceGroup{
 				Actions:   tt.fields.Actions,
 				Resources: tt.fields.Resources,
-				Name:      tt.fields.Name,
+				name:      tt.fields.Name,
 			}
 			got, err := rg.handlers(tt.args.actionName, tt.args.allHandlers)
 			if (err != nil) != tt.wantErr {
@@ -204,7 +204,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 					},
 				},
 			},
-			Name: "test",
+			name: "test",
 		}
 
 		rg.handleAll(testContext(), test.APIClient, Handlers{ // nolint
@@ -274,7 +274,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 					},
 				},
 			},
-			Name: "test",
+			name: "test",
 		}
 
 		rg.handleAll(testContext(), test.APIClient, Handlers{ // nolint
