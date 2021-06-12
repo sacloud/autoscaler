@@ -100,3 +100,10 @@ autoscaler:
 さくらのクラウドAPIキーなどの設定を行います。
 
 - [SakuraCloud](https://pkg.go.dev/github.com/sacloud/autoscaler/core#SakuraCloud)
+
+省略した場合は以下の環境変数を参照します。  
+
+- APIトークン: `SAKURACLOUD_ACCESS_TOKEN`
+- APIシークレット: `SAKURACLOUD_ACCESS_TOKEN_SECRET`
+
+APIキーにはアクセスレベル`作成・削除`または`設定編集`が必要です。

@@ -26,8 +26,7 @@ sacloud/autoscalerはシェル補完に対応しています。
 
 sacloud/autoscalerを実行するにはYAML形式の設定ファイルで対象リソースの定義などを行う必要があります。  
 
-TODO: 設定ファイルの例を表示するコマンドを追加
-
+設定ファイルの雛形は`autoscaler server example`で出力できます。
 設定ファイルの記載内容については[Configuration Reference](./configuration.md)を参照してください。
 
 ## CLIリファレンス
