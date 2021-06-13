@@ -1,11 +1,12 @@
 # Getting Started Guide
 
-## 目次
+## 利用までの流れ
 
 - インストール
-  - シェル補完(bash/zsh/fish/powershell)
-- 設定ファイル(autoscaler.yaml)
-- CLIリファレンス
+- Coreの設定ファイルの作成
+- Coreの起動
+- Inputsの起動
+- Grafana/AlertManagerの設定
 
 ## インストール
 
@@ -15,45 +16,58 @@ GitHub Releasesから実行ファイルをダウンロードします。
 
 ダウンロードしたら適切なディレクトリに保存/展開してください。
 
-### シェル補完
+CLIの利用方法については[CLIリファレンス](./cli.md)を参照してください。
 
-sacloud/autoscalerはシェル補完に対応しています。  
-シェル補完の有効化方法はご利用のシェルごとに異なります。  
-
-`autoscaler completion --help`で表示される手順に従ってください。  
-
-## 設定ファイル(autoscaler.yaml)
+## Coreの設定ファイル(autoscaler.yaml)の作成
 
 sacloud/autoscalerを実行するにはYAML形式の設定ファイルで対象リソースの定義などを行う必要があります。  
 
 設定ファイルの雛形は`autoscaler server example`で出力できます。
 設定ファイルの記載内容については[Configuration Reference](./configuration.md)を参照してください。
 
-## CLIリファレンス
+## Coreの起動
 
-`autoscaler -h`でヘルプが表示されます。  
+以下のコマンドでCoreを起動します。  
 
 ```shell
-$ autoscaler -h
-
-autoscaler is a tool for managing the scale of resources on SAKURA cloud
-
-Usage:
-  autoscaler [command]
-
-Available Commands:
-  completion  Generate completion script
-  help        Help about any command
-  inputs      A set of sub commands to manage autoscaler's inputs
-  server      A set of sub commands to manage autoscaler's core server
-  version     show version
-
-Flags:
-  -h, --help                help for autoscaler
-      --log-format string   Format of logging to be output. options: [ logfmt | json ] (default "logfmt")
-      --log-level string    Level of logging to be output. options: [ error | warn | info | debug ] (default "info")
-
-Use "autoscaler [command] --help" for more information about a command.
+# デフォルト設定で起動
+$ autoscaler server start 
 ```
 
-指定可能なサブコマンドやオプションは各コマンドのヘルプを参照してください。
+指定可能なオプションは以下の通りです。
+
+```console
+start autoscaler's core server
+
+Usage:
+  autoscaler server start [flags]...
+
+Flags:
+      --addr string     Address of the gRPC endpoint to listen to (default "unix:autoscaler.sock")
+      --config string   File path of configuration of AutoScaler Core (default "autoscaler.yaml")
+  -h, --help            help for start
+
+Global Flags:
+      --log-format string   Format of logging to be output. options: [ logfmt | json ] (default "logfmt")
+      --log-level string    Level of logging to be output. options: [ error | warn | info | debug ] (default "info")
+```
+
+Note: Coreはデフォルトだと`unix:autoscaler.sock`でリッスンします。  
+Inputsを別のマシン上で動かす場合などは`--addr`フラグで`http://192.0.2.1:8080`のようなアドレスを指定する必要があります。  
+
+## Inputsの起動
+
+以下のコマンドでInputsを起動します。
+
+```shell
+# Grafana Inputsの場合
+$ autoscaler inputs grafana
+
+# AlertManager Inputsの場合
+$ autoscaler inputs alertmanager
+```
+
+## Grafana/AlertManagerの設定
+
+Grafana、またはAlertManagerでアラートの設定、およびWebhookでの通知設定が必要です。  
+詳細は[Inputsドキュメント](./inputs)を参照してください。  
