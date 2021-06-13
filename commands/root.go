@@ -21,7 +21,8 @@ import (
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/commands/inputs"
 	"github.com/sacloud/autoscaler/commands/server"
-	"github.com/sacloud/autoscaler/commands/version"
+	cmdVersion "github.com/sacloud/autoscaler/commands/version"
+	"github.com/sacloud/autoscaler/version"
 	"github.com/spf13/cobra"
 )
 
@@ -31,17 +32,19 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: flags.ValidateLogFlags,
 	SilenceUsage:      true,
 	SilenceErrors:     false,
+	Version:           version.Version,
 }
 
 var subCommands = []*cobra.Command{
 	completion.Command,
 	inputs.Command,
 	server.Command,
-	version.Command,
+	cmdVersion.Command,
 }
 
 func init() {
 	flags.SetLogFlags(rootCmd)
+	rootCmd.SetVersionTemplate("{{.Version}}\n")
 	rootCmd.AddCommand(subCommands...)
 }
 
