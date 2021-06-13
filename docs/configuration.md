@@ -36,7 +36,7 @@ resources:
 
 # オートスケーラーの動作設定
 autoscaler:
-  job_cooling_sec: 6000 # デフォルト: 6000(10分)
+  cooldown: 6000 # デフォルト: 6000(10分)
 ```
 
 ## 指定可能な項目

@@ -111,7 +111,7 @@ func (c *Core) Down(ctx *RequestContext) (*JobStatus, string, error) {
 func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 	job, ok := c.jobs[ctx.JobID()]
 	if !ok {
-		job = NewJobStatus(ctx.Request(), c.config.AutoScaler.JobCoolingTime())
+		job = NewJobStatus(ctx.Request(), c.config.AutoScaler.JobCoolDownTime())
 		c.jobs[ctx.JobID()] = job
 	}
 	return job

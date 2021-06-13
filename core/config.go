@@ -109,13 +109,13 @@ func (c *Config) Validate(ctx context.Context) error {
 
 // AutoScalerConfig オートスケーラー自体の動作設定
 type AutoScalerConfig struct {
-	JobCoolingSec int `yaml:"job_cooling_sec"` // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
+	CoolDownSec int `yaml:"cooldown"` // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
 }
 
-func (c *AutoScalerConfig) JobCoolingTime() time.Duration {
-	sec := c.JobCoolingSec
+func (c *AutoScalerConfig) JobCoolDownTime() time.Duration {
+	sec := c.CoolDownSec
 	if sec <= 0 {
-		return defaults.JobCoolingTime
+		return defaults.CoolDownTime
 	}
 	return time.Duration(sec) * time.Second
 }

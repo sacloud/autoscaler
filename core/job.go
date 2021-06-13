@@ -31,17 +31,17 @@ type JobStatus struct {
 	id            string
 	status        request.ScalingJobStatus
 	statusChanged time.Time
-	coolingTime   time.Duration
+	coolDownTime  time.Duration
 	mu            sync.Mutex
 }
 
-func NewJobStatus(req *requestInfo, coolingTime time.Duration) *JobStatus {
+func NewJobStatus(req *requestInfo, coolDownTime time.Duration) *JobStatus {
 	return &JobStatus{
 		requestType:   req.requestType,
 		id:            req.ID(),
 		status:        request.ScalingJobStatus_JOB_UNKNOWN,
 		statusChanged: time.Now(),
-		coolingTime:   coolingTime,
+		coolDownTime:  coolDownTime,
 	}
 }
 
@@ -80,15 +80,15 @@ func (j *JobStatus) Acceptable() bool {
 		return false
 	default:
 		// 以外は冷却期間でなければtrue
-		return !j.inCoolingTime()
+		return !j.inCoolDownTime()
 	}
 }
 
-// inCoolingTime StatusがDONE、かつ冷却期間内であればtrue
-func (j *JobStatus) inCoolingTime() bool {
-	if j.coolingTime == 0 {
-		j.coolingTime = defaults.JobCoolingTime
+// inCoolDownTime StatusがDONE、かつ冷却期間内であればtrue
+func (j *JobStatus) inCoolDownTime() bool {
+	if j.coolDownTime == 0 {
+		j.coolDownTime = defaults.CoolDownTime
 	}
 	return j.Status() == request.ScalingJobStatus_JOB_DONE &&
-		j.statusChanged.After(time.Now().Add(-1*j.coolingTime))
+		j.statusChanged.After(time.Now().Add(-1*j.coolDownTime))
 }
