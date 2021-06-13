@@ -1,5 +1,6 @@
 # AutoScaler
 
+![logo.svg](./docs/images/logo.svg)
 [sacloud/autoscaler](https://github.com/sacloud/autoscaler) はさくらのクラウド上のリソースのオートスケーリングを行うためのツールです。
 
 ## Overview
