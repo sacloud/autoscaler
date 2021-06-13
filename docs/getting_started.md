@@ -18,6 +18,22 @@ GitHub Releasesから実行ファイルをダウンロードします。
 
 CLIの利用方法については[CLIリファレンス](./cli.md)を参照してください。
 
+#### Dockerを利用する場合
+
+GitHub Container RegistryでDockerイメージを配布しています。  
+Dockerを利用する場合は以下のようにします。  
+
+```shell
+# Coreを起動する場合(Unixドメインソケットでリッスン)
+$ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:dev server start
+
+# Grafana Inputsを起動する場合(CoreとはVolume経由でUnixドメインソケットを受け渡して通信する)
+$ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:dev inputs grafana --addr ":8080"
+
+# AlertManager Inputsを起動する場合(CoreとはVolume経由でUnixドメインソケットを受け渡して通信する)
+$ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:dev inputs alertmanager --addr ":8080"
+```
+
 ## Coreの設定ファイル(autoscaler.yaml)の作成
 
 sacloud/autoscalerを実行するにはYAML形式の設定ファイルで対象リソースの定義などを行う必要があります。  
