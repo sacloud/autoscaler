@@ -26,5 +26,5 @@ const (
 	SourceName        = "default"
 	DesiredStateName  = "default"
 
-	JobCoolingTime = 10 * time.Minute // 同一ジョブの実行制御のための冷却期間
+	CoolDownTime = 10 * time.Minute // 同一ジョブの実行制御のための冷却期間
 )

@@ -72,7 +72,7 @@ func TestConfig_Load(t *testing.T) {
 					return rgs
 				}(),
 				AutoScaler: AutoScalerConfig{
-					JobCoolingSec: 30,
+					CoolDownSec: 30,
 				},
 			},
 			args: args{
@@ -92,7 +92,7 @@ resources:
           zone: "is1a"
         dedicated_cpu: true
 autoscaler:
-  job_cooling_sec: 30
+  cooldown: 30
 `)),
 			},
 			wantErr: false,
