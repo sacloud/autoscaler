@@ -10,7 +10,7 @@ InputsとCore、CoreとHandlersのやりとりにはgRPCを利用しています
 InputsとHandlersについては各.protoファイルに沿って独自のgRPCクライアント/サーバを実装することも可能です。
 
 - Inputs 〜 Core: [request.proto](https://github.com/sacloud/autoscaler/blob/main/protos/request.proto)
-- Core 〜 Handlers [handler.proto](https://github.com/sacloud/autoscaler/blob/main/protos/handlers.proto)
+- Core 〜 Handlers [handler.proto](https://github.com/sacloud/autoscaler/blob/main/protos/handler.proto)
 
 ## コンポーネント構成
 
