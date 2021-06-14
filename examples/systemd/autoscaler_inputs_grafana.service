@@ -1,0 +1,11 @@
+[Unit]
+Description=SakuraCloud AutoScaler Grafana Inputs
+
+[Service]
+User=autoscaler
+EnvironmentFile=/etc/autoscaler/inputs_grafana.config
+ExecStart=/usr/local/sbin/autoscaler inputs grafana $OPTIONS
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
