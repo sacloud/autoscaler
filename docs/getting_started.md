@@ -34,6 +34,10 @@ $ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:dev 
 $ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:dev inputs alertmanager --addr ":8080"
 ```
 
+#### systemdを利用する場合
+
+[examples/systemd](../examples/systemd/)を参照してください。
+
 ## Coreの設定ファイル(autoscaler.yaml)の作成
 
 sacloud/autoscalerを実行するにはYAML形式の設定ファイルで対象リソースの定義などを行う必要があります。  
