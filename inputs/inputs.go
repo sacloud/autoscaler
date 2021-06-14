@@ -106,7 +106,19 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 
 	s.logger.Info("message", "sending request to the Core server", "request-type", scalingReq.RequestType) // nolint
 
-	if err := s.send(scalingReq); err != nil {
+	res, err := s.send(scalingReq)
+	if err != nil {
+		s.logger.Error("error", err) // nolint
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := s.logger.Info(
+		"message", "webhook handled",
+		"status", res.Status,
+		"job-id", res.ScalingJobId,
+		"job-message", res.Message,
+	); err != nil {
 		s.logger.Error("error", err) // nolint
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -114,7 +126,7 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 
 	w.Header().Add("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("accepted")) // nolint
+	w.Write([]byte(fmt.Sprintf("scaling-job-id:%s, status:%s, message:%s", res.ScalingJobId, res.Status, res.Message))) // nolint
 }
 
 func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRequest, error) {
@@ -196,15 +208,15 @@ func (s *server) validateQueryString(query url.Values) error {
 	return nil
 }
 
-func (s *server) send(scalingReq *ScalingRequest) error {
+func (s *server) send(scalingReq *ScalingRequest) (*request.ScalingResponse, error) {
 	if scalingReq == nil {
-		return nil
+		return nil, nil
 	}
 	ctx := context.Background()
 
 	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: s.coreAddress})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer cleanup()
 
@@ -217,16 +229,12 @@ func (s *server) send(scalingReq *ScalingRequest) error {
 	case "down":
 		f = req.Down
 	default:
-		return fmt.Errorf("invalid request type: %s", scalingReq.RequestType)
+		return nil, fmt.Errorf("invalid request type: %s", scalingReq.RequestType)
 	}
-	res, err := f(ctx, &request.ScalingRequest{
+	return f(ctx, &request.ScalingRequest{
 		Source:            scalingReq.Source,
 		Action:            scalingReq.Action,
 		ResourceGroupName: scalingReq.GroupName,
 		DesiredStateName:  scalingReq.DesiredStateName,
 	})
-	if err != nil {
-		return err
-	}
-	return s.logger.Info("message", "webhook handled", "status", res.Status, "job-id", res.ScalingJobId)
 }
