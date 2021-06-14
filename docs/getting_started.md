@@ -34,6 +34,11 @@ $ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:dev 
 $ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:dev inputs alertmanager --addr ":8080"
 ```
 
+#### Docker Composeを利用する場合(開発環境向け)
+
+開発環境での動作確認向けにDocker ComposeでPrometheus/Grafana/AutoScalerの動作確認を行うための例を提供しています。
+[examples/docker-compose](../examples/docker-compose)を参照してください。  
+
 #### systemdを利用する場合
 
 [examples/systemd](../examples/systemd/)を参照してください。

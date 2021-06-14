@@ -1,0 +1,117 @@
+version: '3.1'
+
+volumes:
+  prometheus_data: {}
+  alertmanager_data: {}
+  grafana_data: {}
+  autoscaler_data: {}
+
+networks:
+  front-tier:
+  back-tier:
+
+services:
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - prometheus_data:/prometheus
+      - /etc/hosts:/etc/hosts:ro
+      - $PWD/prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - 9090:9090
+    networks:
+      - back-tier
+    restart: always
+
+  file-exporter:
+    image: mdoubez/filestat_exporter
+    volumes:
+      - $PWD/watch:/work
+    command:
+      - '--config.file=none'
+      - '--path.cwd=/work'
+      - 'up'
+      - 'down'
+    ports:
+      - 9943:9943
+    networks:
+      - back-tier
+    restart: always
+
+  #  alertmanager:
+  #    image: prom/alertmanager
+  #    ports:
+  #      - 9093:9093
+  #    volumes:
+  #      - $PWD/alertmanager:/etc/alertmanager
+  #      - alertmanager_data:/alertmanager
+  #    networks:
+  #      - back-tier
+  #    restart: always
+  #    command:
+  #      - '--config.file=/etc/alertmanager/config.yml'
+  #      - '--storage.path=/alertmanager'
+
+  grafana:
+    image: grafana/grafana
+    user: "104"
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - $PWD/grafana:/etc/grafana/provisioning/
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - back-tier
+      - front-tier
+    restart: always
+
+  autoscaler-core:
+    image: ghcr.io/sacloud/autoscaler:v0.0.1-beta.1
+    command: [server, start, "--config", "/autoscaler/autoscaler.yaml"]
+    working_dir: /work
+    volumes:
+      - $PWD/autoscaler:/autoscaler
+      - autoscaler_data:/work
+    environment:
+      - SAKURACLOUD_ACCESS_TOKEN
+      - SAKURACLOUD_ACCESS_TOKEN_SECRET
+    networks:
+      - front-tier
+      - back-tier
+    restart: always
+
+  autoscaler-inputs:
+    image: ghcr.io/sacloud/autoscaler:v0.0.1-beta.1
+    command: [inputs, grafana, --addr, ":8080"]
+    working_dir: /work
+    volumes:
+      - autoscaler_data:/work
+    ports:
+      - 8080:8080
+    networks:
+      - back-tier
+    restart: always
+
+  # for alertmanager
+#  autoscaler-inputs:
+#    image: ghcr.io/sacloud/autoscaler:v0.0.1-beta.1
+#    command: [inputs, alertmanager, --addr, ":8080"]
+#    working_dir: /work
+#    volumes:
+#      - autoscaler_data:/work
+#    ports:
+#      - 8080:8080
+#    networks:
+#      - back-tier
+#    restart: always

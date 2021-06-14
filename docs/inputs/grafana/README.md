@@ -37,6 +37,26 @@ Urlには以下のパラメータが指定可能です。
 
 Urlの記載例: `http://example.com:8080/up?source=grafana&action=action1&resource-group-name=group1`
 
+#### Config Fileによるプロビジョニングを行う場合の例
+
+```yaml
+# /etc/grafana/provisioning/notifiers/example.yaml
+notifiers:
+  - name: "AutoScaler:Up"
+    type: webhook
+    org_id: 1
+    uid: 1
+    is_default: false
+    send_reminder: false
+    frequency: 30m
+    disable_resolve_message: true
+    settings:
+      autoResolve: true
+      httpMethod: "POST"
+      uploadImage: false
+      url: "http://example.com:8080/up?source=grafana&action=action1&resource-group-name=group1"
+```
+
 #### APIで登録する場合の例
 
 GrafanaのAPI(`POST /api/alert-notifications`)を利用してNotification Channelを登録する例:
