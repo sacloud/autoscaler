@@ -42,10 +42,12 @@ import (
 )
 
 const (
-	coreReadyMarker   = `message="autoscaler started" address=autoscaler.sock`
-	inputsReadyMarker = `from=autoscaler-inputs-grafana message=started address=127.0.0.1:8080`
-	upJobDoneMarker   = `request-type=Up scaling-job-id=default-default-default status=JOB_DONE`
-	downJobDoneMarker = `request-type=Down scaling-job-id=default-default-default status=JOB_DONE`
+	coreReadyMarker        = `message="autoscaler started" address=autoscaler.sock`
+	inputsReadyMarker      = `from=autoscaler-inputs-grafana message=started address=127.0.0.1:8080`
+	upJobDoneMarker        = `request-type=Up scaling-job-id=default-default-default status=JOB_DONE`
+	downJobDoneMarker      = `request-type=Down scaling-job-id=default-default-default status=JOB_DONE`
+	inCoolDownTimeMarker   = `job-message="job is in an unacceptable state"`
+	inCoolDownTimeResponse = `message:job is in an unacceptable state`
 )
 
 var (
@@ -132,8 +134,32 @@ func TestE2E(t *testing.T) {
 		)
 	}
 
+	/**************************************************************************
+	 * Step 1-3: 冷却期間の確認
+	 *************************************************************************/
+	resp, err = http.Post("http://127.0.0.1:8080/up", "text/plain", bytes.NewReader(grafanaWebhookBody))
+	if err != nil {
+		fatalWithStderrOutputs(t, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		fatalWithStderrOutputs(t,
+			fmt.Sprintf("Grafana Inputs returns unexpected status code: expected: 200 actual: %d", resp.StatusCode))
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fatalWithStderrOutputs(t, err)
+	}
+	if !strings.Contains(string(body), inCoolDownTimeResponse) {
+		fatalWithStderrOutputs(t,
+			fmt.Sprintf("Grafana Inputs returns unexpected response: expected: %s actual: %s", inCoolDownTimeResponse, string(body)))
+	}
+	// 冷却期間中である事のメッセージを受け取っているはず
+	if err := waitOutput(inCoolDownTimeMarker, 10*time.Second); err != nil {
+		fatalWithStderrOutputs(t, err)
+	}
+
 	// 冷却期間待機
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	/**************************************************************************
 	 * Step 2-1: スケールダウン
