@@ -1,0 +1,26 @@
+route:
+  receiver: 'slack'
+  routes:
+    - receiver: 'autoscaler-up'
+      matchers:
+        - autoscaler = up
+    - receiver: 'autoscaler-down'
+      matchers:
+        - autoscaler = down
+
+receivers:
+  - name: 'slack'
+    slack_configs:
+      - send_resolved: true
+        username: 'prometheus'
+        api_url: 'https://hooks.slack.com/services/xxxxxxxxx/xxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxx'
+
+  - name: 'autoscaler-up'
+    webhook_configs:
+      - url: http://autoscaler-inputs:8080/up
+        send_resolved: false
+
+  - name: 'autoscaler-down'
+    webhook_configs:
+      - url: http://autoscaler-inputs:8080/down
+        send_resolved: false

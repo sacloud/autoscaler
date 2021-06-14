@@ -1,0 +1,28 @@
+notifiers:
+  - name: "AutoScaler:Up"
+    type: webhook
+    org_id: 1
+    uid: 1
+    is_default: false
+    send_reminder: false
+    frequency: 30m
+    disable_resolve_message: true
+    settings:
+      autoResolve: true
+      httpMethod: "POST"
+      uploadImage: false
+      url: "http://autoscaler-inputs:8080/up?source=grafana"
+
+  - name: "AutoScaler:Down"
+    type: webhook
+    org_id: 1
+    uid: 2
+    is_default: false
+    send_reminder: false
+    frequency: 30m
+    disable_resolve_message: true
+    settings:
+      autoResolve: true
+      httpMethod: "POST"
+      uploadImage: false
+      url: "http://autoscaler-inputs:8080/down?source=grafana"
