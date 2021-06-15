@@ -59,13 +59,16 @@ func (sc *SakuraCloud) APIClient() sacloud.APICaller {
 
 		httpClient := &http.Client{}
 		sc.apiClient = api.NewCaller(&api.CallerOptions{
-			AccessToken:       token,
-			AccessTokenSecret: secret,
-			HTTPClient:        httpClient,
-			UserAgent:         ua,
-			TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
-			TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
-			FakeMode:          os.Getenv("FAKE_MODE") != "",
+			AccessToken:          token,
+			AccessTokenSecret:    secret,
+			HTTPClient:           httpClient,
+			HTTPRequestTimeout:   300,
+			HTTPRequestRateLimit: 10,
+			RetryMax:             10,
+			UserAgent:            ua,
+			TraceAPI:             os.Getenv("SAKURACLOUD_TRACE") != "",
+			TraceHTTP:            os.Getenv("SAKURACLOUD_TRACE") != "",
+			FakeMode:             os.Getenv("FAKE_MODE") != "",
 		})
 	})
 	return sc.apiClient
