@@ -70,8 +70,11 @@ var apiCaller = api.NewCaller(&api.CallerOptions{
 		runtime.GOARCH,
 		libsacloud.Version,
 	),
-	TraceAPI:  os.Getenv("SAKURACLOUD_TRACE") != "",
-	TraceHTTP: os.Getenv("SAKURACLOUD_TRACE") != "",
+	HTTPRequestTimeout:   300,
+	HTTPRequestRateLimit: 10,
+	RetryMax:             10,
+	TraceAPI:             os.Getenv("SAKURACLOUD_TRACE") != "",
+	TraceHTTP:            os.Getenv("SAKURACLOUD_TRACE") != "",
 })
 
 func TestMain(m *testing.M) {
