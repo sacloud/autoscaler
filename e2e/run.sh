@@ -38,3 +38,4 @@ usacloud proxy-lb delete -y `usacloud proxy-lb read -q autoscaler-e2e-test` > /d
 fi
 
 echo "Done: $RESULT"
+exit $RESULT
