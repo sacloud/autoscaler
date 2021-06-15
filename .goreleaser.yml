@@ -56,11 +56,11 @@ signs:
 #     # skip_upload: true
 #     test: |
 #       system "#{bin}/usacloud --version"
-release:
-  draft: true
+#release:
+#  draft: true
 changelog:
   skip: false
-  sort: desc
+#  sort: desc
 #  filters:
 #    exclude:
 #      - '^docs:'
