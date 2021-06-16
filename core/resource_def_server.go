@@ -39,7 +39,7 @@ type ServerScalingOption struct {
 	ShutdownForce bool `yaml:"shutdown_force"`
 }
 
-type Server struct {
+type ResourceDefServer struct {
 	*ResourceBase `yaml:",inline"`
 	DedicatedCPU  bool                `yaml:"dedicated_cpu"`
 	Plans         []*ServerPlan       `yaml:"plans"`
@@ -48,7 +48,7 @@ type Server struct {
 	parent ResourceDefinition `yaml:"-"`
 }
 
-func (s *Server) resourcePlans() ResourcePlans {
+func (s *ResourceDefServer) resourcePlans() ResourcePlans {
 	var plans ResourcePlans
 	for _, p := range s.Plans {
 		plans = append(plans, p)
@@ -56,7 +56,7 @@ func (s *Server) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (s *Server) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (s *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 
 	selector := s.Selector()
@@ -84,7 +84,7 @@ func (s *Server) Validate(ctx context.Context, apiClient sacloud.APICaller) []er
 	return errors.Errors
 }
 
-func (s *Server) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (s *ResourceDefServer) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
 	if len(s.Plans) > 0 {
 		if len(s.Plans) == 1 {
 			return []error{fmt.Errorf("at least two plans must be specified")}
@@ -127,7 +127,7 @@ func (s *Server) validatePlans(ctx context.Context, apiClient sacloud.APICaller)
 	return nil
 }
 
-func (s *Server) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
+func (s *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := s.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func (s *Server) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Comp
 	return computed, nil
 }
 
-func (s *Server) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.Server, error) {
+func (s *ResourceDefServer) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.Server, error) {
 	serverOp := sacloud.NewServerOp(apiClient)
 	selector := s.Selector()
 
@@ -159,11 +159,11 @@ func (s *Server) findCloudResource(ctx context.Context, apiClient sacloud.APICal
 	return found.Servers[0], nil
 }
 
-func (s *Server) Parent() ResourceDefinition {
+func (s *ResourceDefServer) Parent() ResourceDefinition {
 	return s.parent
 }
 
-func (s *Server) SetParent(parent ResourceDefinition) {
+func (s *ResourceDefServer) SetParent(parent ResourceDefinition) {
 	s.parent = parent
 }
 
@@ -173,10 +173,10 @@ type computedServer struct {
 	zone        string
 	newCPU      int
 	newMemory   int
-	resource    *Server // 算出元のResourceへの参照
+	resource    *ResourceDefServer // 算出元のResourceへの参照
 }
 
-func newComputedServer(ctx *RequestContext, resource *Server, zone string, server *sacloud.Server) (*computedServer, error) {
+func newComputedServer(ctx *RequestContext, resource *ResourceDefServer, zone string, server *sacloud.Server) (*computedServer, error) {
 	computed := &computedServer{
 		instruction: handler.ResourceInstructions_NOOP,
 		server:      &sacloud.Server{},

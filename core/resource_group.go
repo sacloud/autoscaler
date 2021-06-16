@@ -106,21 +106,21 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 	var resource ResourceDefinition
 	switch typeName {
 	case "Server":
-		v := &Server{}
+		v := &ResourceDefServer{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		v.children = resources
 		resource = v
 	case "ServerGroup":
-		v := &ServerGroup{}
+		v := &ResourceDefServerGroup{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		v.children = resources
 		resource = v
 	case "EnhancedLoadBalancer", "ELB":
-		v := &EnhancedLoadBalancer{}
+		v := &ResourceDefELB{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
@@ -129,21 +129,21 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 		v.children = resources
 		resource = v
 	case "GSLB":
-		v := &GSLB{}
+		v := &ResourceDefGSLB{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		v.children = resources
 		resource = v
 	case "DNS":
-		v := &DNS{}
+		v := &ResourceDefDNS{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		v.children = resources
 		resource = v
 	case "Router":
-		v := &Router{}
+		v := &ResourceDefRouter{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}

@@ -23,11 +23,11 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type DNS struct {
+type ResourceDefDNS struct {
 	*ResourceBase `yaml:",inline"`
 }
 
-func (d *DNS) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *ResourceDefDNS) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 	selector := d.Selector()
 	if selector == nil {
@@ -48,7 +48,7 @@ func (d *DNS) Validate(ctx context.Context, apiClient sacloud.APICaller) []error
 	return errors.Errors
 }
 
-func (d *DNS) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
+func (d *ResourceDefDNS) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := d.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (d *DNS) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Compute
 	return computed, nil
 }
 
-func (d *DNS) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.DNS, error) {
+func (d *ResourceDefDNS) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.DNS, error) {
 	dnsOp := sacloud.NewDNSOp(apiClient)
 	selector := d.Selector()
 
@@ -82,10 +82,10 @@ func (d *DNS) findCloudResource(ctx context.Context, apiClient sacloud.APICaller
 type computedDNS struct {
 	instruction handler.ResourceInstructions
 	dns         *sacloud.DNS
-	resource    *DNS // 算出元のResourceへの参照
+	resource    *ResourceDefDNS // 算出元のResourceへの参照
 }
 
-func newComputedDNS(ctx *RequestContext, resource *DNS, dns *sacloud.DNS) (*computedDNS, error) {
+func newComputedDNS(ctx *RequestContext, resource *ResourceDefDNS, dns *sacloud.DNS) (*computedDNS, error) {
 	computed := &computedDNS{
 		instruction: handler.ResourceInstructions_NOOP,
 		dns:         &sacloud.DNS{},

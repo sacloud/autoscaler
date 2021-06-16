@@ -57,7 +57,7 @@ func TestConfig_Load(t *testing.T) {
 					rgs := newResourceGroups()
 					rg := &ResourceGroup{}
 					rg.Resources = ResourceDefinitions{
-						&Server{
+						&ResourceDefServer{
 							ResourceBase: &ResourceBase{
 								TypeName: "Server",
 								TargetSelector: &ResourceSelector{

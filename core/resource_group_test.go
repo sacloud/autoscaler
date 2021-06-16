@@ -192,7 +192,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 		called := 0
 		rg := &ResourceGroup{
 			Resources: ResourceDefinitions{
-				&stubResource{
+				&stubDefinition{
 					ResourceBase: &ResourceBase{},
 					computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 						called++
@@ -234,13 +234,13 @@ func TestResourceGroup_handleAll(t *testing.T) {
 		var history []string
 		rg := &ResourceGroup{
 			Resources: ResourceDefinitions{
-				&stubResource{
+				&stubDefinition{
 					ResourceBase: &ResourceBase{
 						children: ResourceDefinitions{
-							&stubResource{
+							&stubDefinition{
 								ResourceBase: &ResourceBase{
 									children: ResourceDefinitions{
-										&stubResource{
+										&stubDefinition{
 											ResourceBase: &ResourceBase{},
 											computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 												history = append(history, "child2")

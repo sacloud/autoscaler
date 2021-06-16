@@ -23,11 +23,11 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type GSLB struct {
+type ResourceDefGSLB struct {
 	*ResourceBase `yaml:",inline"`
 }
 
-func (g *GSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (g *ResourceDefGSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 	selector := g.Selector()
 	if selector == nil {
@@ -48,7 +48,7 @@ func (g *GSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []erro
 	return errors.Errors
 }
 
-func (g *GSLB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
+func (g *ResourceDefGSLB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := g.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (g *GSLB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Comput
 	return computed, nil
 }
 
-func (g *GSLB) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.GSLB, error) {
+func (g *ResourceDefGSLB) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.GSLB, error) {
 	gslbOp := sacloud.NewGSLBOp(apiClient)
 	selector := g.Selector()
 
@@ -84,10 +84,10 @@ func (g *GSLB) findCloudResource(ctx context.Context, apiClient sacloud.APICalle
 type computedGSLB struct {
 	instruction handler.ResourceInstructions
 	gslb        *sacloud.GSLB
-	resource    *GSLB // 算出元のResourceへの参照
+	resource    *ResourceDefGSLB // 算出元のResourceへの参照
 }
 
-func newComputedGSLB(ctx *RequestContext, resource *GSLB, gslb *sacloud.GSLB) (*computedGSLB, error) {
+func newComputedGSLB(ctx *RequestContext, resource *ResourceDefGSLB, gslb *sacloud.GSLB) (*computedGSLB, error) {
 	computed := &computedGSLB{
 		instruction: handler.ResourceInstructions_NOOP,
 		gslb:        &sacloud.GSLB{},

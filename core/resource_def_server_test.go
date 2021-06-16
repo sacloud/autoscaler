@@ -26,8 +26,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testServer() *Server {
-	return &Server{
+func testServer() *ResourceDefServer {
+	return &ResourceDefServer{
 		ResourceBase: &ResourceBase{
 			TypeName: "Server",
 			TargetSelector: &ResourceSelector{
@@ -94,7 +94,7 @@ func TestServer_Validate(t *testing.T) {
 	defer initTestServer(t)()
 
 	t.Run("returns error if selector is empty", func(t *testing.T) {
-		empty := &Server{
+		empty := &ResourceDefServer{
 			ResourceBase: &ResourceBase{TypeName: "Server"},
 		}
 		errs := empty.Validate(context.Background(), test.APIClient)
@@ -103,7 +103,7 @@ func TestServer_Validate(t *testing.T) {
 	})
 
 	t.Run("returns error if selector.Zone is empty", func(t *testing.T) {
-		empty := &Server{
+		empty := &ResourceDefServer{
 			ResourceBase: &ResourceBase{
 				TypeName:       "Server",
 				TargetSelector: &ResourceSelector{},
@@ -122,7 +122,7 @@ func TestServer_Computed(t *testing.T) {
 	ctx := testContext()
 
 	t.Run("returns error if selector has invalid value", func(t *testing.T) {
-		notFound := &Server{
+		notFound := &ResourceDefServer{
 			ResourceBase: &ResourceBase{
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
@@ -137,7 +137,7 @@ func TestServer_Computed(t *testing.T) {
 	})
 
 	t.Run("returns UPDATE instruction if selector has valid value", func(t *testing.T) {
-		running := &Server{
+		running := &ResourceDefServer{
 			ResourceBase: &ResourceBase{
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
@@ -198,7 +198,7 @@ func TestServer_Computed(t *testing.T) {
 
 	t.Run("with Parent", func(t *testing.T) {
 		ctx := testContext()
-		dns := &DNS{
+		dns := &ResourceDefDNS{
 			ResourceBase: &ResourceBase{
 				TypeName: "DNS",
 				TargetSelector: &ResourceSelector{
@@ -206,7 +206,7 @@ func TestServer_Computed(t *testing.T) {
 				},
 			},
 		}
-		server := &Server{
+		server := &ResourceDefServer{
 			ResourceBase: &ResourceBase{
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{

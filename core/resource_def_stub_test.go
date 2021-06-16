@@ -21,16 +21,16 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type stubResource struct {
+type stubDefinition struct {
 	*ResourceBase `yaml:",inline"`
 	computeFunc   func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error)
 }
 
-func (r *stubResource) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (r *stubDefinition) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	return nil
 }
 
-func (r *stubResource) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
+func (r *stubDefinition) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	if r.computeFunc != nil {
 		computed, err := r.computeFunc(ctx, apiClient)
 		r.ComputedCache = computed

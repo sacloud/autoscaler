@@ -20,27 +20,27 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type ServerGroup struct {
+type ResourceDefServerGroup struct {
 	*ResourceBase `yaml:",inline"`
 	wrapper       ResourceDefinition
 }
 
-func (s *ServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (s *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	// TODO 実装
 	return nil
 }
 
-func (s *ServerGroup) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
+func (s *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	// TODO 実装
 	return nil, nil
 }
 
 // Parent ChildResourceインターフェースの実装
-func (s *ServerGroup) Parent() ResourceDefinition {
+func (s *ResourceDefServerGroup) Parent() ResourceDefinition {
 	return s.wrapper
 }
 
 // SetParent ChildResourceインターフェースの実装
-func (s *ServerGroup) SetParent(parent ResourceDefinition) {
+func (s *ResourceDefServerGroup) SetParent(parent ResourceDefinition) {
 	s.wrapper = parent
 }

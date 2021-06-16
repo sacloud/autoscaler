@@ -41,12 +41,12 @@ var DefaultRouterPlans = ResourcePlans{
 	&RouterPlan{BandWidth: 5000},
 }
 
-type Router struct {
+type ResourceDefRouter struct {
 	*ResourceBase `yaml:",inline"`
 	Plans         []*RouterPlan `yaml:"plans"`
 }
 
-func (r *Router) resourcePlans() ResourcePlans {
+func (r *ResourceDefRouter) resourcePlans() ResourcePlans {
 	var plans ResourcePlans
 	for _, p := range r.Plans {
 		plans = append(plans, p)
@@ -54,7 +54,7 @@ func (r *Router) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (r *Router) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (r *ResourceDefRouter) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 
 	selector := r.Selector()
@@ -82,7 +82,7 @@ func (r *Router) Validate(ctx context.Context, apiClient sacloud.APICaller) []er
 	return errors.Errors
 }
 
-func (r *Router) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (r *ResourceDefRouter) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
 	if len(r.Plans) > 0 {
 		if len(r.Plans) == 1 {
 			return []error{fmt.Errorf("at least two plans must be specified")}
@@ -121,7 +121,7 @@ func (r *Router) validatePlans(ctx context.Context, apiClient sacloud.APICaller)
 	return nil
 }
 
-func (r *Router) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
+func (r *ResourceDefRouter) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := r.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (r *Router) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Comp
 	return computed, nil
 }
 
-func (r *Router) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.Internet, error) {
+func (r *ResourceDefRouter) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.Internet, error) {
 	routerOp := sacloud.NewInternetOp(apiClient)
 	selector := r.Selector()
 
@@ -156,12 +156,12 @@ func (r *Router) findCloudResource(ctx context.Context, apiClient sacloud.APICal
 type computedRouter struct {
 	instruction  handler.ResourceInstructions
 	router       *sacloud.Internet
-	resource     *Router // 算出元のResourceへの参照
+	resource     *ResourceDefRouter // 算出元のResourceへの参照
 	zone         string
 	newBandWidth int
 }
 
-func newComputedRouter(ctx *RequestContext, resource *Router, zone string, router *sacloud.Internet) (*computedRouter, error) {
+func newComputedRouter(ctx *RequestContext, resource *ResourceDefRouter, zone string, router *sacloud.Internet) (*computedRouter, error) {
 	computed := &computedRouter{
 		instruction: handler.ResourceInstructions_NOOP,
 		router:      &sacloud.Internet{},

@@ -41,7 +41,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 					},
 				}
 
-				dns := &DNS{
+				dns := &ResourceDefDNS{
 					ResourceBase: &ResourceBase{
 						TypeName: "DNS",
 						TargetSelector: &ResourceSelector{
@@ -50,7 +50,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 						},
 					},
 				}
-				childServer := &Server{
+				childServer := &ResourceDefServer{
 					ResourceBase: &ResourceBase{
 						TypeName: "Server",
 						TargetSelector: &ResourceSelector{
@@ -63,7 +63,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 				dns.children = ResourceDefinitions{childServer}
 
 				rg.Resources = ResourceDefinitions{
-					&Server{
+					&ResourceDefServer{
 						ResourceBase: &ResourceBase{
 							TypeName: "Server",
 							TargetSelector: &ResourceSelector{
@@ -73,7 +73,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 						},
 						DedicatedCPU: true,
 					},
-					&ServerGroup{
+					&ResourceDefServerGroup{
 						ResourceBase: &ResourceBase{
 							TypeName: "ServerGroup",
 							TargetSelector: &ResourceSelector{
@@ -83,7 +83,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 						},
 					},
 					dns,
-					&GSLB{
+					&ResourceDefGSLB{
 						ResourceBase: &ResourceBase{
 							TypeName: "GSLB",
 							TargetSelector: &ResourceSelector{
@@ -92,7 +92,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							},
 						},
 					},
-					&EnhancedLoadBalancer{
+					&ResourceDefELB{
 						ResourceBase: &ResourceBase{
 							TypeName: "EnhancedLoadBalancer",
 							TargetSelector: &ResourceSelector{

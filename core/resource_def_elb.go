@@ -36,13 +36,13 @@ var DefaultELBPlans = ResourcePlans{
 	&ELBPlan{CPS: 400_000},
 }
 
-type EnhancedLoadBalancer struct {
+type ResourceDefELB struct {
 	*ResourceBase `yaml:",inline"`
 	Plans         []*ELBPlan `yaml:"plans"`
 	parent        ResourceDefinition
 }
 
-func (e *EnhancedLoadBalancer) resourcePlans() ResourcePlans {
+func (e *ResourceDefELB) resourcePlans() ResourcePlans {
 	var plans ResourcePlans
 	for _, p := range e.Plans {
 		plans = append(plans, p)
@@ -50,7 +50,7 @@ func (e *EnhancedLoadBalancer) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (e *EnhancedLoadBalancer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (e *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 	selector := e.Selector()
 	if selector == nil {
@@ -75,7 +75,7 @@ func (e *EnhancedLoadBalancer) Validate(ctx context.Context, apiClient sacloud.A
 	return errors.Errors
 }
 
-func (e *EnhancedLoadBalancer) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (e *ResourceDefELB) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
 	var errors []error
 	names := map[string]struct{}{}
 
@@ -107,16 +107,16 @@ func (e *EnhancedLoadBalancer) validatePlans(ctx context.Context, apiClient sacl
 }
 
 // Parent ChildResourceインターフェースの実装
-func (e *EnhancedLoadBalancer) Parent() ResourceDefinition {
+func (e *ResourceDefELB) Parent() ResourceDefinition {
 	return e.parent
 }
 
 // SetParent ChildResourceインターフェースの実装
-func (e *EnhancedLoadBalancer) SetParent(parent ResourceDefinition) {
+func (e *ResourceDefELB) SetParent(parent ResourceDefinition) {
 	e.parent = parent
 }
 
-func (e *EnhancedLoadBalancer) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
+func (e *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := e.findCloudResource(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (e *EnhancedLoadBalancer) Compute(ctx *RequestContext, apiClient sacloud.AP
 	return computed, nil
 }
 
-func (e *EnhancedLoadBalancer) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.ProxyLB, error) {
+func (e *ResourceDefELB) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.ProxyLB, error) {
 	elbOp := sacloud.NewProxyLBOp(apiClient)
 	selector := e.Selector()
 
@@ -151,10 +151,10 @@ type computedELB struct {
 	instruction handler.ResourceInstructions
 	elb         *sacloud.ProxyLB
 	newCPS      int
-	resource    *EnhancedLoadBalancer // 算出元のResourceへの参照
+	resource    *ResourceDefELB // 算出元のResourceへの参照
 }
 
-func newComputedELB(ctx *RequestContext, resource *EnhancedLoadBalancer, elb *sacloud.ProxyLB) (*computedELB, error) {
+func newComputedELB(ctx *RequestContext, resource *ResourceDefELB, elb *sacloud.ProxyLB) (*computedELB, error) {
 	computed := &computedELB{
 		instruction: handler.ResourceInstructions_NOOP,
 		elb:         &sacloud.ProxyLB{},

@@ -36,14 +36,14 @@ func TestResources_Walk(t *testing.T) {
 		{
 			name: "order",
 			r: ResourceDefinitions{
-				&EnhancedLoadBalancer{
+				&ResourceDefELB{
 					ResourceBase: &ResourceBase{
 						TypeName: "ELB",
 						TargetSelector: &ResourceSelector{
 							ID: 1,
 						},
 						children: ResourceDefinitions{
-							&Server{
+							&ResourceDefServer{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
@@ -51,7 +51,7 @@ func TestResources_Walk(t *testing.T) {
 									},
 								},
 							},
-							&Server{
+							&ResourceDefServer{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
@@ -62,21 +62,21 @@ func TestResources_Walk(t *testing.T) {
 						},
 					},
 				},
-				&EnhancedLoadBalancer{
+				&ResourceDefELB{
 					ResourceBase: &ResourceBase{
 						TypeName: "ELB",
 						TargetSelector: &ResourceSelector{
 							ID: 4,
 						},
 						children: ResourceDefinitions{
-							&Server{
+							&ResourceDefServer{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
 										ID: 5,
 									},
 									children: ResourceDefinitions{
-										&Server{
+										&ResourceDefServer{
 											ResourceBase: &ResourceBase{
 												TypeName: "Server",
 												TargetSelector: &ResourceSelector{
@@ -84,7 +84,7 @@ func TestResources_Walk(t *testing.T) {
 												},
 											},
 										},
-										&Server{
+										&ResourceDefServer{
 											ResourceBase: &ResourceBase{
 												TypeName: "Server",
 												TargetSelector: &ResourceSelector{
@@ -95,7 +95,7 @@ func TestResources_Walk(t *testing.T) {
 									},
 								},
 							},
-							&Server{
+							&ResourceDefServer{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
