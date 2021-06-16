@@ -26,8 +26,8 @@ import (
 )
 
 type ResourceGroup struct {
-	Actions   Actions   `yaml:"actions"`
-	Resources Resources `yaml:"resources"`
+	Actions   Actions             `yaml:"actions"`
+	Resources ResourceDefinitions `yaml:"resources"`
 
 	name string // ResourceGroupsのアンマーシャル時に設定される
 }
@@ -88,7 +88,7 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 		return nil, fmt.Errorf("yaml.Marshal failed with %v", data)
 	}
 
-	var resources Resources
+	var resources ResourceDefinitions
 	if rawChildren, ok := data["resources"]; ok {
 		if children, ok := rawChildren.([]interface{}); ok {
 			for _, child := range children {
@@ -216,7 +216,7 @@ func (rg *ResourceGroup) handleAll(ctx *RequestContext, apiClient sacloud.APICal
 	return nil
 }
 
-func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *RequestContext, apiClient sacloud.APICaller, handlers Handlers) (ResourceWalkFunc, ResourceWalkFunc) {
+func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *RequestContext, apiClient sacloud.APICaller, handlers Handlers) (ResourceDefWalkFunc, ResourceDefWalkFunc) {
 	forwardFn := func(resource ResourceDefinition) error {
 		_, err := resource.Compute(parentCtx, apiClient)
 		return err

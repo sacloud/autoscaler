@@ -44,7 +44,7 @@ func TestResourceGroup_handlers(t *testing.T) {
 
 	type fields struct {
 		Actions   Actions
-		Resources Resources
+		Resources ResourceDefinitions
 		Name      string
 	}
 	type args struct {
@@ -191,7 +191,7 @@ func TestResourceGroup_handleAll(t *testing.T) {
 	t.Run("calls Compute() func twice", func(t *testing.T) {
 		called := 0
 		rg := &ResourceGroup{
-			Resources: Resources{
+			Resources: ResourceDefinitions{
 				&stubResource{
 					ResourceBase: &ResourceBase{},
 					computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
@@ -233,13 +233,13 @@ func TestResourceGroup_handleAll(t *testing.T) {
 	t.Run("compute current/desired state with parent", func(t *testing.T) {
 		var history []string
 		rg := &ResourceGroup{
-			Resources: Resources{
+			Resources: ResourceDefinitions{
 				&stubResource{
 					ResourceBase: &ResourceBase{
-						children: Resources{
+						children: ResourceDefinitions{
 							&stubResource{
 								ResourceBase: &ResourceBase{
-									children: Resources{
+									children: ResourceDefinitions{
 										&stubResource{
 											ResourceBase: &ResourceBase{},
 											computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {

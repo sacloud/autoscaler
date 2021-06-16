@@ -22,27 +22,27 @@ import (
 
 func TestResources_Walk(t *testing.T) {
 	type args struct {
-		forwardFn  ResourceWalkFunc
-		backwardFn ResourceWalkFunc
+		forwardFn  ResourceDefWalkFunc
+		backwardFn ResourceDefWalkFunc
 	}
 	var results []string
 	tests := []struct {
 		name     string
-		r        Resources
+		r        ResourceDefinitions
 		args     args
 		expected []string
 		wantErr  bool
 	}{
 		{
 			name: "order",
-			r: Resources{
+			r: ResourceDefinitions{
 				&EnhancedLoadBalancer{
 					ResourceBase: &ResourceBase{
 						TypeName: "ELB",
 						TargetSelector: &ResourceSelector{
 							ID: 1,
 						},
-						children: Resources{
+						children: ResourceDefinitions{
 							&Server{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
@@ -68,14 +68,14 @@ func TestResources_Walk(t *testing.T) {
 						TargetSelector: &ResourceSelector{
 							ID: 4,
 						},
-						children: Resources{
+						children: ResourceDefinitions{
 							&Server{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
 										ID: 5,
 									},
-									children: Resources{
+									children: ResourceDefinitions{
 										&Server{
 											ResourceBase: &ResourceBase{
 												TypeName: "Server",

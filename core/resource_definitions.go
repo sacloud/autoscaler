@@ -20,10 +20,10 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-// Resources リソースのリスト
-type Resources []ResourceDefinition
+// ResourceDefinitions リソースのリスト
+type ResourceDefinitions []ResourceDefinition
 
-func (r *Resources) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (r *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	var errors []error
 
 	fn := func(r ResourceDefinition) error {
@@ -37,7 +37,7 @@ func (r *Resources) Validate(ctx context.Context, apiClient sacloud.APICaller) [
 	return errors
 }
 
-type ResourceWalkFunc func(ResourceDefinition) error
+type ResourceDefWalkFunc func(ResourceDefinition) error
 
 // Walk 各リソースに対し順次forwardFn,backwardFnを適用する
 //
@@ -63,11 +63,11 @@ type ResourceWalkFunc func(ResourceDefinition) error
 //    - backwardFn(resource1)
 //
 // forwardFn, backwardFnがerrorを返した場合は即時リターンし以降のリソースに対する処理は行われない
-func (r *Resources) Walk(forwardFn, backwardFn ResourceWalkFunc) error {
+func (r *ResourceDefinitions) Walk(forwardFn, backwardFn ResourceDefWalkFunc) error {
 	return r.walk(*r, forwardFn, backwardFn)
 }
 
-func (r *Resources) walk(targets Resources, forwardFn, backwardFn ResourceWalkFunc) error {
+func (r *ResourceDefinitions) walk(targets ResourceDefinitions, forwardFn, backwardFn ResourceDefWalkFunc) error {
 	noopFunc := func(_ ResourceDefinition) error {
 		return nil
 	}
