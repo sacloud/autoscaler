@@ -73,7 +73,7 @@ func (rg *ResourceGroup) UnmarshalYAML(data []byte) error {
 	return nil
 }
 
-func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (Resource, error) {
+func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (ResourceDefinition, error) {
 	rawTypeName, ok := data["type"]
 	if !ok {
 		return nil, fmt.Errorf("'type' field required: %v", data)
@@ -103,21 +103,21 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 		}
 	}
 
-	var resource Resource
+	var resource ResourceDefinition
 	switch typeName {
 	case "Server":
 		v := &Server{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "ServerGroup":
 		v := &ServerGroup{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "EnhancedLoadBalancer", "ELB":
 		v := &EnhancedLoadBalancer{}
@@ -126,28 +126,28 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 		}
 		// TypeNameのエイリアスを正規化
 		v.TypeName = "EnhancedLoadBalancer"
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "GSLB":
 		v := &GSLB{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "DNS":
 		v := &DNS{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "Router":
 		v := &Router{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	default:
 		return nil, fmt.Errorf("unexpected type: %s", typeName)
@@ -156,13 +156,13 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 	return resource, nil
 }
 
-func (rg *ResourceGroup) setParentResource(parent, r Resource) {
+func (rg *ResourceGroup) setParentResource(parent, r ResourceDefinition) {
 	if parent != nil {
 		if v, ok := r.(ChildResource); ok {
 			v.SetParent(parent)
 		}
 	}
-	for _, child := range r.Resources() {
+	for _, child := range r.Children() {
 		rg.setParentResource(r, child)
 	}
 }
@@ -177,7 +177,7 @@ func (rg *ResourceGroup) Validate(ctx context.Context, apiClient sacloud.APICall
 
 	// Actions
 	errors = multierror.Append(errors, rg.Actions.Validate(ctx, handlers)...)
-	// Resources
+	// children
 	errors = multierror.Append(errors, rg.Resources.Validate(ctx, apiClient)...)
 
 	// set group name prefix
@@ -217,12 +217,12 @@ func (rg *ResourceGroup) handleAll(ctx *RequestContext, apiClient sacloud.APICal
 }
 
 func (rg *ResourceGroup) resourceWalkFuncs(parentCtx *RequestContext, apiClient sacloud.APICaller, handlers Handlers) (ResourceWalkFunc, ResourceWalkFunc) {
-	forwardFn := func(resource Resource) error {
+	forwardFn := func(resource ResourceDefinition) error {
 		_, err := resource.Compute(parentCtx, apiClient)
 		return err
 	}
 
-	backwardFn := func(resource Resource) error {
+	backwardFn := func(resource ResourceDefinition) error {
 		computed := resource.Computed()
 
 		zone := computed.Zone()
@@ -286,7 +286,7 @@ func (rg *ResourceGroup) handleAllByFunc(computed Computed, handlers Handlers, f
 }
 
 func (rg *ResourceGroup) clearCacheAll() {
-	rg.Resources.Walk(func(resource Resource) error { // nolint 戻り値のerrorを無視しているがerrorが返ることはない
+	rg.Resources.Walk(func(resource ResourceDefinition) error { // nolint 戻り値のerrorを無視しているがerrorが返ることはない
 		resource.ClearCache()
 		return nil
 	}, nil)

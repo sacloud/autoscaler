@@ -23,10 +23,11 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
-// Resource Coreが扱うさくらのクラウド上のリソースを表す
+// ResourceDefinition Coreが扱うさくらのクラウド上のリソースを表す
 //
 // Core起動時のコンフィギュレーションから形成される
-type Resource interface {
+// Selectorを元にさくらのクラウドAPIで検索し、ヒットしたリソース全てがスケール操作対象となる
+type ResourceDefinition interface {
 	Type() ResourceTypes // リソースの型
 	Selector() *ResourceSelector
 	Validate(ctx context.Context, apiClient sacloud.APICaller) []error
@@ -46,12 +47,12 @@ type Resource interface {
 	ClearCache()
 
 	// Resources このリソースに対する子リソースを返す
-	Resources() Resources
+	Children() Resources
 }
 
 type ChildResource interface {
-	Parent() Resource
-	SetParent(parent Resource)
+	Parent() ResourceDefinition
+	SetParent(parent ResourceDefinition)
 }
 
 // ResourceBase 全てのリソースが実装すべき基本プロパティ
@@ -60,7 +61,7 @@ type ChildResource interface {
 type ResourceBase struct {
 	TypeName       string            `yaml:"type"`
 	TargetSelector *ResourceSelector `yaml:"selector"`
-	Children       Resources         `yaml:"-"`
+	children       Resources         `yaml:"-"`
 	ComputedCache  Computed          `yaml:"-"`
 }
 
@@ -84,9 +85,9 @@ func (r *ResourceBase) Selector() *ResourceSelector {
 	return r.TargetSelector
 }
 
-// Resources 子リソースを返す(自身は含まない)
-func (r *ResourceBase) Resources() Resources {
-	return r.Children
+// Children 子リソースを返す(自身は含まない)
+func (r *ResourceBase) Children() Resources {
+	return r.children
 }
 
 // Computed 各リソースでのCompute()のキャッシュされた結果を返す

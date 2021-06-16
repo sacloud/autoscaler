@@ -45,7 +45,7 @@ type Server struct {
 	Plans         []*ServerPlan       `yaml:"plans"`
 	Option        ServerScalingOption `yaml:"option"`
 
-	parent Resource `yaml:"-"`
+	parent ResourceDefinition `yaml:"-"`
 }
 
 func (s *Server) resourcePlans() ResourcePlans {
@@ -159,11 +159,11 @@ func (s *Server) findCloudResource(ctx context.Context, apiClient sacloud.APICal
 	return found.Servers[0], nil
 }
 
-func (s *Server) Parent() Resource {
+func (s *Server) Parent() ResourceDefinition {
 	return s.parent
 }
 
-func (s *Server) SetParent(parent Resource) {
+func (s *Server) SetParent(parent ResourceDefinition) {
 	s.parent = parent
 }
 

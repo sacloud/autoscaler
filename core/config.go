@@ -98,7 +98,7 @@ func (c *Config) Validate(ctx context.Context) error {
 		return err
 	}
 
-	// Resources
+	// children
 	errors := &multierror.Error{}
 	if errs := c.Resources.Validate(ctx, c.APIClient(), c.Handlers()); len(errs) > 0 {
 		errors = multierror.Append(errors, errs...)

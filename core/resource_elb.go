@@ -39,7 +39,7 @@ var DefaultELBPlans = ResourcePlans{
 type EnhancedLoadBalancer struct {
 	*ResourceBase `yaml:",inline"`
 	Plans         []*ELBPlan `yaml:"plans"`
-	parent        Resource
+	parent        ResourceDefinition
 }
 
 func (e *EnhancedLoadBalancer) resourcePlans() ResourcePlans {
@@ -107,12 +107,12 @@ func (e *EnhancedLoadBalancer) validatePlans(ctx context.Context, apiClient sacl
 }
 
 // Parent ChildResourceインターフェースの実装
-func (e *EnhancedLoadBalancer) Parent() Resource {
+func (e *EnhancedLoadBalancer) Parent() ResourceDefinition {
 	return e.parent
 }
 
 // SetParent ChildResourceインターフェースの実装
-func (e *EnhancedLoadBalancer) SetParent(parent Resource) {
+func (e *EnhancedLoadBalancer) SetParent(parent ResourceDefinition) {
 	e.parent = parent
 }
 

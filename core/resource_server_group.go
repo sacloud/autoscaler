@@ -22,7 +22,7 @@ import (
 
 type ServerGroup struct {
 	*ResourceBase `yaml:",inline"`
-	wrapper       Resource
+	wrapper       ResourceDefinition
 }
 
 func (s *ServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
@@ -36,11 +36,11 @@ func (s *ServerGroup) Compute(ctx *RequestContext, apiClient sacloud.APICaller) 
 }
 
 // Parent ChildResourceインターフェースの実装
-func (s *ServerGroup) Parent() Resource {
+func (s *ServerGroup) Parent() ResourceDefinition {
 	return s.wrapper
 }
 
 // SetParent ChildResourceインターフェースの実装
-func (s *ServerGroup) SetParent(parent Resource) {
+func (s *ServerGroup) SetParent(parent ResourceDefinition) {
 	s.wrapper = parent
 }

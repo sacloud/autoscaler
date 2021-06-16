@@ -21,12 +21,12 @@ import (
 )
 
 // Resources リソースのリスト
-type Resources []Resource
+type Resources []ResourceDefinition
 
 func (r *Resources) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	var errors []error
 
-	fn := func(r Resource) error {
+	fn := func(r ResourceDefinition) error {
 		if errs := r.Validate(ctx, apiClient); len(errs) > 0 {
 			errors = append(errors, errs...)
 		}
@@ -37,7 +37,7 @@ func (r *Resources) Validate(ctx context.Context, apiClient sacloud.APICaller) [
 	return errors
 }
 
-type ResourceWalkFunc func(Resource) error
+type ResourceWalkFunc func(ResourceDefinition) error
 
 // Walk 各リソースに対し順次forwardFn,backwardFnを適用する
 //
@@ -68,7 +68,7 @@ func (r *Resources) Walk(forwardFn, backwardFn ResourceWalkFunc) error {
 }
 
 func (r *Resources) walk(targets Resources, forwardFn, backwardFn ResourceWalkFunc) error {
-	noopFunc := func(_ Resource) error {
+	noopFunc := func(_ ResourceDefinition) error {
 		return nil
 	}
 	if forwardFn == nil {
@@ -82,11 +82,11 @@ func (r *Resources) walk(targets Resources, forwardFn, backwardFn ResourceWalkFu
 		if err := forwardFn(target); err != nil {
 			return err
 		}
-		for _, child := range target.Resources() {
+		for _, child := range target.Children() {
 			if err := forwardFn(child); err != nil {
 				return err
 			}
-			if err := r.walk(child.Resources(), forwardFn, backwardFn); err != nil {
+			if err := r.walk(child.Children(), forwardFn, backwardFn); err != nil {
 				return err
 			}
 			if err := backwardFn(child); err != nil {

@@ -42,7 +42,7 @@ func TestResources_Walk(t *testing.T) {
 						TargetSelector: &ResourceSelector{
 							ID: 1,
 						},
-						Children: Resources{
+						children: Resources{
 							&Server{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
@@ -68,14 +68,14 @@ func TestResources_Walk(t *testing.T) {
 						TargetSelector: &ResourceSelector{
 							ID: 4,
 						},
-						Children: Resources{
+						children: Resources{
 							&Server{
 								ResourceBase: &ResourceBase{
 									TypeName: "Server",
 									TargetSelector: &ResourceSelector{
 										ID: 5,
 									},
-									Children: Resources{
+									children: Resources{
 										&Server{
 											ResourceBase: &ResourceBase{
 												TypeName: "Server",
@@ -108,11 +108,11 @@ func TestResources_Walk(t *testing.T) {
 				},
 			},
 			args: args{
-				forwardFn: func(r Resource) error {
+				forwardFn: func(r ResourceDefinition) error {
 					results = append(results, "forward"+r.Selector().ID.String())
 					return nil
 				},
-				backwardFn: func(r Resource) error {
+				backwardFn: func(r ResourceDefinition) error {
 					results = append(results, "backward"+r.Selector().ID.String())
 					return nil
 				},
