@@ -11,3 +11,4 @@ vendor/
 autoscaler.yaml
 e2e/.terraform*
 e2e/terraform*
+work/
