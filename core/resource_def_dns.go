@@ -48,6 +48,11 @@ func (d *ResourceDefDNS) Validate(ctx context.Context, apiClient sacloud.APICall
 	return errors.Errors
 }
 
+func (s *ResourceDefDNS) Fetch(ctx *RequestContext, apiClient sacloud.APICaller) ([]Resource, error) {
+	// TODO Fetchを実装する
+	return nil, nil
+}
+
 func (d *ResourceDefDNS) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := d.findCloudResource(ctx, apiClient)
 	if err != nil {

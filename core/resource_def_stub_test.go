@@ -30,6 +30,11 @@ func (r *stubDefinition) Validate(ctx context.Context, apiClient sacloud.APICall
 	return nil
 }
 
+func (s *stubDefinition) Fetch(ctx *RequestContext, apiClient sacloud.APICaller) ([]Resource, error) {
+	// TODO Fetchを実装する
+	return nil, nil
+}
+
 func (r *stubDefinition) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	if r.computeFunc != nil {
 		computed, err := r.computeFunc(ctx, apiClient)

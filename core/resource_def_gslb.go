@@ -48,6 +48,11 @@ func (g *ResourceDefGSLB) Validate(ctx context.Context, apiClient sacloud.APICal
 	return errors.Errors
 }
 
+func (s *ResourceDefGSLB) Fetch(ctx *RequestContext, apiClient sacloud.APICaller) ([]Resource, error) {
+	// TODO Fetchを実装する
+	return nil, nil
+}
+
 func (g *ResourceDefGSLB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := g.findCloudResource(ctx, apiClient)
 	if err != nil {

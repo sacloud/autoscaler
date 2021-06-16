@@ -116,6 +116,11 @@ func (e *ResourceDefELB) SetParent(parent ResourceDefinition) {
 	e.parent = parent
 }
 
+func (s *ResourceDefELB) Fetch(ctx *RequestContext, apiClient sacloud.APICaller) ([]Resource, error) {
+	// TODO Fetchを実装する
+	return nil, nil
+}
+
 func (e *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := e.findCloudResource(ctx, apiClient)
 	if err != nil {

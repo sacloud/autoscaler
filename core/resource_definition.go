@@ -32,6 +32,9 @@ type ResourceDefinition interface {
 	Selector() *ResourceSelector
 	Validate(ctx context.Context, apiClient sacloud.APICaller) []error
 
+	// Fetch TypeやSelectorの値からさくらのクラウド上のリソース情報をfetchし、Resourceを作成して返す
+	Fetch(ctx *RequestContext, apiClient sacloud.APICaller) ([]Resource, error)
+
 	// Compute 現在/あるべき姿を算出する
 	//
 	// さくらのクラウド上の1つのリソースに対し1つのComputedを返す

@@ -127,6 +127,11 @@ func (s *ResourceDefServer) validatePlans(ctx context.Context, apiClient sacloud
 	return nil
 }
 
+func (s *ResourceDefServer) Fetch(ctx *RequestContext, apiClient sacloud.APICaller) ([]Resource, error) {
+	// TODO Fetchを実装する
+	return nil, nil
+}
+
 func (s *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	cloudResource, err := s.findCloudResource(ctx, apiClient)
 	if err != nil {

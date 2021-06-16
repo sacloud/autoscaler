@@ -30,6 +30,11 @@ func (s *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud
 	return nil
 }
 
+func (s *ResourceDefServerGroup) Fetch(ctx *RequestContext, apiClient sacloud.APICaller) ([]Resource, error) {
+	// TODO Fetchを実装する
+	return nil, nil
+}
+
 func (s *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
 	// TODO 実装
 	return nil, nil
