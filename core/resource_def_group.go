@@ -77,6 +77,10 @@ func (rg *ResourceDefGroup) buildResourceGroup(ctx *RequestContext, apiClient sa
 			return fmt.Errorf("ResourceDefinition with children must return one resource, but got multiple resources")
 		}
 
+		for _, r := range resources {
+			r.SetParent(parent)
+		}
+
 		// 親リソースが指定されてたらそちらに、以外はgroupに直接追加
 		if len(resources) > 0 {
 			if parent != nil {
