@@ -60,7 +60,7 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 					},
 				}
 				childServer.SetParent(dns)
-				dns.Children = Resources{childServer}
+				dns.children = Resources{childServer}
 
 				rg.Resources = Resources{
 					&Server{

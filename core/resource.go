@@ -45,8 +45,8 @@ type Resource interface {
 	// ClearCache Compute()の結果のキャッシュをクリアする
 	ClearCache()
 
-	// Resources このリソースに対する子リソースを返す
-	Resources() Resources
+	// Children このリソースに対する子リソースを返す
+	Children() Resources
 }
 
 type ChildResource interface {
@@ -60,7 +60,7 @@ type ChildResource interface {
 type ResourceBase struct {
 	TypeName       string            `yaml:"type"`
 	TargetSelector *ResourceSelector `yaml:"selector"`
-	Children       Resources         `yaml:"-"`
+	children       Resources         `yaml:"-"`
 	ComputedCache  Computed          `yaml:"-"`
 }
 
@@ -85,8 +85,8 @@ func (r *ResourceBase) Selector() *ResourceSelector {
 }
 
 // Resources 子リソースを返す(自身は含まない)
-func (r *ResourceBase) Resources() Resources {
-	return r.Children
+func (r *ResourceBase) Children() Resources {
+	return r.children
 }
 
 // Computed 各リソースでのCompute()のキャッシュされた結果を返す

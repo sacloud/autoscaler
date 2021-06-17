@@ -110,14 +110,14 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "ServerGroup":
 		v := &ServerGroup{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "EnhancedLoadBalancer", "ELB":
 		v := &EnhancedLoadBalancer{}
@@ -126,28 +126,28 @@ func (rg *ResourceGroup) unmarshalResourceFromMap(data map[string]interface{}) (
 		}
 		// TypeNameのエイリアスを正規化
 		v.TypeName = "EnhancedLoadBalancer"
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "GSLB":
 		v := &GSLB{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "DNS":
 		v := &DNS{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	case "Router":
 		v := &Router{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
-		v.Children = resources
+		v.children = resources
 		resource = v
 	default:
 		return nil, fmt.Errorf("unexpected type: %s", typeName)
@@ -162,7 +162,7 @@ func (rg *ResourceGroup) setParentResource(parent, r Resource) {
 			v.SetParent(parent)
 		}
 	}
-	for _, child := range r.Resources() {
+	for _, child := range r.Children() {
 		rg.setParentResource(r, child)
 	}
 }

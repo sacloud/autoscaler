@@ -82,11 +82,11 @@ func (r *Resources) walk(targets Resources, forwardFn, backwardFn ResourceWalkFu
 		if err := forwardFn(target); err != nil {
 			return err
 		}
-		for _, child := range target.Resources() {
+		for _, child := range target.Children() {
 			if err := forwardFn(child); err != nil {
 				return err
 			}
-			if err := r.walk(child.Resources(), forwardFn, backwardFn); err != nil {
+			if err := r.walk(child.Children(), forwardFn, backwardFn); err != nil {
 				return err
 			}
 			if err := backwardFn(child); err != nil {
