@@ -30,8 +30,45 @@ type Resource2 interface {
 
 	// Children 子リソース
 	Children() Resources2
-	// SetChildren 子リソースを設定
-	SetChildren(Resources2)
+	// AppendChildren 子リソースを設定
+	AppendChildren(Resources2)
+
+	Parent() Resource2
 }
 
 type Resources2 []Resource2
+
+type ResourceBase2 struct {
+	resourceType ResourceTypes
+	parent       Resource2
+	children     Resources2
+}
+
+func NewResourceBase2(tp ResourceTypes, parent Resource2, children ...Resource2) *ResourceBase2 {
+	v := &ResourceBase2{
+		resourceType: tp,
+		parent:       parent,
+	}
+	for _, child := range children {
+		if child != nil {
+			v.children = append(v.children, child)
+		}
+	}
+	return v
+}
+
+func (r *ResourceBase2) Type() ResourceTypes {
+	return r.resourceType
+}
+
+func (r *ResourceBase2) Children() Resources2 {
+	return r.children
+}
+
+func (r *ResourceBase2) AppendChildren(children Resources2) {
+	r.children = append(r.children, children...)
+}
+
+func (r *ResourceBase2) Parent() Resource2 {
+	return r.parent
+}
