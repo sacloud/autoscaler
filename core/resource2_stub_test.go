@@ -38,13 +38,8 @@ func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICall
 
 // TODO リソース切り替え時に名前変更
 type stubResource2 struct {
-	resourceType ResourceTypes
-	computeFunc  func(ctx *RequestContext, apiClient sacloud.APICaller, refresh bool) (Computed, error)
-	children     Resources2
-}
-
-func (r *stubResource2) Type() ResourceTypes {
-	return r.resourceType
+	*ResourceBase2
+	computeFunc func(ctx *RequestContext, apiClient sacloud.APICaller, refresh bool) (Computed, error)
 }
 
 func (r *stubResource2) Compute(ctx *RequestContext, apiClient sacloud.APICaller, refresh bool) (Computed, error) {
@@ -52,12 +47,4 @@ func (r *stubResource2) Compute(ctx *RequestContext, apiClient sacloud.APICaller
 		return r.computeFunc(ctx, apiClient, refresh)
 	}
 	return nil, nil
-}
-
-func (r *stubResource2) Children() Resources2 {
-	return r.children
-}
-
-func (r *stubResource2) SetChildren(children Resources2) {
-	r.children = children
 }

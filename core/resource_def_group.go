@@ -78,10 +78,12 @@ func (rg *ResourceDefGroup) buildResourceGroup(ctx *RequestContext, apiClient sa
 		}
 
 		// 親リソースが指定されてたらそちらに、以外はgroupに直接追加
-		if parent != nil {
-			parent.SetChildren(append(parent.Children(), resources...))
-		} else {
-			group.Resources = append(group.Resources, resources...)
+		if len(resources) > 0 {
+			if parent != nil {
+				parent.AppendChildren(resources)
+			} else {
+				group.Resources = append(group.Resources, resources...)
+			}
 		}
 
 		if err := rg.buildResourceGroup(ctx, apiClient, group, resources[0], def.Children()); err != nil {
