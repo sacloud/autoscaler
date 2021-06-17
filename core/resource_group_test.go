@@ -236,10 +236,10 @@ func TestResourceGroup_handleAll(t *testing.T) {
 			Resources: Resources{
 				&stubResource{
 					ResourceBase: &ResourceBase{
-						Children: Resources{
+						children: Resources{
 							&stubResource{
 								ResourceBase: &ResourceBase{
-									Children: Resources{
+									children: Resources{
 										&stubResource{
 											ResourceBase: &ResourceBase{},
 											computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
