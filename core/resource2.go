@@ -14,26 +14,26 @@
 
 package core
 
-import "github.com/sacloud/libsacloud/v2/sacloud"
-
 // Resource2 Definitionから作られるResource
 //
 // TODO 現行Resourceとの切り替え時に名前変更する
 type Resource2 interface {
-	// Type リソースの型
-	Type() ResourceTypes
-
 	// Compute リクエストに沿った、希望する状態を算出する
 	//
-	// refreshがtrueの場合、さくらのクラウドAPIを用いて最新の状態に更新した上で処理を行う
-	Compute(ctx *RequestContext, apiClient sacloud.APICaller, refresh bool) (Computed, error)
+	// refreshがtrueの場合、さくらのクラウドAPIを用いて最新の状態を取得した上で処理を行う
+	// falseの場合はキャッシュされている結果を元に処理を行う
+	Compute(ctx *RequestContext, refresh bool) (Computed, error)
 
+	// Type リソースの型
+	Type() ResourceTypes
 	// Children 子リソース
 	Children() Resources2
 	// AppendChildren 子リソースを設定
 	AppendChildren(Resources2)
-
+	// Parent 親Resourceへの参照
 	Parent() Resource2
+	// SetParent 親Resourceを設定
+	SetParent(parent Resource2)
 }
 
 type Resources2 []Resource2
@@ -42,19 +42,6 @@ type ResourceBase2 struct {
 	resourceType ResourceTypes
 	parent       Resource2
 	children     Resources2
-}
-
-func NewResourceBase2(tp ResourceTypes, parent Resource2, children ...Resource2) *ResourceBase2 {
-	v := &ResourceBase2{
-		resourceType: tp,
-		parent:       parent,
-	}
-	for _, child := range children {
-		if child != nil {
-			v.children = append(v.children, child)
-		}
-	}
-	return v
 }
 
 func (r *ResourceBase2) Type() ResourceTypes {
@@ -71,4 +58,8 @@ func (r *ResourceBase2) AppendChildren(children Resources2) {
 
 func (r *ResourceBase2) Parent() Resource2 {
 	return r.parent
+}
+
+func (r *ResourceBase2) SetParent(parent Resource2) {
+	r.parent = parent
 }

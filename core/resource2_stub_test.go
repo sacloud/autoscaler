@@ -25,7 +25,7 @@ type stubResourceDef struct {
 	computeFunc func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error)
 }
 
-func (d *stubResourceDef) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *stubResourceDef) Validate(_ context.Context, _ sacloud.APICaller) []error {
 	return nil
 }
 
@@ -39,12 +39,12 @@ func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICall
 // TODO リソース切り替え時に名前変更
 type stubResource2 struct {
 	*ResourceBase2
-	computeFunc func(ctx *RequestContext, apiClient sacloud.APICaller, refresh bool) (Computed, error)
+	computeFunc func(ctx *RequestContext, refresh bool) (Computed, error)
 }
 
-func (r *stubResource2) Compute(ctx *RequestContext, apiClient sacloud.APICaller, refresh bool) (Computed, error) {
+func (r *stubResource2) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if r.computeFunc != nil {
-		return r.computeFunc(ctx, apiClient, refresh)
+		return r.computeFunc(ctx, refresh)
 	}
 	return nil, nil
 }
