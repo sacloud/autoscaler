@@ -23,7 +23,7 @@ import (
 )
 
 type ResourceDefGSLB struct {
-	*ResourceBase `yaml:",inline"`
+	*ResourceDefBase `yaml:",inline"`
 }
 
 func (d *ResourceDefGSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {

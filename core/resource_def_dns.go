@@ -23,7 +23,7 @@ import (
 )
 
 type ResourceDefDNS struct {
-	*ResourceBase `yaml:",inline"`
+	*ResourceDefBase `yaml:",inline"`
 }
 
 func (d *ResourceDefDNS) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {

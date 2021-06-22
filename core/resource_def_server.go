@@ -28,6 +28,8 @@ type ResourceDefServer struct {
 	DedicatedCPU     bool                `yaml:"dedicated_cpu"`
 	Plans            []*ServerPlan       `yaml:"plans"`
 	Option           ServerScalingOption `yaml:"option"`
+
+	parent ResourceDefinition
 }
 
 func (s *ResourceDefServer) resourcePlans() ResourcePlans {
@@ -39,6 +41,14 @@ func (s *ResourceDefServer) resourcePlans() ResourcePlans {
 		plans = append(plans, p)
 	}
 	return plans
+}
+
+func (s *ResourceDefServer) Parent() ResourceDefinition {
+	return s.parent
+}
+
+func (s *ResourceDefServer) SetParent(parent ResourceDefinition) {
+	s.parent = parent
 }
 
 func (s *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {

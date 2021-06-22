@@ -31,8 +31,6 @@ type ResourceDefGroup struct {
 	name string // ResourceGroupsのアンマーシャル時に設定される
 }
 
-// TODO UnmarshalYAMLを実装する
-
 func (rg *ResourceDefGroup) ValidateActions(actionName string, handlerFilters Handlers) error {
 	_, err := rg.handlers(actionName, handlerFilters)
 	return err
