@@ -129,6 +129,7 @@ func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	job := c.currentJob(ctx)
 	if !job.Acceptable() {
+		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "job is in an unacceptable state") // nolint
 		return job, "job is in an unacceptable state", nil
 	}
 
