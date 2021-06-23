@@ -17,30 +17,14 @@ package core
 import (
 	"context"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/autoscaler/test"
 )
 
-type ServerGroup struct {
-	*ResourceBase `yaml:",inline"`
-	wrapper       Resource
-}
-
-func (s *ServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
-	// TODO 実装
-	return nil
-}
-
-func (s *ServerGroup) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
-	// TODO 実装
-	return nil, nil
-}
-
-// Parent ChildResourceインターフェースの実装
-func (s *ServerGroup) Parent() Resource {
-	return s.wrapper
-}
-
-// SetParent ChildResourceインターフェースの実装
-func (s *ServerGroup) SetParent(parent Resource) {
-	s.wrapper = parent
+func testContext() *RequestContext {
+	return NewRequestContext(context.Background(), &requestInfo{
+		requestType:       requestTypeUp,
+		source:            "default",
+		action:            "default",
+		resourceGroupName: "web",
+	}, test.Logger)
 }

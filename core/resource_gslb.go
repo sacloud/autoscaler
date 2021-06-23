@@ -15,135 +15,99 @@
 package core
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type GSLB struct {
-	*ResourceBase `yaml:",inline"`
+type ResourceGSLB struct {
+	*ResourceBase
+
+	apiClient sacloud.APICaller
+	gslb      *sacloud.GSLB
+	def       *ResourceDefGSLB
 }
 
-func (g *GSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
-	errors := &multierror.Error{}
-	selector := g.Selector()
-	if selector == nil {
-		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+func NewResourceGSLB(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefGSLB, gslb *sacloud.GSLB) (*ResourceGSLB, error) {
+	resource := &ResourceGSLB{
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeGSLB},
+		apiClient:    apiClient,
+		gslb:         gslb,
+		def:          def,
 	}
-	if errors.Len() == 0 {
-		if selector.Zone != "" {
-			errors = multierror.Append(fmt.Errorf("selector.Zone: can not be specified for this resource"))
-		}
-
-		if _, err := g.findCloudResource(ctx, apiClient); err != nil {
-			errors = multierror.Append(errors, err)
-		}
-	}
-
-	// set prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", g.Type().String())).(*multierror.Error)
-	return errors.Errors
-}
-
-func (g *GSLB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
-	cloudResource, err := g.findCloudResource(ctx, apiClient)
-	if err != nil {
+	if err := resource.setResourceIDTag(ctx); err != nil {
 		return nil, err
 	}
-
-	computed, err := newComputedGSLB(ctx, g, cloudResource)
-	if err != nil {
-		return nil, err
-	}
-
-	g.ComputedCache = computed
-	return computed, nil
+	return resource, nil
 }
 
-func (g *GSLB) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.GSLB, error) {
-	gslbOp := sacloud.NewGSLBOp(apiClient)
-	selector := g.Selector()
-
-	found, err := gslbOp.Find(ctx, selector.findCondition())
-	if err != nil {
-		return nil, fmt.Errorf("computing status failed: %s", err)
-	}
-	if len(found.GSLBs) == 0 {
-		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
-	}
-	if len(found.GSLBs) > 1 {
-		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
+func (r *ResourceGSLB) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+	if refresh {
+		if err := r.refresh(ctx); err != nil {
+			return nil, err
+		}
 	}
 
-	return found.GSLBs[0], nil
-}
-
-type computedGSLB struct {
-	instruction handler.ResourceInstructions
-	gslb        *sacloud.GSLB
-	resource    *GSLB // 算出元のResourceへの参照
-}
-
-func newComputedGSLB(ctx *RequestContext, resource *GSLB, gslb *sacloud.GSLB) (*computedGSLB, error) {
 	computed := &computedGSLB{
 		instruction: handler.ResourceInstructions_NOOP,
 		gslb:        &sacloud.GSLB{},
-		resource:    resource,
+		resource:    r,
 	}
-	if err := mapconvDecoder.ConvertTo(gslb, computed.gslb); err != nil {
+	if err := mapconvDecoder.ConvertTo(r.gslb, computed.gslb); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
 	return computed, nil
 }
 
-func (c *computedGSLB) ID() string {
-	if c.gslb != nil {
-		return c.gslb.ID.String()
-	}
-	return ""
-}
-
-func (c *computedGSLB) Type() ResourceTypes {
-	return ResourceTypeGSLB
-}
-
-func (c *computedGSLB) Zone() string {
-	return ""
-}
-
-func (c *computedGSLB) Instruction() handler.ResourceInstructions {
-	return c.instruction
-}
-
-func (c *computedGSLB) Current() *handler.Resource {
-	if c.gslb != nil {
-		var servers []*handler.GSLBServer
-		for _, s := range c.gslb.DestinationServers {
-			servers = append(servers, &handler.GSLBServer{
-				IpAddress: s.IPAddress,
-				Enabled:   s.Enabled.Bool(),
-				Weight:    uint32(s.Weight.Int()),
-			})
+func (r *ResourceGSLB) setResourceIDTag(ctx *RequestContext) error {
+	tags, changed := SetupTagsWithResourceID(r.gslb.Tags, r.gslb.ID)
+	if changed {
+		gslbOp := sacloud.NewGSLBOp(r.apiClient)
+		updated, err := gslbOp.Update(ctx, r.gslb.ID, &sacloud.GSLBUpdateRequest{
+			Name:               r.gslb.Name,
+			Description:        r.gslb.Description,
+			Tags:               tags,
+			IconID:             r.gslb.IconID,
+			HealthCheck:        r.gslb.HealthCheck,
+			DelayLoop:          r.gslb.DelayLoop,
+			Weighted:           r.gslb.Weighted,
+			SorryServer:        r.gslb.SorryServer,
+			DestinationServers: r.gslb.DestinationServers,
+			SettingsHash:       r.gslb.SettingsHash,
+		})
+		if err != nil {
+			return err
 		}
-
-		return &handler.Resource{
-			Resource: &handler.Resource_Gslb{
-				Gslb: &handler.GSLB{
-					Id:      c.gslb.ID.String(),
-					Fqdn:    c.gslb.FQDN,
-					Servers: servers,
-				},
-			},
-		}
+		r.gslb = updated
 	}
 	return nil
 }
 
-func (c *computedGSLB) Desired() *handler.Resource {
-	// GSLBリソースは基本的に参照専用なため常にCurrentを返すのみ
-	return c.Current()
+func (r *ResourceGSLB) refresh(ctx *RequestContext) error {
+	gslbOp := sacloud.NewGSLBOp(r.apiClient)
+
+	// まずキャッシュしているリソースのIDで検索
+	gslb, err := gslbOp.Read(ctx, r.gslb.ID)
+	if err != nil {
+		if sacloud.IsNotFoundError(err) {
+			// 見つからなかったらIDマーカータグを元に検索
+			found, err := gslbOp.Find(ctx, FindConditionWithResourceIDTag(r.gslb.ID))
+			if err != nil {
+				return err
+			}
+			if len(found.GSLBs) == 0 {
+				return fmt.Errorf("gslb not found with: Filter='%s'", resourceIDMarkerTag(r.gslb.ID))
+			}
+			if len(found.GSLBs) > 1 {
+				return fmt.Errorf("invalid state: found multiple gslb with: Filter='%s'", resourceIDMarkerTag(r.gslb.ID))
+			}
+			gslb = found.GSLBs[0]
+		} else {
+			return err
+		}
+	}
+	r.gslb = gslb
+	return r.setResourceIDTag(ctx)
 }

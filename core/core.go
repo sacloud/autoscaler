@@ -127,27 +127,27 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	ctx = ctx.WithJobStatus(job)
 
 	//対象リソースグループを取得
-	rg, err := c.targetResourceGroup(ctx)
+	rdg, err := c.targetResourceGroup(ctx)
 	if err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
 		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
 		return job, "", err
 	}
 
-	if err := rg.ValidateActions(ctx.Request().action, c.config.Handlers()); err != nil {
+	if err := rdg.ValidateActions(ctx.Request().action, c.config.Handlers()); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
 		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
 		return job, "", err
 	}
 
-	go rg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
+	go rdg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) // nolint
 	return job, "", nil
 }
 
-func (c *Core) targetResourceGroup(ctx *RequestContext) (*ResourceGroup, error) {
+func (c *Core) targetResourceGroup(ctx *RequestContext) (*ResourceDefGroup, error) {
 	groupName := ctx.Request().resourceGroupName
 	if groupName == "" {
 		groupName = defaults.ResourceGroupName

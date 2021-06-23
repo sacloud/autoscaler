@@ -21,28 +21,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestResourceGroups_UnmarshalYAML(t *testing.T) {
+func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 	type args struct {
 		data []byte
 	}
 	tests := []struct {
 		name    string
-		r       *ResourceGroups
+		r       *ResourceDefGroups
 		args    args
 		wantErr bool
 	}{
 		{
 			name: "resource group",
-			r: func() *ResourceGroups {
-				rgs := newResourceGroups()
-				rg := &ResourceGroup{
+			r: func() *ResourceDefGroups {
+				rgs := newResourceDefGroups()
+				rg := &ResourceDefGroup{
 					Actions: Actions{
 						"foobar": []string{"handler1", "handler2"},
 					},
 				}
 
-				dns := &DNS{
-					ResourceBase: &ResourceBase{
+				dns := &ResourceDefDNS{
+					ResourceDefBase: &ResourceDefBase{
 						TypeName: "DNS",
 						TargetSelector: &ResourceSelector{
 							Names: []string{"test-name"},
@@ -50,8 +50,8 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 						},
 					},
 				}
-				childServer := &Server{
-					ResourceBase: &ResourceBase{
+				childServer := &ResourceDefServer{
+					ResourceDefBase: &ResourceDefBase{
 						TypeName: "Server",
 						TargetSelector: &ResourceSelector{
 							Names: []string{"test-child"},
@@ -60,11 +60,11 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 					},
 				}
 				childServer.SetParent(dns)
-				dns.Children = Resources{childServer}
+				dns.children = ResourceDefinitions{childServer}
 
-				rg.Resources = Resources{
-					&Server{
-						ResourceBase: &ResourceBase{
+				rg.ResourceDefs = ResourceDefinitions{
+					&ResourceDefServer{
+						ResourceDefBase: &ResourceDefBase{
 							TypeName: "Server",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
@@ -73,18 +73,9 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 						},
 						DedicatedCPU: true,
 					},
-					&ServerGroup{
-						ResourceBase: &ResourceBase{
-							TypeName: "ServerGroup",
-							TargetSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Zone:  "is1a",
-							},
-						},
-					},
 					dns,
-					&GSLB{
-						ResourceBase: &ResourceBase{
+					&ResourceDefGSLB{
+						ResourceDefBase: &ResourceDefBase{
 							TypeName: "GSLB",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
@@ -92,8 +83,8 @@ func TestResourceGroups_UnmarshalYAML(t *testing.T) {
 							},
 						},
 					},
-					&EnhancedLoadBalancer{
-						ResourceBase: &ResourceBase{
+					&ResourceDefELB{
+						ResourceDefBase: &ResourceDefBase{
 							TypeName: "EnhancedLoadBalancer",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
@@ -114,10 +105,6 @@ web:
         names: ["test-name"]
         zone: "is1a"
       dedicated_cpu: true
-    - type: ServerGroup
-      selector:
-        names: ["test-name"]
-        zone: "is1a"
     - type: DNS
       selector:
         names: ["test-name"]
@@ -146,7 +133,7 @@ web:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var target ResourceGroups
+			var target ResourceDefGroups
 			if err := yaml.Unmarshal(tt.args.data, &target); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalYAML() error = %v, wantErr %v", err, tt.wantErr)
 			}
