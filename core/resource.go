@@ -15,8 +15,6 @@
 package core
 
 // Resource Definitionから作られるResource
-//
-// TODO 現行Resourceとの切り替え時に名前変更する
 type Resource interface {
 	// Compute リクエストに沿った、希望する状態を算出する
 	//
