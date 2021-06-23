@@ -79,7 +79,7 @@ func TestResourceDefServer_Compute(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    Resources2
+		want    Resources
 		wantErr bool
 	}{
 		{

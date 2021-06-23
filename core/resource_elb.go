@@ -21,20 +21,20 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type ResourceELB2 struct {
-	*ResourceBase2
+type ResourceELB struct {
+	*ResourceBase
 
 	apiClient sacloud.APICaller
 	elb       *sacloud.ProxyLB
 	def       *ResourceDefELB
 }
 
-func NewResourceELB(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefELB, elb *sacloud.ProxyLB) (*ResourceELB2, error) {
-	resource := &ResourceELB2{
-		ResourceBase2: &ResourceBase2{resourceType: ResourceTypeEnhancedLoadBalancer},
-		apiClient:     apiClient,
-		elb:           elb,
-		def:           def,
+func NewResourceELB(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefELB, elb *sacloud.ProxyLB) (*ResourceELB, error) {
+	resource := &ResourceELB{
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeEnhancedLoadBalancer},
+		apiClient:    apiClient,
+		elb:          elb,
+		def:          def,
 	}
 	if err := resource.setResourceIDTag(ctx); err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func NewResourceELB(ctx *RequestContext, apiClient sacloud.APICaller, def *Resou
 	return resource, nil
 }
 
-func (r *ResourceELB2) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *ResourceELB) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
@@ -79,7 +79,7 @@ func (r *ResourceELB2) Compute(ctx *RequestContext, refresh bool) (Computed, err
 	return computed, nil
 }
 
-func (r *ResourceELB2) desiredPlan(ctx *RequestContext) (*ELBPlan, error) {
+func (r *ResourceELB) desiredPlan(ctx *RequestContext) (*ELBPlan, error) {
 	plans := r.def.resourcePlans()
 	plan, err := desiredPlan(ctx, r.elb, plans)
 	if err != nil {
@@ -94,7 +94,7 @@ func (r *ResourceELB2) desiredPlan(ctx *RequestContext) (*ELBPlan, error) {
 	return nil, nil
 }
 
-func (r *ResourceELB2) setResourceIDTag(ctx *RequestContext) error {
+func (r *ResourceELB) setResourceIDTag(ctx *RequestContext) error {
 	tags, changed := SetupTagsWithResourceID(r.elb.Tags, r.elb.ID)
 	if changed {
 		elbOp := sacloud.NewProxyLBOp(r.apiClient)
@@ -122,7 +122,7 @@ func (r *ResourceELB2) setResourceIDTag(ctx *RequestContext) error {
 	return nil
 }
 
-func (r *ResourceELB2) refresh(ctx *RequestContext) error {
+func (r *ResourceELB) refresh(ctx *RequestContext) error {
 	elbOp := sacloud.NewProxyLBOp(r.apiClient)
 
 	// まずキャッシュしているリソースのIDで検索

@@ -52,9 +52,9 @@ func (rg *ResourceDefGroup) Validate(ctx context.Context, apiClient sacloud.APIC
 	return errors.Errors
 }
 
-func (rg *ResourceDefGroup) ResourceGroup(ctx *RequestContext, apiClient sacloud.APICaller) (*ResourceGroup2, error) {
-	group := &ResourceGroup2{
-		Resources: Resources2{},
+func (rg *ResourceDefGroup) ResourceGroup(ctx *RequestContext, apiClient sacloud.APICaller) (*ResourceGroup, error) {
+	group := &ResourceGroup{
+		Resources: Resources{},
 	}
 
 	if err := rg.buildResourceGroup(ctx, apiClient, group, nil, rg.ResourceDefs); err != nil {
@@ -63,7 +63,7 @@ func (rg *ResourceDefGroup) ResourceGroup(ctx *RequestContext, apiClient sacloud
 	return group, nil
 }
 
-func (rg *ResourceDefGroup) buildResourceGroup(ctx *RequestContext, apiClient sacloud.APICaller, group *ResourceGroup2, parent Resource2, defs ResourceDefinitions) error {
+func (rg *ResourceDefGroup) buildResourceGroup(ctx *RequestContext, apiClient sacloud.APICaller, group *ResourceGroup, parent Resource, defs ResourceDefinitions) error {
 	for _, def := range defs {
 		resources, err := def.Compute(ctx, apiClient)
 		if err != nil {

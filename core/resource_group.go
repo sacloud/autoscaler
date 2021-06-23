@@ -14,6 +14,7 @@
 
 package core
 
-type ResourceGroup2 struct {
-	Resources Resources2 `yaml:"resources"`
+// ResourceGroup リソースグループ
+type ResourceGroup struct {
+	Resources Resources `yaml:"resources"`
 }

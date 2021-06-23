@@ -34,7 +34,7 @@ type ResourceDefinition interface {
 	// Compute 現在/あるべき姿を算出する
 	//
 	// TypeとSelectorを元にさくらのクラウドAPIを用いて実リソースを検索、Resourceを作成して返す
-	Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error)
+	Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error)
 
 	// Children このリソースに対する子リソースを返す
 	Children() ResourceDefinitions

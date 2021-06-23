@@ -106,13 +106,13 @@ func (e *ResourceDefELB) validatePlans(_ context.Context, _ sacloud.APICaller) [
 	return errors
 }
 
-func (e *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
+func (e *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
 	cloudResources, err := e.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var resources Resources2
+	var resources Resources
 	for _, elb := range cloudResources {
 		r, err := NewResourceELB(ctx, apiClient, e, elb)
 		if err != nil {

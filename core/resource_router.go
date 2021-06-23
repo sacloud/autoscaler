@@ -39,8 +39,8 @@ var DefaultRouterPlans = ResourcePlans{
 	&RouterPlan{BandWidth: 5000},
 }
 
-type ResourceRouter2 struct {
-	*ResourceBase2
+type ResourceRouter struct {
+	*ResourceBase
 
 	apiClient sacloud.APICaller
 	router    *sacloud.Internet
@@ -48,13 +48,13 @@ type ResourceRouter2 struct {
 	zone      string
 }
 
-func NewResourceRouter(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefRouter, zone string, router *sacloud.Internet) (*ResourceRouter2, error) {
-	resource := &ResourceRouter2{
-		ResourceBase2: &ResourceBase2{resourceType: ResourceTypeRouter},
-		apiClient:     apiClient,
-		zone:          zone,
-		router:        router,
-		def:           def,
+func NewResourceRouter(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefRouter, zone string, router *sacloud.Internet) (*ResourceRouter, error) {
+	resource := &ResourceRouter{
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeRouter},
+		apiClient:    apiClient,
+		zone:         zone,
+		router:       router,
+		def:          def,
 	}
 	if err := resource.setResourceIDTag(ctx); err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func NewResourceRouter(ctx *RequestContext, apiClient sacloud.APICaller, def *Re
 	return resource, nil
 }
 
-func (r *ResourceRouter2) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *ResourceRouter) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
@@ -91,7 +91,7 @@ func (r *ResourceRouter2) Compute(ctx *RequestContext, refresh bool) (Computed, 
 	return computed, nil
 }
 
-func (r *ResourceRouter2) desiredPlan(ctx *RequestContext) (*RouterPlan, error) {
+func (r *ResourceRouter) desiredPlan(ctx *RequestContext) (*RouterPlan, error) {
 	plans := r.def.resourcePlans()
 	plan, err := desiredPlan(ctx, r.router, plans)
 	if err != nil {
@@ -106,7 +106,7 @@ func (r *ResourceRouter2) desiredPlan(ctx *RequestContext) (*RouterPlan, error) 
 	return nil, nil
 }
 
-func (r *ResourceRouter2) setResourceIDTag(ctx *RequestContext) error {
+func (r *ResourceRouter) setResourceIDTag(ctx *RequestContext) error {
 	tags, changed := SetupTagsWithResourceID(r.router.Tags, r.router.ID)
 	if changed {
 		routerOp := sacloud.NewInternetOp(r.apiClient)
@@ -124,7 +124,7 @@ func (r *ResourceRouter2) setResourceIDTag(ctx *RequestContext) error {
 	return nil
 }
 
-func (r *ResourceRouter2) refresh(ctx *RequestContext) error {
+func (r *ResourceRouter) refresh(ctx *RequestContext) error {
 	routerOp := sacloud.NewInternetOp(r.apiClient)
 
 	// まずキャッシュしているリソースのIDで検索

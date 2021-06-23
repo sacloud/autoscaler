@@ -22,27 +22,26 @@ import (
 
 type stubResourceDef struct {
 	*ResourceDefBase
-	computeFunc func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error)
+	computeFunc func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error)
 }
 
 func (d *stubResourceDef) Validate(_ context.Context, _ sacloud.APICaller) []error {
 	return nil
 }
 
-func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
+func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
 	if d.computeFunc != nil {
 		return d.computeFunc(ctx, apiClient)
 	}
 	return nil, nil
 }
 
-// TODO リソース切り替え時に名前変更
-type stubResource2 struct {
-	*ResourceBase2
+type stubResource struct {
+	*ResourceBase
 	computeFunc func(ctx *RequestContext, refresh bool) (Computed, error)
 }
 
-func (r *stubResource2) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *stubResource) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if r.computeFunc != nil {
 		return r.computeFunc(ctx, refresh)
 	}

@@ -46,13 +46,13 @@ func (d *ResourceDefDNS) Validate(ctx context.Context, apiClient sacloud.APICall
 	return errors.Errors
 }
 
-func (d *ResourceDefDNS) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
+func (d *ResourceDefDNS) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
 	cloudResources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var resources Resources2
+	var resources Resources
 	for _, dns := range cloudResources {
 		r, err := NewResourceDNS(ctx, apiClient, d, dns)
 		if err != nil {

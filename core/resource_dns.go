@@ -21,20 +21,20 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type ResourceDNS2 struct {
-	*ResourceBase2
+type ResourceDNS struct {
+	*ResourceBase
 
 	apiClient sacloud.APICaller
 	dns       *sacloud.DNS
 	def       *ResourceDefDNS
 }
 
-func NewResourceDNS(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefDNS, dns *sacloud.DNS) (*ResourceDNS2, error) {
-	resource := &ResourceDNS2{
-		ResourceBase2: &ResourceBase2{resourceType: ResourceTypeDNS},
-		apiClient:     apiClient,
-		dns:           dns,
-		def:           def,
+func NewResourceDNS(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefDNS, dns *sacloud.DNS) (*ResourceDNS, error) {
+	resource := &ResourceDNS{
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeDNS},
+		apiClient:    apiClient,
+		dns:          dns,
+		def:          def,
 	}
 	if err := resource.setResourceIDTag(ctx); err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func NewResourceDNS(ctx *RequestContext, apiClient sacloud.APICaller, def *Resou
 	return resource, nil
 }
 
-func (r *ResourceDNS2) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *ResourceDNS) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
@@ -61,7 +61,7 @@ func (r *ResourceDNS2) Compute(ctx *RequestContext, refresh bool) (Computed, err
 	return computed, nil
 }
 
-func (r *ResourceDNS2) setResourceIDTag(ctx *RequestContext) error {
+func (r *ResourceDNS) setResourceIDTag(ctx *RequestContext) error {
 	tags, changed := SetupTagsWithResourceID(r.dns.Tags, r.dns.ID)
 	if changed {
 		dnsOp := sacloud.NewDNSOp(r.apiClient)
@@ -80,7 +80,7 @@ func (r *ResourceDNS2) setResourceIDTag(ctx *RequestContext) error {
 	return nil
 }
 
-func (r *ResourceDNS2) refresh(ctx *RequestContext) error {
+func (r *ResourceDNS) refresh(ctx *RequestContext) error {
 	dnsOp := sacloud.NewDNSOp(r.apiClient)
 
 	// まずキャッシュしているリソースのIDで検索

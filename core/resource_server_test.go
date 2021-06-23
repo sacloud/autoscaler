@@ -126,8 +126,8 @@ func TestResourceServer2_Compute(t *testing.T) {
 			ShutdownForce: false,
 		},
 	}
-	resource := &ResourceServer2{
-		ResourceBase2: &ResourceBase2{
+	resource := &ResourceServer{
+		ResourceBase: &ResourceBase{
 			resourceType: ResourceTypeServer,
 		},
 		apiClient: test.APIClient,

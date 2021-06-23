@@ -23,8 +23,8 @@ type computedELB struct {
 	instruction handler.ResourceInstructions
 	elb         *sacloud.ProxyLB
 	newCPS      int
-	parent      Computed      // 親リソースのComputed
-	resource    *ResourceELB2 // 算出元のResourceへの参照
+	parent      Computed     // 親リソースのComputed
+	resource    *ResourceELB // 算出元のResourceへの参照
 }
 
 func (c *computedELB) ID() string {

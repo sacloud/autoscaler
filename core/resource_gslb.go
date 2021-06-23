@@ -21,20 +21,20 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type ResourceGSLB2 struct {
-	*ResourceBase2
+type ResourceGSLB struct {
+	*ResourceBase
 
 	apiClient sacloud.APICaller
 	gslb      *sacloud.GSLB
 	def       *ResourceDefGSLB
 }
 
-func NewResourceGSLB(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefGSLB, gslb *sacloud.GSLB) (*ResourceGSLB2, error) {
-	resource := &ResourceGSLB2{
-		ResourceBase2: &ResourceBase2{resourceType: ResourceTypeGSLB},
-		apiClient:     apiClient,
-		gslb:          gslb,
-		def:           def,
+func NewResourceGSLB(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefGSLB, gslb *sacloud.GSLB) (*ResourceGSLB, error) {
+	resource := &ResourceGSLB{
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeGSLB},
+		apiClient:    apiClient,
+		gslb:         gslb,
+		def:          def,
 	}
 	if err := resource.setResourceIDTag(ctx); err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func NewResourceGSLB(ctx *RequestContext, apiClient sacloud.APICaller, def *Reso
 	return resource, nil
 }
 
-func (r *ResourceGSLB2) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *ResourceGSLB) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
@@ -61,7 +61,7 @@ func (r *ResourceGSLB2) Compute(ctx *RequestContext, refresh bool) (Computed, er
 	return computed, nil
 }
 
-func (r *ResourceGSLB2) setResourceIDTag(ctx *RequestContext) error {
+func (r *ResourceGSLB) setResourceIDTag(ctx *RequestContext) error {
 	tags, changed := SetupTagsWithResourceID(r.gslb.Tags, r.gslb.ID)
 	if changed {
 		gslbOp := sacloud.NewGSLBOp(r.apiClient)
@@ -85,7 +85,7 @@ func (r *ResourceGSLB2) setResourceIDTag(ctx *RequestContext) error {
 	return nil
 }
 
-func (r *ResourceGSLB2) refresh(ctx *RequestContext) error {
+func (r *ResourceGSLB) refresh(ctx *RequestContext) error {
 	gslbOp := sacloud.NewGSLBOp(r.apiClient)
 
 	// まずキャッシュしているリソースのIDで検索

@@ -104,13 +104,13 @@ func (r *ResourceDefRouter) validatePlans(ctx context.Context, apiClient sacloud
 	return nil
 }
 
-func (r *ResourceDefRouter) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
+func (r *ResourceDefRouter) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
 	cloudResources, err := r.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var resources Resources2
+	var resources Resources
 	for _, router := range cloudResources {
 		r, err := NewResourceRouter(ctx, apiClient, r, r.Selector().Zone, router)
 		if err != nil {

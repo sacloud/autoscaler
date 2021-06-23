@@ -93,7 +93,7 @@ func (r *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient sacloud.A
 	return r.handleAll(ctx, apiClient, handlers, nil, *r)
 }
 
-func (r *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers, parentResource Resource2, defs ResourceDefinitions) error {
+func (r *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers, parentResource Resource, defs ResourceDefinitions) error {
 	for _, def := range defs {
 		resources, err := def.Compute(ctx, apiClient)
 		if err != nil {
@@ -124,7 +124,7 @@ func (r *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.A
 	return nil
 }
 
-func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers Handlers, resource Resource2) error {
+func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers Handlers, resource Resource) error {
 	computed, err := resource.Compute(parentCtx, false)
 	if err != nil {
 		return err

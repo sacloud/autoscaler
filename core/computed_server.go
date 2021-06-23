@@ -26,8 +26,8 @@ type computedServer struct {
 	zone        string
 	newCPU      int
 	newMemory   int
-	parent      Computed         // 親Resourceのcomputed
-	resource    *ResourceServer2 // 算出元のResourceへの参照
+	parent      Computed        // 親Resourceのcomputed
+	resource    *ResourceServer // 算出元のResourceへの参照
 }
 
 func (c *computedServer) ID() string {

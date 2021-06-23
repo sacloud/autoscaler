@@ -14,10 +14,10 @@
 
 package core
 
-// Resource2 Definitionから作られるResource
+// Resource Definitionから作られるResource
 //
 // TODO 現行Resourceとの切り替え時に名前変更する
-type Resource2 interface {
+type Resource interface {
 	// Compute リクエストに沿った、希望する状態を算出する
 	//
 	// refreshがtrueの場合、さくらのクラウドAPIを用いて最新の状態を取得した上で処理を行う
@@ -27,39 +27,41 @@ type Resource2 interface {
 	// Type リソースの型
 	Type() ResourceTypes
 	// Children 子リソース
-	Children() Resources2
+	Children() Resources
 	// AppendChildren 子リソースを設定
-	AppendChildren(Resources2)
+	AppendChildren(Resources)
 	// Parent 親Resourceへの参照
-	Parent() Resource2
+	Parent() Resource
 	// SetParent 親Resourceを設定
-	SetParent(parent Resource2)
+	SetParent(parent Resource)
 }
 
-type Resources2 []Resource2
+// Resources Resourceのスライス
+type Resources []Resource
 
-type ResourceBase2 struct {
+// ResourceBase 全てのリソースが所有すべきResourceの基本構造
+type ResourceBase struct {
 	resourceType ResourceTypes
-	parent       Resource2
-	children     Resources2
+	parent       Resource
+	children     Resources
 }
 
-func (r *ResourceBase2) Type() ResourceTypes {
+func (r *ResourceBase) Type() ResourceTypes {
 	return r.resourceType
 }
 
-func (r *ResourceBase2) Children() Resources2 {
+func (r *ResourceBase) Children() Resources {
 	return r.children
 }
 
-func (r *ResourceBase2) AppendChildren(children Resources2) {
+func (r *ResourceBase) AppendChildren(children Resources) {
 	r.children = append(r.children, children...)
 }
 
-func (r *ResourceBase2) Parent() Resource2 {
+func (r *ResourceBase) Parent() Resource {
 	return r.parent
 }
 
-func (r *ResourceBase2) SetParent(parent Resource2) {
+func (r *ResourceBase) SetParent(parent Resource) {
 	r.parent = parent
 }

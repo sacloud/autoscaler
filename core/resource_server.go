@@ -32,8 +32,8 @@ var DefaultServerPlans = ResourcePlans{
 	&ServerPlan{Core: 10, Memory: 48},
 }
 
-type ResourceServer2 struct {
-	*ResourceBase2
+type ResourceServer struct {
+	*ResourceBase
 
 	apiClient sacloud.APICaller
 	server    *sacloud.Server
@@ -41,9 +41,9 @@ type ResourceServer2 struct {
 	zone      string
 }
 
-func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefServer, zone string, server *sacloud.Server) (*ResourceServer2, error) {
-	resource := &ResourceServer2{
-		ResourceBase2: &ResourceBase2{
+func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefServer, zone string, server *sacloud.Server) (*ResourceServer, error) {
+	resource := &ResourceServer{
+		ResourceBase: &ResourceBase{
 			resourceType: ResourceTypeServer,
 		},
 		apiClient: apiClient,
@@ -57,7 +57,7 @@ func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *Re
 	return resource, nil
 }
 
-func (r *ResourceServer2) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *ResourceServer) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
@@ -96,7 +96,7 @@ func (r *ResourceServer2) Compute(ctx *RequestContext, refresh bool) (Computed, 
 	return computed, nil
 }
 
-func (r *ResourceServer2) desiredPlan(ctx *RequestContext) (*ServerPlan, error) {
+func (r *ResourceServer) desiredPlan(ctx *RequestContext) (*ServerPlan, error) {
 	plans := r.def.resourcePlans()
 	plan, err := desiredPlan(ctx, r.server, plans)
 	if err != nil {
@@ -111,7 +111,7 @@ func (r *ResourceServer2) desiredPlan(ctx *RequestContext) (*ServerPlan, error) 
 	return nil, nil
 }
 
-func (r *ResourceServer2) setResourceIDTag(ctx *RequestContext) error {
+func (r *ResourceServer) setResourceIDTag(ctx *RequestContext) error {
 	tags, changed := SetupTagsWithResourceID(r.server.Tags, r.server.ID)
 	if changed {
 		serverOp := sacloud.NewServerOp(r.apiClient)
@@ -131,7 +131,7 @@ func (r *ResourceServer2) setResourceIDTag(ctx *RequestContext) error {
 	return nil
 }
 
-func (r *ResourceServer2) refresh(ctx *RequestContext) error {
+func (r *ResourceServer) refresh(ctx *RequestContext) error {
 	serverOp := sacloud.NewServerOp(r.apiClient)
 
 	// まずキャッシュしているリソースのIDで検索

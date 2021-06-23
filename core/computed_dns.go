@@ -22,7 +22,7 @@ import (
 type computedDNS struct {
 	instruction handler.ResourceInstructions
 	dns         *sacloud.DNS
-	resource    *ResourceDNS2 // 算出元のResourceへの参照
+	resource    *ResourceDNS // 算出元のResourceへの参照
 }
 
 func (c *computedDNS) ID() string {

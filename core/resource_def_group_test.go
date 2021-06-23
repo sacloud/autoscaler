@@ -194,7 +194,7 @@ func TestResourceDefGroup_ResourceGroup(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *ResourceGroup2
+		want    *ResourceGroup
 		wantErr bool
 	}{
 		{
@@ -212,27 +212,27 @@ func TestResourceDefGroup_ResourceGroup(t *testing.T) {
 				//  |------- Server6
 				ResourceDefs: ResourceDefinitions{
 					&stubResourceDef{
-						computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-							return Resources2{
-								&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeDNS}},
+						computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+							return Resources{
+								&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeDNS}},
 							}, nil
 						},
 						ResourceDefBase: &ResourceDefBase{
 							TypeName: ResourceTypeDNS.String(),
 							children: ResourceDefinitions{
 								&stubResourceDef{
-									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-										return Resources2{
-											&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeEnhancedLoadBalancer}},
+									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+										return Resources{
+											&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeEnhancedLoadBalancer}},
 										}, nil
 									},
 									ResourceDefBase: &ResourceDefBase{
 										TypeName: ResourceTypeEnhancedLoadBalancer.String(),
 										children: ResourceDefinitions{
 											&stubResourceDef{
-												computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-													return Resources2{
-														&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer}},
+												computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+													return Resources{
+														&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer}},
 													}, nil
 												},
 												ResourceDefBase: &ResourceDefBase{
@@ -240,9 +240,9 @@ func TestResourceDefGroup_ResourceGroup(t *testing.T) {
 												},
 											},
 											&stubResourceDef{
-												computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-													return Resources2{
-														&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer}},
+												computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+													return Resources{
+														&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer}},
 													}, nil
 												},
 												ResourceDefBase: &ResourceDefBase{
@@ -253,18 +253,18 @@ func TestResourceDefGroup_ResourceGroup(t *testing.T) {
 									},
 								},
 								&stubResourceDef{
-									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-										return Resources2{
-											&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeEnhancedLoadBalancer}},
+									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+										return Resources{
+											&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeEnhancedLoadBalancer}},
 										}, nil
 									},
 									ResourceDefBase: &ResourceDefBase{
 										TypeName: ResourceTypeEnhancedLoadBalancer.String(),
 										children: ResourceDefinitions{
 											&stubResourceDef{
-												computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-													return Resources2{
-														&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer}},
+												computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+													return Resources{
+														&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer}},
 													}, nil
 												},
 												ResourceDefBase: &ResourceDefBase{
@@ -272,9 +272,9 @@ func TestResourceDefGroup_ResourceGroup(t *testing.T) {
 												},
 											},
 											&stubResourceDef{
-												computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-													return Resources2{
-														&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer}},
+												computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+													return Resources{
+														&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer}},
 													}, nil
 												},
 												ResourceDefBase: &ResourceDefBase{
@@ -288,18 +288,18 @@ func TestResourceDefGroup_ResourceGroup(t *testing.T) {
 						},
 					},
 					&stubResourceDef{
-						computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-							return Resources2{
-								&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeGSLB}},
+						computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+							return Resources{
+								&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeGSLB}},
 							}, nil
 						},
 						ResourceDefBase: &ResourceDefBase{
 							TypeName: ResourceTypeGSLB.String(),
 							children: ResourceDefinitions{
 								&stubResourceDef{
-									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-										return Resources2{
-											&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer}},
+									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+										return Resources{
+											&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer}},
 										}, nil
 									},
 									ResourceDefBase: &ResourceDefBase{
@@ -307,9 +307,9 @@ func TestResourceDefGroup_ResourceGroup(t *testing.T) {
 									},
 								},
 								&stubResourceDef{
-									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
-										return Resources2{
-											&stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer}},
+									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+										return Resources{
+											&stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer}},
 										}, nil
 									},
 									ResourceDefBase: &ResourceDefBase{
@@ -338,25 +338,25 @@ func TestResourceDefGroup_ResourceGroup(t *testing.T) {
 				},
 				apiClient: test.APIClient,
 			},
-			want: func() *ResourceGroup2 {
-				dns := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeDNS}}
-				elb1 := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeEnhancedLoadBalancer, parent: dns}}
-				elb2 := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeEnhancedLoadBalancer, parent: dns}}
-				server1 := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer, parent: elb1}}
-				server2 := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer, parent: elb1}}
-				server3 := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer, parent: elb2}}
-				server4 := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer, parent: elb2}}
+			want: func() *ResourceGroup {
+				dns := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeDNS}}
+				elb1 := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeEnhancedLoadBalancer, parent: dns}}
+				elb2 := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeEnhancedLoadBalancer, parent: dns}}
+				server1 := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer, parent: elb1}}
+				server2 := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer, parent: elb1}}
+				server3 := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer, parent: elb2}}
+				server4 := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer, parent: elb2}}
 
-				gslb := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeGSLB}}
-				server5 := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer, parent: gslb}}
-				server6 := &stubResource2{ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer, parent: gslb}}
+				gslb := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeGSLB}}
+				server5 := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer, parent: gslb}}
+				server6 := &stubResource{ResourceBase: &ResourceBase{resourceType: ResourceTypeServer, parent: gslb}}
 
-				dns.children = Resources2{elb1, elb2}
-				elb1.children = Resources2{server1, server2}
-				elb2.children = Resources2{server3, server4}
-				gslb.children = Resources2{server5, server6}
+				dns.children = Resources{elb1, elb2}
+				elb1.children = Resources{server1, server2}
+				elb2.children = Resources{server3, server4}
+				gslb.children = Resources{server5, server6}
 
-				return &ResourceGroup2{Resources: Resources2{dns, gslb}}
+				return &ResourceGroup{Resources: Resources{dns, gslb}}
 			}(),
 			wantErr: false,
 		},
