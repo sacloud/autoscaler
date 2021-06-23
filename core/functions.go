@@ -44,6 +44,13 @@ func computedToParents(parentComputed Computed) *handler.Parent {
 					},
 				}
 			}
+			if v := current.GetLoadBalancer(); v != nil {
+				parent = &handler.Parent{
+					Resource: &handler.Parent_LoadBalancer{
+						LoadBalancer: v,
+					},
+				}
+			}
 
 			return parent
 		}

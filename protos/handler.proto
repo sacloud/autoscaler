@@ -90,12 +90,13 @@ enum ResourceInstructions {
 // リソース型
 message Resource {
   oneof resource {
-    Server server            = 10;
-    ServerGroup server_group = 11;
-    ELB elb                  = 12;
-    GSLB gslb                = 13;
-    DNS dns                  = 14;
-    Router router            = 15;
+    Server server              = 10;
+    ServerGroup server_group   = 11;
+    ELB elb                    = 12;
+    GSLB gslb                  = 13;
+    DNS dns                    = 14;
+    Router router              = 15;
+    LoadBalancer load_balancer = 16;
   }
 }
 
@@ -141,6 +142,13 @@ message GSLB {
   repeated GSLBServer servers      = 13;
 }
 
+message GSLBServer {
+  string ip_address = 1;
+  bool enabled      = 2;
+  uint32 weight     = 3;
+}
+
+
 message DNS {
   reserved 1 to 10;
 
@@ -157,20 +165,34 @@ message Router {
   uint32 band_width                  = 13;
 }
 
+message LoadBalancer {
+  reserved 1 to 10;
+
+  string id                                     = 11;
+  string zone                                   = 12;
+  repeated LoadBalancerVIP virtual_ip_addresses = 13;
+}
+
+message LoadBalancerVIP {
+  string ip_address = 1;
+  uint32 port = 2;
+  repeated LoadBalancerServer servers = 3;
+}
+
+message LoadBalancerServer {
+  string ip_address = 1;
+  bool enabled      = 2;
+}
+
 message Parent {
   reserved 1 to 10;
 
   oneof resource {
-    ELB elb   = 11;
-    GSLB gslb = 12;
-    DNS dns   = 13;
+    ELB elb                    = 11;
+    GSLB gslb                  = 12;
+    DNS dns                    = 13;
+    LoadBalancer load_balancer = 14;
   }
-}
-
-message GSLBServer {
-  string ip_address = 1;
-  bool enabled      = 2;
-  uint32 weight     = 3;
 }
 
 message NetworkInfo {
