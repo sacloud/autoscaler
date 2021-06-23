@@ -79,14 +79,16 @@ func (r *ResourceRouter) Compute(ctx *RequestContext, refresh bool) (Computed, e
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan, err := r.desiredPlan(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("computing desired plan failed: %s", err)
-	}
+	if !refresh {
+		plan, err := r.desiredPlan(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("computing desired plan failed: %s", err)
+		}
 
-	if plan != nil {
-		computed.newBandWidth = plan.BandWidth
-		computed.instruction = handler.ResourceInstructions_UPDATE
+		if plan != nil {
+			computed.newBandWidth = plan.BandWidth
+			computed.instruction = handler.ResourceInstructions_UPDATE
+		}
 	}
 	return computed, nil
 }

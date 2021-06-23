@@ -24,6 +24,7 @@ const (
 	ResourceTypeGSLB
 	ResourceTypeDNS
 	ResourceTypeRouter
+	ResourceTypeLoadBalancer
 )
 
 func (rt ResourceTypes) String() string {
@@ -40,6 +41,8 @@ func (rt ResourceTypes) String() string {
 		return "DNS"
 	case ResourceTypeRouter:
 		return "Router"
+	case ResourceTypeLoadBalancer:
+		return "LoadBalancer"
 	}
 	return "unknown"
 }
