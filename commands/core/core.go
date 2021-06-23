@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package core
 
 import (
-	"github.com/sacloud/autoscaler/commands/server/example"
-	"github.com/sacloud/autoscaler/commands/server/handlers"
-	"github.com/sacloud/autoscaler/commands/server/start"
+	"github.com/sacloud/autoscaler/commands/core/example"
+	"github.com/sacloud/autoscaler/commands/core/handlers"
+	"github.com/sacloud/autoscaler/commands/core/start"
 	"github.com/spf13/cobra"
 )
 
 var Command = &cobra.Command{
-	Use:           "server",
+	Use:           "core",
+	Aliases:       []string{"server"},
 	Short:         "A set of sub commands to manage autoscaler's core server",
 	SilenceErrors: true,
 }
