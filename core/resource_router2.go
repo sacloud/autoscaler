@@ -69,7 +69,7 @@ func (r *ResourceRouter2) Compute(ctx *RequestContext, refresh bool) (Computed, 
 		}
 	}
 
-	computed := &computedRouter2{
+	computed := &computedRouter{
 		instruction: handler.ResourceInstructions_NOOP,
 		router:      &sacloud.Internet{},
 		zone:        r.zone,

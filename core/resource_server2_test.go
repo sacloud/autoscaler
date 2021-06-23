@@ -158,7 +158,7 @@ func TestResourceServer2_Compute(t *testing.T) {
 				}, test.Logger),
 				refresh: false,
 			},
-			want: &computedServer2{
+			want: &computedServer{
 				instruction: handler.ResourceInstructions_UPDATE,
 				server:      server,
 				zone:        test.Zone,
@@ -181,7 +181,7 @@ func TestResourceServer2_Compute(t *testing.T) {
 				}, test.Logger),
 				refresh: false,
 			},
-			want: &computedServer2{
+			want: &computedServer{
 				instruction: handler.ResourceInstructions_UPDATE,
 				server:      server,
 				zone:        test.Zone,

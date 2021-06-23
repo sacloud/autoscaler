@@ -57,7 +57,7 @@ func (r *ResourceELB2) Compute(ctx *RequestContext, refresh bool) (Computed, err
 		parent = pc
 	}
 
-	computed := &computedELB2{
+	computed := &computedELB{
 		instruction: handler.ResourceInstructions_NOOP,
 		elb:         &sacloud.ProxyLB{},
 		resource:    r,

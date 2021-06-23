@@ -49,7 +49,7 @@ func (r *ResourceGSLB2) Compute(ctx *RequestContext, refresh bool) (Computed, er
 		}
 	}
 
-	computed := &computedGSLB2{
+	computed := &computedGSLB{
 		instruction: handler.ResourceInstructions_NOOP,
 		gslb:        &sacloud.GSLB{},
 		resource:    r,

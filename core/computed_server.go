@@ -20,7 +20,7 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
-type computedServer2 struct {
+type computedServer struct {
 	instruction handler.ResourceInstructions
 	server      *sacloud.Server
 	zone        string
@@ -30,30 +30,30 @@ type computedServer2 struct {
 	resource    *ResourceServer2 // 算出元のResourceへの参照
 }
 
-func (c *computedServer2) ID() string {
+func (c *computedServer) ID() string {
 	if c.server != nil {
 		return c.server.ID.String()
 	}
 	return ""
 }
 
-func (c *computedServer2) Type() ResourceTypes {
+func (c *computedServer) Type() ResourceTypes {
 	return ResourceTypeServer
 }
 
-func (c *computedServer2) Zone() string {
+func (c *computedServer) Zone() string {
 	return c.zone
 }
 
-func (c *computedServer2) Instruction() handler.ResourceInstructions {
+func (c *computedServer) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }
 
-func (c *computedServer2) parents() *handler.Parent {
+func (c *computedServer) parents() *handler.Parent {
 	return computedToParents(c.parent)
 }
 
-func (c *computedServer2) Current() *handler.Resource {
+func (c *computedServer) Current() *handler.Resource {
 	if c.server != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Server{
@@ -75,7 +75,7 @@ func (c *computedServer2) Current() *handler.Resource {
 	return nil
 }
 
-func (c *computedServer2) Desired() *handler.Resource {
+func (c *computedServer) Desired() *handler.Resource {
 	if c.server != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Server{
@@ -97,7 +97,7 @@ func (c *computedServer2) Desired() *handler.Resource {
 	return nil
 }
 
-func (c *computedServer2) assignedNetwork() []*handler.NetworkInfo {
+func (c *computedServer) assignedNetwork() []*handler.NetworkInfo {
 	var assignedNetwork []*handler.NetworkInfo
 	for i, nic := range c.server.Interfaces {
 		var ipAddress string

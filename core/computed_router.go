@@ -19,7 +19,7 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type computedRouter2 struct {
+type computedRouter struct {
 	instruction  handler.ResourceInstructions
 	router       *sacloud.Internet
 	zone         string
@@ -27,26 +27,26 @@ type computedRouter2 struct {
 	resource     *ResourceRouter2 // 算出元のResourceへの参照
 }
 
-func (c *computedRouter2) ID() string {
+func (c *computedRouter) ID() string {
 	if c.router != nil {
 		return c.router.ID.String()
 	}
 	return ""
 }
 
-func (c *computedRouter2) Type() ResourceTypes {
+func (c *computedRouter) Type() ResourceTypes {
 	return ResourceTypeRouter
 }
 
-func (c *computedRouter2) Zone() string {
+func (c *computedRouter) Zone() string {
 	return c.zone
 }
 
-func (c *computedRouter2) Instruction() handler.ResourceInstructions {
+func (c *computedRouter) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }
 
-func (c *computedRouter2) Current() *handler.Resource {
+func (c *computedRouter) Current() *handler.Resource {
 	if c.router != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Router{
@@ -61,7 +61,7 @@ func (c *computedRouter2) Current() *handler.Resource {
 	return nil
 }
 
-func (c *computedRouter2) Desired() *handler.Resource {
+func (c *computedRouter) Desired() *handler.Resource {
 	if c.router != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Router{

@@ -72,7 +72,7 @@ func (r *ResourceServer2) Compute(ctx *RequestContext, refresh bool) (Computed, 
 		parent = pc
 	}
 
-	computed := &computedServer2{
+	computed := &computedServer{
 		instruction: handler.ResourceInstructions_NOOP,
 		server:      &sacloud.Server{},
 		zone:        r.zone,

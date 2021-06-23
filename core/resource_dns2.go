@@ -49,7 +49,7 @@ func (r *ResourceDNS2) Compute(ctx *RequestContext, refresh bool) (Computed, err
 		}
 	}
 
-	computed := &computedDNS2{
+	computed := &computedDNS{
 		instruction: handler.ResourceInstructions_NOOP,
 		dns:         &sacloud.DNS{},
 		resource:    r,

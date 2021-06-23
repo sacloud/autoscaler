@@ -19,39 +19,38 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type computedELB2 struct {
+type computedELB struct {
 	instruction handler.ResourceInstructions
 	elb         *sacloud.ProxyLB
 	newCPS      int
 	parent      Computed      // 親リソースのComputed
 	resource    *ResourceELB2 // 算出元のResourceへの参照
-
 }
 
-func (c *computedELB2) ID() string {
+func (c *computedELB) ID() string {
 	if c.elb != nil {
 		return c.elb.ID.String()
 	}
 	return ""
 }
 
-func (c *computedELB2) Type() ResourceTypes {
+func (c *computedELB) Type() ResourceTypes {
 	return ResourceTypeEnhancedLoadBalancer
 }
 
-func (c *computedELB2) Zone() string {
+func (c *computedELB) Zone() string {
 	return ""
 }
 
-func (c *computedELB2) Instruction() handler.ResourceInstructions {
+func (c *computedELB) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }
 
-func (c *computedELB2) parents() *handler.Parent {
+func (c *computedELB) parents() *handler.Parent {
 	return computedToParents(c.parent)
 }
 
-func (c *computedELB2) Current() *handler.Resource {
+func (c *computedELB) Current() *handler.Resource {
 	if c.elb != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Elb{
@@ -69,7 +68,7 @@ func (c *computedELB2) Current() *handler.Resource {
 	return nil
 }
 
-func (c *computedELB2) Desired() *handler.Resource {
+func (c *computedELB) Desired() *handler.Resource {
 	if c.elb != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Elb{
