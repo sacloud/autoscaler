@@ -12,7 +12,7 @@ resources:
           - type: Server
             selector:
               names: ["autoscaler-e2e-test"]
-              zone: "is1a"
+              zones: ["is1a"]
             option:
               shutdown_force: true
             plans:
