@@ -57,7 +57,6 @@ func TestResourceDefinitions_HandleAll_havingChildrenDefinitionReturnsMultipleRe
 	}
 	err := defs.HandleAll(ctx, test.APIClient, noopHandlers)
 	require.True(t, err != nil)
-	t.Log(err)
 }
 
 func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
@@ -72,7 +71,7 @@ func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
 			TypeName: "Server",
 			TargetSelector: &ResourceSelector{
 				Names: []string{"test-server"},
-				Zone:  test.Zone,
+				Zones: []string{test.Zone},
 			},
 		},
 	}

@@ -44,7 +44,7 @@ func TestResourceDefDNS_Validate(t *testing.T) {
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: ResourceTypeDNS.String(),
 					TargetSelector: &ResourceSelector{
-						Zone: "is1a",
+						Zones: []string{"is1a"},
 					},
 				},
 			},

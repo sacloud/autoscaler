@@ -38,16 +38,18 @@ func TestResourceDefServer_Validate(t *testing.T) {
 		require.EqualError(t, errs[0], "resource=Server: selector: required")
 	})
 
-	t.Run("returns error if selector.Zone is empty", func(t *testing.T) {
+	t.Run("returns error if selector.Zones is empty", func(t *testing.T) {
 		empty := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
-				TypeName:       "Server",
-				TargetSelector: &ResourceSelector{},
+				TypeName: "Server",
+				TargetSelector: &ResourceSelector{
+					Names: []string{"test"},
+				},
 			},
 		}
 		errs := empty.Validate(context.Background(), test.APIClient)
 		require.Len(t, errs, 1)
-		require.EqualError(t, errs[0], "resource=Server: selector.Zone: required")
+		require.EqualError(t, errs[0], "resource=Server: selector.Zones: required")
 	})
 
 	t.Run("returns error if servers were not found", func(t *testing.T) {
@@ -55,14 +57,14 @@ func TestResourceDefServer_Validate(t *testing.T) {
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
-					Zone:  "is1a",
+					Zones: []string{"is1a"},
 					Names: []string{"server-not-found"},
 				},
 			},
 		}
 		errs := empty.Validate(context.Background(), test.APIClient)
 		require.Len(t, errs, 1)
-		require.EqualError(t, errs[0], "resource=Server: resource not found with selector: ID: , Names: [server-not-found], Zone: is1a")
+		require.EqualError(t, errs[0], "resource=Server: resource not found with selector: ID: , Names: [server-not-found], Zones: [is1a]")
 	})
 }
 
@@ -91,7 +93,7 @@ func TestResourceDefServer_Compute(t *testing.T) {
 					TypeName: ResourceTypeServer.String(),
 					TargetSelector: &ResourceSelector{
 						Names: []string{"test-server"},
-						Zone:  test.Zone,
+						Zones: []string{test.Zone},
 					},
 				},
 			},
@@ -132,8 +134,8 @@ func TestServer_ComputedWithResource(t *testing.T) {
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
-					ID:   123456789012,
-					Zone: test.Zone,
+					ID:    123456789012,
+					Zones: []string{test.Zone},
 				},
 			},
 		}
@@ -148,7 +150,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
 					Names: []string{"test-server"},
-					Zone:  test.Zone,
+					Zones: []string{test.Zone},
 				},
 			},
 			Plans: []*ServerPlan{
@@ -183,7 +185,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
 					Names: []string{"test-server"},
-					Zone:  test.Zone,
+					Zones: []string{test.Zone},
 				},
 			},
 			Plans: []*ServerPlan{

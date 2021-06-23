@@ -59,31 +59,26 @@ func (d *ResourceDefServer) SetParent(parent ResourceDefinition) {
 func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 
-	selector := d.Selector()
-	if selector == nil {
-		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+	if err := d.Selector().Validate(true); err != nil {
+		errors = multierror.Append(errors, err)
 	} else {
-		if selector.Zone == "" {
-			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: required"))
-		} else {
-			if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
-				errors = multierror.Append(errors, errs...)
-			}
+		if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
+			errors = multierror.Append(errors, errs...)
+		}
 
-			resources, err := d.findCloudResources(ctx, apiClient)
-			if err != nil {
-				errors = multierror.Append(errors, err)
+		resources, err := d.findCloudResources(ctx, apiClient)
+		if err != nil {
+			errors = multierror.Append(errors, err)
+		}
+		if len(d.children) > 0 && len(resources) > 1 {
+			var names []string
+			for _, r := range resources {
+				names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", r.zone, r.ID, r.Name))
 			}
-			if len(d.children) > 0 && len(resources) > 1 {
-				var names []string
-				for _, r := range resources {
-					names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", selector.Zone, r.ID, r.Name))
-				}
-				errors = multierror.Append(errors,
-					fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-						d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
-					))
-			}
+			errors = multierror.Append(errors,
+				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
+					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+				))
 		}
 	}
 
@@ -98,38 +93,39 @@ func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient sacloud
 			return []error{fmt.Errorf("at least two plans must be specified")}
 		}
 
-		availablePlans, err := sacloud.NewServerPlanOp(apiClient).Find(ctx, d.Selector().Zone, nil)
-		if err != nil {
-			return []error{fmt.Errorf("validating server plan failed: %s", err)}
-		}
-
-		// for unique check: plan name
-		names := map[string]struct{}{}
-
 		errors := &multierror.Error{}
-		for _, p := range d.Plans {
-			if p.Name != "" {
-				if _, ok := names[p.Name]; ok {
-					errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
-				}
-				names[p.Name] = struct{}{}
+		for _, zone := range d.Selector().Zones {
+			availablePlans, err := sacloud.NewServerPlanOp(apiClient).Find(ctx, zone, nil)
+			if err != nil {
+				return []error{fmt.Errorf("validating server plan failed: %s", err)}
 			}
 
-			exists := false
-			for _, available := range availablePlans.ServerPlans {
-				dedicatedCPU := available.Commitment == types.Commitments.DedicatedCPU
-				if available.Availability.IsAvailable() && dedicatedCPU == d.DedicatedCPU &&
-					available.CPU == p.Core && available.GetMemoryGB() == p.Memory {
-					exists = true
-					break
+			// for unique check: plan name
+			names := map[string]struct{}{}
+
+			for _, p := range d.Plans {
+				if p.Name != "" {
+					if _, ok := names[p.Name]; ok {
+						errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
+					}
+					names[p.Name] = struct{}{}
 				}
-			}
-			if !exists {
-				errors = multierror.Append(errors,
-					fmt.Errorf("plan{zone:%s, core:%d, memory:%d, dedicated_cpu:%t} not exists", d.Selector().Zone, p.Core, p.Memory, d.DedicatedCPU))
+
+				exists := false
+				for _, available := range availablePlans.ServerPlans {
+					dedicatedCPU := available.Commitment == types.Commitments.DedicatedCPU
+					if available.Availability.IsAvailable() && dedicatedCPU == d.DedicatedCPU &&
+						available.CPU == p.Core && available.GetMemoryGB() == p.Memory {
+						exists = true
+						break
+					}
+				}
+				if !exists {
+					errors = multierror.Append(errors,
+						fmt.Errorf("plan{zone:%s, core:%d, memory:%d, dedicated_cpu:%t} not exists", zone, p.Core, p.Memory, d.DedicatedCPU))
+				}
 			}
 		}
-
 		return errors.Errors
 	}
 	return nil
@@ -143,7 +139,7 @@ func (d *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICa
 
 	var resources Resources
 	for _, server := range cloudResources {
-		r, err := NewResourceServer(ctx, apiClient, d, d.Selector().Zone, server)
+		r, err := NewResourceServer(ctx, apiClient, d, server.zone, server.Server)
 		if err != nil {
 			return nil, err
 		}
@@ -152,19 +148,28 @@ func (d *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICa
 	return resources, nil
 }
 
-func (d *ResourceDefServer) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.Server, error) {
+func (d *ResourceDefServer) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sakuraCloudServer, error) {
 	serverOp := sacloud.NewServerOp(apiClient)
 	selector := d.Selector()
+	var results []*sakuraCloudServer
 
-	// TODO セレクターに複数のゾーンを指定可能にしたらここも修正
-
-	found, err := serverOp.Find(ctx, selector.Zone, selector.findCondition())
-	if err != nil {
-		return nil, fmt.Errorf("computing status failed: %s", err)
+	for _, zone := range selector.Zones {
+		found, err := serverOp.Find(ctx, zone, selector.findCondition())
+		if err != nil {
+			return nil, fmt.Errorf("computing status failed: %s", err)
+		}
+		for _, s := range found.Servers {
+			results = append(results, &sakuraCloudServer{Server: s, zone: zone})
+		}
 	}
-	if len(found.Servers) == 0 {
+	if len(results) == 0 {
 		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
 	}
 
-	return found.Servers, nil
+	return results, nil
+}
+
+type sakuraCloudServer struct {
+	*sacloud.Server
+	zone string
 }

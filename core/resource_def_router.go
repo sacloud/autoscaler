@@ -42,31 +42,26 @@ func (d *ResourceDefRouter) resourcePlans() ResourcePlans {
 func (d *ResourceDefRouter) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 
-	selector := d.Selector()
-	if selector == nil {
-		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+	if err := d.Selector().Validate(true); err != nil {
+		errors = multierror.Append(errors, err)
 	} else {
-		if selector.Zone == "" {
-			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: required"))
-		} else {
-			if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
-				errors = multierror.Append(errors, errs...)
-			}
+		if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
+			errors = multierror.Append(errors, errs...)
+		}
 
-			resources, err := d.findCloudResources(ctx, apiClient)
-			if err != nil {
-				errors = multierror.Append(errors, err)
+		resources, err := d.findCloudResources(ctx, apiClient)
+		if err != nil {
+			errors = multierror.Append(errors, err)
+		}
+		if len(d.children) > 0 && len(resources) > 1 {
+			var names []string
+			for _, r := range resources {
+				names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", r.zone, r.ID, r.Name))
 			}
-			if len(d.children) > 0 && len(resources) > 1 {
-				var names []string
-				for _, r := range resources {
-					names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", selector.Zone, r.ID, r.Name))
-				}
-				errors = multierror.Append(errors,
-					fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-						d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
-					))
-			}
+			errors = multierror.Append(errors,
+				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
+					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+				))
 		}
 	}
 
@@ -80,33 +75,34 @@ func (d *ResourceDefRouter) validatePlans(ctx context.Context, apiClient sacloud
 		if len(d.Plans) == 1 {
 			return []error{fmt.Errorf("at least two plans must be specified")}
 		}
-
-		availablePlans, err := sacloud.NewInternetPlanOp(apiClient).Find(ctx, d.Selector().Zone, nil)
-		if err != nil {
-			return []error{fmt.Errorf("validating router plan failed: %s", err)}
-		}
-
-		// for unique check: plan name
-		names := map[string]struct{}{}
-
 		errors := &multierror.Error{}
-		for _, p := range d.Plans {
-			if p.Name != "" {
-				if _, ok := names[p.Name]; ok {
-					errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
-				}
-				names[p.Name] = struct{}{}
+		for _, zone := range d.Selector().Zones {
+			availablePlans, err := sacloud.NewInternetPlanOp(apiClient).Find(ctx, zone, nil)
+			if err != nil {
+				return []error{fmt.Errorf("validating router plan failed: %s", err)}
 			}
 
-			exists := false
-			for _, available := range availablePlans.InternetPlans {
-				if available.Availability.IsAvailable() && available.BandWidthMbps == p.BandWidth {
-					exists = true
-					break
+			// for unique check: plan name
+			names := map[string]struct{}{}
+
+			for _, p := range d.Plans {
+				if p.Name != "" {
+					if _, ok := names[p.Name]; ok {
+						errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
+					}
+					names[p.Name] = struct{}{}
 				}
-			}
-			if !exists {
-				errors = multierror.Append(errors, fmt.Errorf("plan{band_width:%d} not exists", p.BandWidth))
+
+				exists := false
+				for _, available := range availablePlans.InternetPlans {
+					if available.Availability.IsAvailable() && available.BandWidthMbps == p.BandWidth {
+						exists = true
+						break
+					}
+				}
+				if !exists {
+					errors = multierror.Append(errors, fmt.Errorf("plan{zone: %s, band_width:%d} not exists", zone, p.BandWidth))
+				}
 			}
 		}
 		return errors.Errors
@@ -122,7 +118,7 @@ func (d *ResourceDefRouter) Compute(ctx *RequestContext, apiClient sacloud.APICa
 
 	var resources Resources
 	for _, router := range cloudResources {
-		r, err := NewResourceRouter(ctx, apiClient, d, d.Selector().Zone, router)
+		r, err := NewResourceRouter(ctx, apiClient, d, router.zone, router.Internet)
 		if err != nil {
 			return nil, err
 		}
@@ -131,17 +127,28 @@ func (d *ResourceDefRouter) Compute(ctx *RequestContext, apiClient sacloud.APICa
 	return resources, nil
 }
 
-func (d *ResourceDefRouter) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.Internet, error) {
+func (d *ResourceDefRouter) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sakuraCloudRouter, error) {
 	routerOp := sacloud.NewInternetOp(apiClient)
 	selector := d.Selector()
+	var results []*sakuraCloudRouter
 
-	found, err := routerOp.Find(ctx, selector.Zone, selector.findCondition())
-	if err != nil {
-		return nil, fmt.Errorf("computing state failed: %s", err)
+	for _, zone := range selector.Zones {
+		found, err := routerOp.Find(ctx, zone, selector.findCondition())
+		if err != nil {
+			return nil, fmt.Errorf("computing state failed: %s", err)
+		}
+		for _, r := range found.Internet {
+			results = append(results, &sakuraCloudRouter{Internet: r, zone: zone})
+		}
 	}
-	if len(found.Internet) == 0 {
+	if len(results) == 0 {
 		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
 	}
 
-	return found.Internet, nil
+	return results, nil
+}
+
+type sakuraCloudRouter struct {
+	*sacloud.Internet
+	zone string
 }

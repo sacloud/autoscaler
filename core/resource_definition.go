@@ -83,12 +83,12 @@ func (r *ResourceDefBase) Children() ResourceDefinitions {
 type ResourceSelector struct {
 	ID    types.ID `yaml:"id"`
 	Names []string `yaml:"names"`
-	Zone  string   `yaml:"zone"` // グローバルリソースの場合はis1aまたは空とする
+	Zones []string `yaml:"zones"` // グローバルリソースの場合はis1aまたは空とする
 }
 
 func (rs *ResourceSelector) String() string {
 	if rs != nil {
-		return fmt.Sprintf("ID: %s, Names: %s, Zone: %s", rs.ID, rs.Names, rs.Zone)
+		return fmt.Sprintf("ID: %s, Names: %s, Zones: %s", rs.ID, rs.Names, rs.Zones)
 	}
 	return ""
 }
@@ -104,4 +104,40 @@ func (rs *ResourceSelector) findCondition() *sacloud.FindCondition {
 		fc.Filter[search.Key("Name")] = search.PartialMatch(rs.Names...)
 	}
 	return fc
+}
+
+func (rs *ResourceSelector) Validate(requireZone bool) error {
+	if rs == nil {
+		return fmt.Errorf("selector: required")
+	}
+
+	if rs.ID.IsEmpty() && len(rs.Names) == 0 {
+		return fmt.Errorf("selector.ID or selector.Names: required")
+	}
+
+	if !rs.ID.IsEmpty() && len(rs.Names) > 0 {
+		return fmt.Errorf("selector.ID and selector.Names: cannot specify both")
+	}
+
+	if requireZone && len(rs.Zones) == 0 {
+		return fmt.Errorf("selector.Zones: required")
+	}
+
+	if !requireZone && len(rs.Zones) > 0 {
+		return fmt.Errorf("selector.Zone: can not be specified for this resource")
+	}
+
+	for _, zone := range rs.Zones {
+		exist := false
+		for _, z := range sacloud.SakuraCloudZones {
+			if z == zone {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			return fmt.Errorf("selector.Zones: invalid zone: %s", zone)
+		}
+	}
+	return nil
 }

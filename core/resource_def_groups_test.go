@@ -46,7 +46,7 @@ func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 						TypeName: "DNS",
 						TargetSelector: &ResourceSelector{
 							Names: []string{"test-name"},
-							Zone:  "is1a",
+							Zones: []string{"is1a"},
 						},
 					},
 				}
@@ -55,7 +55,7 @@ func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 						TypeName: "Server",
 						TargetSelector: &ResourceSelector{
 							Names: []string{"test-child"},
-							Zone:  "is1a",
+							Zones: []string{"is1a"},
 						},
 					},
 				}
@@ -68,7 +68,7 @@ func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "Server",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zone:  "is1a",
+								Zones: []string{"is1a"},
 							},
 						},
 						DedicatedCPU: true,
@@ -79,7 +79,7 @@ func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "GSLB",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zone:  "is1a",
+								Zones: []string{"is1a"},
 							},
 						},
 					},
@@ -88,7 +88,7 @@ func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 							TypeName: "EnhancedLoadBalancer",
 							TargetSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zone:  "is1a",
+								Zones: []string{"is1a"},
 							},
 						},
 					},
@@ -103,25 +103,25 @@ web:
     - type: Server
       selector:
         names: ["test-name"]
-        zone: "is1a"
+        zones: ["is1a"]
       dedicated_cpu: true
     - type: DNS
       selector:
         names: ["test-name"]
-        zone: "is1a"
+        zones: ["is1a"]
       resources:
         - type: Server
           selector:
             names: ["test-child"]
-            zone: "is1a"
+            zones: ["is1a"]
     - type: GSLB 
       selector:
         names: ["test-name"]
-        zone: "is1a"
+        zones: ["is1a"]
     - type: ELB
       selector:
         names: ["test-name"]
-        zone: "is1a"
+        zones: ["is1a"]
   actions:
     foobar:
       - handler1
