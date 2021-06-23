@@ -16,12 +16,8 @@ package core
 
 import (
 	"context"
-	"testing"
 
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 func testContext() *RequestContext {
@@ -31,42 +27,4 @@ func testContext() *RequestContext {
 		action:            "default",
 		resourceGroupName: "web",
 	}, test.Logger)
-}
-
-func initTestServer(t *testing.T) func() {
-	serverOp := sacloud.NewServerOp(test.APIClient)
-	server, err := serverOp.Create(context.Background(), test.Zone, &sacloud.ServerCreateRequest{
-		CPU:                  2,
-		MemoryMB:             4 * size.GiB,
-		ServerPlanCommitment: types.Commitments.Standard,
-		ServerPlanGeneration: types.PlanGenerations.Default,
-		ConnectedSwitches:    nil,
-		InterfaceDriver:      types.InterfaceDrivers.VirtIO,
-		Name:                 "test-server",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return func() {
-		if err := serverOp.Delete(context.Background(), test.Zone, server.ID); err != nil {
-			t.Logf("[WARN] deleting server failed: %s", err)
-		}
-	}
-}
-
-func initTestDNS(t *testing.T) func() {
-	dnsOp := sacloud.NewDNSOp(test.APIClient)
-	dns, err := dnsOp.Create(context.Background(), &sacloud.DNSCreateRequest{
-		Name: "test-dns.com",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return func() {
-		if err := dnsOp.Delete(context.Background(), dns.ID); err != nil {
-			t.Logf("[WARN] deleting dns failed: %s", err)
-		}
-	}
 }

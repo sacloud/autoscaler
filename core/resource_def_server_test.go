@@ -26,7 +26,8 @@ import (
 )
 
 func TestResourceDefServer_Validate(t *testing.T) {
-	defer initTestServer(t)()
+	_, cleanup := test.AddTestServer(t, "test-server")
+	defer cleanup()
 
 	t.Run("returns error if selector is empty", func(t *testing.T) {
 		empty := &ResourceDefServer{
@@ -66,7 +67,8 @@ func TestResourceDefServer_Validate(t *testing.T) {
 }
 
 func TestResourceDefServer_Compute(t *testing.T) {
-	defer initTestServer(t)()
+	_, cleanup := test.AddTestServer(t, "test-server")
+	defer cleanup()
 
 	type fields struct {
 		ResourceDefBase *ResourceDefBase
@@ -120,7 +122,8 @@ func TestResourceDefServer_Compute(t *testing.T) {
 }
 
 func TestServer_ComputedWithResource(t *testing.T) {
-	defer initTestServer(t)()
+	_, cleanup := test.AddTestServer(t, "test-server")
+	defer cleanup()
 
 	ctx := testContext()
 

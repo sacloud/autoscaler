@@ -62,8 +62,10 @@ func TestResourceDefinitions_HandleAll_havingChildrenDefinitionReturnsMultipleRe
 
 func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
 	ctx := testContext()
-	defer initTestServer(t)()
-	defer initTestDNS(t)()
+	_, cleanup := test.AddTestServer(t, "test-server")
+	defer cleanup()
+	_, cleanup2 := test.AddTestDNS(t, "test-dns.com")
+	defer cleanup2()
 
 	server := &ResourceDefServer{
 		ResourceDefBase: &ResourceDefBase{
