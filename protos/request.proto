@@ -32,5 +32,6 @@ enum ScalingJobStatus {
   JOB_RUNNING         = 2;
   JOB_DONE            = 3;
   JOB_CANCELED        = 4;
-  JOB_FAILED          = 5;
+  JOB_IGNORED         = 5;
+  JOB_FAILED          = 6;
 }
