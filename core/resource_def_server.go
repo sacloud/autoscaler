@@ -32,6 +32,10 @@ type ResourceDefServer struct {
 	parent ResourceDefinition
 }
 
+type ServerScalingOption struct {
+	ShutdownForce bool `yaml:"shutdown_force"`
+}
+
 func (s *ResourceDefServer) resourcePlans() ResourcePlans {
 	if len(s.Plans) == 0 {
 		return DefaultServerPlans

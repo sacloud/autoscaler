@@ -23,6 +23,18 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
+// DefaultELBPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
+var DefaultELBPlans = ResourcePlans{
+	&ELBPlan{CPS: 100},
+	&ELBPlan{CPS: 500},
+	&ELBPlan{CPS: 1_000},
+	&ELBPlan{CPS: 5_000},
+	&ELBPlan{CPS: 10_000},
+	&ELBPlan{CPS: 50_000},
+	&ELBPlan{CPS: 100_000},
+	&ELBPlan{CPS: 400_000},
+}
+
 type ResourceDefELB struct {
 	*ResourceDefBase `yaml:",inline"`
 	Plans            []*ELBPlan `yaml:"plans"`

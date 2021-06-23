@@ -16,11 +16,8 @@ package core
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/search"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 // Resource Coreが扱うさくらのクラウド上のリソースを表す
@@ -97,31 +94,4 @@ func (r *ResourceBase) Computed() Computed {
 // ClearCache Compute()の結果のキャッシュをクリア
 func (r *ResourceBase) ClearCache() {
 	r.ComputedCache = nil
-}
-
-// ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
-type ResourceSelector struct {
-	ID    types.ID `yaml:"id"`
-	Names []string `yaml:"names"`
-	Zone  string   `yaml:"zone"` // グローバルリソースの場合はis1aまたは空とする
-}
-
-func (rs *ResourceSelector) String() string {
-	if rs != nil {
-		return fmt.Sprintf("ID: %s, Names: %s, Zone: %s", rs.ID, rs.Names, rs.Zone)
-	}
-	return ""
-}
-
-func (rs *ResourceSelector) findCondition() *sacloud.FindCondition {
-	fc := &sacloud.FindCondition{
-		Filter: search.Filter{},
-	}
-	if !rs.ID.IsEmpty() {
-		fc.Filter[search.Key("ID")] = search.ExactMatch(rs.ID.String())
-	}
-	if len(rs.Names) != 0 {
-		fc.Filter[search.Key("Name")] = search.PartialMatch(rs.Names...)
-	}
-	return fc
 }

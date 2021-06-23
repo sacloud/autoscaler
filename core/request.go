@@ -41,7 +41,6 @@ type requestInfo struct {
 	action            string
 	resourceGroupName string
 	desiredStateName  string
-	refresh           bool
 }
 
 func (r *requestInfo) String() string {

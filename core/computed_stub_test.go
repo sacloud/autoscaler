@@ -14,30 +14,7 @@
 
 package core
 
-import (
-	"context"
-
-	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-)
-
-type stubResource struct {
-	*ResourceBase `yaml:",inline"`
-	computeFunc   func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error)
-}
-
-func (r *stubResource) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
-	return nil
-}
-
-func (r *stubResource) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
-	if r.computeFunc != nil {
-		computed, err := r.computeFunc(ctx, apiClient)
-		r.ComputedCache = computed
-		return computed, err
-	}
-	return nil, nil
-}
+import "github.com/sacloud/autoscaler/handler"
 
 type stubComputed struct {
 	id          string

@@ -21,6 +21,17 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
+// DefaultServerPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
+var DefaultServerPlans = ResourcePlans{
+	&ServerPlan{Core: 2, Memory: 4},
+	&ServerPlan{Core: 4, Memory: 8},
+	&ServerPlan{Core: 4, Memory: 16},
+	&ServerPlan{Core: 8, Memory: 16},
+	&ServerPlan{Core: 10, Memory: 24},
+	&ServerPlan{Core: 10, Memory: 32},
+	&ServerPlan{Core: 10, Memory: 48},
+}
+
 type ResourceServer2 struct {
 	*ResourceBase2
 
@@ -32,11 +43,13 @@ type ResourceServer2 struct {
 
 func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefServer, zone string, server *sacloud.Server) (*ResourceServer2, error) {
 	resource := &ResourceServer2{
-		ResourceBase2: &ResourceBase2{resourceType: ResourceTypeServer},
-		apiClient:     apiClient,
-		zone:          zone,
-		server:        server,
-		def:           def,
+		ResourceBase2: &ResourceBase2{
+			resourceType: ResourceTypeServer,
+		},
+		apiClient: apiClient,
+		zone:      zone,
+		server:    server,
+		def:       def,
 	}
 	if err := resource.setResourceIDTag(ctx); err != nil {
 		return nil, err

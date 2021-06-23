@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sacloud/autoscaler/request"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -139,4 +141,25 @@ func (rg *ResourceDefGroup) handlers(actionName string, allHandlers Handlers) (H
 		results = append(results, found)
 	}
 	return results, nil
+}
+
+func (rg *ResourceDefGroup) HandleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlerFilters Handlers) {
+	job := ctx.Job()
+	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) // nolint
+
+	handlers, err := rg.handlers(ctx.Request().action, handlerFilters)
+	if err != nil { // 事前にValidateHandlerFiltersで検証しておくため基本的にありえないはず
+		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
+		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "fatal", err) // nolint
+	}
+
+	if err := rg.ResourceDefs.HandleAll(ctx, apiClient, handlers); err != nil {
+		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
+		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "error", err) // nolint
+		return
+	}
+
+	job.SetStatus(request.ScalingJobStatus_JOB_DONE)
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_DONE) // nolint
 }

@@ -147,7 +147,7 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	return job, "", nil
 }
 
-func (c *Core) targetResourceGroup(ctx *RequestContext) (*ResourceGroup, error) {
+func (c *Core) targetResourceGroup(ctx *RequestContext) (*ResourceDefGroup, error) {
 	groupName := ctx.Request().resourceGroupName
 	if groupName == "" {
 		groupName = defaults.ResourceGroupName

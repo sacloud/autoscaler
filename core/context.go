@@ -57,20 +57,6 @@ func (c *RequestContext) WithJobStatus(job *JobStatus) *RequestContext {
 	}
 }
 
-// ForRefresh リフレッシュのためのContextを現在のContextを元に作成して返す
-//
-// 現在のContextが親Contextとなる
-func (c *RequestContext) ForRefresh() *RequestContext {
-	return NewRequestContext(c, &requestInfo{
-		requestType:       c.request.requestType,
-		source:            c.request.source,
-		action:            c.request.action,
-		resourceGroupName: c.request.resourceGroupName,
-		desiredStateName:  c.request.desiredStateName,
-		refresh:           true,
-	}, c.logger)
-}
-
 // Request 現在のコンテキストで受けたリクエストの情報を返す
 func (c *RequestContext) Request() *requestInfo {
 	return c.request

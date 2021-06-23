@@ -21,6 +21,24 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
+// DefaultRouterPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
+//
+// 東京第2ゾーンでのみ利用可能なプランは定義されていないため、利用したい場合は各リソース定義内で個別に定義する
+var DefaultRouterPlans = ResourcePlans{
+	&RouterPlan{BandWidth: 100},
+	&RouterPlan{BandWidth: 250},
+	&RouterPlan{BandWidth: 500},
+	&RouterPlan{BandWidth: 1000},
+	&RouterPlan{BandWidth: 1500},
+	&RouterPlan{BandWidth: 2000},
+	&RouterPlan{BandWidth: 2500},
+	&RouterPlan{BandWidth: 3000},
+	&RouterPlan{BandWidth: 3500},
+	&RouterPlan{BandWidth: 4000},
+	&RouterPlan{BandWidth: 4500},
+	&RouterPlan{BandWidth: 5000},
+}
+
 type ResourceRouter2 struct {
 	*ResourceBase2
 
