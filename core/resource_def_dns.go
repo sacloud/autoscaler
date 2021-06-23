@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -33,11 +34,22 @@ func (d *ResourceDefDNS) Validate(ctx context.Context, apiClient sacloud.APICall
 		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
 	} else {
 		if selector.Zone != "" {
-			errors = multierror.Append(fmt.Errorf("selector.Zone: can not be specified for this resource"))
+			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: can not be specified for this resource"))
 		}
 
-		if _, err := d.findCloudResources(ctx, apiClient); err != nil {
+		resources, err := d.findCloudResources(ctx, apiClient)
+		if err != nil {
 			errors = multierror.Append(errors, err)
+		}
+		if len(d.children) > 0 && len(resources) > 1 {
+			var names []string
+			for _, r := range resources {
+				names = append(names, fmt.Sprintf("{ID:%s, Name:%s}", r.ID, r.Name))
+			}
+			errors = multierror.Append(errors,
+				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
+					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+				))
 		}
 	}
 

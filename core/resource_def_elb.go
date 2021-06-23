@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -40,51 +41,62 @@ type ResourceDefELB struct {
 	Plans            []*ELBPlan `yaml:"plans"`
 }
 
-func (e *ResourceDefELB) resourcePlans() ResourcePlans {
-	if len(e.Plans) == 0 {
+func (d *ResourceDefELB) resourcePlans() ResourcePlans {
+	if len(d.Plans) == 0 {
 		return DefaultELBPlans
 	}
 	var plans ResourcePlans
-	for _, p := range e.Plans {
+	for _, p := range d.Plans {
 		plans = append(plans, p)
 	}
 	return plans
 }
 
-func (e *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
-	selector := e.Selector()
+	selector := d.Selector()
 	if selector == nil {
 		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
 	} else {
 		if selector.Zone != "" {
-			errors = multierror.Append(fmt.Errorf("selector.Zone: can not be specified for this resource"))
+			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: can not be specified for this resource"))
 		}
 
-		if errs := e.validatePlans(ctx, apiClient); len(errs) > 0 {
+		if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
 			errors = multierror.Append(errors, errs...)
 		}
 
-		if _, err := e.findCloudResources(ctx, apiClient); err != nil {
+		resources, err := d.findCloudResources(ctx, apiClient)
+		if err != nil {
 			errors = multierror.Append(errors, err)
+		}
+		if len(d.children) > 0 && len(resources) > 1 {
+			var names []string
+			for _, r := range resources {
+				names = append(names, fmt.Sprintf("{ID:%s, Name:%s}", r.ID, r.Name))
+			}
+			errors = multierror.Append(errors,
+				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
+					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+				))
 		}
 	}
 
 	// set prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", e.Type().String())).(*multierror.Error)
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", d.Type().String())).(*multierror.Error)
 	return errors.Errors
 }
 
-func (e *ResourceDefELB) validatePlans(_ context.Context, _ sacloud.APICaller) []error {
+func (d *ResourceDefELB) validatePlans(_ context.Context, _ sacloud.APICaller) []error {
 	var errors []error
 	names := map[string]struct{}{}
 
-	if len(e.Plans) == 1 {
+	if len(d.Plans) == 1 {
 		errors = append(errors, fmt.Errorf("at least two plans must be specified"))
 		return errors
 	}
 
-	for _, p := range e.Plans {
+	for _, p := range d.Plans {
 		if p.Name != "" {
 			if _, ok := names[p.Name]; ok {
 				errors = append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
@@ -106,15 +118,15 @@ func (e *ResourceDefELB) validatePlans(_ context.Context, _ sacloud.APICaller) [
 	return errors
 }
 
-func (e *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
-	cloudResources, err := e.findCloudResources(ctx, apiClient)
+func (d *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+	cloudResources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
 
 	var resources Resources
 	for _, elb := range cloudResources {
-		r, err := NewResourceELB(ctx, apiClient, e, elb)
+		r, err := NewResourceELB(ctx, apiClient, d, elb)
 		if err != nil {
 			return nil, err
 		}
@@ -123,9 +135,9 @@ func (e *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICalle
 	return resources, nil
 }
 
-func (e *ResourceDefELB) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.ProxyLB, error) {
+func (d *ResourceDefELB) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.ProxyLB, error) {
 	elbOp := sacloud.NewProxyLBOp(apiClient)
-	selector := e.Selector()
+	selector := d.Selector()
 
 	found, err := elbOp.Find(ctx, selector.findCondition())
 	if err != nil {
