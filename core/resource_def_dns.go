@@ -29,14 +29,9 @@ type ResourceDefDNS struct {
 
 func (d *ResourceDefDNS) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
-	selector := d.Selector()
-	if selector == nil {
-		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+	if err := d.Selector().Validate(false); err != nil {
+		errors = multierror.Append(errors, err)
 	} else {
-		if selector.Zone != "" {
-			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: can not be specified for this resource"))
-		}
-
 		resources, err := d.findCloudResources(ctx, apiClient)
 		if err != nil {
 			errors = multierror.Append(errors, err)

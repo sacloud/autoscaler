@@ -29,27 +29,22 @@ type ResourceDefLoadBalancer struct {
 
 func (d *ResourceDefLoadBalancer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
-	selector := d.Selector()
-	if selector == nil {
-		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+	if err := d.Selector().Validate(true); err != nil {
+		errors = multierror.Append(errors, err)
 	} else {
-		if selector.Zone == "" {
-			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: required"))
-		} else {
-			resources, err := d.findCloudResources(ctx, apiClient)
-			if err != nil {
-				errors = multierror.Append(errors, err)
+		resources, err := d.findCloudResources(ctx, apiClient)
+		if err != nil {
+			errors = multierror.Append(errors, err)
+		}
+		if len(d.children) > 0 && len(resources) > 1 {
+			var names []string
+			for _, r := range resources {
+				names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", r.zone, r.ID, r.Name))
 			}
-			if len(d.children) > 0 && len(resources) > 1 {
-				var names []string
-				for _, r := range resources {
-					names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", selector.Zone, r.ID, r.Name))
-				}
-				errors = multierror.Append(errors,
-					fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-						d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
-					))
-			}
+			errors = multierror.Append(errors,
+				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
+					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+				))
 		}
 	}
 
@@ -66,7 +61,7 @@ func (d *ResourceDefLoadBalancer) Compute(ctx *RequestContext, apiClient sacloud
 
 	var resources Resources
 	for _, lb := range cloudResources {
-		r, err := NewResourceLoadBalancer(ctx, apiClient, d, d.Selector().Zone, lb)
+		r, err := NewResourceLoadBalancer(ctx, apiClient, d, lb.zone, lb.LoadBalancer)
 		if err != nil {
 			return nil, err
 		}
@@ -75,16 +70,27 @@ func (d *ResourceDefLoadBalancer) Compute(ctx *RequestContext, apiClient sacloud
 	return resources, nil
 }
 
-func (d *ResourceDefLoadBalancer) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.LoadBalancer, error) {
+func (d *ResourceDefLoadBalancer) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sakuraCloudLoadBalancer, error) {
 	lbOp := sacloud.NewLoadBalancerOp(apiClient)
 	selector := d.Selector()
+	var results []*sakuraCloudLoadBalancer
 
-	found, err := lbOp.Find(ctx, selector.Zone, selector.findCondition())
-	if err != nil {
-		return nil, fmt.Errorf("computing status failed: %s", err)
+	for _, zone := range selector.Zones {
+		found, err := lbOp.Find(ctx, zone, selector.findCondition())
+		if err != nil {
+			return nil, fmt.Errorf("computing status failed: %s", err)
+		}
+		for _, lb := range found.LoadBalancers {
+			results = append(results, &sakuraCloudLoadBalancer{LoadBalancer: lb, zone: zone})
+		}
 	}
-	if len(found.LoadBalancers) == 0 {
+	if len(results) == 0 {
 		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
 	}
-	return found.LoadBalancers, nil
+	return results, nil
+}
+
+type sakuraCloudLoadBalancer struct {
+	*sacloud.LoadBalancer
+	zone string
 }

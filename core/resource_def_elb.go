@@ -54,14 +54,9 @@ func (d *ResourceDefELB) resourcePlans() ResourcePlans {
 
 func (d *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
-	selector := d.Selector()
-	if selector == nil {
-		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+	if err := d.Selector().Validate(false); err != nil {
+		errors = multierror.Append(errors, err)
 	} else {
-		if selector.Zone != "" {
-			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: can not be specified for this resource"))
-		}
-
 		if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
 			errors = multierror.Append(errors, errs...)
 		}

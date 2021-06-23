@@ -54,7 +54,7 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 			TargetSelector: &ResourceSelector{
 				ID:    0,
 				Names: nil,
-				Zone:  "",
+				Zones: []string{},
 			},
 			children: nil,
 		},
@@ -112,7 +112,7 @@ func TestResourceServer2_Compute(t *testing.T) {
 			TargetSelector: &ResourceSelector{
 				ID:    0,
 				Names: nil,
-				Zone:  "",
+				Zones: []string{},
 			},
 			children: nil,
 		},
