@@ -18,6 +18,7 @@ import (
 	"github.com/sacloud/autoscaler/commands/core/example"
 	"github.com/sacloud/autoscaler/commands/core/handlers"
 	"github.com/sacloud/autoscaler/commands/core/start"
+	"github.com/sacloud/autoscaler/commands/core/validate"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +33,7 @@ var subCommands = []*cobra.Command{
 	example.Command,
 	start.Command,
 	handlers.Command,
+	validate.Command,
 }
 
 func init() {

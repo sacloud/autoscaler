@@ -43,14 +43,23 @@ func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) 
 	}, nil
 }
 
-// Start 指定のファイルパスからコンフィグを読み込み、gRPCサーバとしてリッスンを開始する
-func Start(ctx context.Context, addr, configPath string, logger *log.Logger) error {
+// LoadAndValidate 指定のファイルパスからコンフィグを読み込み、バリデーションを行う
+func LoadAndValidate(ctx context.Context, configPath string, logger *log.Logger) (*Config, error) {
 	config, err := NewConfigFromPath(configPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := config.Validate(ctx); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+// Start 指定のファイルパスからコンフィグを読み込み、gRPCサーバとしてリッスンを開始する
+func Start(ctx context.Context, addr, configPath string, logger *log.Logger) error {
+	config, err := LoadAndValidate(ctx, configPath, logger)
+	if err != nil {
 		return err
 	}
 

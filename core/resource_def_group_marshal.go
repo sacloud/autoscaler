@@ -27,7 +27,11 @@ func (rdg *ResourceDefGroup) UnmarshalYAML(data []byte) error {
 	}
 
 	group := &ResourceDefGroup{}
-	resources := rawMap["resources"].([]interface{})
+	rawResources, ok := rawMap["resources"]
+	if !ok || rawResources == nil {
+		return fmt.Errorf("resources block required")
+	}
+	resources := rawResources.([]interface{})
 	for _, rawResource := range resources {
 		v := rawResource.(map[string]interface{})
 		resource, err := rdg.unmarshalResourceDefFromMap(v)
