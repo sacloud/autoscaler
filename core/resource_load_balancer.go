@@ -55,6 +55,7 @@ func (r *ResourceLoadBalancer) Compute(ctx *RequestContext, refresh bool) (Compu
 		instruction: handler.ResourceInstructions_NOOP,
 		lb:          &sacloud.LoadBalancer{},
 		resource:    r,
+		zone:        r.zone,
 	}
 	if err := mapconvDecoder.ConvertTo(r.lb, computed.lb); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)

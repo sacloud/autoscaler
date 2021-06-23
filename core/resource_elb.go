@@ -67,14 +67,16 @@ func (r *ResourceELB) Compute(ctx *RequestContext, refresh bool) (Computed, erro
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan, err := r.desiredPlan(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("computing desired plan failed: %s", err)
-	}
+	if !refresh {
+		plan, err := r.desiredPlan(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("computing desired plan failed: %s", err)
+		}
 
-	if plan != nil {
-		computed.newCPS = plan.CPS
-		computed.instruction = handler.ResourceInstructions_UPDATE
+		if plan != nil {
+			computed.newCPS = plan.CPS
+			computed.instruction = handler.ResourceInstructions_UPDATE
+		}
 	}
 	return computed, nil
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/handlers/elb"
 	"github.com/sacloud/autoscaler/handlers/gslb"
+	"github.com/sacloud/autoscaler/handlers/lb"
 	"github.com/sacloud/autoscaler/handlers/router"
 	"github.com/sacloud/autoscaler/handlers/server"
 )
@@ -52,6 +53,12 @@ func BuiltinHandlers() Handlers {
 			Name: "gslb-servers-handler",
 			BuiltinHandler: &builtins.Handler{
 				Builtin: gslb.NewServersHandler(),
+			},
+		},
+		{
+			Name: "load-balancer-servers-handler",
+			BuiltinHandler: &builtins.Handler{
+				Builtin: lb.NewServersHandler(),
 			},
 		},
 		{

@@ -145,6 +145,15 @@ func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interfa
 		}
 		v.children = defs
 		def = v
+	case "LoadBalancer", "LB":
+		v := &ResourceDefLoadBalancer{}
+		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+		}
+		// TypeNameのエイリアスを正規化
+		v.TypeName = "LoadBalancer"
+		v.children = defs
+		def = v
 	default:
 		return nil, fmt.Errorf("unexpected type: %s", typeName)
 	}
