@@ -19,32 +19,32 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type computedGSLB2 struct {
+type computedGSLB struct {
 	instruction handler.ResourceInstructions
 	gslb        *sacloud.GSLB
-	resource    *ResourceGSLB2 // 算出元のResourceへの参照
+	resource    *ResourceGSLB // 算出元のResourceへの参照
 }
 
-func (c *computedGSLB2) ID() string {
+func (c *computedGSLB) ID() string {
 	if c.gslb != nil {
 		return c.gslb.ID.String()
 	}
 	return ""
 }
 
-func (c *computedGSLB2) Type() ResourceTypes {
+func (c *computedGSLB) Type() ResourceTypes {
 	return ResourceTypeGSLB
 }
 
-func (c *computedGSLB2) Zone() string {
+func (c *computedGSLB) Zone() string {
 	return ""
 }
 
-func (c *computedGSLB2) Instruction() handler.ResourceInstructions {
+func (c *computedGSLB) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }
 
-func (c *computedGSLB2) Current() *handler.Resource {
+func (c *computedGSLB) Current() *handler.Resource {
 	if c.gslb != nil {
 		var servers []*handler.GSLBServer
 		for _, s := range c.gslb.DestinationServers {
@@ -67,7 +67,7 @@ func (c *computedGSLB2) Current() *handler.Resource {
 	return nil
 }
 
-func (c *computedGSLB2) Desired() *handler.Resource {
+func (c *computedGSLB) Desired() *handler.Resource {
 	// GSLBリソースは基本的に参照専用なため常にCurrentを返すのみ
 	return c.Current()
 }

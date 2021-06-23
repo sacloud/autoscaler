@@ -30,10 +30,10 @@ import (
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
 type Config struct {
-	SakuraCloud    *SakuraCloud     `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
-	CustomHandlers Handlers         `yaml:"handlers"`    // カスタムハンドラーの定義
-	Resources      *ResourceGroups  `yaml:"resources"`   // リソースグループの定義
-	AutoScaler     AutoScalerConfig `yaml:"autoscaler"`  // オートスケーラー自体の動作設定
+	SakuraCloud    *SakuraCloud       `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
+	CustomHandlers Handlers           `yaml:"handlers"`    // カスタムハンドラーの定義
+	Resources      *ResourceDefGroups `yaml:"resources"`   // リソースグループの定義
+	AutoScaler     AutoScalerConfig   `yaml:"autoscaler"`  // オートスケーラー自体の動作設定
 }
 
 // NewConfigFromPath 指定のファイルパスからコンフィギュレーションを読み取ってConfigを作成する

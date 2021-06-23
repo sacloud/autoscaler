@@ -15,10 +15,8 @@
 package core
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
@@ -41,138 +39,47 @@ var DefaultRouterPlans = ResourcePlans{
 	&RouterPlan{BandWidth: 5000},
 }
 
-type Router struct {
-	*ResourceBase `yaml:",inline"`
-	Plans         []*RouterPlan `yaml:"plans"`
+type ResourceRouter struct {
+	*ResourceBase
+
+	apiClient sacloud.APICaller
+	router    *sacloud.Internet
+	def       *ResourceDefRouter
+	zone      string
 }
 
-func (r *Router) resourcePlans() ResourcePlans {
-	var plans ResourcePlans
-	for _, p := range r.Plans {
-		plans = append(plans, p)
+func NewResourceRouter(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefRouter, zone string, router *sacloud.Internet) (*ResourceRouter, error) {
+	resource := &ResourceRouter{
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeRouter},
+		apiClient:    apiClient,
+		zone:         zone,
+		router:       router,
+		def:          def,
 	}
-	return plans
-}
-
-func (r *Router) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
-	errors := &multierror.Error{}
-
-	selector := r.Selector()
-	if selector == nil {
-		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
-	}
-	if errors.Len() == 0 {
-		if selector.Zone == "" {
-			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: required"))
-		}
-	}
-
-	if errors.Len() == 0 {
-		if errs := r.validatePlans(ctx, apiClient); len(errs) > 0 {
-			errors = multierror.Append(errors, errs...)
-		}
-
-		if _, err := r.findCloudResource(ctx, apiClient); err != nil {
-			errors = multierror.Append(errors, err)
-		}
-	}
-
-	// set prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", r.Type().String())).(*multierror.Error)
-	return errors.Errors
-}
-
-func (r *Router) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
-	if len(r.Plans) > 0 {
-		if len(r.Plans) == 1 {
-			return []error{fmt.Errorf("at least two plans must be specified")}
-		}
-
-		availablePlans, err := sacloud.NewInternetPlanOp(apiClient).Find(ctx, r.Selector().Zone, nil)
-		if err != nil {
-			return []error{fmt.Errorf("validating router plan failed: %s", err)}
-		}
-
-		// for unique check: plan name
-		names := map[string]struct{}{}
-
-		errors := &multierror.Error{}
-		for _, p := range r.Plans {
-			if p.Name != "" {
-				if _, ok := names[p.Name]; ok {
-					errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
-				}
-				names[p.Name] = struct{}{}
-			}
-
-			exists := false
-			for _, available := range availablePlans.InternetPlans {
-				if available.Availability.IsAvailable() && available.BandWidthMbps == p.BandWidth {
-					exists = true
-					break
-				}
-			}
-			if !exists {
-				errors = multierror.Append(errors, fmt.Errorf("plan{band_width:%d} not exists", p.BandWidth))
-			}
-		}
-		return errors.Errors
-	}
-	return nil
-}
-
-func (r *Router) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
-	cloudResource, err := r.findCloudResource(ctx, apiClient)
-	if err != nil {
+	if err := resource.setResourceIDTag(ctx); err != nil {
 		return nil, err
 	}
-	computed, err := newComputedRouter(ctx, r, r.Selector().Zone, cloudResource)
-	if err != nil {
-		return nil, err
-	}
-
-	r.ComputedCache = computed
-	return computed, nil
+	return resource, nil
 }
 
-func (r *Router) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.Internet, error) {
-	routerOp := sacloud.NewInternetOp(apiClient)
-	selector := r.Selector()
-
-	found, err := routerOp.Find(ctx, selector.Zone, selector.findCondition())
-	if err != nil {
-		return nil, fmt.Errorf("computing state failed: %s", err)
-	}
-	if len(found.Internet) == 0 {
-		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
-	}
-	if len(found.Internet) > 1 {
-		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
+func (r *ResourceRouter) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+	if refresh {
+		if err := r.refresh(ctx); err != nil {
+			return nil, err
+		}
 	}
 
-	return found.Internet[0], nil
-}
-
-type computedRouter struct {
-	instruction  handler.ResourceInstructions
-	router       *sacloud.Internet
-	resource     *Router // 算出元のResourceへの参照
-	zone         string
-	newBandWidth int
-}
-
-func newComputedRouter(ctx *RequestContext, resource *Router, zone string, router *sacloud.Internet) (*computedRouter, error) {
 	computed := &computedRouter{
 		instruction: handler.ResourceInstructions_NOOP,
 		router:      &sacloud.Internet{},
-		zone:        zone,
-		resource:    resource,
+		zone:        r.zone,
+		resource:    r,
 	}
-	if err := mapconvDecoder.ConvertTo(router, computed.router); err != nil {
+	if err := mapconvDecoder.ConvertTo(r.router, computed.router); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan, err := computed.desiredPlan(ctx, router, resource.resourcePlans())
+	plan, err := r.desiredPlan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("computing desired plan failed: %s", err)
 	}
@@ -184,60 +91,9 @@ func newComputedRouter(ctx *RequestContext, resource *Router, zone string, route
 	return computed, nil
 }
 
-func (c *computedRouter) ID() string {
-	if c.router != nil {
-		return c.router.ID.String()
-	}
-	return ""
-}
-
-func (c *computedRouter) Type() ResourceTypes {
-	return ResourceTypeRouter
-}
-
-func (c *computedRouter) Zone() string {
-	return c.zone
-}
-
-func (c *computedRouter) Instruction() handler.ResourceInstructions {
-	return c.instruction
-}
-
-func (c *computedRouter) Current() *handler.Resource {
-	if c.router != nil {
-		return &handler.Resource{
-			Resource: &handler.Resource_Router{
-				Router: &handler.Router{
-					Id:        c.router.ID.String(),
-					Zone:      c.zone,
-					BandWidth: uint32(c.router.BandWidthMbps),
-				},
-			},
-		}
-	}
-	return nil
-}
-
-func (c *computedRouter) Desired() *handler.Resource {
-	if c.router != nil {
-		return &handler.Resource{
-			Resource: &handler.Resource_Router{
-				Router: &handler.Router{
-					Id:        c.router.ID.String(),
-					Zone:      c.zone,
-					BandWidth: uint32(c.newBandWidth),
-				},
-			},
-		}
-	}
-	return nil
-}
-
-func (c *computedRouter) desiredPlan(ctx *RequestContext, current *sacloud.Internet, plans ResourcePlans) (*RouterPlan, error) {
-	if len(plans) == 0 {
-		plans = DefaultRouterPlans
-	}
-	plan, err := desiredPlan(ctx, current, plans)
+func (r *ResourceRouter) desiredPlan(ctx *RequestContext) (*RouterPlan, error) {
+	plans := r.def.resourcePlans()
+	plan, err := desiredPlan(ctx, r.router, plans)
 	if err != nil {
 		return nil, err
 	}
@@ -248,4 +104,49 @@ func (c *computedRouter) desiredPlan(ctx *RequestContext, current *sacloud.Inter
 		return nil, fmt.Errorf("invalid plan: %#v", plan)
 	}
 	return nil, nil
+}
+
+func (r *ResourceRouter) setResourceIDTag(ctx *RequestContext) error {
+	tags, changed := SetupTagsWithResourceID(r.router.Tags, r.router.ID)
+	if changed {
+		routerOp := sacloud.NewInternetOp(r.apiClient)
+		updated, err := routerOp.Update(ctx, r.zone, r.router.ID, &sacloud.InternetUpdateRequest{
+			Name:        r.router.Name,
+			Description: r.router.Description,
+			Tags:        tags,
+			IconID:      r.router.IconID,
+		})
+		if err != nil {
+			return err
+		}
+		r.router = updated
+	}
+	return nil
+}
+
+func (r *ResourceRouter) refresh(ctx *RequestContext) error {
+	routerOp := sacloud.NewInternetOp(r.apiClient)
+
+	// まずキャッシュしているリソースのIDで検索
+	router, err := routerOp.Read(ctx, r.zone, r.router.ID)
+	if err != nil {
+		if sacloud.IsNotFoundError(err) {
+			// 見つからなかったらIDマーカータグを元に検索
+			found, err := routerOp.Find(ctx, r.zone, FindConditionWithResourceIDTag(r.router.ID))
+			if err != nil {
+				return err
+			}
+			if len(found.Internet) == 0 {
+				return fmt.Errorf("router not found with: Filter='%s'", resourceIDMarkerTag(r.router.ID))
+			}
+			if len(found.Internet) > 1 {
+				return fmt.Errorf("invalid state: found multiple router with: Filter='%s'", resourceIDMarkerTag(r.router.ID))
+			}
+			router = found.Internet[0]
+		} else {
+			return err
+		}
+	}
+	r.router = router
+	return r.setResourceIDTag(ctx)
 }

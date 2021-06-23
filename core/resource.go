@@ -14,114 +14,65 @@
 
 package core
 
-import (
-	"context"
-	"fmt"
+import "fmt"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/search"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-)
-
-// Resource Coreが扱うさくらのクラウド上のリソースを表す
-//
-// Core起動時のコンフィギュレーションから形成される
+// Resource Definitionから作られるResource
 type Resource interface {
-	Type() ResourceTypes // リソースの型
-	Selector() *ResourceSelector
-	Validate(ctx context.Context, apiClient sacloud.APICaller) []error
-
-	// Compute 現在/あるべき姿を算出する
+	// Compute リクエストに沿った、希望する状態を算出する
 	//
-	// さくらのクラウド上の1つのリソースに対し1つのComputedを返す
-	// Selector()の値によっては複数のComputedを返しても良い
-	// Computeの結果はキャッシュしておき、Computed()で参照可能にしておく
-	// キャッシュはClearCache()を呼ぶまで保持しておく
-	Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error)
+	// refreshがtrueの場合、さくらのクラウドAPIを用いて最新の状態を取得した上で処理を行う
+	// falseの場合はキャッシュされている結果を元に処理を行う
+	Compute(ctx *RequestContext, refresh bool) (Computed, error)
 
-	// Computed Compute()の結果のキャッシュ、Compute()呼び出し前はnilを返す
-	Computed() Computed
-
-	// ClearCache Compute()の結果のキャッシュをクリアする
-	ClearCache()
-
-	// Children このリソースに対する子リソースを返す
+	// Type リソースの型
+	Type() ResourceTypes
+	// Children 子リソース
 	Children() Resources
-}
-
-type ChildResource interface {
+	// AppendChildren 子リソースを設定
+	AppendChildren(Resources)
+	// Parent 親Resourceへの参照
 	Parent() Resource
+	// SetParent 親Resourceを設定
 	SetParent(parent Resource)
 }
 
-// ResourceBase 全てのリソースが実装すべき基本プロパティ
-//
-// Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
+// Resources Resourceのスライス
+type Resources []Resource
+
+func (rs *Resources) String() string {
+	var types []string
+	for _, r := range *rs {
+		types = append(types, r.Type().String())
+	}
+	if len(types) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s", types)
+}
+
+// ResourceBase 全てのリソースが所有すべきResourceの基本構造
 type ResourceBase struct {
-	TypeName       string            `yaml:"type"`
-	TargetSelector *ResourceSelector `yaml:"selector"`
-	children       Resources         `yaml:"-"`
-	ComputedCache  Computed          `yaml:"-"`
+	resourceType ResourceTypes
+	parent       Resource
+	children     Resources
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
-	switch r.TypeName {
-	case ResourceTypeServer.String():
-		return ResourceTypeServer
-	case ResourceTypeServerGroup.String():
-		return ResourceTypeServerGroup
-	case ResourceTypeEnhancedLoadBalancer.String(), "ELB":
-		return ResourceTypeEnhancedLoadBalancer
-	case ResourceTypeGSLB.String():
-		return ResourceTypeGSLB
-	case ResourceTypeDNS.String():
-		return ResourceTypeDNS
-	}
-	return ResourceTypeUnknown
+	return r.resourceType
 }
 
-func (r *ResourceBase) Selector() *ResourceSelector {
-	return r.TargetSelector
-}
-
-// Resources 子リソースを返す(自身は含まない)
 func (r *ResourceBase) Children() Resources {
 	return r.children
 }
 
-// Computed 各リソースでのCompute()のキャッシュされた結果を返す
-func (r *ResourceBase) Computed() Computed {
-	return r.ComputedCache
+func (r *ResourceBase) AppendChildren(children Resources) {
+	r.children = append(r.children, children...)
 }
 
-// ClearCache Compute()の結果のキャッシュをクリア
-func (r *ResourceBase) ClearCache() {
-	r.ComputedCache = nil
+func (r *ResourceBase) Parent() Resource {
+	return r.parent
 }
 
-// ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
-type ResourceSelector struct {
-	ID    types.ID `yaml:"id"`
-	Names []string `yaml:"names"`
-	Zone  string   `yaml:"zone"` // グローバルリソースの場合はis1aまたは空とする
-}
-
-func (rs *ResourceSelector) String() string {
-	if rs != nil {
-		return fmt.Sprintf("ID: %s, Names: %s, Zone: %s", rs.ID, rs.Names, rs.Zone)
-	}
-	return ""
-}
-
-func (rs *ResourceSelector) findCondition() *sacloud.FindCondition {
-	fc := &sacloud.FindCondition{
-		Filter: search.Filter{},
-	}
-	if !rs.ID.IsEmpty() {
-		fc.Filter[search.Key("ID")] = search.ExactMatch(rs.ID.String())
-	}
-	if len(rs.Names) != 0 {
-		fc.Filter[search.Key("Name")] = search.PartialMatch(rs.Names...)
-	}
-	return fc
+func (r *ResourceBase) SetParent(parent Resource) {
+	r.parent = parent
 }

@@ -15,13 +15,10 @@
 package core
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 // DefaultServerPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
@@ -35,159 +32,58 @@ var DefaultServerPlans = ResourcePlans{
 	&ServerPlan{Core: 10, Memory: 48},
 }
 
-type ServerScalingOption struct {
-	ShutdownForce bool `yaml:"shutdown_force"`
+type ResourceServer struct {
+	*ResourceBase
+
+	apiClient sacloud.APICaller
+	server    *sacloud.Server
+	def       *ResourceDefServer
+	zone      string
 }
 
-type Server struct {
-	*ResourceBase `yaml:",inline"`
-	DedicatedCPU  bool                `yaml:"dedicated_cpu"`
-	Plans         []*ServerPlan       `yaml:"plans"`
-	Option        ServerScalingOption `yaml:"option"`
-
-	parent Resource `yaml:"-"`
+func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefServer, zone string, server *sacloud.Server) (*ResourceServer, error) {
+	resource := &ResourceServer{
+		ResourceBase: &ResourceBase{
+			resourceType: ResourceTypeServer,
+		},
+		apiClient: apiClient,
+		zone:      zone,
+		server:    server,
+		def:       def,
+	}
+	if err := resource.setResourceIDTag(ctx); err != nil {
+		return nil, err
+	}
+	return resource, nil
 }
 
-func (s *Server) resourcePlans() ResourcePlans {
-	var plans ResourcePlans
-	for _, p := range s.Plans {
-		plans = append(plans, p)
-	}
-	return plans
-}
-
-func (s *Server) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
-	errors := &multierror.Error{}
-
-	selector := s.Selector()
-	if selector == nil {
-		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
-	}
-	if errors.Len() == 0 {
-		if selector.Zone == "" {
-			errors = multierror.Append(errors, fmt.Errorf("selector.Zone: required"))
+func (r *ResourceServer) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+	if refresh {
+		if err := r.refresh(ctx); err != nil {
+			return nil, err
 		}
 	}
-
-	if errors.Len() == 0 {
-		if errs := s.validatePlans(ctx, apiClient); len(errs) > 0 {
-			errors = multierror.Append(errors, errs...)
-		}
-
-		if _, err := s.findCloudResource(ctx, apiClient); err != nil {
-			errors = multierror.Append(errors, err)
-		}
-	}
-
-	// set prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", s.Type().String())).(*multierror.Error)
-	return errors.Errors
-}
-
-func (s *Server) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
-	if len(s.Plans) > 0 {
-		if len(s.Plans) == 1 {
-			return []error{fmt.Errorf("at least two plans must be specified")}
-		}
-
-		availablePlans, err := sacloud.NewServerPlanOp(apiClient).Find(ctx, s.Selector().Zone, nil)
+	var parent Computed
+	if r.parent != nil {
+		pc, err := r.parent.Compute(ctx, false)
 		if err != nil {
-			return []error{fmt.Errorf("validating server plan failed: %s", err)}
+			return nil, err
 		}
-
-		// for unique check: plan name
-		names := map[string]struct{}{}
-
-		errors := &multierror.Error{}
-		for _, p := range s.Plans {
-			if p.Name != "" {
-				if _, ok := names[p.Name]; ok {
-					errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
-				}
-				names[p.Name] = struct{}{}
-			}
-
-			exists := false
-			for _, available := range availablePlans.ServerPlans {
-				dedicatedCPU := available.Commitment == types.Commitments.DedicatedCPU
-				if available.Availability.IsAvailable() && dedicatedCPU == s.DedicatedCPU &&
-					available.CPU == p.Core && available.GetMemoryGB() == p.Memory {
-					exists = true
-					break
-				}
-			}
-			if !exists {
-				errors = multierror.Append(errors,
-					fmt.Errorf("plan{zone:%s, core:%d, memory:%d, dedicated_cpu:%t} not exists", s.Selector().Zone, p.Core, p.Memory, s.DedicatedCPU))
-			}
-		}
-
-		return errors.Errors
-	}
-	return nil
-}
-
-func (s *Server) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
-	cloudResource, err := s.findCloudResource(ctx, apiClient)
-	if err != nil {
-		return nil, err
-	}
-	computed, err := newComputedServer(ctx, s, s.Selector().Zone, cloudResource)
-	if err != nil {
-		return nil, err
+		parent = pc
 	}
 
-	s.ComputedCache = computed
-	return computed, nil
-}
-
-func (s *Server) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.Server, error) {
-	serverOp := sacloud.NewServerOp(apiClient)
-	selector := s.Selector()
-
-	found, err := serverOp.Find(ctx, selector.Zone, selector.findCondition())
-	if err != nil {
-		return nil, fmt.Errorf("computing status failed: %s", err)
-	}
-	if len(found.Servers) == 0 {
-		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
-	}
-	if len(found.Servers) > 1 {
-		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
-	}
-
-	return found.Servers[0], nil
-}
-
-func (s *Server) Parent() Resource {
-	return s.parent
-}
-
-func (s *Server) SetParent(parent Resource) {
-	s.parent = parent
-}
-
-type computedServer struct {
-	instruction handler.ResourceInstructions
-	server      *sacloud.Server
-	zone        string
-	newCPU      int
-	newMemory   int
-	resource    *Server // 算出元のResourceへの参照
-}
-
-func newComputedServer(ctx *RequestContext, resource *Server, zone string, server *sacloud.Server) (*computedServer, error) {
 	computed := &computedServer{
 		instruction: handler.ResourceInstructions_NOOP,
 		server:      &sacloud.Server{},
-		zone:        zone,
-		resource:    resource,
+		zone:        r.zone,
+		resource:    r,
+		parent:      parent,
 	}
-	if err := mapconvDecoder.ConvertTo(server, computed.server); err != nil {
+	if err := mapconvDecoder.ConvertTo(r.server, computed.server); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	plan, err := computed.desiredPlan(ctx, server, resource.resourcePlans())
+	plan, err := r.desiredPlan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("computing desired plan failed: %s", err)
 	}
@@ -200,11 +96,9 @@ func newComputedServer(ctx *RequestContext, resource *Server, zone string, serve
 	return computed, nil
 }
 
-func (c *computedServer) desiredPlan(ctx *RequestContext, current *sacloud.Server, plans ResourcePlans) (*ServerPlan, error) {
-	if len(plans) == 0 {
-		plans = DefaultServerPlans
-	}
-	plan, err := desiredPlan(ctx, current, plans)
+func (r *ResourceServer) desiredPlan(ctx *RequestContext) (*ServerPlan, error) {
+	plans := r.def.resourcePlans()
+	plan, err := desiredPlan(ctx, r.server, plans)
 	if err != nil {
 		return nil, err
 	}
@@ -217,91 +111,49 @@ func (c *computedServer) desiredPlan(ctx *RequestContext, current *sacloud.Serve
 	return nil, nil
 }
 
-func (c *computedServer) ID() string {
-	if c.server != nil {
-		return c.server.ID.String()
-	}
-	return ""
-}
-
-func (c *computedServer) Type() ResourceTypes {
-	return ResourceTypeServer
-}
-
-func (c *computedServer) Zone() string {
-	return c.zone
-}
-
-func (c *computedServer) Instruction() handler.ResourceInstructions {
-	return c.instruction
-}
-
-func (c *computedServer) parents() *handler.Parent {
-	if c.resource.parent != nil {
-		return computedToParents(c.resource.parent.Computed())
-	}
-	return nil
-}
-
-func (c *computedServer) Current() *handler.Resource {
-	if c.server != nil {
-		return &handler.Resource{
-			Resource: &handler.Resource_Server{
-				Server: &handler.Server{
-					Id:              c.server.ID.String(),
-					Zone:            c.zone,
-					Core:            uint32(c.server.CPU),
-					Memory:          uint32(c.server.GetMemoryGB()),
-					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
-					AssignedNetwork: c.assignedNetwork(),
-					Parent:          c.parents(),
-					Option: &handler.ServerScalingOption{
-						ShutdownForce: c.resource.Option.ShutdownForce,
-					},
-				},
-			},
-		}
-	}
-	return nil
-}
-
-func (c *computedServer) Desired() *handler.Resource {
-	if c.server != nil {
-		return &handler.Resource{
-			Resource: &handler.Resource_Server{
-				Server: &handler.Server{
-					Id:              c.server.ID.String(),
-					Zone:            c.zone,
-					Core:            uint32(c.newCPU),
-					Memory:          uint32(c.newMemory),
-					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
-					AssignedNetwork: c.assignedNetwork(),
-					Parent:          c.parents(),
-					Option: &handler.ServerScalingOption{
-						ShutdownForce: c.resource.Option.ShutdownForce,
-					},
-				},
-			},
-		}
-	}
-	return nil
-}
-
-func (c *computedServer) assignedNetwork() []*handler.NetworkInfo {
-	var assignedNetwork []*handler.NetworkInfo
-	for i, nic := range c.server.Interfaces {
-		var ipAddress string
-		if nic.SwitchScope == types.Scopes.Shared {
-			ipAddress = nic.IPAddress
-		} else {
-			ipAddress = nic.UserIPAddress
-		}
-		assignedNetwork = append(assignedNetwork, &handler.NetworkInfo{
-			IpAddress: ipAddress,
-			Netmask:   uint32(nic.UserSubnetNetworkMaskLen),
-			Gateway:   nic.UserSubnetDefaultRoute,
-			Index:     uint32(i),
+func (r *ResourceServer) setResourceIDTag(ctx *RequestContext) error {
+	tags, changed := SetupTagsWithResourceID(r.server.Tags, r.server.ID)
+	if changed {
+		serverOp := sacloud.NewServerOp(r.apiClient)
+		updated, err := serverOp.Update(ctx, r.zone, r.server.ID, &sacloud.ServerUpdateRequest{
+			Name:            r.server.Name,
+			Description:     r.server.Description,
+			Tags:            tags,
+			IconID:          r.server.IconID,
+			PrivateHostID:   r.server.PrivateHostID,
+			InterfaceDriver: r.server.InterfaceDriver,
 		})
+		if err != nil {
+			return err
+		}
+		r.server = updated
 	}
-	return assignedNetwork
+	return nil
+}
+
+func (r *ResourceServer) refresh(ctx *RequestContext) error {
+	serverOp := sacloud.NewServerOp(r.apiClient)
+
+	// まずキャッシュしているリソースのIDで検索
+	server, err := serverOp.Read(ctx, r.zone, r.server.ID)
+	if err != nil {
+		if sacloud.IsNotFoundError(err) {
+			// 見つからなかったらIDマーカータグを元に検索
+			found, err := serverOp.Find(ctx, r.zone, FindConditionWithResourceIDTag(r.server.ID))
+			if err != nil {
+				return err
+			}
+			if len(found.Servers) == 0 {
+				return fmt.Errorf("server not found with: Filter='%s'", resourceIDMarkerTag(r.server.ID))
+			}
+			if len(found.Servers) > 1 {
+				return fmt.Errorf("invalid state: found multiple server with: Filter='%s'", resourceIDMarkerTag(r.server.ID))
+			}
+			server = found.Servers[0]
+		} else {
+			return err
+		}
+	}
+	r.server = server
+	return r.setResourceIDTag(ctx)
 }

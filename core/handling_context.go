@@ -18,7 +18,7 @@ import "github.com/sacloud/autoscaler/handler"
 
 // HandlingContext 1リクエスト中の1リソースに対するハンドリングのスコープに対応するコンテキスト
 //
-// context.Contextを実装し、core.Contextに加えて現在処理中の[]Computedを保持する
+// context.Contextを実装し、core.Contextに加えて現在処理中のComputedを保持する
 type HandlingContext struct {
 	*RequestContext
 	cachedComputed Computed
@@ -47,7 +47,7 @@ func (c *HandlingContext) CurrentComputed() Computed {
 	return c.cachedComputed
 }
 
-// ComputeResult コンテキストに保持している[]Computedと渡されたComputedを比較しHandleの結果を算出する
+// ComputeResult コンテキストに保持しているComputedと渡されたComputedを比較しHandleの結果を算出する
 func (c *HandlingContext) ComputeResult(computed Computed) handler.PostHandleRequest_ResourceHandleResults {
 	if computed.Instruction() != handler.ResourceInstructions_NOOP {
 		return handler.PostHandleRequest_UNKNOWN

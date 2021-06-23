@@ -23,6 +23,18 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
+// DefaultELBPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
+var DefaultELBPlans = ResourcePlans{
+	&ELBPlan{CPS: 100},
+	&ELBPlan{CPS: 500},
+	&ELBPlan{CPS: 1_000},
+	&ELBPlan{CPS: 5_000},
+	&ELBPlan{CPS: 10_000},
+	&ELBPlan{CPS: 50_000},
+	&ELBPlan{CPS: 100_000},
+	&ELBPlan{CPS: 400_000},
+}
+
 type ResourceDefELB struct {
 	*ResourceDefBase `yaml:",inline"`
 	Plans            []*ELBPlan `yaml:"plans"`
@@ -94,13 +106,13 @@ func (e *ResourceDefELB) validatePlans(_ context.Context, _ sacloud.APICaller) [
 	return errors
 }
 
-func (e *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
+func (e *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
 	cloudResources, err := e.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var resources Resources2
+	var resources Resources
 	for _, elb := range cloudResources {
 		r, err := NewResourceELB(ctx, apiClient, e, elb)
 		if err != nil {

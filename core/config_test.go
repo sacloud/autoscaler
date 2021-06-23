@@ -26,7 +26,7 @@ func TestConfig_Load(t *testing.T) {
 	type fields struct {
 		SakuraCloud *SakuraCloud
 		Handlers    Handlers
-		Resources   *ResourceGroups
+		Resources   *ResourceDefGroups
 		AutoScaler  AutoScalerConfig
 	}
 	type args struct {
@@ -53,12 +53,12 @@ func TestConfig_Load(t *testing.T) {
 						Endpoint: "unix:autoscaler-handlers-fake.sock",
 					},
 				},
-				Resources: func() *ResourceGroups {
-					rgs := newResourceGroups()
-					rg := &ResourceGroup{}
-					rg.Resources = Resources{
-						&Server{
-							ResourceBase: &ResourceBase{
+				Resources: func() *ResourceDefGroups {
+					rgs := newResourceDefGroups()
+					rg := &ResourceDefGroup{}
+					rg.ResourceDefs = ResourceDefinitions{
+						&ResourceDefServer{
+							ResourceDefBase: &ResourceDefBase{
 								TypeName: "Server",
 								TargetSelector: &ResourceSelector{
 									Names: []string{"test-name"},

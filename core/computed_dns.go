@@ -19,32 +19,32 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type computedDNS2 struct {
+type computedDNS struct {
 	instruction handler.ResourceInstructions
 	dns         *sacloud.DNS
-	resource    *ResourceDNS2 // 算出元のResourceへの参照
+	resource    *ResourceDNS // 算出元のResourceへの参照
 }
 
-func (c *computedDNS2) ID() string {
+func (c *computedDNS) ID() string {
 	if c.dns != nil {
 		return c.dns.ID.String()
 	}
 	return ""
 }
 
-func (c *computedDNS2) Type() ResourceTypes {
+func (c *computedDNS) Type() ResourceTypes {
 	return ResourceTypeDNS
 }
 
-func (c *computedDNS2) Zone() string {
+func (c *computedDNS) Zone() string {
 	return ""
 }
 
-func (c *computedDNS2) Instruction() handler.ResourceInstructions {
+func (c *computedDNS) Instruction() handler.ResourceInstructions {
 	return c.instruction
 }
 
-func (c *computedDNS2) Current() *handler.Resource {
+func (c *computedDNS) Current() *handler.Resource {
 	if c.dns != nil {
 		return &handler.Resource{
 			Resource: &handler.Resource_Dns{
@@ -59,7 +59,7 @@ func (c *computedDNS2) Current() *handler.Resource {
 	return nil
 }
 
-func (c *computedDNS2) Desired() *handler.Resource {
+func (c *computedDNS) Desired() *handler.Resource {
 	// DNSリソースは基本的に参照専用なため常にCurrentを返すのみ
 	return c.Current()
 }

@@ -28,6 +28,12 @@ type ResourceDefServer struct {
 	DedicatedCPU     bool                `yaml:"dedicated_cpu"`
 	Plans            []*ServerPlan       `yaml:"plans"`
 	Option           ServerScalingOption `yaml:"option"`
+
+	parent ResourceDefinition
+}
+
+type ServerScalingOption struct {
+	ShutdownForce bool `yaml:"shutdown_force"`
 }
 
 func (s *ResourceDefServer) resourcePlans() ResourcePlans {
@@ -39,6 +45,14 @@ func (s *ResourceDefServer) resourcePlans() ResourcePlans {
 		plans = append(plans, p)
 	}
 	return plans
+}
+
+func (s *ResourceDefServer) Parent() ResourceDefinition {
+	return s.parent
+}
+
+func (s *ResourceDefServer) SetParent(parent ResourceDefinition) {
+	s.parent = parent
 }
 
 func (s *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
@@ -111,13 +125,13 @@ func (s *ResourceDefServer) validatePlans(ctx context.Context, apiClient sacloud
 	return nil
 }
 
-func (s *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
+func (s *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
 	cloudResources, err := s.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var resources Resources2
+	var resources Resources
 	for _, server := range cloudResources {
 		r, err := NewResourceServer(ctx, apiClient, s, s.Selector().Zone, server)
 		if err != nil {

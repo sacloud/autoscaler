@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sacloud/autoscaler/request"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -31,77 +33,30 @@ type ResourceDefGroup struct {
 	name string // ResourceGroupsのアンマーシャル時に設定される
 }
 
-// TODO UnmarshalYAMLを実装する
-
-func (rg *ResourceDefGroup) ValidateActions(actionName string, handlerFilters Handlers) error {
-	_, err := rg.handlers(actionName, handlerFilters)
+func (rdg *ResourceDefGroup) ValidateActions(actionName string, handlerFilters Handlers) error {
+	_, err := rdg.handlers(actionName, handlerFilters)
 	return err
 }
 
-func (rg *ResourceDefGroup) Validate(ctx context.Context, apiClient sacloud.APICaller, handlers Handlers) []error {
+func (rdg *ResourceDefGroup) Validate(ctx context.Context, apiClient sacloud.APICaller, handlers Handlers) []error {
 	errors := &multierror.Error{}
 
 	// Actions
-	errors = multierror.Append(errors, rg.Actions.Validate(ctx, handlers)...)
+	errors = multierror.Append(errors, rdg.Actions.Validate(ctx, handlers)...)
 	// Resources
-	errors = multierror.Append(errors, rg.ResourceDefs.Validate(ctx, apiClient)...)
+	errors = multierror.Append(errors, rdg.ResourceDefs.Validate(ctx, apiClient)...)
 
 	// set group name prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource def group=%s:", rg.name)).(*multierror.Error)
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource def group=%s:", rdg.name)).(*multierror.Error)
 
 	return errors.Errors
 }
 
-func (rg *ResourceDefGroup) ResourceGroup(ctx *RequestContext, apiClient sacloud.APICaller) (*ResourceGroup2, error) {
-	group := &ResourceGroup2{
-		Resources: Resources2{},
-	}
-
-	if err := rg.buildResourceGroup(ctx, apiClient, group, nil, rg.ResourceDefs); err != nil {
-		return nil, err
-	}
-	return group, nil
-}
-
-func (rg *ResourceDefGroup) buildResourceGroup(ctx *RequestContext, apiClient sacloud.APICaller, group *ResourceGroup2, parent Resource2, defs ResourceDefinitions) error {
-	for _, def := range defs {
-		resources, err := def.Compute(ctx, apiClient)
-		if err != nil {
-			return err
-		}
-		if len(resources) == 0 {
-			return fmt.Errorf("ResourceDefinition did not return any resources")
-		}
-		if def.Children() != nil && len(resources) > 1 {
-			// 親リソースになっている場合は複数リソースを許容しない
-			return fmt.Errorf("ResourceDefinition with children must return one resource, but got multiple resources")
-		}
-
-		for _, r := range resources {
-			r.SetParent(parent)
-		}
-
-		// 親リソースが指定されてたらそちらに、以外はgroupに直接追加
-		if len(resources) > 0 {
-			if parent != nil {
-				parent.AppendChildren(resources)
-			} else {
-				group.Resources = append(group.Resources, resources...)
-			}
-		}
-
-		if err := rg.buildResourceGroup(ctx, apiClient, group, resources[0], def.Children()); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // Handlers 引数で指定されたハンドラーのリストをActionsの定義に合致するハンドラだけにフィルタして返す
-func (rg *ResourceDefGroup) handlers(actionName string, allHandlers Handlers) (Handlers, error) {
+func (rdg *ResourceDefGroup) handlers(actionName string, allHandlers Handlers) (Handlers, error) {
 	var results Handlers
 
-	if len(rg.Actions) == 0 {
+	if len(rdg.Actions) == 0 {
 		for _, h := range allHandlers {
 			if !h.Disabled {
 				results = append(results, h)
@@ -113,13 +68,13 @@ func (rg *ResourceDefGroup) handlers(actionName string, allHandlers Handlers) (H
 	if actionName == "" || actionName == defaults.ActionName {
 		// Actionsが定義されている時にActionNameが省略 or デフォルトの場合はActionsの最初のキーを利用
 		// YAMLでの定義順とは限らないため注意
-		for k := range rg.Actions {
+		for k := range rdg.Actions {
 			actionName = k
 			break
 		}
 	}
 
-	handlers, ok := rg.Actions[actionName]
+	handlers, ok := rdg.Actions[actionName]
 	if !ok {
 		return nil, fmt.Errorf("action %q not found", actionName)
 	}
@@ -141,4 +96,25 @@ func (rg *ResourceDefGroup) handlers(actionName string, allHandlers Handlers) (H
 		results = append(results, found)
 	}
 	return results, nil
+}
+
+func (rdg *ResourceDefGroup) HandleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlerFilters Handlers) {
+	job := ctx.Job()
+	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) // nolint
+
+	handlers, err := rdg.handlers(ctx.Request().action, handlerFilters)
+	if err != nil { // 事前にValidateHandlerFiltersで検証しておくため基本的にありえないはず
+		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
+		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "fatal", err) // nolint
+	}
+
+	if err := rdg.ResourceDefs.HandleAll(ctx, apiClient, handlers); err != nil {
+		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
+		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "error", err) // nolint
+		return
+	}
+
+	job.SetStatus(request.ScalingJobStatus_JOB_DONE)
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_DONE) // nolint
 }

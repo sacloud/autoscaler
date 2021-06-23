@@ -16,6 +16,7 @@ package core
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/sacloud/autoscaler/handler"
@@ -26,33 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testServer() *Server {
-	return &Server{
-		ResourceBase: &ResourceBase{
-			TypeName: "Server",
-			TargetSelector: &ResourceSelector{
-				Names: []string{"test-server"},
-				Zone:  test.Zone,
-			},
-		},
-		Plans: []*ServerPlan{
-			{Core: 1, Memory: 1},
-			{Core: 2, Memory: 4},
-			{Core: 4, Memory: 8},
-		},
-	}
-}
-
-func testContext() *RequestContext {
-	return NewRequestContext(context.Background(), &requestInfo{
-		requestType:       requestTypeUp,
-		source:            "default",
-		action:            "default",
-		resourceGroupName: "web",
-	}, test.Logger)
-}
-
-func initTestServer(t *testing.T) func() {
+func initTestResourceServer(t *testing.T) *sacloud.Server {
 	serverOp := sacloud.NewServerOp(test.APIClient)
 	server, err := serverOp.Create(context.Background(), test.Zone, &sacloud.ServerCreateRequest{
 		CPU:                  2,
@@ -66,170 +41,168 @@ func initTestServer(t *testing.T) func() {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	return func() {
-		if err := serverOp.Delete(context.Background(), test.Zone, server.ID); err != nil {
-			t.Logf("[WARN] deleting server failed: %s", err)
-		}
-	}
+	return server
 }
 
-func initTestDNS(t *testing.T) func() {
-	dnsOp := sacloud.NewDNSOp(test.APIClient)
-	dns, err := dnsOp.Create(context.Background(), &sacloud.DNSCreateRequest{
-		Name: "test-dns.com",
+func TestResourceServer_New_Refresh(t *testing.T) {
+	ctx := testContext()
+	server := initTestResourceServer(t)
+
+	def := &ResourceDefServer{
+		ResourceDefBase: &ResourceDefBase{
+			TypeName: "",
+			TargetSelector: &ResourceSelector{
+				ID:    0,
+				Names: nil,
+				Zone:  "",
+			},
+			children: nil,
+		},
+		DedicatedCPU: false,
+		Plans:        nil,
+		Option: ServerScalingOption{
+			ShutdownForce: false,
+		},
+	}
+
+	// Newした時にIDマーカータグが付与されるはず
+	resource, err := NewResourceServer(ctx, test.APIClient, def, test.Zone, server)
+	require.NoError(t, err)
+	require.NotNil(t, resource)
+
+	serverOp := sacloud.NewServerOp(test.APIClient)
+
+	server, err = serverOp.Read(ctx, test.Zone, server.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, types.Tags{resourceIDMarkerTag(server.ID)}, server.Tags)
+
+	// IDを変えるためにプラン変更を実施
+	updated, err := serverOp.ChangePlan(ctx, test.Zone, server.ID, &sacloud.ServerChangePlanRequest{
+		CPU:                  1,
+		MemoryMB:             2 * size.GiB,
+		ServerPlanGeneration: types.PlanGenerations.Default,
+		ServerPlanCommitment: types.Commitments.Standard,
 	})
-	if err != nil {
+	require.NoError(t, err)
+
+	// refresh実施
+	_, err = resource.Compute(ctx, true)
+	require.NoError(t, err)
+
+	server, err = serverOp.Read(ctx, test.Zone, updated.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, types.Tags{resourceIDMarkerTag(updated.ID)}, server.Tags)
+
+	// cleanup
+	if err := serverOp.Delete(ctx, test.Zone, updated.ID); err != nil {
 		t.Fatal(err)
 	}
+}
 
-	return func() {
-		if err := dnsOp.Delete(context.Background(), dns.ID); err != nil {
-			t.Logf("[WARN] deleting dns failed: %s", err)
+func TestResourceServer2_Compute(t *testing.T) {
+	server := initTestResourceServer(t)
+	defer func() {
+		if err := sacloud.NewServerOp(test.APIClient).Delete(context.Background(), test.Zone, server.ID); err != nil {
+			t.Fatal(err)
 		}
+	}()
+	def := &ResourceDefServer{
+		ResourceDefBase: &ResourceDefBase{
+			TypeName: "",
+			TargetSelector: &ResourceSelector{
+				ID:    0,
+				Names: nil,
+				Zone:  "",
+			},
+			children: nil,
+		},
+		DedicatedCPU: false,
+		Plans: []*ServerPlan{
+			{Core: 1, Memory: 1, Name: "plan1"},
+			{Core: 2, Memory: 4, Name: "plan2"},
+			{Core: 4, Memory: 8, Name: "plan3"},
+		},
+		Option: ServerScalingOption{
+			ShutdownForce: false,
+		},
 	}
-}
+	resource := &ResourceServer{
+		ResourceBase: &ResourceBase{
+			resourceType: ResourceTypeServer,
+		},
+		apiClient: test.APIClient,
+		server:    server,
+		def:       def,
+		zone:      test.Zone,
+	}
 
-func TestServer_Validate(t *testing.T) {
-	defer initTestServer(t)()
-
-	t.Run("returns error if selector is empty", func(t *testing.T) {
-		empty := &Server{
-			ResourceBase: &ResourceBase{TypeName: "Server"},
-		}
-		errs := empty.Validate(context.Background(), test.APIClient)
-		require.Len(t, errs, 1)
-		require.EqualError(t, errs[0], "resource=Server: selector: required")
-	})
-
-	t.Run("returns error if selector.Zone is empty", func(t *testing.T) {
-		empty := &Server{
-			ResourceBase: &ResourceBase{
-				TypeName:       "Server",
-				TargetSelector: &ResourceSelector{},
+	type args struct {
+		ctx     *RequestContext
+		refresh bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    Computed
+		wantErr bool
+	}{
+		{
+			name: "up",
+			args: args{
+				ctx: NewRequestContext(context.Background(), &requestInfo{
+					requestType:       requestTypeUp,
+					source:            "default",
+					action:            "default",
+					resourceGroupName: "default",
+					desiredStateName:  "",
+				}, test.Logger),
+				refresh: false,
 			},
-		}
-		errs := empty.Validate(context.Background(), test.APIClient)
-		require.Len(t, errs, 1)
-		require.EqualError(t, errs[0], "resource=Server: selector.Zone: required")
-	})
-}
-
-func TestServer_Computed(t *testing.T) {
-	defer initTestServer(t)()
-	defer initTestDNS(t)()
-
-	ctx := testContext()
-
-	t.Run("returns error if selector has invalid value", func(t *testing.T) {
-		notFound := &Server{
-			ResourceBase: &ResourceBase{
-				TypeName: "Server",
-				TargetSelector: &ResourceSelector{
-					ID:   123456789012,
-					Zone: test.Zone,
-				},
+			want: &computedServer{
+				instruction: handler.ResourceInstructions_UPDATE,
+				server:      server,
+				zone:        test.Zone,
+				newCPU:      4,
+				newMemory:   8,
+				parent:      nil,
+				resource:    resource,
 			},
-		}
-
-		_, err := notFound.Compute(ctx, test.APIClient)
-		require.Error(t, err)
-	})
-
-	t.Run("returns UPDATE instruction if selector has valid value", func(t *testing.T) {
-		running := &Server{
-			ResourceBase: &ResourceBase{
-				TypeName: "Server",
-				TargetSelector: &ResourceSelector{
-					Names: []string{"test-server"},
-					Zone:  test.Zone,
-				},
+			wantErr: false,
+		},
+		{
+			name: "down",
+			args: args{
+				ctx: NewRequestContext(context.Background(), &requestInfo{
+					requestType:       requestTypeDown,
+					source:            "default",
+					action:            "default",
+					resourceGroupName: "default",
+					desiredStateName:  "",
+				}, test.Logger),
+				refresh: false,
 			},
-			Plans: []*ServerPlan{
-				{Core: 1, Memory: 1},
-				{Core: 2, Memory: 4},
-				{Core: 4, Memory: 8},
+			want: &computedServer{
+				instruction: handler.ResourceInstructions_UPDATE,
+				server:      server,
+				zone:        test.Zone,
+				newCPU:      1,
+				newMemory:   1,
+				parent:      nil,
+				resource:    resource,
 			},
-		}
-
-		computed, err := running.Compute(ctx, test.APIClient)
-		require.NoError(t, err)
-		require.NotNil(t, computed)
-		require.Equal(t, handler.ResourceInstructions_UPDATE, computed.Instruction())
-
-		current := computed.Current()
-		require.NotNil(t, current)
-
-		desired := computed.Desired()
-		require.NotNil(t, desired)
-	})
-
-	t.Run("returns desired state that can convert to the request parameter", func(t *testing.T) {
-		ctx := testContext()
-		server := testServer()
-		computed, err := server.Compute(ctx, test.APIClient)
-		require.NoError(t, err)
-
-		handlerReq := computed.Desired()
-		require.NotNil(t, handlerReq)
-
-		desiredServer := handlerReq.GetServer()
-		require.NotNil(t, desiredServer)
-
-		// Server.Plansで指定した次のプランが返されるはず
-		require.Equal(t, uint32(4), desiredServer.Core)
-		require.Equal(t, uint32(8), desiredServer.Memory)
-		require.Equal(t, server.DedicatedCPU, desiredServer.DedicatedCpu)
-	})
-
-	t.Run("stores results to own cache", func(t *testing.T) {
-		ctx := testContext()
-		server := testServer()
-		computed, err := server.Compute(ctx, test.APIClient)
-		require.NoError(t, err)
-
-		cached := server.Computed()
-		require.Equal(t, computed, cached)
-
-		server.ClearCache()
-		cached = server.Computed()
-		require.Nil(t, cached)
-	})
-
-	t.Run("with Parent", func(t *testing.T) {
-		ctx := testContext()
-		dns := &DNS{
-			ResourceBase: &ResourceBase{
-				TypeName: "DNS",
-				TargetSelector: &ResourceSelector{
-					Names: []string{"test-dns.com"},
-				},
-			},
-		}
-		server := &Server{
-			ResourceBase: &ResourceBase{
-				TypeName: "Server",
-				TargetSelector: &ResourceSelector{
-					Names: []string{"test-server"},
-					Zone:  test.Zone,
-				},
-			},
-			Plans: []*ServerPlan{
-				{Core: 1, Memory: 1},
-				{Core: 2, Memory: 4},
-				{Core: 4, Memory: 8},
-			},
-			parent: dns,
-		}
-
-		_, err := dns.Compute(ctx, test.APIClient)
-		require.NoError(t, err)
-
-		computed, err := server.Compute(ctx, test.APIClient)
-		require.NoError(t, err)
-		require.NotNil(t, computed)
-
-		current := computed.Current()
-		require.NotNil(t, current.GetServer().Parent)
-	})
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := resource.Compute(tt.args.ctx, tt.args.refresh)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Compute() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Compute() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

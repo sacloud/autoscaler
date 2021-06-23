@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sacloud/autoscaler/handler"
+
 	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/stretchr/testify/require"
@@ -27,8 +29,8 @@ func TestResourceDefServer_Validate(t *testing.T) {
 	defer initTestServer(t)()
 
 	t.Run("returns error if selector is empty", func(t *testing.T) {
-		empty := &Server{
-			ResourceBase: &ResourceBase{TypeName: "Server"},
+		empty := &ResourceDefServer{
+			ResourceDefBase: &ResourceDefBase{TypeName: "Server"},
 		}
 		errs := empty.Validate(context.Background(), test.APIClient)
 		require.Len(t, errs, 1)
@@ -36,8 +38,8 @@ func TestResourceDefServer_Validate(t *testing.T) {
 	})
 
 	t.Run("returns error if selector.Zone is empty", func(t *testing.T) {
-		empty := &Server{
-			ResourceBase: &ResourceBase{
+		empty := &ResourceDefServer{
+			ResourceDefBase: &ResourceDefBase{
 				TypeName:       "Server",
 				TargetSelector: &ResourceSelector{},
 			},
@@ -48,8 +50,8 @@ func TestResourceDefServer_Validate(t *testing.T) {
 	})
 
 	t.Run("returns error if servers were not found", func(t *testing.T) {
-		empty := &Server{
-			ResourceBase: &ResourceBase{
+		empty := &ResourceDefServer{
+			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
 				TargetSelector: &ResourceSelector{
 					Zone:  "is1a",
@@ -77,7 +79,7 @@ func TestResourceDefServer_Compute(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    Resources2
+		want    Resources
 		wantErr bool
 	}{
 		{
@@ -115,4 +117,92 @@ func TestResourceDefServer_Compute(t *testing.T) {
 			require.Len(t, got, 1)
 		})
 	}
+}
+
+func TestServer_ComputedWithResource(t *testing.T) {
+	defer initTestServer(t)()
+
+	ctx := testContext()
+
+	t.Run("returns error if selector has invalid value", func(t *testing.T) {
+		notFound := &ResourceDefServer{
+			ResourceDefBase: &ResourceDefBase{
+				TypeName: "Server",
+				TargetSelector: &ResourceSelector{
+					ID:   123456789012,
+					Zone: test.Zone,
+				},
+			},
+		}
+
+		_, err := notFound.Compute(ctx, test.APIClient)
+		require.Error(t, err)
+	})
+
+	t.Run("returns UPDATE instruction if selector has valid value", func(t *testing.T) {
+		running := &ResourceDefServer{
+			ResourceDefBase: &ResourceDefBase{
+				TypeName: "Server",
+				TargetSelector: &ResourceSelector{
+					Names: []string{"test-server"},
+					Zone:  test.Zone,
+				},
+			},
+			Plans: []*ServerPlan{
+				{Core: 1, Memory: 1},
+				{Core: 2, Memory: 4},
+				{Core: 4, Memory: 8},
+			},
+		}
+
+		resources, err := running.Compute(ctx, test.APIClient)
+		require.NoError(t, err)
+		require.Len(t, resources, 1)
+		resource := resources[0]
+
+		computed, err := resource.Compute(ctx, false)
+		require.NoError(t, err)
+		require.NotNil(t, computed)
+
+		require.Equal(t, handler.ResourceInstructions_UPDATE, computed.Instruction())
+
+		current := computed.Current()
+		require.NotNil(t, current)
+
+		desired := computed.Desired()
+		require.NotNil(t, desired)
+	})
+
+	t.Run("returns desired state that can convert to the request parameter", func(t *testing.T) {
+		ctx := testContext()
+		server := &ResourceDefServer{
+			ResourceDefBase: &ResourceDefBase{
+				TypeName: "Server",
+				TargetSelector: &ResourceSelector{
+					Names: []string{"test-server"},
+					Zone:  test.Zone,
+				},
+			},
+			Plans: []*ServerPlan{
+				{Core: 1, Memory: 1},
+				{Core: 2, Memory: 4},
+				{Core: 4, Memory: 8},
+			},
+		}
+		resources, err := server.Compute(ctx, test.APIClient)
+		require.NoError(t, err)
+		computed, err := resources[0].Compute(ctx, false)
+		require.NoError(t, err)
+
+		handlerReq := computed.Desired()
+		require.NotNil(t, handlerReq)
+
+		desiredServer := handlerReq.GetServer()
+		require.NotNil(t, desiredServer)
+
+		// Server.Plansで指定した次のプランが返されるはず
+		require.Equal(t, uint32(4), desiredServer.Core)
+		require.Equal(t, uint32(8), desiredServer.Memory)
+		require.Equal(t, server.DedicatedCPU, desiredServer.DedicatedCpu)
+	})
 }

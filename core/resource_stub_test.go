@@ -17,57 +17,33 @@ package core
 import (
 	"context"
 
-	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type stubResource struct {
-	*ResourceBase `yaml:",inline"`
-	computeFunc   func(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error)
+type stubResourceDef struct {
+	*ResourceDefBase
+	computeFunc func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error)
 }
 
-func (r *stubResource) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *stubResourceDef) Validate(_ context.Context, _ sacloud.APICaller) []error {
 	return nil
 }
 
-func (r *stubResource) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
-	if r.computeFunc != nil {
-		computed, err := r.computeFunc(ctx, apiClient)
-		r.ComputedCache = computed
-		return computed, err
+func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+	if d.computeFunc != nil {
+		return d.computeFunc(ctx, apiClient)
 	}
 	return nil, nil
 }
 
-type stubComputed struct {
-	id          string
-	zone        string
-	typ         ResourceTypes
-	instruction handler.ResourceInstructions
-	current     *handler.Resource
-	desired     *handler.Resource
+type stubResource struct {
+	*ResourceBase
+	computeFunc func(ctx *RequestContext, refresh bool) (Computed, error)
 }
 
-func (c *stubComputed) ID() string {
-	return c.id
-}
-
-func (c *stubComputed) Type() ResourceTypes {
-	return c.typ
-}
-
-func (c *stubComputed) Zone() string {
-	return c.zone
-}
-
-func (c *stubComputed) Instruction() handler.ResourceInstructions {
-	return c.instruction
-}
-
-func (c *stubComputed) Current() *handler.Resource {
-	return c.current
-}
-
-func (c *stubComputed) Desired() *handler.Resource {
-	return c.desired
+func (r *stubResource) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+	if r.computeFunc != nil {
+		return r.computeFunc(ctx, refresh)
+	}
+	return nil, nil
 }

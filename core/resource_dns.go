@@ -15,124 +15,94 @@
 package core
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-type DNS struct {
-	*ResourceBase `yaml:",inline"`
+type ResourceDNS struct {
+	*ResourceBase
+
+	apiClient sacloud.APICaller
+	dns       *sacloud.DNS
+	def       *ResourceDefDNS
 }
 
-func (d *DNS) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
-	errors := &multierror.Error{}
-	selector := d.Selector()
-	if selector == nil {
-		errors = multierror.Append(errors, fmt.Errorf("selector: required"))
+func NewResourceDNS(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefDNS, dns *sacloud.DNS) (*ResourceDNS, error) {
+	resource := &ResourceDNS{
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeDNS},
+		apiClient:    apiClient,
+		dns:          dns,
+		def:          def,
 	}
-	if errors.Len() == 0 {
-		if selector.Zone != "" {
-			errors = multierror.Append(fmt.Errorf("selector.Zone: can not be specified for this resource"))
-		}
-
-		if _, err := d.findCloudResource(ctx, apiClient); err != nil {
-			errors = multierror.Append(errors, err)
-		}
-	}
-
-	// set prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", d.Type().String())).(*multierror.Error)
-	return errors.Errors
-}
-
-func (d *DNS) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Computed, error) {
-	cloudResource, err := d.findCloudResource(ctx, apiClient)
-	if err != nil {
+	if err := resource.setResourceIDTag(ctx); err != nil {
 		return nil, err
 	}
-	computed, err := newComputedDNS(ctx, d, cloudResource)
-	if err != nil {
-		return nil, err
-	}
-
-	d.ComputedCache = computed
-	return computed, nil
+	return resource, nil
 }
 
-func (d *DNS) findCloudResource(ctx context.Context, apiClient sacloud.APICaller) (*sacloud.DNS, error) {
-	dnsOp := sacloud.NewDNSOp(apiClient)
-	selector := d.Selector()
-
-	found, err := dnsOp.Find(ctx, selector.findCondition())
-	if err != nil {
-		return nil, fmt.Errorf("computing status failed: %s", err)
+func (r *ResourceDNS) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+	if refresh {
+		if err := r.refresh(ctx); err != nil {
+			return nil, err
+		}
 	}
-	if len(found.DNS) == 0 {
-		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
-	}
-	if len(found.DNS) > 1 {
-		return nil, fmt.Errorf("multiple resources found with selector: %s", selector.String())
-	}
-	return found.DNS[0], nil
-}
 
-type computedDNS struct {
-	instruction handler.ResourceInstructions
-	dns         *sacloud.DNS
-	resource    *DNS // 算出元のResourceへの参照
-}
-
-func newComputedDNS(ctx *RequestContext, resource *DNS, dns *sacloud.DNS) (*computedDNS, error) {
 	computed := &computedDNS{
 		instruction: handler.ResourceInstructions_NOOP,
 		dns:         &sacloud.DNS{},
-		resource:    resource,
+		resource:    r,
 	}
-	if err := mapconvDecoder.ConvertTo(dns, computed.dns); err != nil {
+	if err := mapconvDecoder.ConvertTo(r.dns, computed.dns); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
 	return computed, nil
 }
 
-func (c *computedDNS) ID() string {
-	if c.dns != nil {
-		return c.dns.ID.String()
-	}
-	return ""
-}
-
-func (c *computedDNS) Type() ResourceTypes {
-	return ResourceTypeDNS
-}
-
-func (c *computedDNS) Zone() string {
-	return ""
-}
-
-func (c *computedDNS) Instruction() handler.ResourceInstructions {
-	return c.instruction
-}
-
-func (c *computedDNS) Current() *handler.Resource {
-	if c.dns != nil {
-		return &handler.Resource{
-			Resource: &handler.Resource_Dns{
-				Dns: &handler.DNS{
-					Id:         c.dns.ID.String(),
-					Zone:       c.dns.DNSZone,
-					DnsServers: c.dns.DNSNameServers,
-				},
-			},
+func (r *ResourceDNS) setResourceIDTag(ctx *RequestContext) error {
+	tags, changed := SetupTagsWithResourceID(r.dns.Tags, r.dns.ID)
+	if changed {
+		dnsOp := sacloud.NewDNSOp(r.apiClient)
+		updated, err := dnsOp.Update(ctx, r.dns.ID, &sacloud.DNSUpdateRequest{
+			Description:  r.dns.Description,
+			Tags:         tags,
+			IconID:       r.dns.IconID,
+			Records:      r.dns.Records,
+			SettingsHash: r.dns.SettingsHash,
+		})
+		if err != nil {
+			return err
 		}
+		r.dns = updated
 	}
 	return nil
 }
 
-func (c *computedDNS) Desired() *handler.Resource {
-	// DNSリソースは基本的に参照専用なため常にCurrentを返すのみ
-	return c.Current()
+func (r *ResourceDNS) refresh(ctx *RequestContext) error {
+	dnsOp := sacloud.NewDNSOp(r.apiClient)
+
+	// まずキャッシュしているリソースのIDで検索
+	dns, err := dnsOp.Read(ctx, r.dns.ID)
+	if err != nil {
+		if sacloud.IsNotFoundError(err) {
+			// 見つからなかったらIDマーカータグを元に検索
+			found, err := dnsOp.Find(ctx, FindConditionWithResourceIDTag(r.dns.ID))
+			if err != nil {
+				return err
+			}
+			if len(found.DNS) == 0 {
+				return fmt.Errorf("dns not found with: Filter='%s'", resourceIDMarkerTag(r.dns.ID))
+			}
+			if len(found.DNS) > 1 {
+				return fmt.Errorf("invalid state: found multiple dns with: Filter='%s'", resourceIDMarkerTag(r.dns.ID))
+			}
+			dns = found.DNS[0]
+		} else {
+			return err
+		}
+	}
+	r.dns = dns
+	return r.setResourceIDTag(ctx)
 }

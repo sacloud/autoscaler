@@ -21,53 +21,53 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-// ResourceGroups 一意な名前をキーとするリソースのリスト
-type ResourceGroups struct {
-	groups map[string]*ResourceGroup
+// ResourceDefGroups 一意な名前をキーとするリソースのリスト
+type ResourceDefGroups struct {
+	groups map[string]*ResourceDefGroup
 }
 
-func newResourceGroups() *ResourceGroups {
-	return &ResourceGroups{
-		groups: make(map[string]*ResourceGroup),
+func newResourceDefGroups() *ResourceDefGroups {
+	return &ResourceDefGroups{
+		groups: make(map[string]*ResourceDefGroup),
 	}
 }
 
-func (rg *ResourceGroups) Get(key string) *ResourceGroup {
+func (rg *ResourceDefGroups) Get(key string) *ResourceDefGroup {
 	v, _ := rg.GetOk(key)
 	return v
 }
 
-func (rg *ResourceGroups) GetOk(key string) (*ResourceGroup, bool) {
+func (rg *ResourceDefGroups) GetOk(key string) (*ResourceDefGroup, bool) {
 	v, ok := rg.groups[key]
 	return v, ok
 }
 
-func (rg *ResourceGroups) All() []*ResourceGroup {
-	var values []*ResourceGroup
+func (rg *ResourceDefGroups) All() []*ResourceDefGroup {
+	var values []*ResourceDefGroup
 	for _, v := range rg.groups {
 		values = append(values, v)
 	}
 	return values
 }
 
-func (rg *ResourceGroups) Set(key string, group *ResourceGroup) {
+func (rg *ResourceDefGroups) Set(key string, group *ResourceDefGroup) {
 	group.name = key
 	rg.groups[key] = group
 }
 
-func (rg *ResourceGroups) UnmarshalYAML(data []byte) error {
-	var loaded map[string]*ResourceGroup
+func (rg *ResourceDefGroups) UnmarshalYAML(data []byte) error {
+	var loaded map[string]*ResourceDefGroup
 	if err := yaml.Unmarshal(data, &loaded); err != nil {
 		return err
 	}
 	for k, v := range loaded {
 		v.name = k
 	}
-	*rg = ResourceGroups{groups: loaded}
+	*rg = ResourceDefGroups{groups: loaded}
 	return nil
 }
 
-func (rg *ResourceGroups) Validate(ctx context.Context, apiClient sacloud.APICaller, handlers Handlers) []error {
+func (rg *ResourceDefGroups) Validate(ctx context.Context, apiClient sacloud.APICaller, handlers Handlers) []error {
 	var errors []error
 	for _, group := range rg.groups {
 		if errs := group.Validate(ctx, apiClient, handlers); len(errs) > 0 {

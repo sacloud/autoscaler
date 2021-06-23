@@ -23,7 +23,7 @@ import (
 )
 
 type ResourceDefGSLB struct {
-	*ResourceBase `yaml:",inline"`
+	*ResourceDefBase `yaml:",inline"`
 }
 
 func (d *ResourceDefGSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
@@ -46,13 +46,13 @@ func (d *ResourceDefGSLB) Validate(ctx context.Context, apiClient sacloud.APICal
 	return errors.Errors
 }
 
-func (d *ResourceDefGSLB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources2, error) {
+func (d *ResourceDefGSLB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
 	cloudResources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var resources Resources2
+	var resources Resources
 	for _, gslb := range cloudResources {
 		r, err := NewResourceGSLB(ctx, apiClient, d, gslb)
 		if err != nil {
