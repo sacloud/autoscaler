@@ -34,38 +34,15 @@ func (r *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.AP
 		return nil
 	}
 
-	if err := r.Walk(fn); err != nil {
+	if err := r.walk(*r, fn); err != nil {
 		errors = append(errors, err)
 	}
 	return errors
 }
 
-type ResourceDefWalkFunc func(def ResourceDefinition) error
+type resourceDefWalkFunc func(def ResourceDefinition) error
 
-// Walk 各リソースに対し順次fnを適用する
-//
-// forwardFnの適用は上から行われる
-//
-// example:
-// resource1
-//  |
-//  |- resource2
-//      |
-//      |- resource3
-//      |- resource4
-//
-//  この場合は以下の処理順になる
-//    - forwardFn(resource1)
-//    - forwardFn(resource2)
-//    - forwardFn(resource3)
-//    - forwardFn(resource4)
-//
-// fnがerrorを返した場合は即時リターンし以降のリソースに対する処理は行われない
-func (r *ResourceDefinitions) Walk(fn ResourceDefWalkFunc) error {
-	return r.walk(*r, fn)
-}
-
-func (r *ResourceDefinitions) walk(targets ResourceDefinitions, fn ResourceDefWalkFunc) error {
+func (r *ResourceDefinitions) walk(targets ResourceDefinitions, fn resourceDefWalkFunc) error {
 	noopFunc := func(_ ResourceDefinition) error {
 		return nil
 	}
@@ -103,7 +80,7 @@ func (r *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.A
 		children := def.Children()
 
 		if len(children) > 0 && len(resources) > 1 {
-			return fmt.Errorf("A resource definition with children cannot return multiple resources: definition: %#v, returned: %#v", def, resources)
+			return fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s", def.Type(), def.Selector(), resources.String())
 		}
 
 		for _, resource := range resources {

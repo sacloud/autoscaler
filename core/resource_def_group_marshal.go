@@ -20,7 +20,7 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-func (rg *ResourceDefGroup) UnmarshalYAML(data []byte) error {
+func (rdg *ResourceDefGroup) UnmarshalYAML(data []byte) error {
 	var rawMap map[string]interface{}
 	if err := yaml.Unmarshal(data, &rawMap); err != nil {
 		return err
@@ -30,12 +30,12 @@ func (rg *ResourceDefGroup) UnmarshalYAML(data []byte) error {
 	resources := rawMap["resources"].([]interface{})
 	for _, rawResource := range resources {
 		v := rawResource.(map[string]interface{})
-		resource, err := rg.unmarshalResourceDefFromMap(v)
+		resource, err := rdg.unmarshalResourceDefFromMap(v)
 		if err != nil {
 			return err
 		}
 
-		rg.setParentResource(nil, resource)
+		rdg.setParentResource(nil, resource)
 		group.ResourceDefs = append(group.ResourceDefs, resource)
 	}
 
@@ -57,22 +57,22 @@ func (rg *ResourceDefGroup) UnmarshalYAML(data []byte) error {
 		}
 	}
 
-	*rg = *group
+	*rdg = *group
 	return nil
 }
 
-func (rg *ResourceDefGroup) setParentResource(parent, r ResourceDefinition) {
+func (rdg *ResourceDefGroup) setParentResource(parent, r ResourceDefinition) {
 	if parent != nil {
 		if v, ok := r.(ChildResourceDefinition); ok {
 			v.SetParent(parent)
 		}
 	}
 	for _, child := range r.Children() {
-		rg.setParentResource(r, child)
+		rdg.setParentResource(r, child)
 	}
 }
 
-func (rg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interface{}) (ResourceDefinition, error) {
+func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interface{}) (ResourceDefinition, error) {
 	rawTypeName, ok := data["type"]
 	if !ok {
 		return nil, fmt.Errorf("'type' field required: %v", data)
@@ -92,7 +92,7 @@ func (rg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interfac
 		if children, ok := rawChildren.([]interface{}); ok {
 			for _, child := range children {
 				if c, ok := child.(map[string]interface{}); ok {
-					r, err := rg.unmarshalResourceDefFromMap(c)
+					r, err := rdg.unmarshalResourceDefFromMap(c)
 					if err != nil {
 						return nil, err
 					}

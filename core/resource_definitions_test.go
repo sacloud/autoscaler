@@ -17,6 +17,8 @@ package core
 import (
 	"testing"
 
+	"github.com/sacloud/libsacloud/v2/sacloud"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 
@@ -25,7 +27,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestResourceDefinitions_HandleAll(t *testing.T) {
+func TestResourceDefinitions_HandleAll_havingChildrenDefinitionReturnsMultipleResource(t *testing.T) {
+	ctx := testContext()
+	defs := ResourceDefinitions{
+		&stubResourceDef{
+			ResourceDefBase: &ResourceDefBase{
+				TypeName: "stub",
+				children: ResourceDefinitions{
+					&stubResourceDef{},
+				},
+			},
+			computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+				return Resources{
+					&stubResource{
+						ResourceBase: &ResourceBase{resourceType: ResourceTypeUnknown},
+						computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
+							return &stubComputed{}, nil
+						},
+					},
+					&stubResource{
+						ResourceBase: &ResourceBase{resourceType: ResourceTypeUnknown},
+						computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
+							return &stubComputed{}, nil
+						},
+					},
+				}, nil
+			},
+		},
+	}
+	err := defs.HandleAll(ctx, test.APIClient, noopHandlers)
+	require.True(t, err != nil)
+	t.Log(err)
+}
+
+func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
 	ctx := testContext()
 	defer initTestServer(t)()
 	defer initTestDNS(t)()
@@ -73,4 +108,16 @@ func TestResourceDefinitions_HandleAll(t *testing.T) {
 	require.NoError(t, err)
 	// 子から先にHandleされているか?
 	require.Equal(t, []string{"server", "dns"}, called)
+}
+
+var noopHandlers = Handlers{
+	&Handler{
+		Name: "stub",
+		BuiltinHandler: &stub.Handler{
+			Logger: test.Logger,
+			HandleFunc: func(_ *handler.HandleRequest, _ handlers.ResponseSender) error {
+				return nil
+			},
+		},
+	},
 }

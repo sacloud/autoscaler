@@ -14,6 +14,8 @@
 
 package core
 
+import "fmt"
+
 // Resource Definitionから作られるResource
 type Resource interface {
 	// Compute リクエストに沿った、希望する状態を算出する
@@ -36,6 +38,17 @@ type Resource interface {
 
 // Resources Resourceのスライス
 type Resources []Resource
+
+func (rs *Resources) String() string {
+	var types []string
+	for _, r := range *rs {
+		types = append(types, r.Type().String())
+	}
+	if len(types) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s", types)
+}
 
 // ResourceBase 全てのリソースが所有すべきResourceの基本構造
 type ResourceBase struct {
