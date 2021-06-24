@@ -18,7 +18,7 @@
 
 次にAutoScalerのコンフィギュレーションを作成/編集します。
 
-    autoscaler server example > autoscaler/autoscaler.yaml
+    autoscaler core example > autoscaler/autoscaler.yaml
     vi autoscaler/autoscaler.yaml
 
 ## 起動

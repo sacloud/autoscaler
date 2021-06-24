@@ -28,7 +28,7 @@
 ### AutoScalerのコンフィギュレーション
 
 デフォルトでは`etc/autoscaler/autoscaler.yaml`を利用します。  
-`/usr/local/sbin/autoscaler server example`コマンドで雛形を出力し作成してください。  
+`/usr/local/sbin/autoscaler core example`コマンドで雛形を出力し作成してください。  
 
 ### デフォルトの動作
 
