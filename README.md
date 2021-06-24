@@ -12,12 +12,24 @@ sacloud/autoscalerはGrafanaやAlertManagerなどの監視ツールからのWebh
 
 以下のオートスケーリングに対応しています。
 
+### Handlers
+
+#### 垂直スケール系
+
 - `elb-vertical-scaler`: エンハンスドロードバランサの垂直スケール(CPSの変更)
-- `elb-servers-handler`: エンハンスドロードバランサ配下のサーバのデタッチ/アタッチ
-- `gslb-servers-handler`: GSLB配下のサーバのデタッチ/アタッチ
 - `router-vertical-scaler`: ルータの垂直スケール(帯域幅の変更)
 - `server-vertical-scaler`: サーバの垂直スケール(CPU/メモリサイズの変更)
+  
+#### アタッチ/デタッチ系
+
+- `elb-servers-handler`: エンハンスドロードバランサ配下のサーバのデタッチ/アタッチ
+- `gslb-servers-handler`: GSLB配下のサーバのデタッチ/アタッチ
+- `load-balancer-servers-handler`: LB配下のサーバのデタッチ/アタッチ
+  
+#### 水平スケール系
+
 - (近日実装予定)`server-horizontal-scaler`: サーバの水平スケール
+
 
 ## Getting Started
 

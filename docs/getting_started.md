@@ -90,9 +90,12 @@ $ autoscaler inputs grafana
 
 # AlertManager Inputsの場合
 $ autoscaler inputs alertmanager
+
+# Zabbix Inputsの場合
+$ autoscaler inputs zabbix
 ```
 
-## Grafana/AlertManagerの設定
+## Grafana/AlertManager/Zabbixの設定
 
-Grafana、またはAlertManagerでアラートの設定、およびWebhookでの通知設定が必要です。  
+Grafana、AlertManager、またはZabbixでアラートの設定、およびWebhookでの通知設定が必要です。  
 詳細は[Inputsドキュメント](./inputs)を参照してください。  
