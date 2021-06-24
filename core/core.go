@@ -58,17 +58,34 @@ func LoadAndValidate(ctx context.Context, configPath string, logger *log.Logger)
 
 // Start 指定のファイルパスからコンフィグを読み込み、gRPCサーバとしてリッスンを開始する
 func Start(ctx context.Context, addr, configPath string, logger *log.Logger) error {
-	config, err := LoadAndValidate(ctx, configPath, logger)
+	instance, err := newInstanceFromConfig(ctx, addr, configPath, logger)
 	if err != nil {
 		return err
+	}
+	return instance.run(ctx)
+}
+
+func newInstanceFromConfig(ctx context.Context, addr, configPath string, logger *log.Logger) (*Core, error) {
+	config, err := LoadAndValidate(ctx, configPath, logger)
+	if err != nil {
+		return nil, err
 	}
 
 	instance, err := newCoreInstance(addr, config, logger)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return instance, nil
+}
 
-	return instance.run(ctx)
+func ResourcesTree(parentCtx context.Context, addr, configPath string, logger *log.Logger) (string, error) {
+	instance, err := newInstanceFromConfig(parentCtx, addr, configPath, logger)
+	if err != nil {
+		return "", err
+	}
+	ctx := NewRequestContext(parentCtx, &requestInfo{requestType: requestTypeUnknown}, logger)
+	graph := NewGraph(instance.config.Resources)
+	return graph.Tree(ctx, instance.config.APIClient())
 }
 
 func (c *Core) run(ctx context.Context) error {
