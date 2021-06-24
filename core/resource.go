@@ -34,6 +34,9 @@ type Resource interface {
 	Parent() Resource
 	// SetParent 親Resourceを設定
 	SetParent(parent Resource)
+
+	// String Resourceの文字列表現
+	String() string
 }
 
 // Resources Resourceのスライス

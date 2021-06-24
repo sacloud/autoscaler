@@ -41,6 +41,10 @@ type stubResource struct {
 	computeFunc func(ctx *RequestContext, refresh bool) (Computed, error)
 }
 
+func (r *stubResource) String() string {
+	return "stub"
+}
+
 func (r *stubResource) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if r.computeFunc != nil {
 		return r.computeFunc(ctx, refresh)

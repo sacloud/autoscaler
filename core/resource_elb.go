@@ -42,6 +42,13 @@ func NewResourceELB(ctx *RequestContext, apiClient sacloud.APICaller, def *Resou
 	return resource, nil
 }
 
+func (r *ResourceELB) String() string {
+	if r == nil || r.elb == nil {
+		return "(empty)"
+	}
+	return fmt.Sprintf("{Type: %s, ID: %s, Name: %s}", r.Type(), r.elb.ID, r.elb.Name)
+}
+
 func (r *ResourceELB) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
