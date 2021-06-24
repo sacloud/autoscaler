@@ -12,29 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package inputs
+package zabbix
 
 import (
-	"github.com/sacloud/autoscaler/commands/inputs/alertmanager"
-	"github.com/sacloud/autoscaler/commands/inputs/direct"
-	"github.com/sacloud/autoscaler/commands/inputs/grafana"
-	"github.com/sacloud/autoscaler/commands/inputs/zabbix"
+	"github.com/sacloud/autoscaler/commands/flags"
+	"github.com/sacloud/autoscaler/inputs"
+	"github.com/sacloud/autoscaler/inputs/zabbix"
 	"github.com/spf13/cobra"
 )
 
 var Command = &cobra.Command{
-	Use:           "inputs",
-	Short:         "A set of sub commands to manage autoscaler's inputs",
-	SilenceErrors: true,
-}
-
-var subCommands = []*cobra.Command{
-	alertmanager.Command,
-	direct.Command,
-	grafana.Command,
-	zabbix.Command,
+	Use:   "zabbix",
+	Short: "Start web server for handle webhooks from Zabbix",
+	PreRunE: flags.ValidateMultiFunc(true,
+		flags.ValidateDestinationFlags,
+		flags.ValidateListenerFlags,
+	),
+	RunE: run,
 }
 
 func init() {
-	Command.AddCommand(subCommands...)
+	flags.SetDestinationFlag(Command)
+	flags.SetListenerFlag(Command)
+}
+
+func run(cmd *cobra.Command, args []string) error {
+	return inputs.Serve(zabbix.NewInput(flags.Destination(), flags.ListenAddr(), flags.NewLogger()))
 }
