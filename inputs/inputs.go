@@ -100,7 +100,9 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 	}
 	if scalingReq == nil {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ignored")) // nolint
+		w.WriteHeader(http.StatusOK)
+		w.Header().Add("Content-Type", "application/json")
+		w.Write([]byte(`{"message":"ignored"}`)) // nolint
 		return
 	}
 
@@ -124,9 +126,9 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	w.Header().Add("Content-Type", "text/plain")
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("scaling-job-id:%s, status:%s, message:%s", res.ScalingJobId, res.Status, res.Message))) // nolint
+	w.Write([]byte(fmt.Sprintf(`{"id":"%s", "status":"%s", "message":"%s"}`, res.ScalingJobId, res.Status, res.Message))) // nolint
 }
 
 func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRequest, error) {
