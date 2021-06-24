@@ -62,6 +62,13 @@ func NewResourceRouter(ctx *RequestContext, apiClient sacloud.APICaller, def *Re
 	return resource, nil
 }
 
+func (r *ResourceRouter) String() string {
+	if r == nil || r.router == nil {
+		return "(empty)"
+	}
+	return fmt.Sprintf("{Type: %s, Zone: %s, ID: %s, Name: %s}", r.Type(), r.zone, r.router.ID, r.router.Name)
+}
+
 func (r *ResourceRouter) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {

@@ -44,6 +44,13 @@ func NewResourceLoadBalancer(ctx *RequestContext, apiClient sacloud.APICaller, d
 	return resource, nil
 }
 
+func (r *ResourceLoadBalancer) String() string {
+	if r == nil || r.lb == nil {
+		return "(empty)"
+	}
+	return fmt.Sprintf("{Type: %s, Zone: %s, ID: %s, Name: %s}", r.Type(), r.zone, r.lb.ID, r.lb.Name)
+}
+
 func (r *ResourceLoadBalancer) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {

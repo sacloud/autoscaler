@@ -42,6 +42,13 @@ func NewResourceDNS(ctx *RequestContext, apiClient sacloud.APICaller, def *Resou
 	return resource, nil
 }
 
+func (r *ResourceDNS) String() string {
+	if r == nil || r.dns == nil {
+		return "(empty)"
+	}
+	return fmt.Sprintf("{Type: %s, ID: %s, Name: %s}", r.Type(), r.dns.ID, r.dns.Name)
+}
+
 func (r *ResourceDNS) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {

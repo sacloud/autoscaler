@@ -42,6 +42,13 @@ func NewResourceGSLB(ctx *RequestContext, apiClient sacloud.APICaller, def *Reso
 	return resource, nil
 }
 
+func (r *ResourceGSLB) String() string {
+	if r == nil || r.gslb == nil {
+		return "(empty)"
+	}
+	return fmt.Sprintf("{Type: %s, ID: %s, Name: %s}", r.Type(), r.gslb.ID, r.gslb.Name)
+}
+
 func (r *ResourceGSLB) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {

@@ -57,6 +57,13 @@ func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *Re
 	return resource, nil
 }
 
+func (r *ResourceServer) String() string {
+	if r == nil || r.server == nil {
+		return "(empty)"
+	}
+	return fmt.Sprintf("{Type: %s, Zone: %s, ID: %s, Name: %s}", r.Type(), r.zone, r.server.ID, r.server.Name)
+}
+
 func (r *ResourceServer) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
