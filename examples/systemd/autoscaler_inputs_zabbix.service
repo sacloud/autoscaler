@@ -1,0 +1,11 @@
+[Unit]
+Description=SakuraCloud AutoScaler Zabbix Inputs
+
+[Service]
+User=autoscaler
+EnvironmentFile=/etc/autoscaler/inputs_zabbix.config
+ExecStart=/usr/local/sbin/autoscaler inputs zabbix $OPTIONS
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

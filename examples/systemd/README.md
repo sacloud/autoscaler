@@ -16,6 +16,10 @@
 デフォルトでは`/usr/local/sbin`配下に`autoscaler`をインストールしておく必要があります。  
 インストール先を変更している場合は`*.service`に記載されているパスを変更してください。  
 
+### ユニットファイル
+
+`*.service`を`/etc/systemd/system`配下にコピーしてください。
+
 ### sysconfigファイル
 
 実行には`/etc/autoscaler/`配下に設定ファイルが必要です。
@@ -47,6 +51,7 @@
     # 以下は必要に応じて
     sudo systemctl enable autoscaler_inputs_grafana.service
     sudo systemctl enable autoscaler_inputs_alertmanager.service
+    sudo systemctl enable autoscaler_inputs_zabbix.service
 
 ### 開始
 
@@ -54,6 +59,7 @@
     # 以下は必要に応じて
     sudo systemctl start autoscaler_inputs_grafana.service
     sudo systemctl start autoscaler_inputs_alertmanager.service
+    sudo systemctl start autoscaler_inputs_zabbix.service
 
 ### ログの確認
 
