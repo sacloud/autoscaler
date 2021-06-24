@@ -1,0 +1,28 @@
+{
+  "embeds": [
+    {
+      "color": 39168,
+      "url": "/tr_events.php?triggerid=&eventid=",
+      "title": "OK: ",
+      "footer": {
+        "text": "Event ID: "
+      },
+      "fields": [
+        {
+          "name": "Host",
+          "value": " []"
+        },
+        {
+          "name": "Recovery time",
+          "value": " ",
+          "inline": "True"
+        },
+        {
+          "name": "Severity",
+          "value": "",
+          "inline": "True"
+        }
+      ]
+    }
+  ]
+}
