@@ -178,7 +178,7 @@ try {&#13;
         params.autoscaler_endpoint + &quot;/&quot; + params.autoscaler_event_type +&#13;
         &quot;?source=&quot; + params.autoscaler_source +&#13;
         &quot;&amp;action=&quot; + params.autoscaler_action +&#13;
-        &quot;&amp;resource_group_name=&quot; + params.autoscaler_resource_group_name;&#13;
+        &quot;&amp;resource-group-name=&quot; + params.autoscaler_resource_group_name;&#13;
 &#13;
     if (!!params.autoscaler_desired_state_name) {&#13;
         params.autoscaler_endpoint = params.autoscaler_endpoint + &quot;&amp;desired-state-name=&quot; + params.autoscaler_desired_state_name;&#13;
