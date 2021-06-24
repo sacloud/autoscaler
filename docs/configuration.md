@@ -24,7 +24,7 @@ resources:
       - type: Server
         selector:
           names: ["example"]
-          zone: "is1a"
+          zones: ["is1a"]
         option:
           shutdown_force: true
 
@@ -36,7 +36,7 @@ resources:
 
 # オートスケーラーの動作設定
 autoscaler:
-  cooldown: 6000 # デフォルト: 6000(10分)
+  cooldown: 600 # デフォルト: 600(10分)
 ```
 
 ## 指定可能な項目
@@ -77,11 +77,14 @@ autoscaler:
 `resource_group`の`resources`の要素として指定します。
 以下のリソースが指定可能です。
 
-- [DNS](https://pkg.go.dev/github.com/sacloud/autoscaler/core#DNS)
-- [EnhancedLoadBalancer](https://pkg.go.dev/github.com/sacloud/autoscaler/core#EnhancedLoadBalancer)
-- [GSLB](https://pkg.go.dev/github.com/sacloud/autoscaler/core#GSLB)
-- [Router](https://pkg.go.dev/github.com/sacloud/autoscaler/core#Router)
-- [Server](https://pkg.go.dev/github.com/sacloud/autoscaler/core#Server)
+- [DNS](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefDNS)
+- [EnhancedLoadBalancer](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefELB)
+- [GSLB](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefGSLB)
+- [Router](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefRouter)
+- [Server](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefServer)
+- [Server](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefLoadBalancer)
+
+実際にどのリソースが対象となるのかは`autoscaler core resources`コマンドで確認できます。  
 
 ## `handlers`
 

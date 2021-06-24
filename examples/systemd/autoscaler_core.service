@@ -4,7 +4,7 @@ Description=SakuraCloud AutoScaler Core Server
 [Service]
 User=autoscaler
 EnvironmentFile=/etc/autoscaler/core.config
-ExecStart=/usr/local/sbin/autoscaler server start $OPTIONS
+ExecStart=/usr/local/sbin/autoscaler core start $OPTIONS
 # NginxなどでUNIX domain socketをプロキシしたい場合にコメントを解除する
 #ExecStartPost=/bin/bash -c "while [ ! -e /var/run/autoscaler/autoscaler.sock ]; do sleep 1; done; /usr/bin/chmod 0660 /var/run/autoscaler/autoscaler.sock"
 Restart=always

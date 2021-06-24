@@ -78,7 +78,7 @@ services:
 
   autoscaler-core:
     image: ghcr.io/sacloud/autoscaler:v0.0.1
-    command: [server, start, "--config", "/autoscaler/autoscaler.yaml"]
+    command: [core, start, "--config", "/autoscaler/autoscaler.yaml"]
     working_dir: /work
     volumes:
       - $PWD/autoscaler:/autoscaler
