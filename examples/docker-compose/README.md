@@ -12,22 +12,30 @@
 - `SAKURACLOUD_ACCESS_TOKEN_SECRET`: さくらのクラウドAPIシークレット
 - `GF_SECURITY_ADMIN_PASSWORD`: Grafanaの管理者パスワード
 
-   export SAKURACLOUD_ACCESS_TOKEN="your-token"
-   export SAKURACLOUD_ACCESS_TOKEN_SECRET="your-secret"
-   export GF_SECURITY_ADMIN_PASSWORD="your-password"
+```bash
+$ export SAKURACLOUD_ACCESS_TOKEN="your-token"
+$ export SAKURACLOUD_ACCESS_TOKEN_SECRET="your-secret"
+$ export GF_SECURITY_ADMIN_PASSWORD="your-password"
+```
 
 次にAutoScalerのコンフィギュレーションを作成/編集します。
 
-    autoscaler core example > autoscaler/autoscaler.yaml
-    vi autoscaler/autoscaler.yaml
+```bash
+$ autoscaler core example > autoscaler/autoscaler.yaml
+$ vi autoscaler/autoscaler.yaml
+```
 
 ## 起動
 
-    docker compose up -d
-    # grafana
-    open http://localhost:3000
-    # prometheus
-    open http://localhost:9090
+```bash
+$ docker compose up -d
+
+# grafana
+$ open http://localhost:3000
+
+# prometheus
+$ open http://localhost:9090
+```
 
 ### スケールアップ/ダウン
 
