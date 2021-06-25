@@ -23,7 +23,6 @@ import (
 
 type ListenerOption struct {
 	Address string
-	// TODO TLS対応する際にはここに項目を追加していく
 }
 
 // Listener 指定のオプションでリッスン構成をした後でリッスンし、net.Listenerとクリーンアップ用のfuncを返す

@@ -27,15 +27,17 @@ var Command = &cobra.Command{
 	PreRunE: flags.ValidateMultiFunc(true,
 		flags.ValidateDestinationFlags,
 		flags.ValidateListenerFlags,
+		flags.ValidateInputsTLSConfigFlags,
 	),
 	RunE: run,
 }
 
 func init() {
 	flags.SetDestinationFlag(Command)
+	flags.SetInputsTLSConfigFlag(Command)
 	flags.SetListenerFlag(Command)
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	return inputs.Serve(grafana.NewInput(flags.Destination(), flags.ListenAddr(), flags.NewLogger()))
+	return inputs.Serve(grafana.NewInput(flags.Destination(), flags.ListenAddr(), flags.InputsTLSConfig(), flags.NewLogger()))
 }

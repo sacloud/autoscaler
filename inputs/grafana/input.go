@@ -24,16 +24,18 @@ import (
 )
 
 type Input struct {
-	dest   string
-	addr   string
-	logger *log.Logger
+	dest          string
+	addr          string
+	tlsConfigPath string
+	logger        *log.Logger
 }
 
-func NewInput(dest, addr string, logger *log.Logger) *Input {
+func NewInput(dest, addr, tlsConfigPath string, logger *log.Logger) *Input {
 	return &Input{
-		dest:   dest,
-		addr:   addr,
-		logger: logger,
+		dest:          dest,
+		addr:          addr,
+		tlsConfigPath: tlsConfigPath,
+		logger:        logger,
 	}
 }
 func (in *Input) Name() string {
@@ -50,6 +52,10 @@ func (in *Input) Destination() string {
 
 func (in *Input) ListenAddress() string {
 	return in.addr
+}
+
+func (in *Input) TLSConfigPath() string {
+	return in.tlsConfigPath
 }
 
 func (in *Input) GetLogger() *log.Logger {

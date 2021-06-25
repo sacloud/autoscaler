@@ -17,19 +17,26 @@ package grpcutil
 import (
 	"context"
 
+	"google.golang.org/grpc/credentials"
+
 	"google.golang.org/grpc"
 )
 
 type DialOption struct {
-	Destination string
-	// TODO TLS対応する際にはここに項目を追加していく
+	Destination          string
+	TransportCredentials credentials.TransportCredentials
 }
 
 // DialContext 指定のオプションでgRPCクライアント接続を行い、コネクションとクリーンアップ用funcを返す
 func DialContext(ctx context.Context, opt *DialOption) (*grpc.ClientConn, func(), error) {
-	transportOption := grpc.WithInsecure() // 現状ではunix or unix-abstract or http のみサポート
+	var dialOpts []grpc.DialOption
+	if opt.TransportCredentials != nil {
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(opt.TransportCredentials))
+	} else {
+		dialOpts = append(dialOpts, grpc.WithInsecure())
+	}
 
-	conn, err := grpc.DialContext(ctx, opt.Destination, transportOption)
+	conn, err := grpc.DialContext(ctx, opt.Destination, dialOpts...)
 	if err != nil {
 		return nil, nil, err
 	}
