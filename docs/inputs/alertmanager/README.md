@@ -9,7 +9,7 @@ AlertManagerを利用する場合の設定について記載します。
 
 ## AlertManagerの設定
 
-AlertManager Inputsを利用するにはAlertManagerでWebhookの設定を行う必要があります。
+AlertManager Inputsを利用するにはAlertManagerでWebhookの設定が必要です。  
 
 ### AlertManagerのWebhook設定
 
@@ -50,7 +50,7 @@ receivers:
 - `source`: リクエスト元を識別するための名称。任意の値を利用可能。デフォルト値:`default`
 - `action`: 実行するアクション名。Coreのコンフィギュレーションで定義したアクション名を指定する。デフォルト値:`default`
 - `resource-group-name`: 操作対象のリソースグループの名前。Coreのコンフィギュレーションで定義したグループ名を指定する。デフォルト値:`default`
-- `desired-state-name`: 希望する状態の名前。Coreのコンフィギュレーションで定義したプラン名を指定する。特定の時刻に特定のスペックにしたい場合などに利用する。  
+- `desired-state-name`: 希望する状態の名前。Coreのコンフィギュレーションで定義したプラン名を指定する。特定の時刻に特定のスペックにしたい場合などに利用する。デフォルト値:`""`  
 
 これらのパラメータを複数指定する場合は`&`で繋げて記載します。  
 

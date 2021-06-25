@@ -1,6 +1,6 @@
 # Configuration Reference
 
-sacloud/autoscalerのコンフィギュレーションファイルはYAML形式で書かれた、操作対象のリソース定義や動作の調整を行うためのものです。  
+sacloud/autoscalerのコンフィギュレーションファイルはYAML形式で書かれた、操作対象のリソース定義や動作を調整するためのものです。  
 
 コンフィギュレーションファイルの例:
 
@@ -82,7 +82,7 @@ autoscaler:
 - [GSLB](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefGSLB)
 - [Router](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefRouter)
 - [Server](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefServer)
-- [Server](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefLoadBalancer)
+- [LoadBalancer](https://pkg.go.dev/github.com/sacloud/autoscaler/core#ResourceDefLoadBalancer)
 
 実際にどのリソースが対象となるのかは`autoscaler core resources`コマンドで確認できます。  
 
@@ -100,7 +100,7 @@ autoscaler:
 
 ## `sakuracloud`
 
-さくらのクラウドAPIキーなどの設定を行います。
+さくらのクラウドAPIキーや動作オプションを設定します。
 
 - [SakuraCloud](https://pkg.go.dev/github.com/sacloud/autoscaler/core#SakuraCloud)
 

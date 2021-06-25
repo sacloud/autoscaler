@@ -18,7 +18,7 @@
 - プラガブルなインプット/ハンドラー
   さまざまなデータソースとの連携やカスタマイズ可能な構成方法をとるためにプラガブルな構成とする
   - トリガーのインプットとしてGrafana/Alert Manager(Prometheus)のWebHook
-  - Composableなアウトプット: 例 -> サーバの増設 + DNSレコード登録
+  - Composableなアウトプット: 例えばサーバの増設 + DNSレコード登録
 
 ## 将来的に実装を考えている機能
 
@@ -31,7 +31,7 @@
 ### 主要コンポーネント
 
 - Inputs: Webhookなどでオートスケールリクエストを受け取りCoreをトリガーする
-- Core: リクエスト/現在のインフラの状態(さくらのクラウドAPIから取得)/設定値からあるべき状態(Desired)を決定、Handlersを呼び出す
+- Core: リクエスト/現在のインフラの状態(さくらのクラウドAPIから取得)/設定値を元にあるべき状態(Desired)を決定、Handlersを呼び出す
 - Handlers: Add/Deleteなどのリクエストを受け、各種クラウドAPIを呼び出しインフラのプロビジョニングを行う
 
 ### Inputs
@@ -49,8 +49,8 @@
 - Server Vertical Scaler: サーバのスペックを任意の状態へスケールアップ/ダウンする
 - DNS A Record Handler: さくらのクラウドDNSへ任意のAレコードを登録/削除する
 - DNS CNAME Record Handler: さくらのクラウドDNSへ任意のCNAMEレコードを登録/削除する
-- Shell Exec Handler: 任意のスクリプト(など)を実行する
-- Terraform Handler: Terraformコンフィギュレーションの出力〜リソースのインポート〜`apply`を実行する
+- Shell Exec Handler: 任意のスクリプトを実行  
+- Terraform Handler: Terraformコンフィギュレーションの出力〜リソースのインポート〜`apply`を実行
 
 さくらのクラウドだけでなく、Route53などを併用するパターンも考えられる。  
 このためShell Exec Handlerなどのような汎用的に処理できる仕組みが必要となる。  
@@ -58,4 +58,4 @@
 #### Handlersの組み合わせ
 
 Handlersは設定により任意の組み合わせを行えるようにする。複数のHandlersが指定された場合パイプラインとして順次処理していく。  
-Core -> Handlersでやりとりされる情報にコンテキストデータを持たせハンドラーのパイプライン間で受け渡せるようにしておく。
+Core - Handlersでやりとりされる情報にコンテキストデータを持たせハンドラーのパイプライン間で受け渡せるようにしておく。

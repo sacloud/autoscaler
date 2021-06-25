@@ -92,6 +92,14 @@ goimports:
 fmt:
 	find . -name '*.go' | grep -v vendor | xargs gofmt -s -w
 
+build-textlint:
+	@echo "building sacloud/textlint:local"
+	@docker build -t sacloud/textlint:local .github/actions/textlint
+
+textlint:
+	@docker run -it --rm -v $$PWD:/work -w /work sacloud/textlint:local .
+
+
 set-license:
 	@addlicense -c $(AUTHOR) -y $(COPYRIGHT_YEAR) $(COPYRIGHT_FILES)
 
