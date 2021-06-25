@@ -47,9 +47,9 @@ func (r *requestInfo) String() string {
 	return fmt.Sprintf("%#v", r)
 }
 
-// ID リクエストのSource/Action/ResourceGroupNameの組み合わせで一意に決まるID
+// ID リクエストのパラメータから一意に決まるID
 //
-// RequestTypesのUp/Downの違いやDesiredStateNameの違いを問わずに値を決めるため、同一リソースに対する同一アクションが実行中かの判定に利用できる
+// RequestTypesのUp/Downの違いやDesiredStateNameの違いを問わずに値を決めるため、同一リソースに対するアクションが実行中かの判定に利用できる
 func (r *requestInfo) ID() string {
-	return fmt.Sprintf("%s-%s-%s", r.source, r.action, r.resourceGroupName)
+	return r.resourceGroupName
 }
