@@ -39,6 +39,7 @@ tools:
 	(cd tools; go install github.com/sacloud/addlicense)
 	(cd tools; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc)
 	(cd tools; go install google.golang.org/protobuf/cmd/protoc-gen-go)
+	(cd tools; go install github.com/google/go-licenses)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.40.0/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.40.0
 
 .PHONY: gen
@@ -92,13 +93,18 @@ goimports:
 fmt:
 	find . -name '*.go' | grep -v vendor | xargs gofmt -s -w
 
+.PHONY: build-textlint
 build-textlint:
 	@echo "building sacloud/textlint:local"
 	@docker build -t sacloud/textlint:local .github/actions/textlint
 
+.PHONY: textlint
 textlint:
 	@docker run -it --rm -v $$PWD:/work -w /work sacloud/textlint:local .
 
+.PHONY: go-licenses-check
+go-licenses-check:
+	go-licenses check .
 
 set-license:
 	@addlicense -c $(AUTHOR) -y $(COPYRIGHT_YEAR) $(COPYRIGHT_FILES)
