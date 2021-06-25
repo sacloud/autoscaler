@@ -1,0 +1,12 @@
+name: 'textlint'
+description: 'lint a document with textlint'
+inputs:
+  working-directory:
+    description: 'working directory'
+    required: false
+    default: '.'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.working-directory}}
