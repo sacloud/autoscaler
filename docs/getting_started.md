@@ -25,13 +25,13 @@ Dockerを利用する場合は以下のようにします。
 
 ```shell
 # Coreを起動する場合(Unixドメインソケットでリッスン)
-$ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:v0.0.1 core start
+$ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:v0.0.2 core start
 
 # Grafana Inputsを起動する場合(CoreとはVolume経由でUnixドメインソケットを受け渡して通信する)
-$ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:v0.0.1 inputs grafana --addr ":8080"
+$ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:v0.0.2 inputs grafana --addr ":8080"
 
 # AlertManager Inputsを起動する場合(CoreとはVolume経由でUnixドメインソケットを受け渡して通信する)
-$ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:v0.0.1 inputs alertmanager --addr ":8080"
+$ docker run -d -w /work -d /your/work/dir:/work ghcr.io/sacloud/autoscaler:v0.0.2 inputs alertmanager --addr ":8080"
 ```
 
 #### Docker Composeを利用する場合(開発環境向け)

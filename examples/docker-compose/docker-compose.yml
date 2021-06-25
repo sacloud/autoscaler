@@ -77,7 +77,7 @@ services:
     restart: always
 
   autoscaler-core:
-    image: ghcr.io/sacloud/autoscaler:v0.0.1
+    image: ghcr.io/sacloud/autoscaler:v0.0.2
     command: [core, start, "--config", "/autoscaler/autoscaler.yaml"]
     working_dir: /work
     volumes:
@@ -92,7 +92,7 @@ services:
     restart: always
 
   autoscaler-inputs:
-    image: ghcr.io/sacloud/autoscaler:v0.0.1
+    image: ghcr.io/sacloud/autoscaler:v0.0.2
     command: [inputs, grafana, --addr, ":8080"]
     working_dir: /work
     volumes:
@@ -105,7 +105,7 @@ services:
 
   # for alertmanager
 #  autoscaler-inputs:
-#    image: ghcr.io/sacloud/autoscaler:v0.0.1
+#    image: ghcr.io/sacloud/autoscaler:v0.0.2
 #    command: [inputs, alertmanager, --addr, ":8080"]
 #    working_dir: /work
 #    volumes:
