@@ -31,7 +31,7 @@ type RequestContext struct {
 
 // NewRequestContext 新しいリクエストコンテキストを生成する
 func NewRequestContext(parent context.Context, request *requestInfo, logger *log.Logger) *RequestContext {
-	logger = logger.With("request-type", request.requestType, "scaling-job-id", request.ID())
+	logger = logger.With("request-type", request.requestType, "source", request.source, "group", request.resourceGroupName, "action", request.action)
 	return &RequestContext{
 		ctx:     parent,
 		request: request,
