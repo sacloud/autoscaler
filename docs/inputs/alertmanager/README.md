@@ -80,3 +80,7 @@ groups:
 Note: AutoScalerによる操作でアラート状態が解消できるようなルールを設定してください。  
 AutoScaler Coreは同一の`source`/`action`/`resource-group-name`へのリクエストを冷却期間の間は無視しますが、冷却期間がすぎると再度リクエストを受け付けるようになります。  
 このためアラートの条件設定次第ではスケール動作を繰り返してしまいます。  
+
+## TLS関連設定
+
+[Inputs共通設定](../tls_config.md)を参照ください。  
