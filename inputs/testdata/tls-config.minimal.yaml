@@ -1,3 +1,0 @@
-server:
-  cert_file: server.crt
-  key_file: server.key

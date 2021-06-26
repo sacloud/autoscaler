@@ -18,24 +18,27 @@ import (
 	"context"
 	"time"
 
+	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/log"
 )
 
 // RequestContext 1リクエストのスコープに対応するコンテキスト、context.Contextを実装し、リクエスト情報や現在のジョブの情報を保持する
 type RequestContext struct {
-	ctx     context.Context
-	request *requestInfo
-	job     *JobStatus
-	logger  *log.Logger
+	ctx       context.Context
+	request   *requestInfo
+	job       *JobStatus
+	logger    *log.Logger
+	tlsConfig *config.TLSStruct
 }
 
 // NewRequestContext 新しいリクエストコンテキストを生成する
-func NewRequestContext(parent context.Context, request *requestInfo, logger *log.Logger) *RequestContext {
+func NewRequestContext(parent context.Context, request *requestInfo, tlsConfig *config.TLSStruct, logger *log.Logger) *RequestContext {
 	logger = logger.With("request-type", request.requestType, "source", request.source, "group", request.resourceGroupName, "action", request.action)
 	return &RequestContext{
-		ctx:     parent,
-		request: request,
-		logger:  logger,
+		ctx:       parent,
+		request:   request,
+		logger:    logger,
+		tlsConfig: tlsConfig,
 	}
 }
 
@@ -52,8 +55,9 @@ func (c *RequestContext) WithJobStatus(job *JobStatus) *RequestContext {
 			resourceGroupName: c.request.resourceGroupName,
 			desiredStateName:  c.request.desiredStateName,
 		},
-		logger: c.logger,
-		job:    job,
+		logger:    c.logger,
+		job:       job,
+		tlsConfig: c.tlsConfig,
 	}
 }
 

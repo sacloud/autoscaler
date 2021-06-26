@@ -46,7 +46,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
 		desiredStateName:  req.DesiredStateName,
-	}, s.instance.logger)
+	}, s.instance.config.AutoScaler.HandlerTLSConfig, s.instance.logger)
 	job, message, err := s.instance.Up(serviceCtx)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 		action:            req.Action,
 		resourceGroupName: req.ResourceGroupName,
 		desiredStateName:  req.DesiredStateName,
-	}, s.instance.logger)
+	}, s.instance.config.AutoScaler.HandlerTLSConfig, s.instance.logger)
 	job, message, err := s.instance.Down(serviceCtx)
 	if err != nil {
 		return nil, err

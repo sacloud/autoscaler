@@ -106,6 +106,20 @@ textlint:
 go-licenses-check:
 	go-licenses check .
 
+.PNONY: generate-test-cert
+generate-test-cert:
+	# valid certs
+	openssl req -x509 -text -newkey rsa:4096 -days 7300 -set_serial 1 -nodes -keyout test/ca-key.pem -out test/ca-cert.pem -subj "/C=JP/O=Usacloud/OU=Usacloud Certificate Authority/CN=Usacloud TLS CA";
+	openssl req -text -newkey rsa:4096 -nodes -keyout test/server-key.pem -out test/server-csr.pem -subj "/C=JP/O=Usacloud/CN=usacloud.example.com"
+	openssl x509 -text -req -in test/server-csr.pem -days 7300 -set_serial 2 -CA test/ca-cert.pem -CAkey test/ca-key.pem -CAcreateserial -out test/server-cert.pem -extfile test/openssl.ext
+	openssl req -text -newkey rsa:4096 -nodes -keyout test/client-key.pem -out test/client-csr.pem -subj "/C=JP/O=Usacloud/CN=client01.usacloud.example.com"
+	openssl x509 -text -req -in test/client-csr.pem -days 7300 -set_serial 3 -CA test/ca-cert.pem -CAkey test/ca-key.pem -CAcreateserial -out test/client-cert.pem  -extfile test/openssl.ext
+	# invalid certs
+	openssl req -x509 -text -newkey rsa:4096 -days 7300 -set_serial 1 -nodes -keyout test/invalid-ca-key.pem -out test/invalid-ca-cert.pem -subj "/C=JP/O=Usacloud/OU=Usacloud Certificate Authority/CN=Usacloud TLS CA";
+	openssl req -text -newkey rsa:4096 -nodes -keyout test/invalid-client-key.pem -out test/invalid-client-csr.pem -subj "/C=JP/O=Usacloud/CN=client01.usacloud.example.com"
+	openssl x509 -text -req -in test/invalid-client-csr.pem -days 7300 -set_serial 3 -CA test/invalid-ca-cert.pem -CAkey test/invalid-ca-key.pem -CAcreateserial -out test/invalid-client-cert.pem  -extfile test/openssl.ext
+	rm -f test/*-csr.pem
+
 set-license:
 	@addlicense -c $(AUTHOR) -y $(COPYRIGHT_YEAR) $(COPYRIGHT_FILES)
 

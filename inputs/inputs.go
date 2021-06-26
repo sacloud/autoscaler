@@ -271,7 +271,7 @@ func (s *server) send(scalingReq *ScalingRequest) (*request.ScalingResponse, err
 		dialOption.TransportCredentials = cred
 	}
 
-	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: s.coreAddress})
+	conn, cleanup, err := grpcutil.DialContext(ctx, dialOption)
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,5 @@
+server_tls_config:
+  cert_file: server-cert.pem
+  key_file: server-key.pem
+  client_auth_type: "RequireAndVerifyClientCert"
+  client_ca_file: ca-cert.pem

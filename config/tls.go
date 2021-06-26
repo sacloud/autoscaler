@@ -23,16 +23,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"google.golang.org/grpc/credentials"
-
 	"github.com/goccy/go-yaml"
+	"google.golang.org/grpc/credentials"
 )
 
 type TLSStruct struct {
 	TLSCertPath string `yaml:"cert_file"`
 	TLSKeyPath  string `yaml:"key_file"`
 	ClientAuth  string `yaml:"client_auth_type"`
-	ClientCAs   string `yaml:"client_ca_file"`
+	ClientCAs   string `yaml:"client_ca_file"` // NoClientCert | RequestClientCert | RequireAnyClientCert | VerifyClientCertIfGiven | RequireAndVerifyClientCert
+	RootCAs     string `yaml:"root_ca_file"`
 }
 
 var ErrNoTLSConfig = errors.New("TLS config is not present")
@@ -67,29 +67,24 @@ func (t *TLSStruct) SetDirectory(dir string) {
 	t.TLSCertPath = joinDir(dir, t.TLSCertPath)
 	t.TLSKeyPath = joinDir(dir, t.TLSKeyPath)
 	t.ClientCAs = joinDir(dir, t.ClientCAs)
+	t.RootCAs = joinDir(dir, t.RootCAs)
 }
 
 func (t *TLSStruct) TLSConfig() (*tls.Config, error) {
-	if t.TLSCertPath == "" && t.TLSKeyPath == "" && t.ClientAuth == "" && t.ClientCAs == "" {
+	if t.TLSCertPath == "" && t.TLSKeyPath == "" && t.ClientAuth == "" && t.ClientCAs == "" && t.RootCAs == "" {
 		return nil, ErrNoTLSConfig
 	}
 
-	if t.TLSCertPath == "" {
-		return nil, errors.New("missing cert_file")
+	cfg := &tls.Config{}
+
+	if t.TLSCertPath != "" && t.TLSKeyPath != "" {
+		cert, err := tls.LoadX509KeyPair(t.TLSCertPath, t.TLSKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load X509KeyPair: %s", err)
+		}
+		cfg.Certificates = []tls.Certificate{cert}
 	}
 
-	if t.TLSKeyPath == "" {
-		return nil, errors.New("missing key_file")
-	}
-
-	cert, err := tls.LoadX509KeyPair(t.TLSCertPath, t.TLSKeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load X509KeyPair: %s", err)
-	}
-
-	cfg := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-	}
 	if t.ClientCAs != "" {
 		clientCAPool := x509.NewCertPool()
 		clientCAFile, err := os.ReadFile(t.ClientCAs)
@@ -118,6 +113,17 @@ func (t *TLSStruct) TLSConfig() (*tls.Config, error) {
 	if t.ClientCAs != "" && cfg.ClientAuth == tls.NoClientCert {
 		return nil, errors.New("Client CA's have been configured without a Client Auth Policy")
 	}
+
+	if t.RootCAs != "" {
+		rootCAPool := x509.NewCertPool()
+		rootCAFile, err := os.ReadFile(t.RootCAs)
+		if err != nil {
+			return nil, err
+		}
+		rootCAPool.AppendCertsFromPEM(rootCAFile)
+		cfg.RootCAs = rootCAPool
+	}
+
 	return cfg, nil
 }
 

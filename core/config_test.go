@@ -19,6 +19,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/sacloud/autoscaler/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -73,6 +74,17 @@ func TestConfig_Load(t *testing.T) {
 				}(),
 				AutoScaler: AutoScalerConfig{
 					CoolDownSec: 30,
+					ServerTLSConfig: &config.TLSStruct{
+						TLSCertPath: "server.crt",
+						TLSKeyPath:  "server.key",
+						ClientAuth:  "RequireAndVerifyClientCert",
+						ClientCAs:   "ca.crt",
+					},
+					HandlerTLSConfig: &config.TLSStruct{
+						TLSCertPath: "server.crt",
+						TLSKeyPath:  "server.key",
+						RootCAs:     "ca.crt",
+					},
 				},
 			},
 			args: args{
@@ -93,6 +105,15 @@ resources:
         dedicated_cpu: true
 autoscaler:
   cooldown: 30
+  server_tls_config:
+    cert_file: server.crt
+    key_file: server.key
+    client_auth_type: RequireAndVerifyClientCert
+    client_ca_file: ca.crt
+  handler_tls_config:
+    cert_file: server.crt
+    key_file: server.key
+    root_ca_file: ca.crt
 `)),
 			},
 			wantErr: false,

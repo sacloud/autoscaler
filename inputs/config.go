@@ -25,9 +25,9 @@ import (
 // TLSConfig InputsのTLS関連動作設定
 type TLSConfig struct {
 	// WebServer WebhookサーバのTLS関連設定
-	Server *config.TLSStruct `yaml:"server"`
+	Server *config.TLSStruct `yaml:"server_tls_config"`
 	// CoreClient coreのgRPCクライアントのTLS関連設定
-	CoreClient *config.TLSStruct `yaml:"core_client"`
+	CoreClient *config.TLSStruct `yaml:"core_tls_config"`
 }
 
 // LoadTLSConfigFromPath 指定のパスからConfigをロードする

@@ -21,7 +21,6 @@ import (
 
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handler"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -38,7 +37,7 @@ func (h *handleService) listenAndServe(parentCtx context.Context) error {
 	ctx, stop := signal.NotifyContext(parentCtx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	listener, cleanup, err := grpcutil.Listener(&grpcutil.ListenerOption{
+	grpcServer, listener, cleanup, err := grpcutil.Server(&grpcutil.ListenerOption{
 		Address: h.Handler.(Listener).ListenAddress(),
 	})
 	if err != nil {
@@ -46,7 +45,6 @@ func (h *handleService) listenAndServe(parentCtx context.Context) error {
 		return err // 到達しない
 	}
 
-	grpcServer := grpc.NewServer()
 	handler.RegisterHandleServiceServer(grpcServer, h)
 	reflection.Register(grpcServer)
 
