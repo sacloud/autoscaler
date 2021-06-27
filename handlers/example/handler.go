@@ -25,13 +25,15 @@ import (
 type Handler struct {
 	handlers.HandlerLogger
 	listenAddress string
+	tlsConfigPath string
 }
 
 // NewHandler .
-func NewHandler(listenAddr string, logger *log.Logger) *Handler {
+func NewHandler(listenAddr string, tlsConfigPath string, logger *log.Logger) *Handler {
 	return &Handler{
 		HandlerLogger: handlers.HandlerLogger{Logger: logger},
 		listenAddress: listenAddr,
+		tlsConfigPath: tlsConfigPath,
 	}
 }
 
@@ -45,14 +47,19 @@ func (h *Handler) Version() string {
 	return version.FullVersion()
 }
 
-// ListenAddress Listenerインターフェースの実装
+// ListenAddress CustomHandlerインターフェースの実装
 func (h *Handler) ListenAddress() string {
 	return h.listenAddress
 }
 
-/*
-	必要に応じてPreHandle/Handle/PostHandleを実装する
-*/
+// TLSConfigPath CustomHandlerインターフェースの実装
+func (h *Handler) TLSConfigPath() string {
+	return h.tlsConfigPath
+}
+
+/*************************************************
+ *	必要に応じてPreHandle/Handle/PostHandleを実装する
+ *************************************************/
 
 // Handle Coreからのメッセージのハンドリング
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {

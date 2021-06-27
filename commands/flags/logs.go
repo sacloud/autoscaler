@@ -37,7 +37,7 @@ func SetLogFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&logs.LogFormat, "log-format", "", logs.LogFormat, "Format of logging to be output. options: [ logfmt | json ]")
 }
 
-func ValidateLogFlags(cmd *cobra.Command, args []string) error {
+func ValidateLogFlags(*cobra.Command, []string) error {
 	return validate.Struct(logs)
 }
 

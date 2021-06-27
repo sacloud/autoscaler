@@ -15,7 +15,6 @@
 package flags
 
 import (
-	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
@@ -24,15 +23,14 @@ type listenerFlags struct {
 	ListenAddr string `name:"--addr" validate:"required,printascii"`
 }
 
-var listener = &listenerFlags{
-	ListenAddr: defaults.ListenAddress,
+var listener = &listenerFlags{}
+
+func SetListenerFlag(cmd *cobra.Command, defaultValue string) {
+	listener.ListenAddr = defaultValue
+	cmd.Flags().StringVarP(&listener.ListenAddr, "addr", "", listener.ListenAddr, "the address for the server to listen on")
 }
 
-func SetListenerFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&listener.ListenAddr, "addr", "", listener.ListenAddr, "the TCP address for the server to listen on")
-}
-
-func ValidateListenerFlags(cmd *cobra.Command, args []string) error {
+func ValidateListenerFlags(*cobra.Command, []string) error {
 	return validate.Struct(listener)
 }
 

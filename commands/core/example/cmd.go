@@ -30,7 +30,7 @@ var Command = &cobra.Command{
 //go:embed example.yaml
 var exampleBody []byte
 
-func run(cmd *cobra.Command, args []string) error {
+func run(*cobra.Command, []string) error {
 	fmt.Println(string(exampleBody))
 	return nil
 }

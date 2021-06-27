@@ -22,7 +22,6 @@ import (
 	"github.com/sacloud/autoscaler/commands/version"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/example"
-	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
 
@@ -32,9 +31,8 @@ var rootCmd = &cobra.Command{
 	SilenceUsage:  true,
 	PersistentPreRunE: flags.ValidateMultiFunc(true,
 		flags.ValidateLogFlags,
-		func(cmd *cobra.Command, args []string) error {
-			return validate.Struct(param)
-		},
+		flags.ValidateListenerFlags,
+		flags.ValidateTLSConfigFlags,
 	),
 }
 
@@ -44,25 +42,23 @@ var serveCmd = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	Args:          cobra.NoArgs,
-	RunE:          run,
+	PreRunE: flags.ValidateMultiFunc(true,
+		flags.ValidateListenerFlags,
+		flags.ValidateTLSConfigFlags,
+	),
+	RunE: run,
 }
 
 func init() {
 	flags.SetLogFlags(rootCmd)
-	serveCmd.Flags().StringVar(&param.ListenAddr, "addr", param.ListenAddr, "Address of the gRPC endpoint to listen to")
+
+	flags.SetListenerFlag(serveCmd, "unix:example-handler.sock")
+	flags.SetTLSConfigFlag(serveCmd)
 
 	rootCmd.AddCommand(
 		serveCmd,
 		version.Command,
 	)
-}
-
-type parameter struct {
-	ListenAddr string
-}
-
-var param = &parameter{
-	ListenAddr: "unix:autoscaler-handlers-example.sock",
 }
 
 func main() {
@@ -72,5 +68,5 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	return handlers.Serve(context.Background(), example.NewHandler(param.ListenAddr, flags.NewLogger()))
+	return handlers.Serve(context.Background(), example.NewHandler(flags.ListenAddr(), flags.TLSConfig(), flags.NewLogger()))
 }

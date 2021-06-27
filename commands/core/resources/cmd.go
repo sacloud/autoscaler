@@ -18,18 +18,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sacloud/autoscaler/validate"
-
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/core"
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
 
 var Command = &cobra.Command{
 	Use:   "resources [flags]...",
 	Short: "list target resources",
-	PreRunE: func(cmd *cobra.Command, args []string) error {
+	PreRunE: func(*cobra.Command, []string) error {
 		return validate.Struct(param)
 	},
 	RunE: run,
@@ -46,7 +45,7 @@ var param = &parameter{
 func init() {
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
 }
-func run(cmd *cobra.Command, args []string) error {
+func run(*cobra.Command, []string) error {
 	tree, err := core.ResourcesTree(context.Background(), "", param.ConfigPath, flags.NewLogger())
 	if err != nil {
 		return err

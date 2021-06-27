@@ -30,7 +30,7 @@ func init() {
 var Command = &cobra.Command{
 	Use:   "version",
 	Short: "show version",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(*cobra.Command, []string) error {
 		v := version.Version
 		if all {
 			v = version.FullVersion()

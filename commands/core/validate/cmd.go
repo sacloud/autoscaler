@@ -28,7 +28,7 @@ import (
 var Command = &cobra.Command{
 	Use:   "validate [flags]...",
 	Short: "validate autoscaler's core configuration",
-	PreRunE: func(cmd *cobra.Command, args []string) error {
+	PreRunE: func(*cobra.Command, []string) error {
 		return validate.Struct(param)
 	},
 	RunE: run,
@@ -46,7 +46,7 @@ func init() {
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(*cobra.Command, []string) error {
 	_, err := core.LoadAndValidate(context.Background(), param.ConfigPath, flags.NewLogger())
 	if err == nil {
 		fmt.Println("OK")

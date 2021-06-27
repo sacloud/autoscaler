@@ -44,8 +44,8 @@ import (
 const (
 	coreReadyMarker        = `message="autoscaler started" address=autoscaler.sock`
 	inputsReadyMarker      = `from=autoscaler-inputs-grafana message=started address=127.0.0.1:8080`
-	upJobDoneMarker        = `request-type=Up scaling-job-id=default-default-default status=JOB_DONE`
-	downJobDoneMarker      = `request-type=Down scaling-job-id=default-default-default status=JOB_DONE`
+	upJobDoneMarker        = `request-type=Up source=default group=default action=default status=JOB_DONE`
+	downJobDoneMarker      = `request-type=Down source=default group=default action=default status=JOB_DONE`
 	inCoolDownTimeMarker   = `job-message="job is in an unacceptable state"`
 	inCoolDownTimeResponse = `message:job is in an unacceptable state`
 )

@@ -19,22 +19,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type inputsTLSConfigFlags struct {
+type tlsConfigFlags struct {
 	TLSConfig string `name:"--tls-config" validate:"omitempty,file"`
 }
 
-var inputsTLSConfig = &inputsTLSConfigFlags{
+var tlsConfig = &tlsConfigFlags{
 	TLSConfig: "",
 }
 
-func SetInputsTLSConfigFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&inputsTLSConfig.TLSConfig, "tls-config", "", inputsTLSConfig.TLSConfig, "File path of input server TLS config")
+func SetTLSConfigFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&tlsConfig.TLSConfig, "tls-config", "", tlsConfig.TLSConfig, "File path of TLS config")
 }
 
-func ValidateInputsTLSConfigFlags(cmd *cobra.Command, args []string) error {
-	return validate.Struct(inputsTLSConfig)
+func ValidateTLSConfigFlags(*cobra.Command, []string) error {
+	return validate.Struct(tlsConfig)
 }
 
-func InputsTLSConfig() string {
-	return inputsTLSConfig.TLSConfig
+func TLSConfig() string {
+	return tlsConfig.TLSConfig
 }

@@ -92,8 +92,21 @@ resources:
 # カスタムハンドラーの定義
 # handlers:
 #   - name: "example"
-#     endpoint: "unix:autoscaler-handlers-example.sock"
+#     endpoint: "unix:example-handler.sock" # or "localhost:8081"
 
 # オートスケーラーの動作設定
 autoscaler:
   cooldown: 600 # ジョブの連続実行を抑止するためのクールダウン期間を秒数で指定。デフォルト: 600(10分)
+
+# CoreのgRPCエンドポイントのTLS設定(省略可)
+#  server_tls_config:
+#    cert_file: path/to/server-cert.pem
+#    key_file: /path/to/server-key.pem
+#    client_auth_type: RequireAndVerifyClientCert
+#    client_ca_file: path/to/ca-cert.pem
+
+# カスタムハンドラへのgRPC接続のTLS設定(省略可)
+#  handler_tls_config:
+#    cert_file: path/to/server-cert.pem
+#    key_file: path/to/server-key.pem
+#    root_ca_file: path/to/root-ca-chain.pem

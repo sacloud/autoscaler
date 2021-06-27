@@ -27,7 +27,7 @@ var Command = &cobra.Command{
 	RunE:  run,
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(*cobra.Command, []string) error {
 	for _, h := range core.BuiltinHandlers() {
 		fmt.Println(h.Name)
 	}
