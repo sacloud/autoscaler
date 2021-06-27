@@ -59,4 +59,4 @@ Zabbix Inputsのエンドポイントの保護が難しい場合はZabbixのRemo
 
 ## TLS関連設定
 
-[Inputs共通設定](../tls_config.md)を参照ください。  
+[Inputs共通設定](../config.md)を参照ください。  

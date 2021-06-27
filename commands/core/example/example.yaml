@@ -110,3 +110,13 @@ autoscaler:
 #    cert_file: path/to/server-cert.pem
 #    key_file: path/to/server-key.pem
 #    root_ca_file: path/to/root-ca-chain.pem
+
+# Exporterの設定
+#  exporter_config:
+#    enabled: true
+#    address: ":8081"
+#    tls_config:
+#      cert_file: path/to/server-cert.pem
+#      key_file: /path/to/server-key.pem
+#      client_auth_type: RequireAndVerifyClientCert
+#      client_ca_file: path/to/ca-cert.pem

@@ -32,7 +32,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: flags.ValidateMultiFunc(true,
 		flags.ValidateLogFlags,
 		flags.ValidateListenerFlags,
-		flags.ValidateTLSConfigFlags,
+		flags.ValidateInputsConfigFlags,
 	),
 }
 
@@ -44,7 +44,7 @@ var serveCmd = &cobra.Command{
 	Args:          cobra.NoArgs,
 	PreRunE: flags.ValidateMultiFunc(true,
 		flags.ValidateListenerFlags,
-		flags.ValidateTLSConfigFlags,
+		flags.ValidateInputsConfigFlags,
 	),
 	RunE: run,
 }
@@ -53,7 +53,7 @@ func init() {
 	flags.SetLogFlags(rootCmd)
 
 	flags.SetListenerFlag(serveCmd, "unix:example-handler.sock")
-	flags.SetTLSConfigFlag(serveCmd)
+	flags.SetInputsConfigFlag(serveCmd)
 
 	rootCmd.AddCommand(
 		serveCmd,
@@ -68,5 +68,5 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	return handlers.Serve(context.Background(), example.NewHandler(flags.ListenAddr(), flags.TLSConfig(), flags.NewLogger()))
+	return handlers.Serve(context.Background(), example.NewHandler(flags.ListenAddr(), flags.InputsConfig(), flags.NewLogger()))
 }

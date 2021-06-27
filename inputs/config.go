@@ -22,16 +22,20 @@ import (
 	"github.com/sacloud/autoscaler/config"
 )
 
-// TLSConfig InputsのTLS関連動作設定
-type TLSConfig struct {
-	// WebServer WebhookサーバのTLS関連設定
-	Server *config.TLSStruct `yaml:"server_tls_config"`
-	// CoreClient coreのgRPCクライアントのTLS関連設定
-	CoreClient *config.TLSStruct `yaml:"core_tls_config"`
+// Config InputsのTLS関連動作設定
+type Config struct {
+	// ServerTLSConfig WebhookサーバのTLS関連設定
+	ServerTLSConfig *config.TLSStruct `yaml:"server_tls_config"`
+
+	// CoreTLSConfig coreのgRPCクライアントのTLS関連設定
+	CoreTLSConfig *config.TLSStruct `yaml:"core_tls_config"`
+
+	// ExporterConfig Exporterの設定
+	ExporterConfig *config.ExporterConfig `yaml:"exporter_config"`
 }
 
-// LoadTLSConfigFromPath 指定のパスからConfigをロードする
-func LoadTLSConfigFromPath(path string) (*TLSConfig, error) {
+// LoadConfigFromPath 指定のパスからConfigをロードする
+func LoadConfigFromPath(path string) (*Config, error) {
 	if path == "" {
 		return nil, nil
 	}
@@ -39,16 +43,19 @@ func LoadTLSConfigFromPath(path string) (*TLSConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &TLSConfig{}
+	c := &Config{}
 	if err := yaml.UnmarshalWithOptions(data, c, yaml.Strict()); err != nil {
 		return nil, err
 	}
 
-	if c.Server != nil {
-		c.Server.SetDirectory(filepath.Dir(path))
+	if c.ServerTLSConfig != nil {
+		c.ServerTLSConfig.SetDirectory(filepath.Dir(path))
 	}
-	if c.CoreClient != nil {
-		c.CoreClient.SetDirectory(filepath.Dir(path))
+	if c.CoreTLSConfig != nil {
+		c.CoreTLSConfig.SetDirectory(filepath.Dir(path))
+	}
+	if c.ExporterConfig != nil && c.ExporterConfig.TLSConfig != nil {
+		c.ExporterConfig.TLSConfig.SetDirectory(filepath.Dir(path))
 	}
 
 	return c, nil

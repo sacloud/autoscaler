@@ -16,8 +16,6 @@ package handlers
 
 import (
 	"context"
-	"os/signal"
-	"syscall"
 
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handler"
@@ -30,25 +28,15 @@ var _ handler.HandleServiceServer = (*handleService)(nil)
 type handleService struct {
 	handler.UnimplementedHandleServiceServer
 	Handler CustomHandler
+	conf    *Config
 }
 
-func (h *handleService) listenAndServe(parentCtx context.Context) error {
-	errCh := make(chan error)
-	ctx, stop := signal.NotifyContext(parentCtx, syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
+func (h *handleService) listenAndServe(ctx context.Context) error {
 	opts := &grpcutil.ListenerOption{
 		Address: h.Handler.ListenAddress(),
 	}
-	tlsConfigPath := h.Handler.TLSConfigPath()
-	if tlsConfigPath != "" {
-		conf, err := LoadTLSConfig(tlsConfigPath)
-		if err != nil {
-			return err
-		}
-		if conf.HandlerTLSConfig != nil {
-			opts.TLSConfig = conf.HandlerTLSConfig
-		}
+	if h.conf != nil && h.conf.HandlerTLSConfig != nil {
+		opts.TLSConfig = h.conf.HandlerTLSConfig
 	}
 
 	grpcServer, listener, cleanup, err := grpcutil.Server(opts)
@@ -65,24 +53,7 @@ func (h *handleService) listenAndServe(parentCtx context.Context) error {
 		cleanup()
 	}()
 
-	go func() {
-		if err := h.Handler.GetLogger().Info("message", "started", "address", listener.Addr().String()); err != nil {
-			errCh <- err
-		}
-		if err := grpcServer.Serve(listener); err != nil {
-			errCh <- err
-		}
-	}()
-
-	for {
-		select {
-		case err := <-errCh:
-			h.Handler.GetLogger().Error("error", err) // nolint
-		case <-ctx.Done():
-			h.Handler.GetLogger().Info("message", "shutting down", "error", ctx.Err()) // nolint
-			return ctx.Err()
-		}
-	}
+	return grpcServer.Serve(listener)
 }
 
 func (h *handleService) PreHandle(req *handler.PreHandleRequest, server handler.HandleService_PreHandleServer) error {

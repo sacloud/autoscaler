@@ -17,10 +17,12 @@ package core
 import (
 	"context"
 	"fmt"
+	"net"
 
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/log"
+	"github.com/sacloud/autoscaler/metrics"
 	"github.com/sacloud/autoscaler/request"
 	"google.golang.org/grpc/reflection"
 )
@@ -91,6 +93,7 @@ func ResourcesTree(parentCtx context.Context, addr, configPath string, logger *l
 func (c *Core) run(ctx context.Context) error {
 	errCh := make(chan error)
 
+	// gRPC server
 	server, listener, cleanup, err := grpcutil.Server(&grpcutil.ListenerOption{
 		Address:   c.listenAddress,
 		TLSConfig: c.config.AutoScaler.ServerTLSConfig,
@@ -107,8 +110,30 @@ func (c *Core) run(ctx context.Context) error {
 		cleanup()
 	}()
 
+	// metrics server
+	if c.config.AutoScaler.ExporterEnabled() {
+		exporterConfig := c.config.AutoScaler.ExporterConfig
+		server := metrics.NewServer(exporterConfig.ListenAddress(), exporterConfig.TLSConfig, c.logger)
+		exporterListener, err := net.Listen("tcp", exporterConfig.ListenAddress())
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			if err := server.Serve(exporterListener); err != nil {
+				errCh <- err
+			}
+		}()
+		defer func() {
+			if err := server.Shutdown(ctx); err != nil {
+				c.logger.Error("error", err) // nolint
+			}
+			exporterListener.Close() // nolint
+		}()
+	}
+
 	go func() {
-		if err := c.logger.Info("message", "autoscaler started", "address", listener.Addr().String()); err != nil {
+		if err := c.logger.Info("message", "autoscaler core started", "address", listener.Addr().String()); err != nil {
 			errCh <- err
 		}
 		if err := server.Serve(listener); err != nil {

@@ -85,6 +85,16 @@ func TestConfig_Load(t *testing.T) {
 						TLSKeyPath:  "server.key",
 						RootCAs:     "ca.crt",
 					},
+					ExporterConfig: &config.ExporterConfig{
+						Enabled: true,
+						Address: "localhost:8080",
+						TLSConfig: &config.TLSStruct{
+							TLSCertPath: "server.crt",
+							TLSKeyPath:  "server.key",
+							ClientAuth:  "RequireAndVerifyClientCert",
+							ClientCAs:   "ca.crt",
+						},
+					},
 				},
 			},
 			args: args{
@@ -114,6 +124,15 @@ autoscaler:
     cert_file: server.crt
     key_file: server.key
     root_ca_file: ca.crt
+  exporter_config:
+    enabled: true
+    address: "localhost:8080"
+    tls_config:
+      cert_file: server.crt
+      key_file: server.key
+      client_auth_type: RequireAndVerifyClientCert
+      client_ca_file: ca.crt
+
 `)),
 			},
 			wantErr: false,
