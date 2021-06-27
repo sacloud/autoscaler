@@ -19,16 +19,31 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/log"
 )
 
-// Handler メトリクス収集用のハンドラーを返す
-func Handler() http.Handler {
+func handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 	return mux
+}
+
+var errors = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "sacloud_autoscaler_grpc_errors_total",
+	Help: "The total number of errors",
+}, []string{"component"})
+
+// IncrementErrorCount sacloud_autoscaler_grpc_errors_totalを指定のラベルとともにインクリメントする
+func IncrementErrorCount(component string) {
+	errors.WithLabelValues(component).Inc()
+}
+
+func InitErrorCount(component string) {
+	errors.WithLabelValues(component)
 }
 
 // Server メトリクス収集用の*http.Serverラッパー
@@ -45,7 +60,7 @@ func NewServer(addr string, tlsConfig *config.TLSStruct, logger *log.Logger) *Se
 		ListenAddress: addr,
 		TLSConfig:     tlsConfig,
 		logger:        logger,
-		server:        &http.Server{Addr: addr, Handler: Handler()},
+		server:        &http.Server{Addr: addr, Handler: handler()},
 	}
 }
 

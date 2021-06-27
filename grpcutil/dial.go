@@ -24,6 +24,7 @@ import (
 type DialOption struct {
 	Destination          string
 	TransportCredentials credentials.TransportCredentials
+	DialOpts             []grpc.DialOption
 }
 
 // DialContext 指定のオプションでgRPCクライアント接続を行い、コネクションとクリーンアップ用funcを返す
@@ -34,6 +35,7 @@ func DialContext(ctx context.Context, opt *DialOption) (*grpc.ClientConn, func()
 	} else {
 		dialOpts = append(dialOpts, grpc.WithInsecure())
 	}
+	dialOpts = append(dialOpts, opt.DialOpts...)
 
 	conn, err := grpc.DialContext(ctx, opt.Destination, dialOpts...)
 	if err != nil {

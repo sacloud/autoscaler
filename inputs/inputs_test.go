@@ -42,7 +42,7 @@ func (i *fakeInput) Version() string {
 	return "dev"
 }
 func (i *fakeInput) ShouldAccept(req *http.Request) (bool, error) {
-	return true, nil
+	return false, nil
 }
 func (i *fakeInput) Destination() string {
 	return ""
@@ -58,6 +58,8 @@ func (i *fakeInput) GetLogger() *log.Logger {
 }
 
 func Test_server_serve(t *testing.T) {
+	initMetrics()
+
 	tests := []struct {
 		name           string
 		schema         string

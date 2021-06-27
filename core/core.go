@@ -36,6 +36,9 @@ type Core struct {
 }
 
 func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) {
+	metrics.InitErrorCount("core")
+	metrics.InitErrorCount("core_to_handlers")
+
 	return &Core{
 		listenAddress: addr,
 		config:        c,
@@ -95,8 +98,9 @@ func (c *Core) run(ctx context.Context) error {
 
 	// gRPC server
 	server, listener, cleanup, err := grpcutil.Server(&grpcutil.ListenerOption{
-		Address:   c.listenAddress,
-		TLSConfig: c.config.AutoScaler.ServerTLSConfig,
+		Address:    c.listenAddress,
+		TLSConfig:  c.config.AutoScaler.ServerTLSConfig,
+		ServerOpts: grpcutil.ServerErrorCountInterceptor("core"),
 	})
 	if err != nil {
 		return err

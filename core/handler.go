@@ -199,7 +199,10 @@ func (h *Handler) postHandleBuiltin(ctx *HandlingContext, computed Computed) err
 }
 
 func (h *Handler) preHandleExternal(ctx *HandlingContext, computed Computed) error {
-	opt := &grpcutil.DialOption{Destination: h.Endpoint}
+	opt := &grpcutil.DialOption{
+		Destination: h.Endpoint,
+		DialOpts:    grpcutil.ClientErrorCountInterceptor("core_to_handlers"),
+	}
 	if ctx.tlsConfig != nil {
 		cred, err := ctx.tlsConfig.TransportCredentials()
 		if err != nil {
@@ -228,7 +231,10 @@ func (h *Handler) preHandleExternal(ctx *HandlingContext, computed Computed) err
 }
 
 func (h *Handler) handleExternal(ctx *HandlingContext, computed Computed) error {
-	opt := &grpcutil.DialOption{Destination: h.Endpoint}
+	opt := &grpcutil.DialOption{
+		Destination: h.Endpoint,
+		DialOpts:    grpcutil.ClientErrorCountInterceptor("core_to_handlers"),
+	}
 	if ctx.tlsConfig != nil {
 		cred, err := ctx.tlsConfig.TransportCredentials()
 		if err != nil {
@@ -257,7 +263,10 @@ func (h *Handler) handleExternal(ctx *HandlingContext, computed Computed) error 
 }
 
 func (h *Handler) postHandleExternal(ctx *HandlingContext, computed Computed) error {
-	opt := &grpcutil.DialOption{Destination: h.Endpoint}
+	opt := &grpcutil.DialOption{
+		Destination: h.Endpoint,
+		DialOpts:    grpcutil.ClientErrorCountInterceptor("core_to_handlers"),
+	}
 	if ctx.tlsConfig != nil {
 		cred, err := ctx.tlsConfig.TransportCredentials()
 		if err != nil {

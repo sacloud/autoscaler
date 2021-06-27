@@ -23,6 +23,7 @@ import (
 	"net/url"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
@@ -55,6 +56,8 @@ func FullName(input Input) string {
 }
 
 func Serve(ctx context.Context, input Input) error {
+	initMetrics()
+
 	errCh := make(chan error)
 
 	conf, err := LoadConfigFromPath(input.ConfigPath())
@@ -127,12 +130,28 @@ func newServer(input Input, conf *Config) (*server, error) {
 		Server:        &http.Server{Addr: input.ListenAddress(), Handler: serveMux},
 	}
 
-	serveMux.HandleFunc("/up", func(w http.ResponseWriter, req *http.Request) {
-		s.handle("up", w, req)
-	})
-	serveMux.HandleFunc("/down", func(w http.ResponseWriter, req *http.Request) {
-		s.handle("down", w, req)
-	})
+	upWebhookHandler := promhttp.InstrumentHandlerCounter(
+		counter,
+		promhttp.InstrumentHandlerCounter(
+			upCounter,
+			http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				s.handle("up", w, req)
+			}),
+		),
+	)
+	downWebhookHandler := promhttp.InstrumentHandlerCounter(
+		counter,
+		promhttp.InstrumentHandlerCounter(
+			downCounter,
+			http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				s.handle("down", w, req)
+			}),
+		),
+	)
+
+	serveMux.HandleFunc("/up", upWebhookHandler)
+	serveMux.HandleFunc("/down", downWebhookHandler)
+
 	serveMux.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok")) // nolint
@@ -180,7 +199,6 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 		return
 	}
 	if scalingReq == nil {
-		w.WriteHeader(http.StatusOK)
 		w.WriteHeader(http.StatusOK)
 		w.Header().Add("Content-Type", "application/json")
 		w.Write([]byte(`{"message":"ignored"}`)) // nolint
@@ -299,6 +317,7 @@ func (s *server) send(scalingReq *ScalingRequest) (*request.ScalingResponse, err
 
 	dialOption := &grpcutil.DialOption{
 		Destination: s.coreAddress,
+		DialOpts:    grpcutil.ClientErrorCountInterceptor("inputs_to_core"),
 	}
 	if s.config != nil && s.config.CoreTLSConfig != nil {
 		cred, err := s.config.CoreTLSConfig.TransportCredentials()
