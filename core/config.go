@@ -108,14 +108,24 @@ func (c *Config) Validate(ctx context.Context) error {
 		errors = multierror.Append(errors, errs...)
 	}
 
+	// AutoScalerConfig
+	if err := c.AutoScaler.Validate(ctx); err != nil {
+		errors = multierror.Append(errors, err)
+	}
+
 	return errors.ErrorOrNil()
 }
 
 // AutoScalerConfig オートスケーラー自体の動作設定
 type AutoScalerConfig struct {
-	CoolDownSec      int               `yaml:"cooldown"`           // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
-	ServerTLSConfig  *config.TLSStruct `yaml:"server_tls_config"`  // CoreへのgRPC接続のTLS設定
-	HandlerTLSConfig *config.TLSStruct `yaml:"handler_tls_config"` // HandlersへのgRPC接続のTLS設定
+	CoolDownSec      int                    `yaml:"cooldown"`           // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
+	ServerTLSConfig  *config.TLSStruct      `yaml:"server_tls_config"`  // CoreへのgRPC接続のTLS設定
+	HandlerTLSConfig *config.TLSStruct      `yaml:"handler_tls_config"` // HandlersへのgRPC接続のTLS設定
+	ExporterConfig   *config.ExporterConfig `yaml:"exporter_config"`    // Exporter設定
+}
+
+func (c *AutoScalerConfig) Validate(context.Context) error {
+	return nil
 }
 
 func (c *AutoScalerConfig) JobCoolDownTime() time.Duration {
@@ -124,4 +134,8 @@ func (c *AutoScalerConfig) JobCoolDownTime() time.Duration {
 		return defaults.CoolDownTime
 	}
 	return time.Duration(sec) * time.Second
+}
+
+func (c *AutoScalerConfig) ExporterEnabled() bool {
+	return c.ExporterConfig != nil && c.ExporterConfig.Enabled
 }

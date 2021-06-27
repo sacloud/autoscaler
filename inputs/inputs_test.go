@@ -31,8 +31,8 @@ import (
 )
 
 type fakeInput struct {
-	listenAddr    string
-	tlsConfigPath string
+	listenAddr string
+	configPath string
 }
 
 func (i *fakeInput) Name() string {
@@ -50,8 +50,8 @@ func (i *fakeInput) Destination() string {
 func (i *fakeInput) ListenAddress() string {
 	return i.listenAddr
 }
-func (i *fakeInput) TLSConfigPath() string {
-	return i.tlsConfigPath
+func (i *fakeInput) ConfigPath() string {
+	return i.configPath
 }
 func (i *fakeInput) GetLogger() *log.Logger {
 	return test.Logger
@@ -61,7 +61,7 @@ func Test_server_serve(t *testing.T) {
 	tests := []struct {
 		name           string
 		schema         string
-		webConfigPath  string
+		configPath     string
 		clientKeyPath  string
 		clientCertPath string
 		caCertPath     string
@@ -70,47 +70,47 @@ func Test_server_serve(t *testing.T) {
 		forceHTTP2     bool
 	}{
 		{
-			name:       "http without TLSConfigPath",
+			name:       "http without ConfigPath",
 			schema:     "http",
 			statusCode: http.StatusOK,
 		},
 		{
-			name:    "https without TLSConfigPath",
+			name:    "https without ConfigPath",
 			schema:  "https",
 			wantErr: true,
 		},
 		{
-			name:          "https with minimal TLSConfig",
-			schema:        "https",
-			webConfigPath: "../test/inputs.minimal.yaml",
-			statusCode:    http.StatusOK,
+			name:       "https with minimal Config",
+			schema:     "https",
+			configPath: "../test/inputs.minimal.yaml",
+			statusCode: http.StatusOK,
 		},
 		{
-			name:          "http with minimal TLSConfig",
-			schema:        "http",
-			webConfigPath: "../test/inputs.minimal.yaml",
-			statusCode:    http.StatusBadRequest,
+			name:       "http with minimal Config",
+			schema:     "http",
+			configPath: "../test/inputs.minimal.yaml",
+			statusCode: http.StatusBadRequest,
 		},
 		{
-			name:           "with mtls TLSConfig",
+			name:           "with mtls Config",
 			schema:         "https",
-			webConfigPath:  "../test/inputs.mtls.yaml",
+			configPath:     "../test/inputs.mtls.yaml",
 			clientCertPath: "../test/client-cert.pem",
 			clientKeyPath:  "../test/client-key.pem",
 			caCertPath:     "../test/ca-cert.pem",
 			statusCode:     http.StatusOK,
 		},
 		{
-			name:          "with mtls TLSConfig without client cert",
-			schema:        "http",
-			webConfigPath: "../test/inputs.mtls.yaml",
-			caCertPath:    "../test/ca-cert.pem",
-			statusCode:    http.StatusBadRequest,
+			name:       "with mtls Config without client cert",
+			schema:     "http",
+			configPath: "../test/inputs.mtls.yaml",
+			caCertPath: "../test/ca-cert.pem",
+			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:           "with mtls and HTTP/2",
 			schema:         "https",
-			webConfigPath:  "../test/inputs.mtls.yaml",
+			configPath:     "../test/inputs.mtls.yaml",
 			clientCertPath: "../test/client-cert.pem",
 			clientKeyPath:  "../test/client-key.pem",
 			caCertPath:     "../test/ca-cert.pem",
@@ -122,10 +122,14 @@ func Test_server_serve(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			input := &fakeInput{
-				listenAddr:    "localhost:0",
-				tlsConfigPath: tt.webConfigPath,
+				listenAddr: "localhost:0",
+				configPath: tt.configPath,
 			}
-			server, err := newServer(input)
+			conf, err := LoadConfigFromPath(tt.configPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			server, err := newServer(input, conf)
 			if err != nil {
 				t.Fatal(err)
 			}

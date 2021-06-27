@@ -15,6 +15,10 @@
 package zabbix
 
 import (
+	"context"
+	"os/signal"
+	"syscall"
+
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/inputs"
@@ -28,17 +32,19 @@ var Command = &cobra.Command{
 	PreRunE: flags.ValidateMultiFunc(true,
 		flags.ValidateDestinationFlags,
 		flags.ValidateListenerFlags,
-		flags.ValidateTLSConfigFlags,
+		flags.ValidateInputsConfigFlags,
 	),
 	RunE: run,
 }
 
 func init() {
 	flags.SetDestinationFlag(Command)
-	flags.SetTLSConfigFlag(Command)
+	flags.SetInputsConfigFlag(Command)
 	flags.SetListenerFlag(Command, defaults.ListenAddress)
 }
 
 func run(*cobra.Command, []string) error {
-	return inputs.Serve(zabbix.NewInput(flags.Destination(), flags.ListenAddr(), flags.TLSConfig(), flags.NewLogger()))
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	return inputs.Serve(ctx, zabbix.NewInput(flags.Destination(), flags.ListenAddr(), flags.InputsConfig(), flags.NewLogger()))
 }

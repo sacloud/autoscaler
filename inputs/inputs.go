@@ -27,6 +27,7 @@ import (
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/log"
+	"github.com/sacloud/autoscaler/metrics"
 	"github.com/sacloud/autoscaler/request"
 	"google.golang.org/grpc"
 )
@@ -45,7 +46,7 @@ type Input interface {
 	ShouldAccept(req *http.Request) (bool, error) // true,nilを返した場合のみCoreへのリクエストを行う
 	Destination() string
 	ListenAddress() string
-	TLSConfigPath() string
+	ConfigPath() string
 	GetLogger() *log.Logger
 }
 
@@ -53,12 +54,53 @@ func FullName(input Input) string {
 	return fmt.Sprintf("autoscaler-inputs-%s", input.Name())
 }
 
-func Serve(input Input) error {
-	server, err := newServer(input)
+func Serve(ctx context.Context, input Input) error {
+	errCh := make(chan error)
+
+	conf, err := LoadConfigFromPath(input.ConfigPath())
+	if err != nil {
+		return err
+	}
+
+	// webhook
+	go func() {
+		errCh <- startWebhookServer(ctx, input, conf)
+	}()
+
+	// exporter
+	if conf != nil && conf.ExporterConfig != nil && conf.ExporterConfig.Enabled {
+		go func() {
+			errCh <- startExporter(ctx, input, conf.ExporterConfig)
+		}()
+	}
+
+	select {
+	case err := <-errCh:
+		return fmt.Errorf("inputs service failed: %s", err)
+	case <-ctx.Done():
+		input.GetLogger().Info("message", "shutting down", "error", ctx.Err()) // nolint
+	}
+	return ctx.Err()
+}
+
+func startWebhookServer(_ context.Context, input Input, conf *Config) error {
+	server, err := newServer(input, conf)
 	if err != nil {
 		return err
 	}
 	return server.listenAndServe()
+}
+
+func startExporter(ctx context.Context, input Input, conf *config.ExporterConfig) error {
+	if !conf.Enabled {
+		return nil
+	}
+	listener, err := net.Listen("tcp", conf.Address)
+	if err != nil {
+		return err
+	}
+	server := metrics.NewServer(listener.Addr().String(), conf.TLSConfig, input.GetLogger())
+	return server.Serve(listener)
 }
 
 type server struct {
@@ -67,26 +109,21 @@ type server struct {
 	webConfigPath string
 	input         Input
 	logger        *log.Logger
-	tlsConfig     *TLSConfig
+	config        *Config
 
 	*http.Server
 }
 
-func newServer(input Input) (*server, error) {
-	conf, err := LoadTLSConfigFromPath(input.TLSConfigPath())
-	if err != nil {
-		return nil, err
-	}
-
+func newServer(input Input, conf *Config) (*server, error) {
 	serveMux := http.NewServeMux()
 
 	s := &server{
 		coreAddress:   input.Destination(),
 		listenAddress: input.ListenAddress(),
-		webConfigPath: input.TLSConfigPath(),
+		webConfigPath: input.ConfigPath(),
 		input:         input,
 		logger:        input.GetLogger(),
-		tlsConfig:     conf,
+		config:        conf,
 		Server:        &http.Server{Addr: input.ListenAddress(), Handler: serveMux},
 	}
 
@@ -115,12 +152,12 @@ func (s *server) listenAndServe() error {
 }
 
 func (s *server) serve(l net.Listener) error {
-	if err := s.logger.Info("message", "started", "address", s.listenAddress); err != nil {
+	if err := s.logger.Info("message", "started", "address", l.Addr().String()); err != nil {
 		return err
 	}
 
-	if s.tlsConfig != nil {
-		tlsConfig, err := s.tlsConfig.Server.TLSConfig()
+	if s.config != nil && s.config.ServerTLSConfig != nil {
+		tlsConfig, err := s.config.ServerTLSConfig.TLSConfig()
 		if err != nil {
 			if err == config.ErrNoTLSConfig {
 				return s.Serve(l)
@@ -263,8 +300,8 @@ func (s *server) send(scalingReq *ScalingRequest) (*request.ScalingResponse, err
 	dialOption := &grpcutil.DialOption{
 		Destination: s.coreAddress,
 	}
-	if s.tlsConfig != nil && s.tlsConfig.CoreClient != nil {
-		cred, err := s.tlsConfig.CoreClient.TransportCredentials()
+	if s.config != nil && s.config.CoreTLSConfig != nil {
+		cred, err := s.config.CoreTLSConfig.TransportCredentials()
 		if err != nil && err != config.ErrNoTLSConfig {
 			return nil, err
 		}

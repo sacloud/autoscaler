@@ -52,8 +52,8 @@ func (h *Handler) ListenAddress() string {
 	return h.listenAddress
 }
 
-// TLSConfigPath CustomHandlerインターフェースの実装
-func (h *Handler) TLSConfigPath() string {
+// ConfigPath CustomHandlerインターフェースの実装
+func (h *Handler) ConfigPath() string {
 	return h.tlsConfigPath
 }
 

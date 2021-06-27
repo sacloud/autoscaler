@@ -10,4 +10,4 @@
 
 各Inputs共通の設定については以下を参照してください。  
 
-- [Inputs共通設定](./tls_config.md)
+- [Inputs共通設定](./config.md)

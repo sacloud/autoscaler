@@ -51,7 +51,7 @@ type Logger interface {
 // Listener gRPCサーバとしてリッスンするためのインターフェース
 type Listener interface {
 	ListenAddress() string
-	TLSConfigPath() string
+	ConfigPath() string
 }
 
 // Handler CoreからのHandleリクエストを処理するためのインターフェース
@@ -74,25 +74,32 @@ type ResponseSender interface {
 	Send(*handler.HandleResponse) error
 }
 
-// TLSConfig .
-type TLSConfig struct {
-	HandlerTLSConfig *config.TLSStruct `yaml:"tls_config"`
+// Config .
+type Config struct {
+	HandlerTLSConfig *config.TLSStruct      `yaml:"tls_config"`
+	ExporterConfig   *config.ExporterConfig `yaml:"exporter_config"`
 }
 
-// LoadTLSConfig ファイルパスからTLSConfigを読み込む
-func LoadTLSConfig(configPath string) (*TLSConfig, error) {
+// LoadConfigFromPath ファイルパスからTLSConfigを読み込む
+func LoadConfigFromPath(configPath string) (*Config, error) {
+	if configPath == "" {
+		return nil, nil
+	}
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
 
-	conf := &TLSConfig{}
+	conf := &Config{}
 	if err := yaml.UnmarshalWithOptions(data, conf, yaml.Strict()); err != nil {
 		return nil, err
 	}
 
 	if conf.HandlerTLSConfig != nil {
 		conf.HandlerTLSConfig.SetDirectory(filepath.Dir(configPath))
+	}
+	if conf.ExporterConfig != nil && conf.ExporterConfig.TLSConfig != nil {
+		conf.ExporterConfig.TLSConfig.SetDirectory(filepath.Dir(configPath))
 	}
 	return conf, nil
 }

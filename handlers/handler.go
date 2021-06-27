@@ -17,18 +17,69 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"net"
+
+	"github.com/sacloud/autoscaler/metrics"
 )
 
 // Serve 指定のハンドラでgRPCサーバをスタート/リッスンする
-func Serve(parentCtx context.Context, handler CustomHandler) error {
+func Serve(ctx context.Context, handler CustomHandler) error {
 	handler.SetLogger(handler.GetLogger().With("from", handlerFullName(handler)))
-
 	validateHandlerInterfaces(handler)
 
+	conf, err := LoadConfigFromPath(handler.ConfigPath())
+	if err != nil {
+		return err
+	}
+
+	errCh := make(chan error)
+	go func() {
+		if err := startHandlerService(ctx, handler, conf); err != nil {
+			errCh <- err
+		}
+	}()
+	go func() {
+		if err := startExporter(ctx, handler, conf); err != nil {
+			errCh <- err
+		}
+	}()
+
+	logger := handler.GetLogger()
+	for {
+		select {
+		case err := <-errCh:
+			logger.Error("error", err) // nolint
+		case <-ctx.Done():
+			logger.Info("message", "shutting down", "error", ctx.Err()) // nolint
+			return ctx.Err()
+		}
+	}
+}
+
+func startHandlerService(ctx context.Context, handler CustomHandler, conf *Config) error {
 	service := &handleService{
 		Handler: handler,
+		conf:    conf,
 	}
-	return service.listenAndServe(parentCtx)
+	return service.listenAndServe(ctx)
+}
+
+func startExporter(ctx context.Context, handler CustomHandler, conf *Config) error {
+	if conf != nil && conf.ExporterConfig != nil && conf.ExporterConfig.Enabled {
+		listener, err := net.Listen("tcp", conf.ExporterConfig.Address)
+		if err != nil {
+			return err
+		}
+
+		server := metrics.NewServer(conf.ExporterConfig.Address, conf.ExporterConfig.TLSConfig, handler.GetLogger())
+		defer func() {
+			server.Shutdown(ctx) // nolint
+			listener.Close()     // nolint
+		}()
+
+		return server.Serve(listener)
+	}
+	return nil
 }
 
 func handlerFullName(server HandlerMeta) string {

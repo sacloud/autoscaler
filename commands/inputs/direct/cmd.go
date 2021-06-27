@@ -39,7 +39,7 @@ var Command = &cobra.Command{
 			if err := validate.Struct(param); err != nil {
 				return err
 			}
-			return flags.ValidateTLSConfigFlags(cmd, args)
+			return flags.ValidateInputsConfigFlags(cmd, args)
 		},
 	),
 	RunE: run,
@@ -61,7 +61,7 @@ var param = &parameter{
 
 func init() {
 	flags.SetDestinationFlag(Command)
-	flags.SetTLSConfigFlag(Command)
+	flags.SetInputsConfigFlag(Command)
 	Command.Flags().StringVarP(&param.Action, "action", "", param.Action, "Name of the action to perform")
 	Command.Flags().StringVarP(&param.ResourceGroupname, "resource-group-name", "", param.ResourceGroupname, "Name of the target resource group")
 	Command.Flags().StringVarP(&param.Source, "source", "", param.Source, "A string representing the request source, passed to AutoScaler Core")
@@ -74,13 +74,13 @@ func run(_ *cobra.Command, args []string) error {
 	opts := &grpcutil.DialOption{
 		Destination: flags.Destination(),
 	}
-	if flags.TLSConfig() != "" {
-		tlsConfig, err := inputs.LoadTLSConfigFromPath(flags.TLSConfig())
+	if flags.InputsConfig() != "" {
+		conf, err := inputs.LoadConfigFromPath(flags.InputsConfig())
 		if err != nil {
 			return err
 		}
-		if tlsConfig != nil && tlsConfig.CoreClient != nil {
-			cred, err := tlsConfig.CoreClient.TransportCredentials()
+		if conf != nil && conf.CoreTLSConfig != nil {
+			cred, err := conf.CoreTLSConfig.TransportCredentials()
 			if err != nil {
 				return err
 			}
