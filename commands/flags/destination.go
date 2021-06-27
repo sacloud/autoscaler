@@ -32,7 +32,7 @@ func SetDestinationFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&destination.Destination, "dest", "", destination.Destination, "Address of the gRPC endpoint of AutoScaler Core")
 }
 
-func ValidateDestinationFlags(cmd *cobra.Command, args []string) error {
+func ValidateDestinationFlags(*cobra.Command, []string) error {
 	return validate.Struct(destination)
 }
 

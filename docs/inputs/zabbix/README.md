@@ -56,3 +56,7 @@ Zabbix Inputsはエンドポイントに対しPOSTリクエストがあったら
 外部からは隔離された監視用ネットワーク上で起動するなどでエンドポイントの保護を別途行なってください。
 
 Zabbix Inputsのエンドポイントの保護が難しい場合はZabbixのRemote commandとDirect Inputsを組み合わせる方法もご検討ください。  
+
+## TLS関連設定
+
+[Inputs共通設定](../tls_config.md)を参照ください。  

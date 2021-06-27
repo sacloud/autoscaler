@@ -61,7 +61,7 @@ handlers:
 
 # オートスケーラーの動作設定(省略可能)
 autoscaler:
-  cooldown: <number | default = 600> # 同一ジョブの連続実行を抑制するためのクールダウン期間、秒単位で指定
+  <autoscaler_config>
 
 # さくらのクラウドAPI関連設定(省略可能)
 # Note: APIキーにはアクセスレベル`作成・削除`または`設定編集`が必要です
@@ -85,6 +85,8 @@ sakuracloud:
       - [\<resource_def_router\>](#resource_def_router)
       - [\<resource_def_server\>](#resource_def_server)
 - [\<handler\>](#handler)
+- [\<autoscaler_config\>](#autoscaler_config)
+- 
 
 ### \<resource_def_groups\>
 
@@ -337,6 +339,28 @@ plans:
 ```yaml
 name: <string> #ハンドラ名
 endpoint: <string> #gRPCのエンドポイントアドレス(例: unix:/var/run/your-custom-handler.sock)
+```
+
+### \<autoscaler_config\>
+
+オートスケーラーの動作設定
+
+```yaml
+cooldown: <number | default = 600> # 同一ジョブの連続実行を抑制するためのクールダウン期間、秒単位で指定
+
+# CoreのgRPCエンドポイントのTLS関連設定
+server_tls_config:
+  cert_file: <string> # 証明書のファイルパス
+  key_file: <string> # 秘密鍵のファイルパス
+  # クライアント認証タイプ: 詳細は https://golang.org/pkg/crypto/tls/#ClientAuthType を参照
+  client_auth_type: <"NoClientCert" | "RequestClientCert" | "RequireAnyClientCert" | "VerifyClientCertIfGiven" | "RequireAndVerifyClientCert" >
+  client_ca_file: <string> # クライアント認証で利用するCA証明書(チェイン)のファイルパス
+
+# HandlersへのgRPCリクエスト時のTLS関連設定
+handler_tls_config:
+  cert_file: <string> # 証明書のファイルパス
+  key_file: <string> # 秘密鍵のファイルパス 
+  root_ca_file: <string> # ルート証明書(チェイン)のファイルパス
 ```
 
 ## 名前付きプラン

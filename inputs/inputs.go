@@ -17,11 +17,13 @@ package inputs
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/log"
@@ -43,6 +45,7 @@ type Input interface {
 	ShouldAccept(req *http.Request) (bool, error) // true,nilを返した場合のみCoreへのリクエストを行う
 	Destination() string
 	ListenAddress() string
+	TLSConfigPath() string
 	GetLogger() *log.Logger
 }
 
@@ -51,11 +54,9 @@ func FullName(input Input) string {
 }
 
 func Serve(input Input) error {
-	server := &server{
-		coreAddress:   input.Destination(),
-		listenAddress: input.ListenAddress(),
-		input:         input,
-		logger:        input.GetLogger().WithPrefix("from", FullName(input)),
+	server, err := newServer(input)
+	if err != nil {
+		return err
 	}
 	return server.listenAndServe()
 }
@@ -63,12 +64,31 @@ func Serve(input Input) error {
 type server struct {
 	coreAddress   string
 	listenAddress string
+	webConfigPath string
 	input         Input
 	logger        *log.Logger
+	tlsConfig     *TLSConfig
+
+	*http.Server
 }
 
-func (s *server) listenAndServe() error {
-	serveMux := http.DefaultServeMux
+func newServer(input Input) (*server, error) {
+	conf, err := LoadTLSConfigFromPath(input.TLSConfigPath())
+	if err != nil {
+		return nil, err
+	}
+
+	serveMux := http.NewServeMux()
+
+	s := &server{
+		coreAddress:   input.Destination(),
+		listenAddress: input.ListenAddress(),
+		webConfigPath: input.TLSConfigPath(),
+		input:         input,
+		logger:        input.GetLogger(),
+		tlsConfig:     conf,
+		Server:        &http.Server{Addr: input.ListenAddress(), Handler: serveMux},
+	}
 
 	serveMux.HandleFunc("/up", func(w http.ResponseWriter, req *http.Request) {
 		s.handle("up", w, req)
@@ -81,11 +101,35 @@ func (s *server) listenAndServe() error {
 		w.Write([]byte("ok")) // nolint
 	})
 
+	return s, nil
+}
+
+func (s *server) listenAndServe() error {
+	listener, err := net.Listen("tcp", s.listenAddress)
+	if err != nil {
+		return err
+	}
+	defer listener.Close()
+
+	return s.serve(listener)
+}
+
+func (s *server) serve(l net.Listener) error {
 	if err := s.logger.Info("message", "started", "address", s.listenAddress); err != nil {
 		return err
 	}
 
-	return http.ListenAndServe(s.listenAddress, serveMux)
+	if s.tlsConfig != nil {
+		tlsConfig, err := s.tlsConfig.Server.TLSConfig()
+		if err != nil {
+			if err == config.ErrNoTLSConfig {
+				return s.Serve(l)
+			}
+		}
+		s.TLSConfig = tlsConfig
+		return s.ServeTLS(l, "", "")
+	}
+	return s.Serve(l)
 }
 
 func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Request) {
@@ -216,7 +260,18 @@ func (s *server) send(scalingReq *ScalingRequest) (*request.ScalingResponse, err
 	}
 	ctx := context.Background()
 
-	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: s.coreAddress})
+	dialOption := &grpcutil.DialOption{
+		Destination: s.coreAddress,
+	}
+	if s.tlsConfig != nil && s.tlsConfig.CoreClient != nil {
+		cred, err := s.tlsConfig.CoreClient.TransportCredentials()
+		if err != nil && err != config.ErrNoTLSConfig {
+			return nil, err
+		}
+		dialOption.TransportCredentials = cred
+	}
+
+	conn, cleanup, err := grpcutil.DialContext(ctx, dialOption)
 	if err != nil {
 		return nil, err
 	}

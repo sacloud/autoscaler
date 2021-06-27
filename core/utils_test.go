@@ -26,5 +26,5 @@ func testContext() *RequestContext {
 		source:            "default",
 		action:            "default",
 		resourceGroupName: "web",
-	}, test.Logger)
+	}, nil, test.Logger)
 }

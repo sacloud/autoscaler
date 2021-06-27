@@ -33,10 +33,11 @@ func NewHandlingContext(parent *RequestContext, computed Computed) *HandlingCont
 
 func (c *HandlingContext) WithLogger(keyvals ...interface{}) *HandlingContext {
 	ctx := NewHandlingContext(&RequestContext{
-		ctx:     c.RequestContext.ctx,
-		request: c.RequestContext.request,
-		job:     c.RequestContext.job,
-		logger:  c.RequestContext.logger,
+		ctx:       c.RequestContext.ctx,
+		request:   c.RequestContext.request,
+		job:       c.RequestContext.job,
+		logger:    c.RequestContext.logger,
+		tlsConfig: c.RequestContext.tlsConfig,
 	}, c.cachedComputed)
 	ctx.logger = ctx.logger.With(keyvals...)
 	return ctx

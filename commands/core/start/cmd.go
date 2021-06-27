@@ -29,7 +29,7 @@ import (
 var Command = &cobra.Command{
 	Use:   "start [flags]...",
 	Short: "start autoscaler's core server",
-	PreRunE: func(cmd *cobra.Command, args []string) error {
+	PreRunE: func(*cobra.Command, []string) error {
 		return validate.Struct(param)
 	},
 	RunE: run,
@@ -50,7 +50,7 @@ func init() {
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(*cobra.Command, []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	return core.Start(ctx, param.ListenAddress, param.ConfigPath, flags.NewLogger())

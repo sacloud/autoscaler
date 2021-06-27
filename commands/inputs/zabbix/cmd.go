@@ -16,6 +16,7 @@ package zabbix
 
 import (
 	"github.com/sacloud/autoscaler/commands/flags"
+	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/inputs"
 	"github.com/sacloud/autoscaler/inputs/zabbix"
 	"github.com/spf13/cobra"
@@ -27,15 +28,17 @@ var Command = &cobra.Command{
 	PreRunE: flags.ValidateMultiFunc(true,
 		flags.ValidateDestinationFlags,
 		flags.ValidateListenerFlags,
+		flags.ValidateTLSConfigFlags,
 	),
 	RunE: run,
 }
 
 func init() {
 	flags.SetDestinationFlag(Command)
-	flags.SetListenerFlag(Command)
+	flags.SetTLSConfigFlag(Command)
+	flags.SetListenerFlag(Command, defaults.ListenAddress)
 }
 
-func run(cmd *cobra.Command, args []string) error {
-	return inputs.Serve(zabbix.NewInput(flags.Destination(), flags.ListenAddr(), flags.NewLogger()))
+func run(*cobra.Command, []string) error {
+	return inputs.Serve(zabbix.NewInput(flags.Destination(), flags.ListenAddr(), flags.TLSConfig(), flags.NewLogger()))
 }

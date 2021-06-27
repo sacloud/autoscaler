@@ -15,9 +15,20 @@
 package handlers
 
 import (
+	"os"
+	"path/filepath"
+
+	"github.com/goccy/go-yaml"
+	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/log"
 )
+
+// CustomHandler カスタムハンドラーが実装すべきインターフェース
+type CustomHandler interface {
+	HandlerMeta
+	Listener
+}
 
 // HandlerMeta ハンドラーのメタ情報
 //
@@ -38,10 +49,9 @@ type Logger interface {
 }
 
 // Listener gRPCサーバとしてリッスンするためのインターフェース
-//
-// カスタムハンドラはこのインターフェースを実装する必要がある
 type Listener interface {
 	ListenAddress() string
+	TLSConfigPath() string
 }
 
 // Handler CoreからのHandleリクエストを処理するためのインターフェース
@@ -62,4 +72,27 @@ type PostHandler interface {
 // ResponseSender gRPCのサーバストリームのレスポンスをラップするインターフェース
 type ResponseSender interface {
 	Send(*handler.HandleResponse) error
+}
+
+// TLSConfig .
+type TLSConfig struct {
+	HandlerTLSConfig *config.TLSStruct `yaml:"tls_config"`
+}
+
+// LoadTLSConfig ファイルパスからTLSConfigを読み込む
+func LoadTLSConfig(configPath string) (*TLSConfig, error) {
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	conf := &TLSConfig{}
+	if err := yaml.UnmarshalWithOptions(data, conf, yaml.Strict()); err != nil {
+		return nil, err
+	}
+
+	if conf.HandlerTLSConfig != nil {
+		conf.HandlerTLSConfig.SetDirectory(filepath.Dir(configPath))
+	}
+	return conf, nil
 }

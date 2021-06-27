@@ -21,7 +21,6 @@ import (
 
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handler"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -30,7 +29,7 @@ var _ handler.HandleServiceServer = (*handleService)(nil)
 // handleService ハンドラ向けgRPCサーバの実装
 type handleService struct {
 	handler.UnimplementedHandleServiceServer
-	Handler HandlerMeta
+	Handler CustomHandler
 }
 
 func (h *handleService) listenAndServe(parentCtx context.Context) error {
@@ -38,15 +37,26 @@ func (h *handleService) listenAndServe(parentCtx context.Context) error {
 	ctx, stop := signal.NotifyContext(parentCtx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	listener, cleanup, err := grpcutil.Listener(&grpcutil.ListenerOption{
-		Address: h.Handler.(Listener).ListenAddress(),
-	})
+	opts := &grpcutil.ListenerOption{
+		Address: h.Handler.ListenAddress(),
+	}
+	tlsConfigPath := h.Handler.TLSConfigPath()
+	if tlsConfigPath != "" {
+		conf, err := LoadTLSConfig(tlsConfigPath)
+		if err != nil {
+			return err
+		}
+		if conf.HandlerTLSConfig != nil {
+			opts.TLSConfig = conf.HandlerTLSConfig
+		}
+	}
+
+	grpcServer, listener, cleanup, err := grpcutil.Server(opts)
 	if err != nil {
 		h.Handler.GetLogger().Fatal("fatal", err)
 		return err // 到達しない
 	}
 
-	grpcServer := grpc.NewServer()
 	handler.RegisterHandleServiceServer(grpcServer, h)
 	reflection.Register(grpcServer)
 

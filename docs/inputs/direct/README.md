@@ -31,8 +31,13 @@ Flags:
   -h, --help                         help for direct
       --resource-group-name string   Name of the target resource group (default "default")
       --source string                A string representing the request source, passed to AutoScaler Core (default "default")
-
+      --tls-config string            File path of input server TLS config
+      
 Global Flags:
       --log-format string   Format of logging to be output. options: [ logfmt | json ] (default "logfmt")
       --log-level string    Level of logging to be output. options: [ error | warn | info | debug ] (default "info")
 ```
+
+## TLS関連設定
+
+[Inputs共通設定](../tls_config.md)を参照ください。  

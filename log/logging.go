@@ -96,6 +96,10 @@ func (l *Logger) initLogger(opt *LoggerOption) {
 	l.opt = opt
 }
 
+func (l *Logger) Log(keyValues ...interface{}) error {
+	return l.internal.Log(keyValues...)
+}
+
 // Reset 現在のLoggerOptionを元にロガーをリセット
 //
 //  Withxxxの影響を元に戻したい時などに利用する

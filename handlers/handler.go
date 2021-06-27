@@ -20,13 +20,13 @@ import (
 )
 
 // Serve 指定のハンドラでgRPCサーバをスタート/リッスンする
-func Serve(parentCtx context.Context, server HandlerMeta) error {
-	server.SetLogger(server.GetLogger().With("from", handlerFullName(server)))
+func Serve(parentCtx context.Context, handler CustomHandler) error {
+	handler.SetLogger(handler.GetLogger().With("from", handlerFullName(handler)))
 
-	validateHandlerInterfaces(server)
+	validateHandlerInterfaces(handler)
 
 	service := &handleService{
-		Handler: server,
+		Handler: handler,
 	}
 	return service.listenAndServe(parentCtx)
 }

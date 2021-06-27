@@ -199,7 +199,16 @@ func (h *Handler) postHandleBuiltin(ctx *HandlingContext, computed Computed) err
 }
 
 func (h *Handler) preHandleExternal(ctx *HandlingContext, computed Computed) error {
-	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: h.Endpoint})
+	opt := &grpcutil.DialOption{Destination: h.Endpoint}
+	if ctx.tlsConfig != nil {
+		cred, err := ctx.tlsConfig.TransportCredentials()
+		if err != nil {
+			return err
+		}
+		opt.TransportCredentials = cred
+	}
+
+	conn, cleanup, err := grpcutil.DialContext(ctx, opt)
 	if err != nil {
 		return err
 	}
@@ -219,7 +228,16 @@ func (h *Handler) preHandleExternal(ctx *HandlingContext, computed Computed) err
 }
 
 func (h *Handler) handleExternal(ctx *HandlingContext, computed Computed) error {
-	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: h.Endpoint})
+	opt := &grpcutil.DialOption{Destination: h.Endpoint}
+	if ctx.tlsConfig != nil {
+		cred, err := ctx.tlsConfig.TransportCredentials()
+		if err != nil {
+			return err
+		}
+		opt.TransportCredentials = cred
+	}
+
+	conn, cleanup, err := grpcutil.DialContext(ctx, opt)
 	if err != nil {
 		return err
 	}
@@ -239,7 +257,16 @@ func (h *Handler) handleExternal(ctx *HandlingContext, computed Computed) error 
 }
 
 func (h *Handler) postHandleExternal(ctx *HandlingContext, computed Computed) error {
-	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: h.Endpoint})
+	opt := &grpcutil.DialOption{Destination: h.Endpoint}
+	if ctx.tlsConfig != nil {
+		cred, err := ctx.tlsConfig.TransportCredentials()
+		if err != nil {
+			return err
+		}
+		opt.TransportCredentials = cred
+	}
+
+	conn, cleanup, err := grpcutil.DialContext(ctx, opt)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,4 @@
+core_tls_config:
+  cert_file: client-cert.pem
+  key_file: client-key.pem
+  root_ca_file: ca-cert.pem

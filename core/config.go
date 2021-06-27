@@ -19,10 +19,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -44,14 +46,16 @@ func NewConfigFromPath(filePath string) (*Config, error) {
 	}
 	defer reader.Close()
 
-	return NewConfigFromReader(reader)
-}
-
-// NewConfigFromReader 指定のio.Readerからコンフィギュレーションを読み取ってConfigを作成する
-func NewConfigFromReader(reader io.Reader) (*Config, error) {
 	c := &Config{}
 	if err := c.load(reader); err != nil {
 		return nil, err
+	}
+
+	if c.AutoScaler.ServerTLSConfig != nil {
+		c.AutoScaler.ServerTLSConfig.SetDirectory(filepath.Dir(filePath))
+	}
+	if c.AutoScaler.HandlerTLSConfig != nil {
+		c.AutoScaler.HandlerTLSConfig.SetDirectory(filepath.Dir(filePath))
 	}
 	return c, nil
 }
@@ -109,7 +113,9 @@ func (c *Config) Validate(ctx context.Context) error {
 
 // AutoScalerConfig オートスケーラー自体の動作設定
 type AutoScalerConfig struct {
-	CoolDownSec int `yaml:"cooldown"` // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
+	CoolDownSec      int               `yaml:"cooldown"`           // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
+	ServerTLSConfig  *config.TLSStruct `yaml:"server_tls_config"`  // CoreへのgRPC接続のTLS設定
+	HandlerTLSConfig *config.TLSStruct `yaml:"handler_tls_config"` // HandlersへのgRPC接続のTLS設定
 }
 
 func (c *AutoScalerConfig) JobCoolDownTime() time.Duration {

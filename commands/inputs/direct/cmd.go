@@ -19,9 +19,9 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/commands/flags"
-
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
+	"github.com/sacloud/autoscaler/inputs"
 	"github.com/sacloud/autoscaler/request"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
@@ -36,7 +36,10 @@ var Command = &cobra.Command{
 	PreRunE: flags.ValidateMultiFunc(true,
 		flags.ValidateDestinationFlags,
 		func(cmd *cobra.Command, args []string) error {
-			return validate.Struct(param)
+			if err := validate.Struct(param); err != nil {
+				return err
+			}
+			return flags.ValidateTLSConfigFlags(cmd, args)
 		},
 	),
 	RunE: run,
@@ -58,16 +61,34 @@ var param = &parameter{
 
 func init() {
 	flags.SetDestinationFlag(Command)
+	flags.SetTLSConfigFlag(Command)
 	Command.Flags().StringVarP(&param.Action, "action", "", param.Action, "Name of the action to perform")
 	Command.Flags().StringVarP(&param.ResourceGroupname, "resource-group-name", "", param.ResourceGroupname, "Name of the target resource group")
 	Command.Flags().StringVarP(&param.Source, "source", "", param.Source, "A string representing the request source, passed to AutoScaler Core")
 	Command.Flags().StringVarP(&param.DesiredStateName, "desired-state-name", "", param.DesiredStateName, "Name of the desired state defined in Core's configuration file")
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(_ *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	conn, cleanup, err := grpcutil.DialContext(ctx, &grpcutil.DialOption{Destination: flags.Destination()})
+	opts := &grpcutil.DialOption{
+		Destination: flags.Destination(),
+	}
+	if flags.TLSConfig() != "" {
+		tlsConfig, err := inputs.LoadTLSConfigFromPath(flags.TLSConfig())
+		if err != nil {
+			return err
+		}
+		if tlsConfig != nil && tlsConfig.CoreClient != nil {
+			cred, err := tlsConfig.CoreClient.TransportCredentials()
+			if err != nil {
+				return err
+			}
+			opts.TransportCredentials = cred
+		}
+	}
+
+	conn, cleanup, err := grpcutil.DialContext(ctx, opts)
 	if err != nil {
 		return err
 	}

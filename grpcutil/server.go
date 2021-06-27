@@ -19,15 +19,18 @@ import (
 	"log"
 	"net"
 	"os"
+
+	"github.com/sacloud/autoscaler/config"
+	"google.golang.org/grpc"
 )
 
 type ListenerOption struct {
-	Address string
-	// TODO TLS対応する際にはここに項目を追加していく
+	Address   string
+	TLSConfig *config.TLSStruct
 }
 
-// Listener 指定のオプションでリッスン構成をした後でリッスンし、net.Listenerとクリーンアップ用のfuncを返す
-func Listener(opt *ListenerOption) (net.Listener, func(), error) {
+// Server 指定のオプションでリッスン構成をした後でリッスンし、*grpc.Serverとクリーンアップ用のfuncを返す
+func Server(opt *ListenerOption) (*grpc.Server, net.Listener, func(), error) {
 	target := ParseTarget(opt.Address, false)
 
 	schema := "tcp"
@@ -37,10 +40,10 @@ func Listener(opt *ListenerOption) (net.Listener, func(), error) {
 
 	listener, err := net.Listen(schema, target.Endpoint)
 	if err != nil {
-		return nil, nil, fmt.Errorf("net.Listen failed: %s", err)
+		return nil, nil, nil, fmt.Errorf("net.Listen failed: %s", err)
 	}
 
-	return listener, func() {
+	cleanup := func() {
 		listener.Close() // nolint
 		if schema == "unix" {
 			if _, err := os.Stat(target.Endpoint); err == nil {
@@ -49,5 +52,16 @@ func Listener(opt *ListenerOption) (net.Listener, func(), error) {
 				}
 			}
 		}
-	}, nil
+	}
+
+	var serverOpts []grpc.ServerOption
+	if opt.TLSConfig != nil && schema != "unix" {
+		cred, err := opt.TLSConfig.TransportCredentials()
+		if err != nil && err != config.ErrNoTLSConfig {
+			return nil, nil, nil, err
+		}
+		serverOpts = append(serverOpts, grpc.Creds(cred))
+	}
+
+	return grpc.NewServer(serverOpts...), listener, cleanup, nil
 }

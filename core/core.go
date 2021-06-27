@@ -22,7 +22,6 @@ import (
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/request"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -83,7 +82,8 @@ func ResourcesTree(parentCtx context.Context, addr, configPath string, logger *l
 	if err != nil {
 		return "", err
 	}
-	ctx := NewRequestContext(parentCtx, &requestInfo{requestType: requestTypeUnknown}, logger)
+	ri := &requestInfo{requestType: requestTypeUnknown}
+	ctx := NewRequestContext(parentCtx, ri, instance.config.AutoScaler.HandlerTLSConfig, logger)
 	graph := NewGraph(instance.config.Resources)
 	return graph.Tree(ctx, instance.config.APIClient())
 }
@@ -91,14 +91,13 @@ func ResourcesTree(parentCtx context.Context, addr, configPath string, logger *l
 func (c *Core) run(ctx context.Context) error {
 	errCh := make(chan error)
 
-	listener, cleanup, err := grpcutil.Listener(&grpcutil.ListenerOption{
-		Address: c.listenAddress,
+	server, listener, cleanup, err := grpcutil.Server(&grpcutil.ListenerOption{
+		Address:   c.listenAddress,
+		TLSConfig: c.config.AutoScaler.ServerTLSConfig,
 	})
 	if err != nil {
 		return err
 	}
-
-	server := grpc.NewServer()
 	srv := NewScalingService(c)
 	request.RegisterScalingServiceServer(server, srv)
 	reflection.Register(server)
