@@ -25,8 +25,9 @@ import (
 )
 
 type ListenerOption struct {
-	Address   string
-	TLSConfig *config.TLSStruct
+	Address    string
+	TLSConfig  *config.TLSStruct
+	ServerOpts []grpc.ServerOption
 }
 
 // Server 指定のオプションでリッスン構成をした後でリッスンし、*grpc.Serverとクリーンアップ用のfuncを返す
@@ -62,6 +63,7 @@ func Server(opt *ListenerOption) (*grpc.Server, net.Listener, func(), error) {
 		}
 		serverOpts = append(serverOpts, grpc.Creds(cred))
 	}
+	serverOpts = append(serverOpts, opt.ServerOpts...)
 
 	return grpc.NewServer(serverOpts...), listener, cleanup, nil
 }

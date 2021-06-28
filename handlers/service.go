@@ -19,6 +19,7 @@ import (
 
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/autoscaler/metrics"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -32,8 +33,10 @@ type handleService struct {
 }
 
 func (h *handleService) listenAndServe(ctx context.Context) error {
+	metrics.InitErrorCount("core")
 	opts := &grpcutil.ListenerOption{
-		Address: h.Handler.ListenAddress(),
+		Address:    h.Handler.ListenAddress(),
+		ServerOpts: grpcutil.ServerErrorCountInterceptor("handlers"),
 	}
 	if h.conf != nil && h.conf.HandlerTLSConfig != nil {
 		opts.TLSConfig = h.conf.HandlerTLSConfig
