@@ -1,6 +1,3 @@
 exporter_config:
   enabled: true
   address: "localhost:8081"
-  tls_config:
-    cert_file: server-cert.pem
-    key_file: server-key.pem

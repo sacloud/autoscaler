@@ -25,10 +25,16 @@ import (
 	"os"
 	"testing"
 
+	"github.com/prometheus/common/expfmt"
 	"github.com/sacloud/autoscaler/log"
+	"github.com/sacloud/autoscaler/metrics"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	initMetrics()
+}
 
 type fakeInput struct {
 	listenAddr string
@@ -58,8 +64,6 @@ func (i *fakeInput) GetLogger() *log.Logger {
 }
 
 func Test_server_serve(t *testing.T) {
-	initMetrics()
-
 	tests := []struct {
 		name           string
 		schema         string
@@ -180,6 +184,109 @@ func Test_server_serve(t *testing.T) {
 	}
 }
 
+func Test_server_exporter(t *testing.T) {
+	input := &fakeInput{
+		listenAddr: "localhost:0",
+	}
+
+	closed1 := make(chan struct{})
+	closed2 := make(chan struct{})
+	// inputs server
+	server, err := newServer(input, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		if err := server.serve(listener); err != http.ErrServerClosed {
+			t.Log(err)
+		}
+		close(closed1)
+	}()
+
+	// exporter
+	exporterListener, err := net.Listen("tcp", "localhost:0")
+	exporterServer := metrics.NewServer(exporterListener.Addr().String(), nil, input.GetLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		if err := exporterServer.Serve(exporterListener); err != http.ErrServerClosed {
+			t.Log(err)
+		}
+		close(closed2)
+	}()
+
+	upURL := fmt.Sprintf("http://%s/up", listener.Addr().String())
+	downURL := fmt.Sprintf("http://%s/down", listener.Addr().String())
+	metricsURL := fmt.Sprintf("http://%s/metrics", exporterListener.Addr().String())
+
+	// /up * 2、 /down * 1
+	requests := []string{upURL, upURL, downURL}
+	for _, url := range requests {
+		if _, err := http.Get(url); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	req, err := http.Get(metricsURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// parse response of Exporter
+	var parser expfmt.TextParser
+	parsed, err := parser.TextToMetricFamilies(req.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reqTotal := parsed["sacloud_autoscaler_webhook_requests_total"]
+	upTotal := parsed["sacloud_autoscaler_webhook_requests_up"]
+	downTotal := parsed["sacloud_autoscaler_webhook_requests_down"]
+
+	require.NotNil(t, reqTotal)
+	require.NotNil(t, upTotal)
+	require.NotNil(t, downTotal)
+
+	totalMetrics := reqTotal.GetMetric()
+	require.Len(t, totalMetrics, 3)
+	require.Equal(t, totalMetrics[0].GetLabel()[0].GetValue(), "200")
+	require.Equal(t, totalMetrics[0].GetCounter().GetValue(), float64(3))
+	require.Equal(t, totalMetrics[1].GetLabel()[0].GetValue(), "400")
+	require.Equal(t, totalMetrics[1].GetCounter().GetValue(), float64(0))
+	require.Equal(t, totalMetrics[2].GetLabel()[0].GetValue(), "500")
+	require.Equal(t, totalMetrics[2].GetCounter().GetValue(), float64(0))
+
+	upMetrics := upTotal.GetMetric()
+	require.Len(t, upMetrics, 3)
+	require.Equal(t, upMetrics[0].GetLabel()[0].GetValue(), "200")
+	require.Equal(t, upMetrics[0].GetCounter().GetValue(), float64(2))
+	require.Equal(t, upMetrics[1].GetLabel()[0].GetValue(), "400")
+	require.Equal(t, upMetrics[1].GetCounter().GetValue(), float64(0))
+	require.Equal(t, upMetrics[2].GetLabel()[0].GetValue(), "500")
+	require.Equal(t, upMetrics[2].GetCounter().GetValue(), float64(0))
+
+	downMetrics := downTotal.GetMetric()
+	require.Len(t, downMetrics, 3)
+	require.Equal(t, downMetrics[0].GetLabel()[0].GetValue(), "200")
+	require.Equal(t, downMetrics[0].GetCounter().GetValue(), float64(1))
+	require.Equal(t, downMetrics[1].GetLabel()[0].GetValue(), "400")
+	require.Equal(t, downMetrics[1].GetCounter().GetValue(), float64(0))
+	require.Equal(t, downMetrics[2].GetLabel()[0].GetValue(), "500")
+	require.Equal(t, downMetrics[2].GetCounter().GetValue(), float64(0))
+
+	if err := server.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if err := exporterServer.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	<-closed1
+	<-closed2
+}
 func testHTTPClient(t *testing.T, clientKeyPath, clientCertPath, caCertPath string, forceHTTP2 bool) *http.Client {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,

@@ -94,7 +94,7 @@ func startWebhookServer(_ context.Context, input Input, conf *Config) error {
 	return server.listenAndServe()
 }
 
-func startExporter(ctx context.Context, input Input, conf *config.ExporterConfig) error {
+func startExporter(_ context.Context, input Input, conf *config.ExporterConfig) error {
 	if !conf.Enabled {
 		return nil
 	}
@@ -102,6 +102,10 @@ func startExporter(ctx context.Context, input Input, conf *config.ExporterConfig
 	if err != nil {
 		return err
 	}
+	return startExporterWithListener(listener, input, conf)
+}
+
+func startExporterWithListener(listener net.Listener, input Input, conf *config.ExporterConfig) error {
 	server := metrics.NewServer(listener.Addr().String(), conf.TLSConfig, input.GetLogger())
 	return server.Serve(listener)
 }
