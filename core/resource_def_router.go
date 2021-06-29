@@ -25,7 +25,13 @@ import (
 
 type ResourceDefRouter struct {
 	*ResourceDefBase `yaml:",inline"`
-	Plans            []*RouterPlan `yaml:"plans"`
+	Selector         *MultiZoneSelector `yaml:"selector"`
+
+	Plans []*RouterPlan `yaml:"plans"`
+}
+
+func (d *ResourceDefRouter) String() string {
+	return d.Selector.String()
 }
 
 func (d *ResourceDefRouter) resourcePlans() ResourcePlans {
@@ -42,7 +48,7 @@ func (d *ResourceDefRouter) resourcePlans() ResourcePlans {
 func (d *ResourceDefRouter) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 
-	if err := d.Selector().Validate(true); err != nil {
+	if err := d.Selector.Validate(); err != nil {
 		errors = multierror.Append(errors, err)
 	} else {
 		if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
@@ -60,7 +66,7 @@ func (d *ResourceDefRouter) Validate(ctx context.Context, apiClient sacloud.APIC
 			}
 			errors = multierror.Append(errors,
 				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+					d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
 				))
 		}
 	}
@@ -76,7 +82,7 @@ func (d *ResourceDefRouter) validatePlans(ctx context.Context, apiClient sacloud
 			return []error{fmt.Errorf("at least two plans must be specified")}
 		}
 		errors := &multierror.Error{}
-		for _, zone := range d.Selector().Zones {
+		for _, zone := range d.Selector.Zones {
 			availablePlans, err := sacloud.NewInternetPlanOp(apiClient).Find(ctx, zone, nil)
 			if err != nil {
 				return []error{fmt.Errorf("validating router plan failed: %s", err)}
@@ -129,7 +135,7 @@ func (d *ResourceDefRouter) Compute(ctx *RequestContext, apiClient sacloud.APICa
 
 func (d *ResourceDefRouter) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sakuraCloudRouter, error) {
 	routerOp := sacloud.NewInternetOp(apiClient)
-	selector := d.Selector()
+	selector := d.Selector
 	var results []*sakuraCloudRouter
 
 	for _, zone := range selector.Zones {

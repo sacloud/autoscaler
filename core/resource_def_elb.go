@@ -38,7 +38,12 @@ var DefaultELBPlans = ResourcePlans{
 
 type ResourceDefELB struct {
 	*ResourceDefBase `yaml:",inline"`
-	Plans            []*ELBPlan `yaml:"plans"`
+	Selector         *ResourceSelector `yaml:"selector"`
+	Plans            []*ELBPlan        `yaml:"plans"`
+}
+
+func (d *ResourceDefELB) String() string {
+	return d.Selector.String()
 }
 
 func (d *ResourceDefELB) resourcePlans() ResourcePlans {
@@ -54,7 +59,7 @@ func (d *ResourceDefELB) resourcePlans() ResourcePlans {
 
 func (d *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
-	if err := d.Selector().Validate(false); err != nil {
+	if err := d.Selector.Validate(); err != nil {
 		errors = multierror.Append(errors, err)
 	} else {
 		if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
@@ -72,7 +77,7 @@ func (d *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICall
 			}
 			errors = multierror.Append(errors,
 				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+					d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
 				))
 		}
 	}
@@ -132,7 +137,7 @@ func (d *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICalle
 
 func (d *ResourceDefELB) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.ProxyLB, error) {
 	elbOp := sacloud.NewProxyLBOp(apiClient)
-	selector := d.Selector()
+	selector := d.Selector
 
 	found, err := elbOp.Find(ctx, selector.findCondition())
 	if err != nil {

@@ -61,10 +61,12 @@ func TestConfig_Load(t *testing.T) {
 						&ResourceDefServer{
 							ResourceDefBase: &ResourceDefBase{
 								TypeName: "Server",
-								TargetSelector: &ResourceSelector{
+							},
+							Selector: &MultiZoneSelector{
+								ResourceSelector: &ResourceSelector{
 									Names: []string{"test-name"},
-									Zones: []string{"is1a"},
 								},
+								Zones: []string{"is1a"},
 							},
 							DedicatedCPU: true,
 						},

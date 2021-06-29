@@ -42,7 +42,9 @@ func TestResourceDefServer_Validate(t *testing.T) {
 		empty := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
-				TargetSelector: &ResourceSelector{
+			},
+			Selector: &MultiZoneSelector{
+				ResourceSelector: &ResourceSelector{
 					Names: []string{"test"},
 				},
 			},
@@ -56,10 +58,12 @@ func TestResourceDefServer_Validate(t *testing.T) {
 		empty := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
-				TargetSelector: &ResourceSelector{
-					Zones: []string{"is1a"},
+			},
+			Selector: &MultiZoneSelector{
+				ResourceSelector: &ResourceSelector{
 					Names: []string{"server-not-found"},
 				},
+				Zones: []string{"is1a"},
 			},
 		}
 		errs := empty.Validate(context.Background(), test.APIClient)
@@ -74,6 +78,7 @@ func TestResourceDefServer_Compute(t *testing.T) {
 
 	type fields struct {
 		ResourceDefBase *ResourceDefBase
+		Selector        *MultiZoneSelector
 	}
 	type args struct {
 		ctx       *RequestContext
@@ -91,10 +96,12 @@ func TestResourceDefServer_Compute(t *testing.T) {
 			fields: fields{
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: ResourceTypeServer.String(),
-					TargetSelector: &ResourceSelector{
+				},
+				Selector: &MultiZoneSelector{
+					ResourceSelector: &ResourceSelector{
 						Names: []string{"test-server"},
-						Zones: []string{test.Zone},
 					},
+					Zones: []string{test.Zone},
 				},
 			},
 			args: args{
@@ -111,6 +118,7 @@ func TestResourceDefServer_Compute(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &ResourceDefServer{
 				ResourceDefBase: tt.fields.ResourceDefBase,
+				Selector:        tt.fields.Selector,
 			}
 			got, err := s.Compute(tt.args.ctx, tt.args.apiClient)
 			if (err != nil) != tt.wantErr {
@@ -133,10 +141,12 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		notFound := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
-				TargetSelector: &ResourceSelector{
-					ID:    123456789012,
-					Zones: []string{test.Zone},
+			},
+			Selector: &MultiZoneSelector{
+				ResourceSelector: &ResourceSelector{
+					ID: 123456789012,
 				},
+				Zones: []string{test.Zone},
 			},
 		}
 
@@ -148,10 +158,12 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		running := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
-				TargetSelector: &ResourceSelector{
+			},
+			Selector: &MultiZoneSelector{
+				ResourceSelector: &ResourceSelector{
 					Names: []string{"test-server"},
-					Zones: []string{test.Zone},
 				},
+				Zones: []string{test.Zone},
 			},
 			Plans: []*ServerPlan{
 				{Core: 1, Memory: 1},
@@ -183,10 +195,12 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		server := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
-				TargetSelector: &ResourceSelector{
+			},
+			Selector: &MultiZoneSelector{
+				ResourceSelector: &ResourceSelector{
 					Names: []string{"test-server"},
-					Zones: []string{test.Zone},
 				},
+				Zones: []string{test.Zone},
 			},
 			Plans: []*ServerPlan{
 				{Core: 1, Memory: 1},

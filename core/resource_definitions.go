@@ -80,7 +80,7 @@ func (r *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.A
 		children := def.Children()
 
 		if len(children) > 0 && len(resources) > 1 {
-			return fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s", def.Type(), def.Selector(), resources.String())
+			return fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s", def.Type(), def.String(), resources.String())
 		}
 
 		for _, resource := range resources {

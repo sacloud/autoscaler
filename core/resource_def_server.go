@@ -26,15 +26,21 @@ import (
 
 type ResourceDefServer struct {
 	*ResourceDefBase `yaml:",inline"`
-	DedicatedCPU     bool                `yaml:"dedicated_cpu"`
-	Plans            []*ServerPlan       `yaml:"plans"`
-	Option           ServerScalingOption `yaml:"option"`
+	Selector         *MultiZoneSelector `yaml:"selector"`
+
+	DedicatedCPU bool                `yaml:"dedicated_cpu"`
+	Plans        []*ServerPlan       `yaml:"plans"`
+	Option       ServerScalingOption `yaml:"option"`
 
 	parent ResourceDefinition
 }
 
 type ServerScalingOption struct {
 	ShutdownForce bool `yaml:"shutdown_force"`
+}
+
+func (d *ResourceDefServer) String() string {
+	return d.Selector.String()
 }
 
 func (d *ResourceDefServer) resourcePlans() ResourcePlans {
@@ -59,7 +65,7 @@ func (d *ResourceDefServer) SetParent(parent ResourceDefinition) {
 func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 
-	if err := d.Selector().Validate(true); err != nil {
+	if err := d.Selector.Validate(); err != nil {
 		errors = multierror.Append(errors, err)
 	} else {
 		if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
@@ -77,7 +83,7 @@ func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APIC
 			}
 			errors = multierror.Append(errors,
 				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+					d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
 				))
 		}
 	}
@@ -94,7 +100,7 @@ func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient sacloud
 		}
 
 		errors := &multierror.Error{}
-		for _, zone := range d.Selector().Zones {
+		for _, zone := range d.Selector.Zones {
 			availablePlans, err := sacloud.NewServerPlanOp(apiClient).Find(ctx, zone, nil)
 			if err != nil {
 				return []error{fmt.Errorf("validating server plan failed: %s", err)}
@@ -150,7 +156,7 @@ func (d *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICa
 
 func (d *ResourceDefServer) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sakuraCloudServer, error) {
 	serverOp := sacloud.NewServerOp(apiClient)
-	selector := d.Selector()
+	selector := d.Selector
 	var results []*sakuraCloudServer
 
 	for _, zone := range selector.Zones {

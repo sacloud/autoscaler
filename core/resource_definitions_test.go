@@ -69,19 +69,21 @@ func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
 	server := &ResourceDefServer{
 		ResourceDefBase: &ResourceDefBase{
 			TypeName: "Server",
-			TargetSelector: &ResourceSelector{
+		},
+		Selector: &MultiZoneSelector{
+			ResourceSelector: &ResourceSelector{
 				Names: []string{"test-server"},
-				Zones: []string{test.Zone},
 			},
+			Zones: []string{test.Zone},
 		},
 	}
 	dns := &ResourceDefDNS{
 		ResourceDefBase: &ResourceDefBase{
 			TypeName: "DNS",
-			TargetSelector: &ResourceSelector{
-				Names: []string{"test-dns.com"},
-			},
 			children: ResourceDefinitions{server},
+		},
+		Selector: &ResourceSelector{
+			Names: []string{"test-dns.com"},
 		},
 	}
 	defs := ResourceDefinitions{dns}
