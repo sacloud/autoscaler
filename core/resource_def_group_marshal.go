@@ -115,6 +115,13 @@ func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interfa
 		}
 		v.children = defs
 		def = v
+	case "ServerGroup":
+		v := &ResourceDefServerGroup{}
+		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+		}
+		v.children = defs
+		def = v
 	case "EnhancedLoadBalancer", "ELB":
 		v := &ResourceDefELB{}
 		if err := yaml.Unmarshal(remarshelded, v); err != nil {

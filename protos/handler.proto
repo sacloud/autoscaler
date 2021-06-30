@@ -154,10 +154,11 @@ message ServerGroupInstance {
     string id                             = 11; // 新規作成指示時は空
     string zone                           = 12;
 
+    // 以降のパラメータは新規作成時のみ設定される
+
     // sources
     string source_archive_id = 21;
     string source_disk_id    = 22;
-    string os_type           = 23;
 
     // spec
     string plan              = 31; // ssd or hdd
@@ -171,7 +172,7 @@ message ServerGroupInstance {
     string icon_id       = 93;
   }
 
-  message EditParameter {
+  message EditParameter { // 新規作成時のみ設定される
     reserved 1 to 10;
     string host_name           = 11;
     string password            = 12;

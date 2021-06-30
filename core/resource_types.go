@@ -19,7 +19,7 @@ type ResourceTypes int
 const (
 	ResourceTypeUnknown ResourceTypes = iota
 	ResourceTypeServer
-	ResourceTypeServerGroup
+	ResourceTypeServerGroupInstance
 	ResourceTypeEnhancedLoadBalancer
 	ResourceTypeGSLB
 	ResourceTypeDNS
@@ -31,8 +31,8 @@ func (rt ResourceTypes) String() string {
 	switch rt {
 	case ResourceTypeServer:
 		return "Server"
-	case ResourceTypeServerGroup:
-		return "ServerGroup"
+	case ResourceTypeServerGroupInstance:
+		return "ServerGroupInstance"
 	case ResourceTypeEnhancedLoadBalancer:
 		return "EnhancedLoadBalancer"
 	case ResourceTypeGSLB:

@@ -3,6 +3,7 @@ module github.com/sacloud/autoscaler
 go 1.16
 
 require (
+	github.com/c-robinson/iplib v0.3.1 // indirect
 	github.com/go-kit/log v0.1.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/goccy/go-yaml v1.8.9

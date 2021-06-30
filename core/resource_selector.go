@@ -57,25 +57,6 @@ func (rs *MultiZoneSelector) Validate() error {
 	return nil
 }
 
-type SingleZoneSelector struct {
-	*ResourceSelector `yaml:",inline"`
-	Zone              string `yaml:"zone"`
-}
-
-func (rs *SingleZoneSelector) String() string {
-	return rs.ResourceSelector.String() + fmt.Sprintf(", Zone: %s", rs.Zone)
-}
-
-func (rs *SingleZoneSelector) Validate() error {
-	if err := rs.ResourceSelector.Validate(); err != nil {
-		return err
-	}
-	if len(rs.Zone) == 0 {
-		return fmt.Errorf("selector.Zone: required")
-	}
-	return nil
-}
-
 // ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
 type ResourceSelector struct {
 	ID    types.ID `yaml:"id"`
