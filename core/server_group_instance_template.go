@@ -58,9 +58,9 @@ type ServerGroupDiskTemplate struct {
 	Description string   `yaml:"description"`
 	IconID      string   `yaml:"icon_id"`
 
-	SourceArchiveSelector *ResourceSelector `yaml:"source_archive"`
-	SourceDiskSelector    *ResourceSelector `yaml:"source_disk"`
-	OSType                string            `yaml:"os_type"`
+	SourceArchiveSelector *NameOrSelector `yaml:"source_archive"`
+	SourceDiskSelector    *NameOrSelector `yaml:"source_disk"`
+	OSType                string          `yaml:"os_type"`
 
 	Plan       string `yaml:"plan" validate:"omitempty,oneof=ssd hdd"`
 	Connection string `yaml:"connection" validate:"omitempty,oneof=virtio ide"`
@@ -83,8 +83,8 @@ type ServerGroupDiskEditTemplate struct {
 	ChangePartitionUUID bool     `yaml:"change_partition_uuid"`
 	StartupScripts      []string `yaml:"startup_scripts"`
 
-	SSHKeys   []string `yaml:"ssh_keys"`
-	SSHKeyIDs []string `yaml:"ssh_key_ids"`
+	SSHKeys   []StringOrFilePath `yaml:"ssh_keys"`
+	SSHKeyIDs []string           `yaml:"ssh_key_ids"`
 }
 
 // HostName HostNamePrefixとindexからホスト名を算出する

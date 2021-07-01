@@ -127,13 +127,19 @@ func (r *ResourceServerGroupInstance) computeEditParameter(ctx *RequestContext, 
 	if networkInfo == nil {
 		networkInfo = &handler.NetworkInfo{}
 	}
+
+	var sshKeys []string
+	for _, key := range tmpl.SSHKeys {
+		sshKeys = append(sshKeys, key.String())
+	}
+
 	return &handler.ServerGroupInstance_EditParameter{
 		HostName:            tmpl.HostName(r.server.Name, r.indexInGroup),
 		Password:            tmpl.Password,
 		DisablePasswordAuth: tmpl.DisablePasswordAuth,
 		EnableDhcp:          tmpl.EnableDHCP,
 		ChangePartitionUuid: tmpl.ChangePartitionUUID,
-		SshKeys:             tmpl.SSHKeys,
+		SshKeys:             sshKeys,
 		SshKeyIds:           tmpl.SSHKeyIDs,
 		StartupScripts:      tmpl.StartupScripts, // Note: この段階ではテンプレートのまま渡す。
 
