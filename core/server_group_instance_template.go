@@ -253,7 +253,13 @@ func (t *ServerGroupNICTemplate) Validate(maxServerNum int) []error {
 		if t.DefaultRoute != "" {
 			assignedNet := iplib.NewNet(ip, maskLen)
 			if !assignedNet.Contains(net.ParseIP(t.DefaultRoute)) {
-				errors = multierror.Append(errors, fmt.Errorf("default_route must contains same network"))
+				errors = multierror.Append(errors,
+					fmt.Errorf(
+						"default_route and assigned_address must be in the same network: assign_cidr_block:%s, assign_netmask_len:%d, default_route:%s",
+						t.AssignCidrBlock,
+						t.AssignNetMaskLen,
+						t.DefaultRoute,
+					))
 			}
 		}
 	}

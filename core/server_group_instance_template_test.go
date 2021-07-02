@@ -361,7 +361,7 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 				DefaultRoute:     "10.0.0.1",
 			},
 			args: args{maxServerNum: 1},
-			want: []error{fmt.Errorf("default_route must contains same network")},
+			want: []error{fmt.Errorf("default_route and assigned_address must be in the same network: assign_cidr_block:192.0.2.0/24, assign_netmask_len:24, default_route:10.0.0.1")},
 		},
 	}
 	for _, tt := range tests {
