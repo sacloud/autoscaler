@@ -36,8 +36,8 @@ type ResourceDefServerGroup struct {
 	Name string `yaml:"name" validate:"required"` // {{ .Name }}{{ .Number }}
 	Zone string `yaml:"zone" validate:"required"`
 
-	MinSize int `yaml:"min_size" validate:"required,ltefield=MaxSize"`
-	MaxSize int `yaml:"max_size" validate:"required,gtecsfield=MinSize"`
+	MinSize int `yaml:"min_size" validate:"min=0,ltefield=MaxSize"`
+	MaxSize int `yaml:"max_size" validate:"min=0,gtecsfield=MinSize"`
 
 	// TODO 名前付きプラン(サーバ数のみ保持する)の追加
 

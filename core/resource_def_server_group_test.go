@@ -219,8 +219,6 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 			want: []error{
 				fmt.Errorf("name: required"),
 				fmt.Errorf("zone: required"),
-				fmt.Errorf("min_size: required"),
-				fmt.Errorf("max_size: required"),
 				fmt.Errorf("template: required"),
 			},
 		},
