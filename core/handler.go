@@ -68,6 +68,12 @@ func BuiltinHandlers() Handlers {
 			},
 		},
 		{
+			Name: "server-horizontal-scaler",
+			BuiltinHandler: &builtins.Handler{
+				Builtin: server.NewHorizontalScaleHandler(),
+			},
+		},
+		{
 			Name: "server-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
 				Builtin: server.NewVerticalScaleHandler(),

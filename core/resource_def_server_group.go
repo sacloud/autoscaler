@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/sacloud/autoscaler/validate"
+
 	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 
@@ -31,12 +33,15 @@ import (
 type ResourceDefServerGroup struct {
 	*ResourceDefBase `yaml:",inline"`
 
-	Name string `yaml:"name_prefix"` // {{ .Name }}{{ .Number }}
-	Zone string `yaml:"zone"`
+	Name string `yaml:"name" validate:"required"` // {{ .Name }}{{ .Number }}
+	Zone string `yaml:"zone" validate:"required"`
 
-	MinSize       int                          `yaml:"min_size"`
-	MaxSize       int                          `yaml:"max_size"`
-	Template      *ServerGroupInstanceTemplate `yaml:"template"`
+	MinSize int `yaml:"min_size" validate:"required,ltefield=MaxSize"`
+	MaxSize int `yaml:"max_size" validate:"required,gtecsfield=MinSize"`
+
+	// TODO 名前付きプラン(サーバ数のみ保持する)の追加
+
+	Template      *ServerGroupInstanceTemplate `yaml:"template" validate:"required"`
 	ShutdownForce bool                         `yaml:"shutdown_force"`
 
 	parent ResourceDefinition
@@ -55,28 +60,24 @@ func (d *ResourceDefServerGroup) SetParent(parent ResourceDefinition) {
 }
 
 func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+	if errs := validate.StructWithMultiError(d); len(errs) > 0 {
+		return errs
+	}
+
 	errors := &multierror.Error{}
 
-	if d.Zone == "" {
-		errors = multierror.Append(errors, fmt.Errorf("zone: required"))
-	} else {
-		exist := false
-		for _, z := range sacloud.SakuraCloudZones {
-			if z == d.Zone {
-				exist = true
-				break
-			}
-		}
-		if !exist {
-			errors = multierror.Append(errors, fmt.Errorf("zone: invalid zone: %s", d.Zone))
-		}
-
-		if d.Template == nil {
-			errors = multierror.Append(errors, fmt.Errorf("template: required"))
-		} else {
-			errors = multierror.Append(errors, d.Template.Validate(ctx, apiClient)...)
+	zoneExist := false
+	for _, z := range sacloud.SakuraCloudZones {
+		if z == d.Zone {
+			zoneExist = true
+			break
 		}
 	}
+	if !zoneExist {
+		errors = multierror.Append(errors, fmt.Errorf("zone: invalid zone: %s", d.Zone))
+	}
+
+	errors = multierror.Append(errors, d.Template.Validate(ctx, apiClient, d)...)
 
 	// set prefix
 	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", d.Type().String())).(*multierror.Error)
@@ -91,6 +92,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 	}
 
 	// Min/MaxとUp/Downを考慮してサーバ数を決定
+	// TODO 名前付きプランの考慮
 	serverCount := len(cloudResources)
 	if ctx.Request().requestType == requestTypeUp {
 		serverCount++
@@ -122,6 +124,8 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 		}
 		resources = append(resources, instance)
 	}
+
+	// TODO 歯抜け対策(xxx-002だけ手動で消した、などの場合)
 	for len(resources) < serverCount {
 		commitment := types.Commitments.Standard
 		if d.Template.Plan.DedicatedCPU {
@@ -133,7 +137,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 			},
 			apiClient: apiClient,
 			server: &sacloud.Server{
-				Name:                 fmt.Sprintf("%s-%03d", d.Name, len(resources)+1), // TODO フォーマット指定可能にすべきか?
+				Name:                 fmt.Sprintf("%s-%03d", d.Name, len(resources)+1), // TODO フォーマット指定可能にする
 				Tags:                 d.Template.Tags,
 				Description:          d.Template.Description,
 				IconID:               types.StringID(d.Template.IconID),

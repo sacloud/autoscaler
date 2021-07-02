@@ -14,7 +14,10 @@
 
 package core
 
-import "github.com/sacloud/autoscaler/handler"
+import (
+	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
+)
 
 func computedToParents(parentComputed Computed) *handler.Parent {
 	if parentComputed != nil {
@@ -56,4 +59,12 @@ func computedToParents(parentComputed Computed) *handler.Parent {
 		}
 	}
 	return nil
+}
+
+func boolToCommitment(dedicatedCPU bool) types.ECommitment {
+	v := types.Commitments.Standard
+	if dedicatedCPU {
+		v = types.Commitments.DedicatedCPU
+	}
+	return v
 }

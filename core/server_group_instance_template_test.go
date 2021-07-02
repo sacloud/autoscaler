@@ -15,9 +15,12 @@
 package core
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/goccy/go-yaml"
+	"github.com/sacloud/autoscaler/test"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -231,6 +234,140 @@ func TestServerGroupNICTemplate_IPAddressByIndexFromCidrBlock(t1 *testing.T) {
 			if got1 != tt.want1 {
 				t1.Errorf("IPAddressByIndexFromCidrBlock() got1 = %v, want %v", got1, tt.want1)
 			}
+		})
+	}
+}
+
+func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
+	tests := []struct {
+		name     string
+		template *ServerGroupInstanceTemplate
+		want     []error
+	}{
+		{
+			name:     "empty",
+			template: &ServerGroupInstanceTemplate{},
+			want:     []error{fmt.Errorf("plan: required")},
+		},
+		{
+			name: "minimum",
+			template: &ServerGroupInstanceTemplate{
+				Plan: &ServerGroupInstancePlan{
+					Core:   1,
+					Memory: 1,
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "field validation",
+			template: &ServerGroupInstanceTemplate{
+				Plan: &ServerGroupInstancePlan{
+					Core:   1,
+					Memory: 1,
+				},
+				Tags:            []string{"duplicate", "duplicate"},
+				InterfaceDriver: types.EInterfaceDriver("foobar"),
+			},
+			want: []error{
+				fmt.Errorf("tags: unique"),
+				fmt.Errorf("interface_driver: oneof=virtio e1000"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errs := tt.template.Validate(testContext(), test.APIClient, &ResourceDefServerGroup{
+				Name: "test",
+				Zone: test.Zone,
+			})
+			require.EqualValues(t, tt.want, errs)
+		})
+	}
+}
+
+func TestServerGroupNICTemplate_Validate(t *testing.T) {
+	type args struct {
+		maxServerNum int
+	}
+	tests := []struct {
+		name     string
+		template *ServerGroupNICTemplate
+		args     args
+		want     []error
+	}{
+		{
+			name:     "shared",
+			template: &ServerGroupNICTemplate{Upstream: &ServerGroupNICUpstream{shared: true}},
+			args:     args{maxServerNum: 1},
+			want:     nil,
+		},
+		{
+			name: "shared with network settings",
+			template: &ServerGroupNICTemplate{
+				Upstream:        &ServerGroupNICUpstream{shared: true},
+				AssignCidrBlock: "192.0.2.0/24",
+			},
+			args: args{maxServerNum: 1},
+			want: []error{fmt.Errorf("upstream=shared but network settings are specified")},
+		},
+		{
+			name: "network settings",
+			template: &ServerGroupNICTemplate{
+				Upstream: &ServerGroupNICUpstream{
+					selector: &ResourceSelector{Names: []string{"test"}},
+				},
+				AssignCidrBlock:  "192.0.2.0/24",
+				AssignNetMaskLen: 24,
+				DefaultRoute:     "192.0.2.1",
+			},
+			args: args{maxServerNum: 1},
+			want: nil,
+		},
+		{
+			name: "invalid cidr block",
+			template: &ServerGroupNICTemplate{
+				Upstream: &ServerGroupNICUpstream{
+					selector: &ResourceSelector{Names: []string{"test"}},
+				},
+				AssignCidrBlock:  "192.0.2.0/111",
+				AssignNetMaskLen: 24,
+				DefaultRoute:     "192.0.2.1",
+			},
+			args: args{maxServerNum: 5},
+			want: []error{fmt.Errorf("assign_cidr_block: cidrv4")},
+		},
+		{
+			name: "invalid network settings",
+			template: &ServerGroupNICTemplate{
+				Upstream: &ServerGroupNICUpstream{
+					selector: &ResourceSelector{Names: []string{"test"}},
+				},
+				AssignCidrBlock:  "192.0.2.0/30",
+				AssignNetMaskLen: 24,
+				DefaultRoute:     "192.0.2.1",
+			},
+			args: args{maxServerNum: 5},
+			want: []error{fmt.Errorf("assign_cidr_block is too small")},
+		},
+		{
+			name: "invalid default route",
+			template: &ServerGroupNICTemplate{
+				Upstream: &ServerGroupNICUpstream{
+					selector: &ResourceSelector{Names: []string{"test"}},
+				},
+				AssignCidrBlock:  "192.0.2.0/24",
+				AssignNetMaskLen: 24,
+				DefaultRoute:     "10.0.0.1",
+			},
+			args: args{maxServerNum: 1},
+			want: []error{fmt.Errorf("default_route must contains same network")},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t1 *testing.T) {
+			got := tt.template.Validate(tt.args.maxServerNum)
+			require.EqualValues(t, tt.want, got)
 		})
 	}
 }

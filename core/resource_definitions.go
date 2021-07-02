@@ -141,6 +141,8 @@ func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers
 		return err
 	}
 	computed = refreshed
+	// IDが採番されていたり変更されていたりするためHandlingContextも更新しておく
+	handlingCtx = NewHandlingContext(parentCtx, computed).WithLogger("type", computed.Type(), "zone", zone, "id", computed.ID())
 
 	// postHandle
 	if err := r.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {

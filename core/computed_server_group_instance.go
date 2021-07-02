@@ -33,10 +33,10 @@ type computedServerGroupInstance struct {
 }
 
 func (c *computedServerGroupInstance) ID() string {
-	if c.server != nil {
+	if c.server != nil && !c.server.ID.IsEmpty() {
 		return c.server.ID.String()
 	}
-	return ""
+	return "(known after handle)"
 }
 
 func (c *computedServerGroupInstance) Type() ResourceTypes {

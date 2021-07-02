@@ -16,15 +16,15 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/test"
+	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -198,6 +198,77 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				}
 				r.def = nil // 後で比較するときのため
 			}
+			require.EqualValues(t, tt.want, got)
+		})
+	}
+}
+
+func TestResourceDefServerGroup_Validate(t *testing.T) {
+	tests := []struct {
+		name string
+		def  *ResourceDefServerGroup
+		want []error
+	}{
+		{
+			name: "empty",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+				},
+			},
+			want: []error{
+				fmt.Errorf("name: required"),
+				fmt.Errorf("zone: required"),
+				fmt.Errorf("min_size: required"),
+				fmt.Errorf("max_size: required"),
+				fmt.Errorf("template: required"),
+			},
+		},
+		{
+			name: "min/mas size",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+				},
+				Name:    "test",
+				Zone:    "is1a",
+				MinSize: 2,
+				MaxSize: 1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			want: []error{
+				fmt.Errorf("min_size: ltefield=MaxSize"),
+				fmt.Errorf("max_size: gtecsfield=MinSize"),
+			},
+		},
+		{
+			name: "minimum valid definition",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+				},
+				Name:    "test",
+				Zone:    "is1a",
+				MinSize: 1,
+				MaxSize: 1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.def.Validate(testContext(), test.APIClient)
 			require.EqualValues(t, tt.want, got)
 		})
 	}

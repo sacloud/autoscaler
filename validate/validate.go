@@ -23,16 +23,24 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-func Struct(v interface{}) error {
+func validate(v interface{}) error {
 	validate := validator.New()
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("name"), ",", 2)[0]
+		if name == "" {
+			// nameタグがない場合はyamlタグを参照
+			name = strings.SplitN(fld.Tag.Get("yaml"), ",", 2)[0]
+		}
 		if name == "-" {
 			return ""
 		}
 		return name
 	})
-	err := validate.Struct(v)
+	return validate.Struct(v)
+}
+
+func Struct(v interface{}) error {
+	err := validate(v)
 	if err != nil {
 		if err != nil {
 			// see https://github.com/go-playground/validator/blob/f6584a41c8acc5dfc0b62f7962811f5231c11530/_examples/simple/main.go#L59-L65
@@ -45,6 +53,26 @@ func Struct(v interface{}) error {
 				errors = multierror.Append(errors, errorFromValidationErr(v, err))
 			}
 			return errors.ErrorOrNil()
+		}
+	}
+
+	return nil
+}
+
+func StructWithMultiError(v interface{}) []error {
+	err := validate(v)
+	if err != nil {
+		if err != nil {
+			// see https://github.com/go-playground/validator/blob/f6584a41c8acc5dfc0b62f7962811f5231c11530/_examples/simple/main.go#L59-L65
+			if _, ok := err.(*validator.InvalidValidationError); ok {
+				return []error{err}
+			}
+
+			errors := &multierror.Error{}
+			for _, err := range err.(validator.ValidationErrors) {
+				errors = multierror.Append(errors, errorFromValidationErr(v, err))
+			}
+			return errors.Errors
 		}
 	}
 

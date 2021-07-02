@@ -18,11 +18,8 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/helper/query"
-	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-
 	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type ResourceServerGroupInstance struct {
@@ -85,8 +82,11 @@ func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, refresh bool)
 }
 
 func (r *ResourceServerGroupInstance) refresh(ctx *RequestContext) error {
-	serverOp := sacloud.NewServerOp(r.apiClient)
+	if r.instruction == handler.ResourceInstructions_DELETE {
+		return nil
+	}
 
+	serverOp := sacloud.NewServerOp(r.apiClient)
 	// サーバが存在したらIDで検索する
 	if !r.server.ID.IsEmpty() {
 		server, err := serverOp.Read(ctx, r.zone, r.server.ID)
@@ -133,6 +133,11 @@ func (r *ResourceServerGroupInstance) computeEditParameter(ctx *RequestContext, 
 		sshKeys = append(sshKeys, key.String())
 	}
 
+	var startupScripts []string
+	for _, ss := range tmpl.StartupScripts {
+		startupScripts = append(startupScripts, ss.String())
+	}
+
 	return &handler.ServerGroupInstance_EditParameter{
 		HostName:            tmpl.HostName(r.server.Name, r.indexInGroup),
 		Password:            tmpl.Password,
@@ -141,7 +146,7 @@ func (r *ResourceServerGroupInstance) computeEditParameter(ctx *RequestContext, 
 		ChangePartitionUuid: tmpl.ChangePartitionUUID,
 		SshKeys:             sshKeys,
 		SshKeyIds:           tmpl.SSHKeyIDs,
-		StartupScripts:      tmpl.StartupScripts, // Note: この段階ではテンプレートのまま渡す。
+		StartupScripts:      startupScripts, // Note: この段階ではGoテンプレートは未評価のまま渡す。
 
 		// これらは必要に応じてHandlerが設定する
 		IpAddress:      networkInfo.IpAddress,
@@ -177,7 +182,7 @@ func (r *ResourceServerGroupInstance) computeDisks(ctx *RequestContext) ([]*hand
 
 	// 新規作成時は必要な値を計算して渡す
 	for i, tmpl := range r.def.Template.Disks {
-		sourceArchiveID, sourceDiskID, err := r.findDiskSource(ctx, tmpl)
+		sourceArchiveID, sourceDiskID, err := tmpl.FindDiskSource(ctx, r.apiClient, r.zone)
 		if err != nil {
 			return nil, err
 		}
@@ -196,53 +201,6 @@ func (r *ResourceServerGroupInstance) computeDisks(ctx *RequestContext) ([]*hand
 		})
 	}
 	return disks, nil
-}
-
-func (r *ResourceServerGroupInstance) findDiskSource(ctx *RequestContext, tmpl *ServerGroupDiskTemplate) (sourceArchiveID, sourceDiskID string, retErr error) {
-	switch {
-	case tmpl.OSType != "":
-		archive, err := query.FindArchiveByOSType(ctx, sacloud.NewArchiveOp(r.apiClient), r.zone, ostype.StrToOSType(tmpl.OSType))
-		if err != nil {
-			retErr = err
-			return
-		}
-		sourceArchiveID = archive.ID.String()
-		return
-	case tmpl.SourceArchiveSelector != nil:
-		found, err := sacloud.NewArchiveOp(r.apiClient).Find(ctx, r.zone, tmpl.SourceArchiveSelector.findCondition())
-		if err != nil {
-			retErr = err
-			return
-		}
-		if len(found.Archives) == 0 {
-			retErr = fmt.Errorf("source archive not found with: %s", tmpl.SourceArchiveSelector)
-			return
-		}
-		if len(found.Archives) > 1 {
-			retErr = fmt.Errorf("multiple source archive found with: %s, archives: %#v", tmpl.SourceArchiveSelector, found.Archives)
-			return
-		}
-		sourceArchiveID = found.Archives[0].ID.String()
-		return
-	case tmpl.SourceDiskSelector != nil:
-		found, err := sacloud.NewDiskOp(r.apiClient).Find(ctx, r.zone, tmpl.SourceDiskSelector.findCondition())
-		if err != nil {
-			retErr = err
-			return
-		}
-		if len(found.Disks) == 0 {
-			retErr = fmt.Errorf("source disk not found with: %s", tmpl.SourceArchiveSelector)
-			return
-		}
-		if len(found.Disks) > 1 {
-			retErr = fmt.Errorf("multiple source disk found with: %s, archives: %#v", tmpl.SourceArchiveSelector, found.Disks)
-			return
-		}
-		sourceDiskID = found.Disks[0].ID.String()
-		return
-	}
-	// blank disk: 2番目以降のディスクや別途Tinkerbellなどのベアメタルプロビジョニングを行う場合などに到達し得る
-	return "", "", nil
 }
 
 func (r *ResourceServerGroupInstance) computeNetworkInterfaces(ctx *RequestContext) ([]*handler.ServerGroupInstance_NIC, error) {
@@ -277,9 +235,6 @@ func (r *ResourceServerGroupInstance) computeNetworkInterfaces(ctx *RequestConte
 			ip, mask, err := tmpl.IPAddressByIndexFromCidrBlock(r.indexInGroup)
 			if err != nil {
 				return nil, err
-			}
-			if tmpl.AssignNetMaskLen != 0 {
-				mask = tmpl.AssignNetMaskLen
 			}
 			nic.UserIpAddress = ip
 			nic.AssignedNetwork = &handler.NetworkInfo{
