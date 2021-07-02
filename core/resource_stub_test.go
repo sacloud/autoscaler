@@ -25,6 +25,10 @@ type stubResourceDef struct {
 	computeFunc func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error)
 }
 
+func (d *stubResourceDef) String() string {
+	return "stub"
+}
+
 func (d *stubResourceDef) Validate(_ context.Context, _ sacloud.APICaller) []error {
 	return nil
 }

@@ -90,13 +90,13 @@ enum ResourceInstructions {
 // リソース型
 message Resource {
   oneof resource {
-    Server server              = 10;
-    ServerGroup server_group   = 11;
-    ELB elb                    = 12;
-    GSLB gslb                  = 13;
-    DNS dns                    = 14;
-    Router router              = 15;
-    LoadBalancer load_balancer = 16;
+    Server server                               = 10;
+    ServerGroupInstance server_group_instance   = 11;
+    ELB elb                                     = 12;
+    GSLB gslb                                   = 13;
+    DNS dns                                     = 14;
+    Router router                               = 15;
+    LoadBalancer load_balancer                  = 16;
   }
 }
 
@@ -111,15 +111,92 @@ message Server {
   bool dedicated_cpu                    = 15;
   repeated NetworkInfo assigned_network = 16;
 
+  // TODO option.shutdown_forceをインラインにする
   ServerScalingOption option            = 101;
-  // TODO その他渡すパラメータを整理する
 }
 
-message ServerGroup {
+message ServerGroupInstance {
   Parent parent                    = 1;
   reserved 2 to 10;
 
-  repeated Server servers          = 11;
+  string id                             = 11; // 新規作成指示時は空
+  string zone                           = 12;
+
+  // plan
+  uint32 core                           = 13;
+  uint32 memory                         = 14;
+  bool dedicated_cpu                    = 15;
+  string private_host_id                = 16;
+
+  // disks
+  repeated Disk disks                   = 20;
+  EditParameter edit_parameter          = 21; // 1番目のディスクにのみ有効
+
+  // networks
+  repeated NIC network_interfaces       = 30;
+
+  // misc
+  string cd_rom_id  = 40;
+  string interface_driver = 41;
+
+  // common
+  string name          = 90;
+  repeated string tags = 91;
+  string description   = 92;
+  string icon_id       = 93;
+  bool shutdown_force  = 94;
+
+  // ******** messages ***********
+
+  message Disk {
+    reserved 1 to 10;
+
+    string id                             = 11; // 新規作成指示時は空
+    string zone                           = 12;
+
+    // 以降のパラメータは新規作成時のみ設定される
+
+    // sources
+    string source_archive_id = 21;
+    string source_disk_id    = 22;
+
+    // spec
+    string plan              = 31; // ssd or hdd
+    string connection        = 32; // virtio or ide
+    uint32 size              = 33;
+
+    // common
+    string name          = 90;
+    repeated string tags = 91;
+    string description   = 92;
+    string icon_id       = 93;
+  }
+
+  message EditParameter { // 新規作成時のみ設定される
+    reserved 1 to 10;
+    string host_name           = 11;
+    string password            = 12;
+    bool disable_password_auth = 13;
+    bool enable_dhcp           = 14;
+    bool change_partition_uuid = 15;
+
+    string ip_address       = 21;
+    uint32 network_mask_len = 22;
+    string default_route    = 23;
+
+    repeated string ssh_keys    = 31;
+    repeated string ssh_key_ids = 32;
+
+    repeated string startup_scripts = 41;
+  }
+
+  message NIC {
+    reserved 1 to 10;
+    string upstream         = 11;
+    string packet_filter_id = 12;
+    string user_ip_address  = 13;
+    NetworkInfo assigned_network = 16; // 新規作成時は空
+  }
 }
 
 message ELB {
@@ -131,7 +208,6 @@ message ELB {
   uint32 plan                      = 13;
   string virtual_ip_address        = 14;
   string fqdn                      = 15;
-  // TODO その他渡すパラメータを整理
 }
 
 message GSLB {

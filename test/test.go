@@ -84,3 +84,19 @@ func AddTestDNS(t *testing.T, name string) (*sacloud.DNS, func()) {
 		}
 	}
 }
+
+func AddTestSwitch(t *testing.T, name string) (*sacloud.Switch, func()) {
+	swOp := sacloud.NewSwitchOp(APIClient)
+	sw, err := swOp.Create(context.Background(), Zone, &sacloud.SwitchCreateRequest{
+		Name: name,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return sw, func() {
+		if err := swOp.Delete(context.Background(), Zone, sw.ID); err != nil {
+			t.Logf("[WARN] deleting switch failed: %s", err)
+		}
+	}
+}

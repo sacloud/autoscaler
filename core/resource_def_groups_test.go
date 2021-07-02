@@ -44,19 +44,20 @@ func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 				dns := &ResourceDefDNS{
 					ResourceDefBase: &ResourceDefBase{
 						TypeName: "DNS",
-						TargetSelector: &ResourceSelector{
-							Names: []string{"test-name"},
-							Zones: []string{"is1a"},
-						},
+					},
+					Selector: &ResourceSelector{
+						Names: []string{"test-name"},
 					},
 				}
 				childServer := &ResourceDefServer{
 					ResourceDefBase: &ResourceDefBase{
 						TypeName: "Server",
-						TargetSelector: &ResourceSelector{
+					},
+					Selector: &MultiZoneSelector{
+						ResourceSelector: &ResourceSelector{
 							Names: []string{"test-child"},
-							Zones: []string{"is1a"},
 						},
+						Zones: []string{"is1a"},
 					},
 				}
 				childServer.SetParent(dns)
@@ -66,10 +67,12 @@ func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 					&ResourceDefServer{
 						ResourceDefBase: &ResourceDefBase{
 							TypeName: "Server",
-							TargetSelector: &ResourceSelector{
+						},
+						Selector: &MultiZoneSelector{
+							ResourceSelector: &ResourceSelector{
 								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
 							},
+							Zones: []string{"is1a"},
 						},
 						DedicatedCPU: true,
 					},
@@ -77,19 +80,17 @@ func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 					&ResourceDefGSLB{
 						ResourceDefBase: &ResourceDefBase{
 							TypeName: "GSLB",
-							TargetSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
-							},
+						},
+						Selector: &ResourceSelector{
+							Names: []string{"test-name"},
 						},
 					},
 					&ResourceDefELB{
 						ResourceDefBase: &ResourceDefBase{
 							TypeName: "EnhancedLoadBalancer",
-							TargetSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Zones: []string{"is1a"},
-							},
+						},
+						Selector: &ResourceSelector{
+							Names: []string{"test-name"},
 						},
 					},
 				}
@@ -108,7 +109,6 @@ web:
     - type: DNS
       selector:
         names: ["test-name"]
-        zones: ["is1a"]
       resources:
         - type: Server
           selector:
@@ -117,11 +117,9 @@ web:
     - type: GSLB 
       selector:
         names: ["test-name"]
-        zones: ["is1a"]
     - type: ELB
       selector:
         names: ["test-name"]
-        zones: ["is1a"]
   actions:
     foobar:
       - handler1

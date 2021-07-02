@@ -16,11 +16,8 @@ package core
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/search"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 // ResourceDefinition Coreが扱うさくらのクラウド上のリソースを表す
@@ -28,7 +25,7 @@ import (
 // Core起動時のコンフィギュレーションから形成される
 type ResourceDefinition interface {
 	Type() ResourceTypes // リソースの型
-	Selector() *ResourceSelector
+	String() string
 	Validate(ctx context.Context, apiClient sacloud.APICaller) []error
 
 	// Compute 現在/あるべき姿を算出する
@@ -49,9 +46,8 @@ type ChildResourceDefinition interface {
 //
 // Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceDefBase struct {
-	TypeName       string              `yaml:"type"`
-	TargetSelector *ResourceSelector   `yaml:"selector"`
-	children       ResourceDefinitions `yaml:"-"`
+	TypeName string              `yaml:"type"`
+	children ResourceDefinitions `yaml:"-"`
 }
 
 func (r *ResourceDefBase) Type() ResourceTypes {
@@ -60,6 +56,8 @@ func (r *ResourceDefBase) Type() ResourceTypes {
 		return ResourceTypeServer
 	case ResourceTypeServerGroup.String():
 		return ResourceTypeServerGroup
+	case ResourceTypeServerGroupInstance.String():
+		return ResourceTypeServerGroupInstance
 	case ResourceTypeEnhancedLoadBalancer.String(), "ELB":
 		return ResourceTypeEnhancedLoadBalancer
 	case ResourceTypeGSLB.String():
@@ -70,74 +68,7 @@ func (r *ResourceDefBase) Type() ResourceTypes {
 	return ResourceTypeUnknown
 }
 
-func (r *ResourceDefBase) Selector() *ResourceSelector {
-	return r.TargetSelector
-}
-
 // Children 子リソースを返す(自身は含まない)
 func (r *ResourceDefBase) Children() ResourceDefinitions {
 	return r.children
-}
-
-// ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
-type ResourceSelector struct {
-	ID    types.ID `yaml:"id"`
-	Names []string `yaml:"names"`
-	Zones []string `yaml:"zones"` // グローバルリソースの場合はis1aまたは空とする
-}
-
-func (rs *ResourceSelector) String() string {
-	if rs != nil {
-		return fmt.Sprintf("ID: %s, Names: %s, Zones: %s", rs.ID, rs.Names, rs.Zones)
-	}
-	return ""
-}
-
-func (rs *ResourceSelector) findCondition() *sacloud.FindCondition {
-	fc := &sacloud.FindCondition{
-		Filter: search.Filter{},
-	}
-	if !rs.ID.IsEmpty() {
-		fc.Filter[search.Key("ID")] = search.ExactMatch(rs.ID.String())
-	}
-	if len(rs.Names) != 0 {
-		fc.Filter[search.Key("Name")] = search.PartialMatch(rs.Names...)
-	}
-	return fc
-}
-
-func (rs *ResourceSelector) Validate(requireZone bool) error {
-	if rs == nil {
-		return fmt.Errorf("selector: required")
-	}
-
-	if rs.ID.IsEmpty() && len(rs.Names) == 0 {
-		return fmt.Errorf("selector.ID or selector.Names: required")
-	}
-
-	if !rs.ID.IsEmpty() && len(rs.Names) > 0 {
-		return fmt.Errorf("selector.ID and selector.Names: cannot specify both")
-	}
-
-	if requireZone && len(rs.Zones) == 0 {
-		return fmt.Errorf("selector.Zones: required")
-	}
-
-	if !requireZone && len(rs.Zones) > 0 {
-		return fmt.Errorf("selector.Zone: can not be specified for this resource")
-	}
-
-	for _, zone := range rs.Zones {
-		exist := false
-		for _, z := range sacloud.SakuraCloudZones {
-			if z == zone {
-				exist = true
-				break
-			}
-		}
-		if !exist {
-			return fmt.Errorf("selector.Zones: invalid zone: %s", zone)
-		}
-	}
-	return nil
 }

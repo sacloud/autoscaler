@@ -51,12 +51,10 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 	def := &ResourceDefServer{
 		ResourceDefBase: &ResourceDefBase{
 			TypeName: "",
-			TargetSelector: &ResourceSelector{
-				ID:    0,
-				Names: nil,
-				Zones: []string{},
-			},
 			children: nil,
+		},
+		Selector: &MultiZoneSelector{
+			ResourceSelector: &ResourceSelector{},
 		},
 		DedicatedCPU: false,
 		Plans:        nil,
@@ -109,12 +107,11 @@ func TestResourceServer2_Compute(t *testing.T) {
 	def := &ResourceDefServer{
 		ResourceDefBase: &ResourceDefBase{
 			TypeName: "",
-			TargetSelector: &ResourceSelector{
-				ID:    0,
-				Names: nil,
-				Zones: []string{},
-			},
 			children: nil,
+		},
+		Selector: &MultiZoneSelector{
+			ResourceSelector: &ResourceSelector{},
+			Zones:            nil,
 		},
 		DedicatedCPU: false,
 		Plans: []*ServerPlan{

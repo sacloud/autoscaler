@@ -17,7 +17,6 @@ package core
 import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type computedServer struct {
@@ -98,20 +97,9 @@ func (c *computedServer) Desired() *handler.Resource {
 }
 
 func (c *computedServer) assignedNetwork() []*handler.NetworkInfo {
-	var assignedNetwork []*handler.NetworkInfo
+	var info []*handler.NetworkInfo
 	for i, nic := range c.server.Interfaces {
-		var ipAddress string
-		if nic.SwitchScope == types.Scopes.Shared {
-			ipAddress = nic.IPAddress
-		} else {
-			ipAddress = nic.UserIPAddress
-		}
-		assignedNetwork = append(assignedNetwork, &handler.NetworkInfo{
-			IpAddress: ipAddress,
-			Netmask:   uint32(nic.UserSubnetNetworkMaskLen),
-			Gateway:   nic.UserSubnetDefaultRoute,
-			Index:     uint32(i),
-		})
+		info = append(info, assignedNetwork(nic, i))
 	}
-	return assignedNetwork
+	return info
 }

@@ -25,11 +25,16 @@ import (
 
 type ResourceDefGSLB struct {
 	*ResourceDefBase `yaml:",inline"`
+	Selector         *ResourceSelector `yaml:"selector"`
+}
+
+func (d *ResourceDefGSLB) String() string {
+	return d.Selector.String()
 }
 
 func (d *ResourceDefGSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
-	if err := d.Selector().Validate(false); err != nil {
+	if err := d.Selector.Validate(); err != nil {
 		errors = multierror.Append(errors, err)
 	} else {
 		resources, err := d.findCloudResources(ctx, apiClient)
@@ -43,7 +48,7 @@ func (d *ResourceDefGSLB) Validate(ctx context.Context, apiClient sacloud.APICal
 			}
 			errors = multierror.Append(errors,
 				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+					d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
 				))
 		}
 	}
@@ -72,7 +77,7 @@ func (d *ResourceDefGSLB) Compute(ctx *RequestContext, apiClient sacloud.APICall
 
 func (d *ResourceDefGSLB) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.GSLB, error) {
 	gslbOp := sacloud.NewGSLBOp(apiClient)
-	selector := d.Selector()
+	selector := d.Selector
 
 	found, err := gslbOp.Find(ctx, selector.findCondition())
 	if err != nil {

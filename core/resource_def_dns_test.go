@@ -31,6 +31,7 @@ func TestResourceDefDNS_Validate(t *testing.T) {
 	defer cleanup3()
 
 	type fields struct {
+		Selector        *ResourceSelector
 		ResourceDefBase *ResourceDefBase
 	}
 	tests := []struct {
@@ -39,35 +40,25 @@ func TestResourceDefDNS_Validate(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name: "zone is not empty",
-			fields: fields{
-				ResourceDefBase: &ResourceDefBase{
-					TypeName: ResourceTypeDNS.String(),
-					TargetSelector: &ResourceSelector{
-						Zones: []string{"is1a"},
-					},
-				},
-			},
-			wantError: true,
-		},
-		{
 			name: "returns error when having children and returns multiple resource",
 			fields: fields{
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: ResourceTypeDNS.String(),
-					TargetSelector: &ResourceSelector{
-						Names: []string{"test"},
-					},
 					children: ResourceDefinitions{
 						&ResourceDefServer{
 							ResourceDefBase: &ResourceDefBase{
 								TypeName: ResourceTypeServer.String(),
-								TargetSelector: &ResourceSelector{
+							},
+							Selector: &MultiZoneSelector{
+								ResourceSelector: &ResourceSelector{
 									Names: []string{"test"},
 								},
 							},
 						},
 					},
+				},
+				Selector: &ResourceSelector{
+					Names: []string{"test"},
 				},
 			},
 			wantError: true,
@@ -75,16 +66,18 @@ func TestResourceDefDNS_Validate(t *testing.T) {
 		{
 			name: "returns no error",
 			fields: fields{
+				Selector: &ResourceSelector{
+					Names: []string{"test1.com"},
+				},
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: ResourceTypeDNS.String(),
-					TargetSelector: &ResourceSelector{
-						Names: []string{"test1.com"},
-					},
 					children: ResourceDefinitions{
 						&ResourceDefServer{
 							ResourceDefBase: &ResourceDefBase{
 								TypeName: ResourceTypeServer.String(),
-								TargetSelector: &ResourceSelector{
+							},
+							Selector: &MultiZoneSelector{
+								ResourceSelector: &ResourceSelector{
 									Names: []string{"test"},
 								},
 							},
@@ -99,6 +92,7 @@ func TestResourceDefDNS_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			d := &ResourceDefDNS{
 				ResourceDefBase: tt.fields.ResourceDefBase,
+				Selector:        tt.fields.Selector,
 			}
 			if got := d.Validate(testContext(), test.APIClient); tt.wantError != (len(got) > 0) {
 				t.Errorf("Validate() = %v, wantError %t", got, tt.wantError)

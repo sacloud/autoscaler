@@ -80,7 +80,7 @@ func (r *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.A
 		children := def.Children()
 
 		if len(children) > 0 && len(resources) > 1 {
-			return fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s", def.Type(), def.Selector(), resources.String())
+			return fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s", def.Type(), def.String(), resources.String())
 		}
 
 		for _, resource := range resources {
@@ -141,6 +141,8 @@ func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers
 		return err
 	}
 	computed = refreshed
+	// IDが採番されていたり変更されていたりするためHandlingContextも更新しておく
+	handlingCtx = NewHandlingContext(parentCtx, computed).WithLogger("type", computed.Type(), "zone", zone, "id", computed.ID())
 
 	// postHandle
 	if err := r.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {

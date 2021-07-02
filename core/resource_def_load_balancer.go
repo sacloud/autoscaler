@@ -25,11 +25,16 @@ import (
 
 type ResourceDefLoadBalancer struct {
 	*ResourceDefBase `yaml:",inline"`
+	Selector         *MultiZoneSelector `yaml:"selector"`
+}
+
+func (d *ResourceDefLoadBalancer) String() string {
+	return d.Selector.String()
 }
 
 func (d *ResourceDefLoadBalancer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
-	if err := d.Selector().Validate(true); err != nil {
+	if err := d.Selector.Validate(); err != nil {
 		errors = multierror.Append(errors, err)
 	} else {
 		resources, err := d.findCloudResources(ctx, apiClient)
@@ -43,7 +48,7 @@ func (d *ResourceDefLoadBalancer) Validate(ctx context.Context, apiClient saclou
 			}
 			errors = multierror.Append(errors,
 				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-					d.Type(), d.Selector(), fmt.Sprintf("[%s]", strings.Join(names, ",")),
+					d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
 				))
 		}
 	}
@@ -72,7 +77,7 @@ func (d *ResourceDefLoadBalancer) Compute(ctx *RequestContext, apiClient sacloud
 
 func (d *ResourceDefLoadBalancer) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sakuraCloudLoadBalancer, error) {
 	lbOp := sacloud.NewLoadBalancerOp(apiClient)
-	selector := d.Selector()
+	selector := d.Selector
 	var results []*sakuraCloudLoadBalancer
 
 	for _, zone := range selector.Zones {

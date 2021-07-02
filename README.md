@@ -28,8 +28,7 @@ sacloud/autoscalerはGrafanaやAlertManagerなどの監視ツールからのWebh
   
 #### 水平スケール系
 
-- (近日実装予定)`server-horizontal-scaler`: サーバの水平スケール
-
+- `server-horizontal-scaler`: サーバの水平スケール
 
 ## Getting Started
 

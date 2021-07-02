@@ -3,10 +3,12 @@ module github.com/sacloud/autoscaler
 go 1.16
 
 require (
+	github.com/c-robinson/iplib v0.3.1
 	github.com/go-kit/log v0.1.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/goccy/go-yaml v1.8.9
 	github.com/hashicorp/go-multierror v1.0.1-0.20190722213833-bdca7bb83f60
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.29.0
 	github.com/sacloud/libsacloud/v2 v2.19.1

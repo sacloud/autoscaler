@@ -38,6 +38,79 @@ resources:
         option:
           shutdown_force: true
 
+      # サーバ(水平スケール)
+      - type: ServerGroup
+        # サーバグループ名、グループ内の各サーバの名前のプレフィックスして利用される(例: server-group-001)
+        name: "server-group"
+        zone: "is1a"
+
+        min_size: 5   # 最小インスタンス数
+        max_size: 20  # 最大インスタンス数
+
+        template: # 各サーバのテンプレート
+          tags: [ "tag1", "tag2" ]
+          description: "..."
+          interface_driver: "virtio" # virtio or e1000
+          shutdown_force: false # ACPIが利用できない場合にtrueにする(強制シャットダウンとなる)
+          plan:
+            core: 2
+            memory: 4
+            dedicated_cpu: false
+
+          # NICs
+          network_interfaces:
+            # 共有セグメントの場合
+            - upstream: "shared"
+
+            # スイッチ or ルータ+スイッチに接続する場合
+            - upstream:
+                names: ["autoscaler-test02"] # セレクター(名前など)で対象スイッチ(or ルータ+スイッチ)を指定
+
+              # NICに割り当てるIPアドレスブロックなどの定義
+              assign_cidr_block: "192.168.12.16/28" # NICに割り当てるIPアドレスの範囲をCIDRブロックで指定
+              assign_netmask_len: 24                # NICに割り当てるサブネットマスク長
+              default_route: "192.168.12.1"
+
+          # ディスク
+          disks:
+            - name_prefix: "..." # 省略した場合は 'サーバ名+ディスク連番' (例: server-group-001-001)
+
+              # コピー元、以下のいずれかを指定するorブランクディスクの場合は全て空にする
+              source_archive:
+                names: ["my-app-archive"] # セレクター(名前など)で対象アーカイブを指定
+              source_disk:
+                names: ["my-app-disk"]    # セレクター(名前など)で対象ディスクを指定
+              os_type: "ubuntu2004"       # OSTypeで指定
+
+              plan: "ssd"
+              connection: "virtio"
+              size: 40
+
+          # 1番目のディスクの対するパラメータ(対応しているアーカイブの場合のみ指定可能)
+          edit_parameter:
+            disabled: false # ディスクの修正を行わない場合はtrue
+            password: "your-password"
+            disable_pw_auth: true
+            enable_dhcp: false
+            change_partition_uuid: true
+
+            # SSH公開鍵の指定
+            ssh_keys:
+              # ファイルパス or 文字列で指定
+              - "~/.ssh/id_rsa.pub"
+              - "ssh-rsa ..."
+
+            # スタートアップスクリプト
+            # サーバのIPアドレス(共有セグメントの場合の自動割り当て)などを{{ .IPAddress}}のようなGoのテンプレートで利用可能
+            startup_scripts:
+              # ファイルパス or 文字列で指定
+              - "/path/to/your/script.sh"
+              - |
+                #!/bin/bash
+
+                echo "server name: {{ .Name }}"
+
+
       # エンハンスドロードバランサ(垂直スケール)
       # - type: ELB
       #   selector:
