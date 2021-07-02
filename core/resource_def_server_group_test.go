@@ -123,7 +123,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					server:       server2,
 					zone:         test.Zone,
 					instruction:  handler.ResourceInstructions_NOOP,
-					indexInGroup: 1,
+					indexInGroup: 2,
 				},
 				&ResourceServerGroupInstance{
 					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
@@ -136,7 +136,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					},
 					zone:         test.Zone,
 					instruction:  handler.ResourceInstructions_CREATE,
-					indexInGroup: 2,
+					indexInGroup: 1,
 				},
 			},
 			wantErr: false,
@@ -178,7 +178,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					server:       server2,
 					zone:         test.Zone,
 					instruction:  handler.ResourceInstructions_DELETE,
-					indexInGroup: 1,
+					indexInGroup: 2,
 				},
 			},
 			wantErr: false,
@@ -278,12 +278,14 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 		defName   string
 		resources Resources
 		want      string
+		wantIndex int
 	}{
 		{
 			name:      "from empty",
 			defName:   "prefix",
 			resources: nil,
 			want:      "prefix-001",
+			wantIndex: 0,
 		},
 		{
 			name:    "from servers are exist",
@@ -296,7 +298,8 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 					server: &sacloud.Server{Name: "prefix-002"},
 				},
 			},
-			want: "prefix-003",
+			want:      "prefix-003",
+			wantIndex: 2,
 		},
 		{
 			name:    "servers that are not sequentially numbered",
@@ -309,7 +312,8 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 					server: &sacloud.Server{Name: "prefix-003"},
 				},
 			},
-			want: "prefix-002",
+			want:      "prefix-002",
+			wantIndex: 1,
 		},
 		{
 			name:    "exist multiple unnumbered",
@@ -325,7 +329,8 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 					server: &sacloud.Server{Name: "prefix-005"},
 				},
 			},
-			want: "prefix-002",
+			want:      "prefix-002",
+			wantIndex: 1,
 		},
 	}
 	for _, tt := range tests {
@@ -333,8 +338,9 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 			d := &ResourceDefServerGroup{
 				Name: tt.defName,
 			}
-			got := d.determineServerName(tt.resources)
+			got, index := d.determineServerName(tt.resources)
 			require.EqualValues(t, tt.want, got)
+			require.EqualValues(t, tt.wantIndex, index)
 		})
 	}
 }

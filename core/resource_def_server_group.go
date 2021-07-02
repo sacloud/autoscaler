@@ -109,13 +109,13 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 			ResourceBase: &ResourceBase{
 				resourceType: ResourceTypeServerGroupInstance,
 			},
-			apiClient:    apiClient,
-			server:       cloudResources[i],
-			zone:         d.Zone,
-			def:          d,
-			instruction:  handler.ResourceInstructions_NOOP,
-			indexInGroup: i,
+			apiClient:   apiClient,
+			server:      cloudResources[i],
+			zone:        d.Zone,
+			def:         d,
+			instruction: handler.ResourceInstructions_NOOP,
 		}
+		instance.indexInGroup = d.resourceIndex(instance)
 		if i >= serverCount {
 			instance.instruction = handler.ResourceInstructions_DELETE
 		}
@@ -127,7 +127,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 		if d.Template.Plan.DedicatedCPU {
 			commitment = types.Commitments.DedicatedCPU
 		}
-		serverName := d.determineServerName(resources)
+		serverName, index := d.determineServerName(resources)
 		resources = append(resources, &ResourceServerGroupInstance{
 			ResourceBase: &ResourceBase{
 				resourceType: ResourceTypeServerGroupInstance,
@@ -148,16 +148,30 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 			zone:         d.Zone,
 			def:          d,
 			instruction:  handler.ResourceInstructions_CREATE,
-			indexInGroup: len(resources),
+			indexInGroup: index,
 		})
 	}
 	return resources, nil
 }
 
-func (d *ResourceDefServerGroup) determineServerName(resources Resources) string {
+func (d *ResourceDefServerGroup) resourceIndex(resource Resource) int {
+	for i := 0; i < d.MaxSize; i++ {
+		name := d.serverNameByIndex(i)
+		if resource.(*ResourceServerGroupInstance).server.Name == name {
+			return i
+		}
+	}
+	return 0
+}
+
+func (d *ResourceDefServerGroup) serverNameByIndex(index int) string {
 	nameFormat := "%s-%03d" // TODO フォーマット指定可能にする
+	return fmt.Sprintf(nameFormat, d.Name, index+1)
+}
+
+func (d *ResourceDefServerGroup) determineServerName(resources Resources) (string, int) {
 	for i := range resources {
-		name := fmt.Sprintf(nameFormat, d.Name, i+1)
+		name := d.serverNameByIndex(i)
 		exist := false
 		for _, r := range resources {
 			if r.(*ResourceServerGroupInstance).server.Name == name {
@@ -166,10 +180,10 @@ func (d *ResourceDefServerGroup) determineServerName(resources Resources) string
 			}
 		}
 		if !exist {
-			return name
+			return name, i
 		}
 	}
-	return fmt.Sprintf(nameFormat, d.Name, len(resources)+1)
+	return d.serverNameByIndex(len(resources)), len(resources)
 }
 
 func (d *ResourceDefServerGroup) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.Server, error) {
