@@ -84,6 +84,7 @@ sakuracloud:
       - [\<resource_def_load_balancer\>](#resource_def_load_balancer)
       - [\<resource_def_router\>](#resource_def_router)
       - [\<resource_def_server\>](#resource_def_server)
+      - [\<resource_def_server_group\>](#resource_def_server_group)
 - [\<handler\>](#handler)
 - [\<autoscaler_config\>](#autoscaler_config)
 - 
@@ -130,7 +131,7 @@ resources:
 resource_def_xxxのいずれかを指定します。
 
 ```yaml
-<resource_def_dns> | <resource_def_elb> | <resource_def_gslb> | <resource_def_load_balancer> | <resource_def_router> | <resource_def_server>
+<resource_def_dns> | <resource_def_elb> | <resource_def_gslb> | <resource_def_load_balancer> | <resource_def_router> | <resource_def_server> | <resource_def_server_group>
 ```
 
 ### \<resource_def_dns\>
@@ -330,6 +331,91 @@ plans:
     memory: 32
   - core: 10
     memory: 48
+```
+
+### \<resource_def_server_group\>
+
+サーバグループの定義。  
+ここで定義したリソースは水平スケール可能になります(ハンドラ`server-horizontal-scaler`)。
+
+```yaml
+type: "ServerGroup"
+  
+# グループ名、グループ内の各サーバ名のプレフィックスとなる
+name: <string>
+zone: <"is1a" | "is1b" | "tk1a" | "tk1b" | "tk1v">
+  
+# 最小/最大サーバ数
+min_size: <number>
+max_size: <number>
+
+# 強制シャットダウンを行うか(ACPIが利用できないサーバの場合trueにする)
+shutdown_force: <boolean>
+
+# グループ内のサーバのテンプレート
+template:
+  tags: [ - <string> ] 
+  description: <string>
+  
+  icon_id: <string>
+  cdrom_id: <string>
+  private_host_id: <string>
+
+  interface_driver: <"virtio" | "e1000" | default="virtio">
+  
+  plan:
+    core: <number>           # コア数
+    memory: <number>         # メモリサイズ、GB単位 
+    dedicated_cpu: <boolean> # コア専有の場合true
+    
+  # 接続するディスクをリストで指定  
+  disks:
+    [ - name_prefix: <string> # ディスク名のプレフィックス(省略可能)
+        tags: [ - <string> ]
+        description: <string>
+        
+        icon_id: <string>
+        
+        source_archive: <string> | <resource_selector>
+        source_disk: <string> | <resource_selector>
+        os_type: <string>
+        
+        plan: <"ssd" | "hdd">
+        connection: <"virtio" | "ide">
+        size: <number>
+    ]
+  
+  edit_parameter:
+    disabled: <boolean>        # ディスクの修正を行わない場合true
+    host_name_prefix: <string> # ホスト名のプレフィックス(省略可能)
+    password: <string>
+    disable_pw_auth: <boolean>
+    enable_dhcp: <boolean>
+    change_partition_uuid: <boolean>
+    startup_scripts: [ - <string> | <filepath> ]
+    ssh_keys: [ - <string> | <filepath> ]
+    ssh_key_ids: [ - <string> ]
+    
+  network_interfaces:
+    # 上流ネットワーク
+    upstream: <"shared"> | <resource_selector>
+    
+    # 以下はupstreamがsharedの場合のみ指定可能
+    assign_cidr_block: <string>
+    assign_netmask_len: <int>
+    default_route: <string>
+    packet_filter_id: <string>
+
+# 子リソースの定義(省略可能)
+resources:
+  [ - <resource_definition> ]
+```
+
+#### <resource_selector>
+
+```yaml
+id: <string>
+names: [ - <string> ]
 ```
 
 ### \<handler\>
