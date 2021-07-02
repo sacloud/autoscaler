@@ -65,7 +65,7 @@ func (c *Config) load(reader io.Reader) error {
 	if err != nil {
 		return fmt.Errorf("loading configuration failed: %s", err)
 	}
-	if err := yaml.Unmarshal(data, c); err != nil {
+	if err := yaml.UnmarshalWithOptions(data, c, yaml.Strict()); err != nil {
 		return fmt.Errorf("unmarshalling of config values failed: %s", err)
 	}
 
