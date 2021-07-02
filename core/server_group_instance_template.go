@@ -19,15 +19,13 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/c-robinson/iplib"
+	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/helper/query"
-	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
-
 	"github.com/sacloud/libsacloud/v2/sacloud"
-
-	"github.com/c-robinson/iplib"
-	"github.com/goccy/go-yaml"
+	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
