@@ -32,6 +32,22 @@ func TestResourceDefGroups_UnmarshalYAML(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "unknown key",
+			r:    &ResourceDefGroups{},
+			args: args{
+				data: []byte(`
+web: 
+  resources:
+    - type: Server
+      selector:
+        names: ["test-name"]
+        zones: ["is1a"]
+      unknown_key: "foobar"
+`),
+			},
+			wantErr: true,
+		},
+		{
 			name: "resource group",
 			r: func() *ResourceDefGroups {
 				rgs := newResourceDefGroups()
@@ -132,7 +148,7 @@ web:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var target ResourceDefGroups
-			if err := yaml.Unmarshal(tt.args.data, &target); (err != nil) != tt.wantErr {
+			if err := yaml.UnmarshalWithOptions(tt.args.data, &target, yaml.Strict()); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalYAML() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			require.EqualValues(t, tt.r, &target)

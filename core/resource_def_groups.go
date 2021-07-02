@@ -57,7 +57,7 @@ func (rg *ResourceDefGroups) Set(key string, group *ResourceDefGroup) {
 
 func (rg *ResourceDefGroups) UnmarshalYAML(data []byte) error {
 	var loaded map[string]*ResourceDefGroup
-	if err := yaml.Unmarshal(data, &loaded); err != nil {
+	if err := yaml.UnmarshalWithOptions(data, &loaded, yaml.Strict()); err != nil {
 		return err
 	}
 	for k, v := range loaded {

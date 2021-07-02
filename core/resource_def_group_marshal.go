@@ -22,7 +22,7 @@ import (
 
 func (rdg *ResourceDefGroup) UnmarshalYAML(data []byte) error {
 	var rawMap map[string]interface{}
-	if err := yaml.Unmarshal(data, &rawMap); err != nil {
+	if err := yaml.UnmarshalWithOptions(data, &rawMap, yaml.Strict()); err != nil {
 		return err
 	}
 
@@ -86,11 +86,6 @@ func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interfa
 		return nil, fmt.Errorf("'type' is not string: %v", data)
 	}
 
-	remarshelded, err := yaml.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("yaml.Marshal failed with %v", data)
-	}
-
 	var defs ResourceDefinitions
 	if rawChildren, ok := data["resources"]; ok {
 		if children, ok := rawChildren.([]interface{}); ok {
@@ -104,27 +99,33 @@ func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interfa
 				}
 			}
 		}
+		delete(data, "resources")
+	}
+
+	remarshelded, err := yaml.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("yaml.Marshal failed with %v", data)
 	}
 
 	var def ResourceDefinition
 	switch typeName {
 	case "Server":
 		v := &ResourceDefServer{}
-		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		v.children = defs
 		def = v
 	case "ServerGroup":
 		v := &ResourceDefServerGroup{}
-		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		v.children = defs
 		def = v
 	case "EnhancedLoadBalancer", "ELB":
 		v := &ResourceDefELB{}
-		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		// TypeNameのエイリアスを正規化
@@ -133,28 +134,28 @@ func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interfa
 		def = v
 	case "GSLB":
 		v := &ResourceDefGSLB{}
-		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		v.children = defs
 		def = v
 	case "DNS":
 		v := &ResourceDefDNS{}
-		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		v.children = defs
 		def = v
 	case "Router":
 		v := &ResourceDefRouter{}
-		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		v.children = defs
 		def = v
 	case "LoadBalancer", "LB":
 		v := &ResourceDefLoadBalancer{}
-		if err := yaml.Unmarshal(remarshelded, v); err != nil {
+		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
 		}
 		// TypeNameのエイリアスを正規化
