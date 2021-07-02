@@ -29,8 +29,8 @@ import (
 )
 
 func TestResourceDefServerGroup_Compute(t *testing.T) {
-	server1, cleanup1 := test.AddTestServer(t, "resource-def-server-test-1")
-	server2, cleanup2 := test.AddTestServer(t, "resource-def-server-test-2")
+	server1, cleanup1 := test.AddTestServer(t, "resource-def-server-test-001")
+	server2, cleanup2 := test.AddTestServer(t, "resource-def-server-test-003")
 	defer cleanup1()
 	defer cleanup2()
 
@@ -129,7 +129,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
 					apiClient:    test.APIClient,
 					server: &sacloud.Server{
-						Name:                 "resource-def-server-test-003",
+						Name:                 "resource-def-server-test-002",
 						CPU:                  1,
 						MemoryMB:             1 * size.GiB,
 						ServerPlanCommitment: types.Commitments.Standard,
@@ -267,6 +267,73 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.def.Validate(testContext(), test.APIClient)
+			require.EqualValues(t, tt.want, got)
+		})
+	}
+}
+
+func TestResourceDefServerGroup_determineServerName(t *testing.T) {
+	tests := []struct {
+		name      string
+		defName   string
+		resources Resources
+		want      string
+	}{
+		{
+			name:      "from empty",
+			defName:   "prefix",
+			resources: nil,
+			want:      "prefix-001",
+		},
+		{
+			name:    "from servers are exist",
+			defName: "prefix",
+			resources: Resources{
+				&ResourceServerGroupInstance{
+					server: &sacloud.Server{Name: "prefix-001"},
+				},
+				&ResourceServerGroupInstance{
+					server: &sacloud.Server{Name: "prefix-002"},
+				},
+			},
+			want: "prefix-003",
+		},
+		{
+			name:    "servers that are not sequentially numbered",
+			defName: "prefix",
+			resources: Resources{
+				&ResourceServerGroupInstance{
+					server: &sacloud.Server{Name: "prefix-001"},
+				},
+				&ResourceServerGroupInstance{
+					server: &sacloud.Server{Name: "prefix-003"},
+				},
+			},
+			want: "prefix-002",
+		},
+		{
+			name:    "exist multiple unnumbered",
+			defName: "prefix",
+			resources: Resources{
+				&ResourceServerGroupInstance{
+					server: &sacloud.Server{Name: "prefix-001"},
+				},
+				&ResourceServerGroupInstance{
+					server: &sacloud.Server{Name: "prefix-003"},
+				},
+				&ResourceServerGroupInstance{
+					server: &sacloud.Server{Name: "prefix-005"},
+				},
+			},
+			want: "prefix-002",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := &ResourceDefServerGroup{
+				Name: tt.defName,
+			}
+			got := d.determineServerName(tt.resources)
 			require.EqualValues(t, tt.want, got)
 		})
 	}

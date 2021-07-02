@@ -54,6 +54,8 @@ func (r *ResourceDefBase) Type() ResourceTypes {
 	switch r.TypeName {
 	case ResourceTypeServer.String():
 		return ResourceTypeServer
+	case ResourceTypeServerGroup.String():
+		return ResourceTypeServerGroup
 	case ResourceTypeServerGroupInstance.String():
 		return ResourceTypeServerGroupInstance
 	case ResourceTypeEnhancedLoadBalancer.String(), "ELB":

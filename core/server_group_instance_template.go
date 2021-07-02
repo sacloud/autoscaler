@@ -250,8 +250,11 @@ func (t *ServerGroupNICTemplate) Validate(maxServerNum int) []error {
 		if iplib.NewNet(ip, maskLen).Count4() < uint32(maxServerNum) {
 			errors = multierror.Append(errors, fmt.Errorf("assign_cidr_block is too small"))
 		}
+		if t.AssignNetMaskLen != 0 {
+			maskLen = t.AssignNetMaskLen
+		}
 		if t.DefaultRoute != "" {
-			assignedNet := iplib.NewNet(ip, maskLen)
+			assignedNet := iplib.NewNet(ipNet.IP, maskLen)
 			if !assignedNet.Contains(net.ParseIP(t.DefaultRoute)) {
 				errors = multierror.Append(errors,
 					fmt.Errorf(

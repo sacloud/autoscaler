@@ -172,7 +172,7 @@ func (h *HorizontalScaleHandler) createServer(ctx context.Context, req *handler.
 }
 
 func (h *HorizontalScaleHandler) diskEditParameter(server *handler.ServerGroupInstance, diskIndex int) (*diskBuilder.EditRequest, error) {
-	if diskIndex != 0 {
+	if diskIndex != 0 || server.EditParameter == nil {
 		return nil, nil
 	}
 

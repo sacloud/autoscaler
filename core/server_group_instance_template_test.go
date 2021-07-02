@@ -325,6 +325,19 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 			want: nil,
 		},
 		{
+			name: "network settings with smaller assign cidr block",
+			template: &ServerGroupNICTemplate{
+				Upstream: &ServerGroupNICUpstream{
+					selector: &ResourceSelector{Names: []string{"test"}},
+				},
+				AssignCidrBlock:  "192.0.2.16/28",
+				AssignNetMaskLen: 24,
+				DefaultRoute:     "192.0.2.1",
+			},
+			args: args{maxServerNum: 1},
+			want: nil,
+		},
+		{
 			name: "invalid cidr block",
 			template: &ServerGroupNICTemplate{
 				Upstream: &ServerGroupNICUpstream{

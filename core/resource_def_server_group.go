@@ -19,15 +19,12 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/sacloud/autoscaler/validate"
-
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-
-	"github.com/sacloud/autoscaler/handler"
-
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/autoscaler/validate"
+	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type ResourceDefServerGroup struct {
@@ -125,19 +122,19 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 		resources = append(resources, instance)
 	}
 
-	// TODO 歯抜け対策(xxx-002だけ手動で消した、などの場合)
 	for len(resources) < serverCount {
 		commitment := types.Commitments.Standard
 		if d.Template.Plan.DedicatedCPU {
 			commitment = types.Commitments.DedicatedCPU
 		}
+		serverName := d.determineServerName(resources)
 		resources = append(resources, &ResourceServerGroupInstance{
 			ResourceBase: &ResourceBase{
 				resourceType: ResourceTypeServerGroupInstance,
 			},
 			apiClient: apiClient,
 			server: &sacloud.Server{
-				Name:                 fmt.Sprintf("%s-%03d", d.Name, len(resources)+1), // TODO フォーマット指定可能にする
+				Name:                 serverName,
 				Tags:                 d.Template.Tags,
 				Description:          d.Template.Description,
 				IconID:               types.StringID(d.Template.IconID),
@@ -155,6 +152,24 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 		})
 	}
 	return resources, nil
+}
+
+func (d *ResourceDefServerGroup) determineServerName(resources Resources) string {
+	nameFormat := "%s-%03d" // TODO フォーマット指定可能にする
+	for i := range resources {
+		name := fmt.Sprintf(nameFormat, d.Name, i+1)
+		exist := false
+		for _, r := range resources {
+			if r.(*ResourceServerGroupInstance).server.Name == name {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			return name
+		}
+	}
+	return fmt.Sprintf(nameFormat, d.Name, len(resources)+1)
 }
 
 func (d *ResourceDefServerGroup) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.Server, error) {
