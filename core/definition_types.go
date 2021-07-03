@@ -69,8 +69,13 @@ func (v *IDOrSelector) UnmarshalYAML(data []byte) error {
 type StringOrFilePath string
 
 func (v *StringOrFilePath) UnmarshalYAML(data []byte) error {
+	var str string
+	if err := yaml.Unmarshal(data, &str); err != nil {
+		return err
+	}
+
 	// パスとして存在する場合はファイルを読み取る、そうでない場合はそのまま
-	path, err := homedir.Expand(string(data))
+	path, err := homedir.Expand(str)
 	if err != nil {
 		return err
 	}
@@ -79,7 +84,7 @@ func (v *StringOrFilePath) UnmarshalYAML(data []byte) error {
 		if !os.IsNotExist(err) {
 			return err
 		}
-		content = data
+		content = []byte(str)
 	}
 	*v = StringOrFilePath(content)
 	return nil
