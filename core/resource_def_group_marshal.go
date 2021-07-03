@@ -33,7 +33,10 @@ func (rdg *ResourceDefGroup) UnmarshalYAML(data []byte) error {
 	}
 	resources := rawResources.([]interface{})
 	for _, rawResource := range resources {
-		v := rawResource.(map[string]interface{})
+		v, ok := rawResource.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("invalid value: resource: %s", rawResource)
+		}
 		resource, err := rdg.unmarshalResourceDefFromMap(v)
 		if err != nil {
 			return err
@@ -46,11 +49,17 @@ func (rdg *ResourceDefGroup) UnmarshalYAML(data []byte) error {
 	if rawActions, ok := rawMap["actions"]; ok {
 		group.Actions = Actions{}
 
-		actions := rawActions.(map[string]interface{})
+		actions, ok := rawActions.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("invalid value: actions: %s", rawActions)
+		}
 		for k, v := range actions {
 			var handlers []string
 
-			v := v.([]interface{})
+			v, ok := v.([]interface{})
+			if !ok {
+				return fmt.Errorf("invalid value: actions: %s", v)
+			}
 			for _, v := range v {
 				if v, ok := v.(string); ok {
 					handlers = append(handlers, v)
