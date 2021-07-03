@@ -56,7 +56,7 @@ resources:
         plans:
           - name: smallest
             size: 5
-          - name: middle
+          - name: medium
             size: 10
           - name: largest
             size: 20

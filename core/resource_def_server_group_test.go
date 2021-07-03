@@ -354,7 +354,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				MinSize: 1,
 				MaxSize: 5,
 				Plans: []*ServerGroupPlan{
-					{Size: 3, Name: "middle"},
+					{Size: 3, Name: "medium"},
 					{Size: 5, Name: "largest"},
 				},
 				Template: &ServerGroupInstanceTemplate{
@@ -370,7 +370,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					source:            "default",
 					action:            "default",
 					resourceGroupName: "default",
-					desiredStateName:  "middle",
+					desiredStateName:  "medium",
 				}, nil, test.Logger),
 			},
 			want:    nil,

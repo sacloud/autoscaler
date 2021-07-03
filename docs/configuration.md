@@ -482,7 +482,7 @@ plans:
     memory: 8
   - core: 4
     memory: 16
-    name: "middle"
+    name: "medium"
   - core: 8
     memory: 16
   - core: 10
