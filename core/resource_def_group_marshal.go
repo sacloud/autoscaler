@@ -112,21 +112,21 @@ func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interfa
 	case "Server":
 		v := &ResourceDefServer{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+			return nil, err
 		}
 		v.children = defs
 		def = v
 	case "ServerGroup":
 		v := &ResourceDefServerGroup{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+			return nil, err
 		}
 		v.children = defs
 		def = v
 	case "EnhancedLoadBalancer", "ELB":
 		v := &ResourceDefELB{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+			return nil, err
 		}
 		// TypeNameのエイリアスを正規化
 		v.TypeName = "EnhancedLoadBalancer"
@@ -135,28 +135,28 @@ func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interfa
 	case "GSLB":
 		v := &ResourceDefGSLB{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+			return nil, err
 		}
 		v.children = defs
 		def = v
 	case "DNS":
 		v := &ResourceDefDNS{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+			return nil, err
 		}
 		v.children = defs
 		def = v
 	case "Router":
 		v := &ResourceDefRouter{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+			return nil, err
 		}
 		v.children = defs
 		def = v
 	case "LoadBalancer", "LB":
 		v := &ResourceDefLoadBalancer{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, fmt.Errorf("yaml.Unmarshal failed with %v", data)
+			return nil, err
 		}
 		// TypeNameのエイリアスを正規化
 		v.TypeName = "LoadBalancer"
