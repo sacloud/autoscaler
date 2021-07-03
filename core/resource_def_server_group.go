@@ -36,7 +36,7 @@ type ResourceDefServerGroup struct {
 	MinSize int `yaml:"min_size" validate:"min=0,ltefield=MaxSize"`
 	MaxSize int `yaml:"max_size" validate:"min=0,gtecsfield=MinSize"`
 
-	// TODO 名前付きプラン(サーバ数のみ保持する)の追加
+	Plans []*ServerGroupPlan `yaml:"plans"`
 
 	Template      *ServerGroupInstanceTemplate `yaml:"template" validate:"required"`
 	ShutdownForce bool                         `yaml:"shutdown_force"`
@@ -74,11 +74,32 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud
 		errors = multierror.Append(errors, fmt.Errorf("zone: invalid zone: %s", d.Zone))
 	}
 
+	for _, p := range d.Plans {
+		if !(d.MinSize <= p.Size && p.Size <= d.MaxSize) {
+			errors = multierror.Append(errors, fmt.Errorf("plan: plan.size must be between min_size and max_size: size:%d", p.Size))
+		}
+	}
+
 	errors = multierror.Append(errors, d.Template.Validate(ctx, apiClient, d)...)
 
 	// set prefix
 	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", d.Type().String())).(*multierror.Error)
 	return errors.Errors
+}
+
+func (d *ResourceDefServerGroup) resourcePlans() ResourcePlans {
+	var plans ResourcePlans
+	for size := d.MinSize; size <= d.MaxSize; size++ {
+		plan := &ServerGroupPlan{Size: size}
+		for _, p := range d.Plans {
+			if p.Size == plan.Size {
+				plan.Name = p.Name
+				break
+			}
+		}
+		plans = append(plans, plan)
+	}
+	return plans
 }
 
 func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
@@ -89,18 +110,9 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 	}
 
 	// Min/MaxとUp/Downを考慮してサーバ数を決定
-	// TODO 名前付きプランの考慮
-	serverCount := len(cloudResources)
-	if ctx.Request().requestType == requestTypeUp {
-		serverCount++
-	} else {
-		serverCount--
-	}
-	if serverCount > d.MaxSize {
-		serverCount = d.MaxSize
-	}
-	if serverCount < d.MinSize {
-		serverCount = d.MinSize
+	plan, err := d.desiredPlan(ctx, len(cloudResources))
+	if err != nil {
+		return nil, err
 	}
 
 	var resources Resources
@@ -116,13 +128,13 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 			instruction: handler.ResourceInstructions_NOOP,
 		}
 		instance.indexInGroup = d.resourceIndex(instance)
-		if i >= serverCount {
+		if i >= plan.Size {
 			instance.instruction = handler.ResourceInstructions_DELETE
 		}
 		resources = append(resources, instance)
 	}
 
-	for len(resources) < serverCount {
+	for len(resources) < plan.Size {
 		commitment := types.Commitments.Standard
 		if d.Template.Plan.DedicatedCPU {
 			commitment = types.Commitments.DedicatedCPU
@@ -152,6 +164,21 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 		})
 	}
 	return resources, nil
+}
+
+func (d *ResourceDefServerGroup) desiredPlan(ctx *RequestContext, currentCount int) (*ServerGroupPlan, error) {
+	plans := d.resourcePlans()
+	plan, err := desiredPlan(ctx, currentCount, plans)
+	if err != nil {
+		return nil, err
+	}
+	if plan != nil {
+		if v, ok := plan.(*ServerGroupPlan); ok {
+			return v, nil
+		}
+		return nil, fmt.Errorf("invalid plan: %#v", plan)
+	}
+	return &ServerGroupPlan{Size: currentCount + 1}, nil
 }
 
 func (d *ResourceDefServerGroup) resourceIndex(resource Resource) int {

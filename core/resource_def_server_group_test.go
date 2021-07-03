@@ -183,6 +183,259 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "scale up with named plans",
+			def: &ResourceDefServerGroup{
+				Name:    "resource-def-server-test",
+				Zone:    test.Zone,
+				MinSize: 1,
+				MaxSize: 5,
+				Plans: []*ServerGroupPlan{
+					{Size: 1, Name: "smallest"},
+					{Size: 5, Name: "largest"},
+				},
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			args: args{
+				ctx: NewRequestContext(context.Background(), &requestInfo{
+					requestType:       requestTypeUp,
+					source:            "default",
+					action:            "default",
+					resourceGroupName: "default",
+					desiredStateName:  "largest",
+				}, nil, test.Logger),
+			},
+			want: Resources{
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server:       server1,
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_NOOP,
+					indexInGroup: 0,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server:       server2,
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_NOOP,
+					indexInGroup: 2,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server: &sacloud.Server{
+						Name:                 "resource-def-server-test-002",
+						CPU:                  1,
+						MemoryMB:             1 * size.GiB,
+						ServerPlanCommitment: types.Commitments.Standard,
+					},
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_CREATE,
+					indexInGroup: 1,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server: &sacloud.Server{
+						Name:                 "resource-def-server-test-004",
+						CPU:                  1,
+						MemoryMB:             1 * size.GiB,
+						ServerPlanCommitment: types.Commitments.Standard,
+					},
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_CREATE,
+					indexInGroup: 3,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server: &sacloud.Server{
+						Name:                 "resource-def-server-test-005",
+						CPU:                  1,
+						MemoryMB:             1 * size.GiB,
+						ServerPlanCommitment: types.Commitments.Standard,
+					},
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_CREATE,
+					indexInGroup: 4,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "scale down with named plans",
+			def: &ResourceDefServerGroup{
+				Name:    "resource-def-server-test",
+				Zone:    test.Zone,
+				MinSize: 1,
+				MaxSize: 5,
+				Plans: []*ServerGroupPlan{
+					{Size: 1, Name: "smallest"},
+					{Size: 5, Name: "largest"},
+				},
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			args: args{
+				ctx: NewRequestContext(context.Background(), &requestInfo{
+					requestType:       requestTypeDown,
+					source:            "default",
+					action:            "default",
+					resourceGroupName: "default",
+					desiredStateName:  "smallest",
+				}, nil, test.Logger),
+			},
+			want: Resources{
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server:       server1,
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_NOOP,
+					indexInGroup: 0,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server:       server2,
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_DELETE,
+					indexInGroup: 2,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "scale up without valid named plan",
+			def: &ResourceDefServerGroup{
+				Name:    "resource-def-server-test",
+				Zone:    test.Zone,
+				MinSize: 1,
+				MaxSize: 5,
+				Plans: []*ServerGroupPlan{
+					{Size: 1, Name: "smallest"},
+					{Size: 5, Name: "largest"},
+				},
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			args: args{
+				ctx: NewRequestContext(context.Background(), &requestInfo{
+					requestType:       requestTypeUp,
+					source:            "default",
+					action:            "default",
+					resourceGroupName: "default",
+					desiredStateName:  "smallest",
+				}, nil, test.Logger),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "scale down without valid named plan",
+			def: &ResourceDefServerGroup{
+				Name:    "resource-def-server-test",
+				Zone:    test.Zone,
+				MinSize: 1,
+				MaxSize: 5,
+				Plans: []*ServerGroupPlan{
+					{Size: 3, Name: "middle"},
+					{Size: 5, Name: "largest"},
+				},
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			args: args{
+				ctx: NewRequestContext(context.Background(), &requestInfo{
+					requestType:       requestTypeDown,
+					source:            "default",
+					action:            "default",
+					resourceGroupName: "default",
+					desiredStateName:  "middle",
+				}, nil, test.Logger),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "scale up with named plans without desired state name",
+			def: &ResourceDefServerGroup{
+				Name:    "resource-def-server-test",
+				Zone:    test.Zone,
+				MinSize: 1,
+				MaxSize: 5,
+				Plans: []*ServerGroupPlan{
+					{Size: 1, Name: "smallest"},
+					{Size: 5, Name: "largest"},
+				},
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			args: args{
+				ctx: NewRequestContext(context.Background(), &requestInfo{
+					requestType:       requestTypeUp,
+					source:            "default",
+					action:            "default",
+					resourceGroupName: "default",
+					desiredStateName:  "default",
+				}, nil, test.Logger),
+			},
+			want: Resources{
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server:       server1,
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_NOOP,
+					indexInGroup: 0,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server:       server2,
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_NOOP,
+					indexInGroup: 2,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server: &sacloud.Server{
+						Name:                 "resource-def-server-test-002",
+						CPU:                  1,
+						MemoryMB:             1 * size.GiB,
+						ServerPlanCommitment: types.Commitments.Standard,
+					},
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_CREATE,
+					indexInGroup: 1,
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
