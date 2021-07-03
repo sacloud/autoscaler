@@ -28,7 +28,7 @@ import (
 // ResourceDefGroup アクションとリソース定義の組み合わせ
 type ResourceDefGroup struct {
 	Actions      Actions             `yaml:"actions"`
-	ResourceDefs ResourceDefinitions `yaml:"resources"`
+	ResourceDefs ResourceDefinitions `yaml:"resources" validate:"required"`
 
 	name string // ResourceGroupsのアンマーシャル時に設定される
 }

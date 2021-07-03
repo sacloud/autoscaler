@@ -22,6 +22,7 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/test"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -457,26 +458,14 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 }
 
 func TestResourceDefServerGroup_Validate(t *testing.T) {
+	validate.InitValidatorAlias(sacloud.SakuraCloudZones)
 	tests := []struct {
 		name string
 		def  *ResourceDefServerGroup
 		want []error
 	}{
 		{
-			name: "empty",
-			def: &ResourceDefServerGroup{
-				ResourceDefBase: &ResourceDefBase{
-					TypeName: "ServerGroup",
-				},
-			},
-			want: []error{
-				fmt.Errorf("name: required"),
-				fmt.Errorf("zone: required"),
-				fmt.Errorf("template: required"),
-			},
-		},
-		{
-			name: "min/mas size",
+			name: "min/max size",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: "ServerGroup",
@@ -519,7 +508,10 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.def.Validate(testContext(), test.APIClient)
+			got := validate.StructWithMultiError(tt.def)
+			if len(got) == 0 {
+				got = tt.def.Validate(testContext(), test.APIClient)
+			}
 			require.EqualValues(t, tt.want, got)
 		})
 	}

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
@@ -28,6 +29,9 @@ func (r *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.AP
 	var errors []error
 
 	fn := func(r ResourceDefinition) error {
+		if err := validate.Struct(r); err != nil {
+			return err
+		}
 		if errs := r.Validate(ctx, apiClient); len(errs) > 0 {
 			errors = append(errors, errs...)
 		}

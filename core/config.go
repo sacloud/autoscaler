@@ -27,15 +27,16 @@ import (
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/handlers/builtins"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
 type Config struct {
-	SakuraCloud    *SakuraCloud       `yaml:"sakuracloud"` // さくらのクラウドAPIのクレデンシャル
-	CustomHandlers Handlers           `yaml:"handlers"`    // カスタムハンドラーの定義
-	Resources      *ResourceDefGroups `yaml:"resources"`   // リソースグループの定義
-	AutoScaler     AutoScalerConfig   `yaml:"autoscaler"`  // オートスケーラー自体の動作設定
+	SakuraCloud    *SakuraCloud       `yaml:"sakuracloud"`                   // さくらのクラウドAPIのクレデンシャル
+	CustomHandlers Handlers           `yaml:"handlers"`                      // カスタムハンドラーの定義
+	Resources      *ResourceDefGroups `yaml:"resources" validate:"required"` // リソースグループの定義
+	AutoScaler     AutoScalerConfig   `yaml:"autoscaler"`                    // オートスケーラー自体の動作設定
 }
 
 // NewConfigFromPath 指定のファイルパスからコンフィギュレーションを読み取ってConfigを作成する
@@ -97,10 +98,18 @@ func (c *Config) Handlers() Handlers {
 
 // Validate 現在のConfig値のバリデーション
 func (c *Config) Validate(ctx context.Context) error {
+	if err := validate.Struct(c); err != nil {
+		return err
+	}
+
 	// API Client
 	if err := c.SakuraCloud.Validate(ctx); err != nil {
 		return err
 	}
+
+	// 利用可能ゾーンリストはさくらのクラウドAPIクライアントの設定次第(プロファイルなど)で
+	// 変更される可能性があるためこのタイミングで初期化する
+	validate.InitValidatorAlias(sacloud.SakuraCloudZones)
 
 	// Resources
 	errors := &multierror.Error{}

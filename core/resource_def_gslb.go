@@ -24,8 +24,8 @@ import (
 )
 
 type ResourceDefGSLB struct {
-	*ResourceDefBase `yaml:",inline"`
-	Selector         *ResourceSelector `yaml:"selector"`
+	*ResourceDefBase `yaml:",inline" validate:"required"`
+	Selector         *ResourceSelector `yaml:"selector" validate:"required"`
 }
 
 func (d *ResourceDefGSLB) String() string {
@@ -34,23 +34,19 @@ func (d *ResourceDefGSLB) String() string {
 
 func (d *ResourceDefGSLB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
-	if err := d.Selector.Validate(); err != nil {
+	resources, err := d.findCloudResources(ctx, apiClient)
+	if err != nil {
 		errors = multierror.Append(errors, err)
-	} else {
-		resources, err := d.findCloudResources(ctx, apiClient)
-		if err != nil {
-			errors = multierror.Append(errors, err)
+	}
+	if len(d.children) > 0 && len(resources) > 1 {
+		var names []string
+		for _, r := range resources {
+			names = append(names, fmt.Sprintf("{ID:%s, Name:%s}", r.ID, r.Name))
 		}
-		if len(d.children) > 0 && len(resources) > 1 {
-			var names []string
-			for _, r := range resources {
-				names = append(names, fmt.Sprintf("{ID:%s, Name:%s}", r.ID, r.Name))
-			}
-			errors = multierror.Append(errors,
-				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-					d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
-				))
-		}
+		errors = multierror.Append(errors,
+			fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
+				d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
+			))
 	}
 
 	// set prefix
