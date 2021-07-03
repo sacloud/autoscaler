@@ -349,6 +349,12 @@ zone: <"is1a" | "is1b" | "tk1a" | "tk1b" | "tk1v">
 min_size: <number>
 max_size: <number>
 
+# 名前付きプラン(サーバグループの場合はサーバ数をプランとして表す)
+plans:
+  [ - name: <string> # プラン名、省略可能 
+      size: <number> # サーバ数
+  ]
+
 # 強制シャットダウンを行うか(ACPIが利用できないサーバの場合trueにする)
 shutdown_force: <boolean>
 
@@ -410,6 +416,8 @@ template:
 resources:
   [ - <resource_definition> ]
 ```
+
+`plans`を省略した場合、`size`に`min_size`から`max_size`までの値を持つプランが存在するとみなします。
 
 #### <resource_selector>
 
@@ -474,7 +482,7 @@ plans:
     memory: 8
   - core: 4
     memory: 16
-    name: "middle"
+    name: "medium"
   - core: 8
     memory: 16
   - core: 10
