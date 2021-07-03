@@ -47,6 +47,20 @@ resources:
         min_size: 5   # 最小インスタンス数
         max_size: 20  # 最大インスタンス数
 
+        # プラン一覧(省略可能)
+        # Inputsからdesired state nameが指定された場合に利用する名前付きプランを定義する
+        # desired state nameが指定されなかった場合はmin_sizeからmax_sizeの間でスケールアウト or インする
+        # 例: 現在10台存在する場合:
+        #     - UpかつDesiredStateName == "largest"の場合 -> 10台追加
+        #     - UpかつDesiredStateName == "" or "default"の場合 -> 1台追加
+        plans:
+          - name: smallest
+            size: 5
+          - name: middle
+            size: 10
+          - name: largest
+            size: 20
+
         template: # 各サーバのテンプレート
           tags: [ "tag1", "tag2" ]
           description: "..."
