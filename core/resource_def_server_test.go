@@ -19,40 +19,16 @@ import (
 	"testing"
 
 	"github.com/sacloud/autoscaler/handler"
-
 	"github.com/sacloud/autoscaler/test"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/stretchr/testify/require"
 )
 
 func TestResourceDefServer_Validate(t *testing.T) {
+	validate.InitValidatorAlias(sacloud.SakuraCloudZones)
 	_, cleanup := test.AddTestServer(t, "test-server")
 	defer cleanup()
-
-	t.Run("returns error if selector is empty", func(t *testing.T) {
-		empty := &ResourceDefServer{
-			ResourceDefBase: &ResourceDefBase{TypeName: "Server"},
-		}
-		errs := empty.Validate(context.Background(), test.APIClient)
-		require.Len(t, errs, 1)
-		require.EqualError(t, errs[0], "resource=Server: selector: required")
-	})
-
-	t.Run("returns error if selector.Zones is empty", func(t *testing.T) {
-		empty := &ResourceDefServer{
-			ResourceDefBase: &ResourceDefBase{
-				TypeName: "Server",
-			},
-			Selector: &MultiZoneSelector{
-				ResourceSelector: &ResourceSelector{
-					Names: []string{"test"},
-				},
-			},
-		}
-		errs := empty.Validate(context.Background(), test.APIClient)
-		require.Len(t, errs, 1)
-		require.EqualError(t, errs[0], "resource=Server: selector.Zones: required")
-	})
 
 	t.Run("returns error if servers were not found", func(t *testing.T) {
 		empty := &ResourceDefServer{

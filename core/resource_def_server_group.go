@@ -21,17 +21,16 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type ResourceDefServerGroup struct {
-	*ResourceDefBase `yaml:",inline"`
+	*ResourceDefBase `yaml:",inline" validate:"required"`
 
 	Name string `yaml:"name" validate:"required"` // {{ .Name }}{{ .Number }}
-	Zone string `yaml:"zone" validate:"required"`
+	Zone string `yaml:"zone" validate:"required,zone"`
 
 	MinSize int `yaml:"min_size" validate:"min=0,ltefield=MaxSize"`
 	MaxSize int `yaml:"max_size" validate:"min=0,gtecsfield=MinSize"`
@@ -57,29 +56,12 @@ func (d *ResourceDefServerGroup) SetParent(parent ResourceDefinition) {
 }
 
 func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
-	if errs := validate.StructWithMultiError(d); len(errs) > 0 {
-		return errs
-	}
-
 	errors := &multierror.Error{}
-
-	zoneExist := false
-	for _, z := range sacloud.SakuraCloudZones {
-		if z == d.Zone {
-			zoneExist = true
-			break
-		}
-	}
-	if !zoneExist {
-		errors = multierror.Append(errors, fmt.Errorf("zone: invalid zone: %s", d.Zone))
-	}
-
 	for _, p := range d.Plans {
 		if !(d.MinSize <= p.Size && p.Size <= d.MaxSize) {
 			errors = multierror.Append(errors, fmt.Errorf("plan: plan.size must be between min_size and max_size: size:%d", p.Size))
 		}
 	}
-
 	errors = multierror.Append(errors, d.Template.Validate(ctx, apiClient, d)...)
 
 	// set prefix

@@ -23,9 +23,10 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+var validatorInstance = validator.New()
+
 func validate(v interface{}) error {
-	validate := validator.New()
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+	validatorInstance.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("name"), ",", 2)[0]
 		if name == "" {
 			// nameタグがない場合はyamlタグを参照
@@ -36,7 +37,12 @@ func validate(v interface{}) error {
 		}
 		return name
 	})
-	return validate.Struct(v)
+	return validatorInstance.Struct(v)
+}
+
+func InitValidatorAlias(zones []string) {
+	validatorInstance.RegisterAlias("zone", fmt.Sprintf("oneof=%s", strings.Join(zones, " ")))
+	validatorInstance.RegisterAlias("zones", "dive,zone")
 }
 
 func Struct(v interface{}) error {

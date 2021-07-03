@@ -17,14 +17,15 @@ package core
 import (
 	"fmt"
 
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/search"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type MultiZoneSelector struct {
-	*ResourceSelector `yaml:",inline"`
-	Zones             []string `yaml:"zones"`
+	*ResourceSelector `yaml:",inline" validate:"required"`
+	Zones             []string `yaml:"zones" validate:"required,zones"`
 }
 
 func (rs *MultiZoneSelector) String() string {
@@ -59,8 +60,8 @@ func (rs *MultiZoneSelector) Validate() error {
 
 // ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
 type ResourceSelector struct {
-	ID    types.ID `yaml:"id"`
-	Names []string `yaml:"names"`
+	ID    types.ID `yaml:"id" validate:"required_without_all=Names"`
+	Names []string `yaml:"names" validate:"required_without_all=ID"`
 }
 
 func (rs *ResourceSelector) String() string {
@@ -84,12 +85,8 @@ func (rs *ResourceSelector) findCondition() *sacloud.FindCondition {
 }
 
 func (rs *ResourceSelector) Validate() error {
-	if rs == nil {
-		return fmt.Errorf("selector: required")
-	}
-
-	if rs.ID.IsEmpty() && len(rs.Names) == 0 {
-		return fmt.Errorf("selector.ID or selector.Names: required")
+	if err := validate.Struct(rs); err != nil {
+		return err
 	}
 
 	if !rs.ID.IsEmpty() && len(rs.Names) > 0 {

@@ -37,8 +37,8 @@ var DefaultELBPlans = ResourcePlans{
 }
 
 type ResourceDefELB struct {
-	*ResourceDefBase `yaml:",inline"`
-	Selector         *ResourceSelector `yaml:"selector"`
+	*ResourceDefBase `yaml:",inline" validate:"required"`
+	Selector         *ResourceSelector `yaml:"selector" validate:"required"`
 	Plans            []*ELBPlan        `yaml:"plans"`
 }
 
@@ -59,27 +59,23 @@ func (d *ResourceDefELB) resourcePlans() ResourcePlans {
 
 func (d *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
-	if err := d.Selector.Validate(); err != nil {
-		errors = multierror.Append(errors, err)
-	} else {
-		if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
-			errors = multierror.Append(errors, errs...)
-		}
+	if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
+		errors = multierror.Append(errors, errs...)
+	}
 
-		resources, err := d.findCloudResources(ctx, apiClient)
-		if err != nil {
-			errors = multierror.Append(errors, err)
+	resources, err := d.findCloudResources(ctx, apiClient)
+	if err != nil {
+		errors = multierror.Append(errors, err)
+	}
+	if len(d.children) > 0 && len(resources) > 1 {
+		var names []string
+		for _, r := range resources {
+			names = append(names, fmt.Sprintf("{ID:%s, Name:%s}", r.ID, r.Name))
 		}
-		if len(d.children) > 0 && len(resources) > 1 {
-			var names []string
-			for _, r := range resources {
-				names = append(names, fmt.Sprintf("{ID:%s, Name:%s}", r.ID, r.Name))
-			}
-			errors = multierror.Append(errors,
-				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-					d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
-				))
-		}
+		errors = multierror.Append(errors,
+			fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
+				d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
+			))
 	}
 
 	// set prefix

@@ -24,8 +24,8 @@ import (
 )
 
 type ResourceDefRouter struct {
-	*ResourceDefBase `yaml:",inline"`
-	Selector         *MultiZoneSelector `yaml:"selector"`
+	*ResourceDefBase `yaml:",inline" validate:"required"`
+	Selector         *MultiZoneSelector `yaml:"selector" validate:"required"`
 
 	Plans []*RouterPlan `yaml:"plans"`
 }
@@ -48,27 +48,23 @@ func (d *ResourceDefRouter) resourcePlans() ResourcePlans {
 func (d *ResourceDefRouter) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 
-	if err := d.Selector.Validate(); err != nil {
-		errors = multierror.Append(errors, err)
-	} else {
-		if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
-			errors = multierror.Append(errors, errs...)
-		}
+	if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
+		errors = multierror.Append(errors, errs...)
+	}
 
-		resources, err := d.findCloudResources(ctx, apiClient)
-		if err != nil {
-			errors = multierror.Append(errors, err)
+	resources, err := d.findCloudResources(ctx, apiClient)
+	if err != nil {
+		errors = multierror.Append(errors, err)
+	}
+	if len(d.children) > 0 && len(resources) > 1 {
+		var names []string
+		for _, r := range resources {
+			names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", r.zone, r.ID, r.Name))
 		}
-		if len(d.children) > 0 && len(resources) > 1 {
-			var names []string
-			for _, r := range resources {
-				names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", r.zone, r.ID, r.Name))
-			}
-			errors = multierror.Append(errors,
-				fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-					d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
-				))
-		}
+		errors = multierror.Append(errors,
+			fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
+				d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
+			))
 	}
 
 	// set prefix

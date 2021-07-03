@@ -46,7 +46,7 @@ type ChildResourceDefinition interface {
 //
 // Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceDefBase struct {
-	TypeName string              `yaml:"type"`
+	TypeName string              `yaml:"type" validate:"required,oneof=Server ServerGroup LoadBalancer EnhancedLoadBalancer ELB GSLB DNS"`
 	children ResourceDefinitions `yaml:"-"`
 }
 
