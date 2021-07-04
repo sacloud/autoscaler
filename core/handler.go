@@ -330,11 +330,10 @@ type builtinResponseSender struct {
 }
 
 func (s *builtinResponseSender) Send(res *handler.HandleResponse) error {
-	if err := s.ctx.Logger().Info("status", res.Status); err != nil {
-		return err
-	}
+	kvs := []interface{}{"status", res.Status}
 	if res.Log != "" {
-		return s.ctx.Logger().Info("log", res.Log)
+		kvs = append(kvs, "log", res.Log)
 	}
-	return nil
+
+	return s.ctx.Logger().Info(kvs...)
 }

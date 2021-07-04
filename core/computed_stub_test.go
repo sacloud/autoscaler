@@ -18,6 +18,7 @@ import "github.com/sacloud/autoscaler/handler"
 
 type stubComputed struct {
 	id          string
+	name        string
 	zone        string
 	typ         ResourceTypes
 	instruction handler.ResourceInstructions
@@ -27,6 +28,10 @@ type stubComputed struct {
 
 func (c *stubComputed) ID() string {
 	return c.id
+}
+
+func (c *stubComputed) Name() string {
+	return c.name
 }
 
 func (c *stubComputed) Type() ResourceTypes {

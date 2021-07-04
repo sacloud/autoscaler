@@ -167,7 +167,6 @@ func (r *ResourceServerGroupInstance) computeDisks(ctx *RequestContext) ([]*hand
 				Zone:            r.zone,
 				SourceArchiveId: "",
 				SourceDiskId:    "",
-				OsType:          "",
 				Plan:            types.DiskPlanNameMap[disk.DiskPlanID],
 				Connection:      disk.Connection.String(),
 				Size:            uint32(disk.GetSizeGB()),

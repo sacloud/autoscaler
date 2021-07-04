@@ -32,6 +32,13 @@ func (c *computedGSLB) ID() string {
 	return ""
 }
 
+func (c *computedGSLB) Name() string {
+	if c.gslb != nil {
+		return c.gslb.Name
+	}
+	return ""
+}
+
 func (c *computedGSLB) Type() ResourceTypes {
 	return ResourceTypeGSLB
 }
@@ -58,6 +65,7 @@ func (c *computedGSLB) Current() *handler.Resource {
 			Resource: &handler.Resource_Gslb{
 				Gslb: &handler.GSLB{
 					Id:      c.gslb.ID.String(),
+					Name:    c.gslb.Name,
 					Fqdn:    c.gslb.FQDN,
 					Servers: servers,
 				},

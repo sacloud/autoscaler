@@ -16,6 +16,7 @@ package elb
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
@@ -45,17 +46,17 @@ func (h *VerticalScaleHandler) Version() string {
 }
 
 func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := context.TODO()
-
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_ACCEPTED,
-	}); err != nil {
-		return err
-	}
+	ctx := context.Background()
 
 	elb := req.Desired.GetElb()
 	if elb != nil && req.Instruction == handler.ResourceInstructions_UPDATE {
+		if err := sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_ACCEPTED,
+		}); err != nil {
+			return err
+		}
+
 		if err := h.handleELB(ctx, req, elb, sender); err != nil {
 			return err
 		}
@@ -72,7 +73,15 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 func (h *VerticalScaleHandler) handleELB(ctx context.Context, req *handler.HandleRequest, elb *handler.ELB, sender handlers.ResponseSender) error {
 	elbOp := sacloud.NewProxyLBOp(h.APICaller())
 
-	_, err := elbOp.ChangePlan(ctx, types.StringID(elb.Id), &sacloud.ProxyLBChangePlanRequest{
+	if err := sender.Send(&handler.HandleResponse{
+		ScalingJobId: req.ScalingJobId,
+		Status:       handler.HandleResponse_RUNNING,
+		Log:          fmt.Sprintf("plan changing...: {Desired CPS:%d}", elb.Plan),
+	}); err != nil {
+		return err
+	}
+
+	updated, err := elbOp.ChangePlan(ctx, types.StringID(elb.Id), &sacloud.ProxyLBChangePlanRequest{
 		ServiceClass: types.ProxyLBServiceClass(types.EProxyLBPlan(elb.Plan), types.EProxyLBRegion(elb.Region)),
 	})
 	if err != nil {
@@ -81,5 +90,6 @@ func (h *VerticalScaleHandler) handleELB(ctx context.Context, req *handler.Handl
 	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_DONE,
+		Log:          fmt.Sprintf("plan changed: {ID:%s, CPS:%d}", updated.ID, elb.Plan),
 	})
 }

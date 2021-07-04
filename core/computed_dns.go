@@ -32,6 +32,13 @@ func (c *computedDNS) ID() string {
 	return ""
 }
 
+func (c *computedDNS) Name() string {
+	if c.dns != nil {
+		return c.dns.Name
+	}
+	return ""
+}
+
 func (c *computedDNS) Type() ResourceTypes {
 	return ResourceTypeDNS
 }

@@ -33,6 +33,13 @@ func (c *computedLoadBalancer) ID() string {
 	return ""
 }
 
+func (c *computedLoadBalancer) Name() string {
+	if c.lb != nil {
+		return c.lb.Name
+	}
+	return ""
+}
+
 func (c *computedLoadBalancer) Type() ResourceTypes {
 	return ResourceTypeLoadBalancer
 }
@@ -66,6 +73,7 @@ func (c *computedLoadBalancer) Current() *handler.Resource {
 			Resource: &handler.Resource_LoadBalancer{
 				LoadBalancer: &handler.LoadBalancer{
 					Id:                 c.lb.ID.String(),
+					Name:               c.lb.Name,
 					Zone:               c.zone,
 					VirtualIpAddresses: vip,
 				},

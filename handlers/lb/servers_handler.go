@@ -57,14 +57,14 @@ func (h *ServersHandler) Version() string {
 func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
 	ctx := context.Background()
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_ACCEPTED,
-	}); err != nil {
-		return err
-	}
-
 	if req.Instruction == handler.ResourceInstructions_UPDATE && h.shouldHandle(req.Desired) {
+		if err := sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_ACCEPTED,
+		}); err != nil {
+			return err
+		}
+
 		server := req.Desired.GetServer()
 		lb := server.Parent.GetLoadBalancer() // バリデーション済みなためnilチェック不要
 		if err := h.handle(ctx, req.ScalingJobId, server, lb, sender, false); err != nil {
@@ -82,14 +82,14 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	ctx := context.Background()
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_ACCEPTED,
-	}); err != nil {
-		return err
-	}
-
 	if req.Result == handler.PostHandleRequest_UPDATED && h.shouldHandle(req.Desired) {
+		if err := sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_ACCEPTED,
+		}); err != nil {
+			return err
+		}
+
 		server := req.Desired.GetServer()
 		lb := server.Parent.GetLoadBalancer() // バリデーション済みなためnilチェック不要
 		if err := h.handle(ctx, req.ScalingJobId, server, lb, sender, true); err != nil {
@@ -131,17 +131,19 @@ func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handl
 
 	// バリデーション済み
 	shouldUpdate := false
+	targetIPAddress := ""
 	for _, vip := range current.VirtualIPAddresses {
 		for _, s := range vip.Servers {
 			for _, nic := range server.AssignedNetwork {
 				if s.IPAddress == nic.IpAddress {
 					s.Enabled = types.StringFlag(attach)
 					shouldUpdate = true
+					targetIPAddress = s.IPAddress
 
 					if err := sender.Send(&handler.HandleResponse{
 						ScalingJobId: jobID,
 						Status:       handler.HandleResponse_RUNNING,
-						Log:          fmt.Sprintf("found target server: %s", s.IPAddress),
+						Log:          fmt.Sprintf("target server found: %s", s.IPAddress),
 					}); err != nil {
 						return err
 					}
@@ -163,6 +165,14 @@ func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handl
 		return nil
 	}
 
+	if err := sender.Send(&handler.HandleResponse{
+		ScalingJobId: jobID,
+		Status:       handler.HandleResponse_DONE,
+		Log:          fmt.Sprintf("updating...: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress),
+	}); err != nil {
+		return err
+	}
+
 	if _, err := lbOp.UpdateSettings(ctx, lb.Zone, types.StringID(lb.Id), &sacloud.LoadBalancerUpdateSettingsRequest{
 		VirtualIPAddresses: current.VirtualIPAddresses,
 		SettingsHash:       current.SettingsHash,
@@ -173,5 +183,6 @@ func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handl
 	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: jobID,
 		Status:       handler.HandleResponse_DONE,
+		Log:          fmt.Sprintf("updated: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress),
 	})
 }

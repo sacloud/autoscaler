@@ -34,6 +34,13 @@ func (c *computedRouter) ID() string {
 	return ""
 }
 
+func (c *computedRouter) Name() string {
+	if c.router != nil {
+		return c.router.Name
+	}
+	return ""
+}
+
 func (c *computedRouter) Type() ResourceTypes {
 	return ResourceTypeRouter
 }
@@ -52,6 +59,7 @@ func (c *computedRouter) Current() *handler.Resource {
 			Resource: &handler.Resource_Router{
 				Router: &handler.Router{
 					Id:        c.router.ID.String(),
+					Name:      c.router.Name,
 					Zone:      c.zone,
 					BandWidth: uint32(c.router.BandWidthMbps),
 				},
@@ -67,6 +75,7 @@ func (c *computedRouter) Desired() *handler.Resource {
 			Resource: &handler.Resource_Router{
 				Router: &handler.Router{
 					Id:        c.router.ID.String(),
+					Name:      c.router.Name,
 					Zone:      c.zone,
 					BandWidth: uint32(c.newBandWidth),
 				},

@@ -39,6 +39,13 @@ func (c *computedServerGroupInstance) ID() string {
 	return "(known after handle)"
 }
 
+func (c *computedServerGroupInstance) Name() string {
+	if c.server != nil {
+		return c.server.Name
+	}
+	return ""
+}
+
 func (c *computedServerGroupInstance) Type() ResourceTypes {
 	return ResourceTypeServerGroupInstance
 }

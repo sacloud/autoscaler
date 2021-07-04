@@ -36,6 +36,13 @@ func (c *computedServer) ID() string {
 	return ""
 }
 
+func (c *computedServer) Name() string {
+	if c.server != nil {
+		return c.server.Name
+	}
+	return ""
+}
+
 func (c *computedServer) Type() ResourceTypes {
 	return ResourceTypeServer
 }
@@ -58,6 +65,7 @@ func (c *computedServer) Current() *handler.Resource {
 			Resource: &handler.Resource_Server{
 				Server: &handler.Server{
 					Id:              c.server.ID.String(),
+					Name:            c.server.Name,
 					Zone:            c.zone,
 					Core:            uint32(c.server.CPU),
 					Memory:          uint32(c.server.GetMemoryGB()),
@@ -80,6 +88,7 @@ func (c *computedServer) Desired() *handler.Resource {
 			Resource: &handler.Resource_Server{
 				Server: &handler.Server{
 					Id:              c.server.ID.String(),
+					Name:            c.server.Name,
 					Zone:            c.zone,
 					Core:            uint32(c.newCPU),
 					Memory:          uint32(c.newMemory),
