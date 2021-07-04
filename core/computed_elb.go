@@ -42,7 +42,7 @@ func (c *computedELB) Name() string {
 }
 
 func (c *computedELB) Type() ResourceTypes {
-	return ResourceTypeEnhancedLoadBalancer
+	return ResourceTypeELB
 }
 
 func (c *computedELB) Zone() string {

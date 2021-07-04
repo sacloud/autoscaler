@@ -31,7 +31,7 @@ type ResourceELB struct {
 
 func NewResourceELB(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefELB, elb *sacloud.ProxyLB) (*ResourceELB, error) {
 	resource := &ResourceELB{
-		ResourceBase: &ResourceBase{resourceType: ResourceTypeEnhancedLoadBalancer},
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeELB},
 		apiClient:    apiClient,
 		elb:          elb,
 		def:          def,
