@@ -15,9 +15,6 @@
 package server
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
@@ -48,35 +45,23 @@ func (h *VerticalScaleHandler) Version() string {
 }
 
 func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := context.Background()
+	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 	server := req.Desired.GetServer()
 
-	if server != nil && req.Instruction == handler.ResourceInstructions_UPDATE {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_ACCEPTED,
-		}); err != nil {
-			return err
+	if server != nil {
+		switch req.Instruction {
+		case handler.ResourceInstructions_UPDATE:
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+			return h.handleServer(ctx, req, server)
 		}
-
-		if err := h.handleServer(ctx, req, server, sender); err != nil {
-			return err
-		}
-	} else {
-		return sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_IGNORED,
-		})
 	}
-
-	return nil
+	return ctx.Report(handler.HandleResponse_IGNORED)
 }
 
-func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.HandleRequest, server *handler.Server, sender handlers.ResponseSender) error {
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-	}); err != nil {
+func (h *VerticalScaleHandler) handleServer(ctx *handlers.HandlerContext, req *handler.HandleRequest, server *handler.Server) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
 		return err
 	}
 
@@ -89,11 +74,7 @@ func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.Ha
 
 	shouldReboot := false
 	if current.InstanceStatus.IsUp() {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-			Log:          "shutting down...",
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "shutting down..."); err != nil {
 			return err
 		}
 
@@ -106,21 +87,14 @@ func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.Ha
 			return err
 		}
 
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-			Log:          "shut down",
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "shut down"); err != nil {
 			return err
 		}
 		shouldReboot = true
 	}
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-		Log:          fmt.Sprintf("plan changing: {Core:%d, Memory:%d}", server.Core, server.Memory),
-	}); err != nil {
+	if err := ctx.Report(handler.HandleResponse_RUNNING,
+		"plan changing: {Core:%d, Memory:%d}", server.Core, server.Memory); err != nil {
 		return err
 	}
 
@@ -138,38 +112,24 @@ func (h *VerticalScaleHandler) handleServer(ctx context.Context, req *handler.Ha
 		return err
 	}
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-		Log:          fmt.Sprintf("plan changed: {ServerIDFrom:%s, ServerIDTo:%s}", server.Id, updated.ID),
-	}); err != nil {
+	if err := ctx.Report(handler.HandleResponse_RUNNING,
+		"plan changed: {ServerIDFrom:%s, ServerIDTo:%s}", server.Id, updated.ID); err != nil {
 		return err
 	}
 
 	if shouldReboot {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-			Log:          "starting...",
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "starting..."); err != nil {
 			return err
 		}
 
-		if err := power.BootServer(ctx, serverOp, server.Zone, updated.ID); err != nil { // NOTE: プラン変更でIDが変わっているためupdatedを使う
+		if err := power.BootServer(ctx, serverOp, server.Zone, updated.ID); err != nil {
 			return err
 		}
 
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-			Log:          "started",
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "started"); err != nil {
 			return err
 		}
 	}
 
-	return sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_DONE,
-	})
+	return ctx.Report(handler.HandleResponse_DONE)
 }

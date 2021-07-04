@@ -16,8 +16,6 @@ package server
 
 import (
 	"bytes"
-	"context"
-	"fmt"
 	"text/template"
 
 	"github.com/sacloud/autoscaler/handler"
@@ -51,36 +49,29 @@ func (h *HorizontalScaleHandler) Version() string {
 }
 
 func (h *HorizontalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := context.Background()
+	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+
 	server := req.Desired.GetServerGroupInstance()
-
 	if server != nil {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_ACCEPTED,
-		}); err != nil {
-			return err
-		}
-
 		switch req.Instruction {
 		case handler.ResourceInstructions_CREATE:
-			return h.createServer(ctx, req, server, sender)
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+			return h.createServer(ctx, req, server)
 		case handler.ResourceInstructions_DELETE:
-			return h.deleteServer(ctx, req, server, sender)
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+			return h.deleteServer(ctx, req, server)
 		}
 	}
 
-	return sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_IGNORED,
-	})
+	return ctx.Report(handler.HandleResponse_IGNORED)
 }
 
-func (h *HorizontalScaleHandler) createServer(ctx context.Context, req *handler.HandleRequest, server *handler.ServerGroupInstance, sender handlers.ResponseSender) error {
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-	}); err != nil {
+func (h *HorizontalScaleHandler) createServer(ctx *handlers.HandlerContext, req *handler.HandleRequest, server *handler.ServerGroupInstance) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
 		return err
 	}
 
@@ -106,11 +97,7 @@ func (h *HorizontalScaleHandler) createServer(ctx context.Context, req *handler.
 		Client:          serverBuilder.NewBuildersAPIClient(h.APICaller()),
 	}
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-		Log:          "creating...",
-	}); err != nil {
+	if err := ctx.Report(handler.HandleResponse_RUNNING, "creating..."); err != nil {
 		return err
 	}
 
@@ -125,11 +112,8 @@ func (h *HorizontalScaleHandler) createServer(ctx context.Context, req *handler.
 		return err
 	}
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-		Log:          fmt.Sprintf("created: {ID:%s, Name:%s}", createdServer.ID, createdServer.Name),
-	}); err != nil {
+	if err := ctx.Report(handler.HandleResponse_RUNNING,
+		"created: {ID:%s, Name:%s}", createdServer.ID, createdServer.Name); err != nil {
 		return err
 	}
 
@@ -155,11 +139,7 @@ func (h *HorizontalScaleHandler) createServer(ctx context.Context, req *handler.
 			Client:          diskBuilder.NewBuildersAPIClient(h.APICaller()),
 		}).Builder()
 
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-			Log:          fmt.Sprintf("creating disk[%d]...", i),
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "creating disk[%d]...", i); err != nil {
 			return err
 		}
 
@@ -172,32 +152,21 @@ func (h *HorizontalScaleHandler) createServer(ctx context.Context, req *handler.
 			return err
 		}
 
-		//createdDisks = append(createdDisks, disk)
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-			Log:          fmt.Sprintf("created disk[%d]: {ID:%s, Name:%s, ServerID:%s}", i, disk.ID, disk.Name, createdServer.ID),
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_RUNNING,
+			"created disk[%d]: {ID:%s, Name:%s, ServerID:%s}",
+			i, disk.ID, disk.Name, createdServer.ID); err != nil {
 			return err
 		}
 	}
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-		Log:          "starting...",
-	}); err != nil {
+	if err := ctx.Report(handler.HandleResponse_RUNNING, "starting..."); err != nil {
 		return err
 	}
 	if err := power.BootServer(ctx, serverOp, server.Zone, createdServer.ID); err != nil {
 		return err
 	}
 
-	return sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_DONE,
-		Log:          "started",
-	})
+	return ctx.Report(handler.HandleResponse_DONE, "started")
 }
 
 func (h *HorizontalScaleHandler) diskEditParameter(server *handler.ServerGroupInstance, diskIndex int) (*diskBuilder.EditRequest, error) {
@@ -284,11 +253,8 @@ func (h *HorizontalScaleHandler) additionalNetworkInterfaces(server *handler.Ser
 	return nics
 }
 
-func (h *HorizontalScaleHandler) deleteServer(ctx context.Context, req *handler.HandleRequest, server *handler.ServerGroupInstance, sender handlers.ResponseSender) error {
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-	}); err != nil {
+func (h *HorizontalScaleHandler) deleteServer(ctx *handlers.HandlerContext, req *handler.HandleRequest, server *handler.ServerGroupInstance) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
 		return err
 	}
 
@@ -299,11 +265,7 @@ func (h *HorizontalScaleHandler) deleteServer(ctx context.Context, req *handler.
 	}
 
 	if current.InstanceStatus.IsUp() {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-			Log:          "shutting down...",
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "shutting down..."); err != nil {
 			return err
 		}
 
@@ -311,11 +273,7 @@ func (h *HorizontalScaleHandler) deleteServer(ctx context.Context, req *handler.
 			return err
 		}
 
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_RUNNING,
-			Log:          "shut down",
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "shut down"); err != nil {
 			return err
 		}
 	}
@@ -325,11 +283,7 @@ func (h *HorizontalScaleHandler) deleteServer(ctx context.Context, req *handler.
 		diskIDs = append(diskIDs, disk.ID)
 	}
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-		Log:          fmt.Sprintf("deleting...: {With Disks:%s}", diskIDs),
-	}); err != nil {
+	if err := ctx.Report(handler.HandleResponse_RUNNING, "deleting...: {Disks:%s}", diskIDs); err != nil {
 		return err
 	}
 
@@ -337,9 +291,5 @@ func (h *HorizontalScaleHandler) deleteServer(ctx context.Context, req *handler.
 		return err
 	}
 
-	return sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_DONE,
-		Log:          fmt.Sprintf("deleted: {With Disks:%s}", diskIDs),
-	})
+	return ctx.Report(handler.HandleResponse_DONE, "deleted: {Disks:%s}", diskIDs)
 }

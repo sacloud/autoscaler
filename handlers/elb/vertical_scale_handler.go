@@ -15,9 +15,6 @@
 package elb
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
@@ -46,38 +43,24 @@ func (h *VerticalScaleHandler) Version() string {
 }
 
 func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := context.Background()
+	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	elb := req.Desired.GetElb()
 	if elb != nil && req.Instruction == handler.ResourceInstructions_UPDATE {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_ACCEPTED,
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 			return err
 		}
 
-		if err := h.handleELB(ctx, req, elb, sender); err != nil {
-			return err
-		}
-	} else {
-		return sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_IGNORED,
-		})
+		return h.handleELB(ctx, req, elb)
 	}
-
-	return nil
+	return ctx.Report(handler.HandleResponse_IGNORED)
 }
 
-func (h *VerticalScaleHandler) handleELB(ctx context.Context, req *handler.HandleRequest, elb *handler.ELB, sender handlers.ResponseSender) error {
+func (h *VerticalScaleHandler) handleELB(ctx *handlers.HandlerContext, req *handler.HandleRequest, elb *handler.ELB) error {
 	elbOp := sacloud.NewProxyLBOp(h.APICaller())
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-		Log:          fmt.Sprintf("plan changing...: {Desired CPS:%d}", elb.Plan),
-	}); err != nil {
+	if err := ctx.Report(handler.HandleResponse_RUNNING,
+		"plan changing...: {Desired CPS:%d}", elb.Plan); err != nil {
 		return err
 	}
 
@@ -87,9 +70,8 @@ func (h *VerticalScaleHandler) handleELB(ctx context.Context, req *handler.Handl
 	if err != nil {
 		return err
 	}
-	return sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_DONE,
-		Log:          fmt.Sprintf("plan changed: {ID:%s, CPS:%d}", updated.ID, elb.Plan),
-	})
+	return ctx.Report(
+		handler.HandleResponse_DONE,
+		"plan changed: {ID:%s, CPS:%d}", updated.ID, elb.Plan,
+	)
 }
