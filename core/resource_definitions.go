@@ -115,7 +115,7 @@ func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers
 	if zone == "" {
 		zone = "global"
 	}
-	handlingCtx := NewHandlingContext(parentCtx, computed).WithLogger("type", computed.Type(), "zone", zone, "id", computed.ID())
+	handlingCtx := NewHandlingContext(parentCtx, computed).WithLogger("type", computed.Type(), "zone", zone, "id", computed.ID(), "name", computed.Name())
 
 	// preHandle
 	if err := r.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
@@ -144,9 +144,9 @@ func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers
 	if err != nil {
 		return err
 	}
-	computed = refreshed
 	// IDが採番されていたり変更されていたりするためHandlingContextも更新しておく
-	handlingCtx = NewHandlingContext(parentCtx, computed).WithLogger("type", computed.Type(), "zone", zone, "id", computed.ID())
+	handlingCtx = NewHandlingContext(parentCtx, computed).WithLogger("type", refreshed.Type(), "zone", zone, "id", refreshed.ID(), "name", refreshed.Name())
+	computed = refreshed
 
 	// postHandle
 	if err := r.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {

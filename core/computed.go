@@ -26,6 +26,8 @@ type Computed interface {
 	Type() ResourceTypes
 	// ID このComputedが表すさくらのクラウド上のリソースのID、まだ存在しないリソースの場合は空文字を返す
 	ID() string
+	// Name このComputedが表すさくらのクラウド上のリソースのName、ログ出力用
+	Name() string
 	// Zone このComputedが表すさくらのクラウド上のリソースが属するゾーン名、グローバルリソースの場合は空文字を返す
 	Zone() string
 	// Instruction 現在のリソースの状態から算出されたハンドラーへの指示の種類

@@ -72,6 +72,7 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 	}
 
 	// TODO ここで実際の処理を実装する
+
 	if err := h.GetLogger().Debug("request", req); err != nil {
 		return err
 	}

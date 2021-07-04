@@ -111,6 +111,9 @@ message Server {
   bool dedicated_cpu                    = 15;
   repeated NetworkInfo assigned_network = 16;
 
+  // common
+  string name          = 90;
+
   // TODO option.shutdown_forceをインラインにする
   ServerScalingOption option            = 101;
 }
@@ -208,6 +211,9 @@ message ELB {
   uint32 plan                      = 13;
   string virtual_ip_address        = 14;
   string fqdn                      = 15;
+
+  // common
+  string name          = 90;
 }
 
 message GSLB {
@@ -216,6 +222,9 @@ message GSLB {
   string id                        = 11;
   string fqdn                      = 12;
   repeated GSLBServer servers      = 13;
+
+  // common
+  string name          = 90;
 }
 
 message GSLBServer {
@@ -239,6 +248,9 @@ message Router {
   string id                        = 11;
   string zone                      = 12;
   uint32 band_width                  = 13;
+
+  // common
+  string name          = 90;
 }
 
 message LoadBalancer {
@@ -247,6 +259,9 @@ message LoadBalancer {
   string id                                     = 11;
   string zone                                   = 12;
   repeated LoadBalancerVIP virtual_ip_addresses = 13;
+
+  // common
+  string name          = 90;
 }
 
 message LoadBalancerVIP {

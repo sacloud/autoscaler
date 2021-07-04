@@ -34,6 +34,13 @@ func (c *computedELB) ID() string {
 	return ""
 }
 
+func (c *computedELB) Name() string {
+	if c.elb != nil {
+		return c.elb.Name
+	}
+	return ""
+}
+
 func (c *computedELB) Type() ResourceTypes {
 	return ResourceTypeEnhancedLoadBalancer
 }
@@ -56,6 +63,7 @@ func (c *computedELB) Current() *handler.Resource {
 			Resource: &handler.Resource_Elb{
 				Elb: &handler.ELB{
 					Id:               c.elb.ID.String(),
+					Name:             c.elb.Name,
 					Region:           c.elb.Region.String(),
 					Plan:             uint32(c.elb.Plan.Int()),
 					VirtualIpAddress: c.elb.VirtualIPAddress,
@@ -74,6 +82,7 @@ func (c *computedELB) Desired() *handler.Resource {
 			Resource: &handler.Resource_Elb{
 				Elb: &handler.ELB{
 					Id:               c.elb.ID.String(),
+					Name:             c.elb.Name,
 					Region:           c.elb.Region.String(),
 					Plan:             uint32(c.newCPS),
 					VirtualIpAddress: c.elb.VirtualIPAddress,

@@ -46,17 +46,17 @@ func (h *VerticalScaleHandler) Version() string {
 }
 
 func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := context.TODO()
-
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_ACCEPTED,
-	}); err != nil {
-		return err
-	}
+	ctx := context.Background()
 
 	router := req.Desired.GetRouter()
 	if router != nil && req.Instruction == handler.ResourceInstructions_UPDATE {
+		if err := sender.Send(&handler.HandleResponse{
+			ScalingJobId: req.ScalingJobId,
+			Status:       handler.HandleResponse_ACCEPTED,
+		}); err != nil {
+			return err
+		}
+
 		if err := h.handleRouter(ctx, req, router, sender); err != nil {
 			return err
 		}
@@ -74,7 +74,7 @@ func (h *VerticalScaleHandler) handleRouter(ctx context.Context, req *handler.Ha
 	if err := sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_RUNNING,
-		Log:          fmt.Sprintf("router plan changing - to %d Mbps", router.BandWidth),
+		Log:          fmt.Sprintf("plan changing...: {Desired BandWidth:%dMbps}", router.BandWidth),
 	}); err != nil {
 		return err
 	}
@@ -90,6 +90,6 @@ func (h *VerticalScaleHandler) handleRouter(ctx context.Context, req *handler.Ha
 	return sender.Send(&handler.HandleResponse{
 		ScalingJobId: req.ScalingJobId,
 		Status:       handler.HandleResponse_DONE,
-		Log:          fmt.Sprintf("router plan changed - resource ID changed: from %s to %s", router.Id, updated.ID.String()),
+		Log:          fmt.Sprintf("plan changed: {ID:%s, BandWidth:%dMbps}", updated.ID, updated.BandWidthMbps),
 	})
 }
