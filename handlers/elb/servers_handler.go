@@ -15,9 +15,6 @@
 package elb
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
@@ -55,53 +52,41 @@ func (h *ServersHandler) Version() string {
 }
 
 func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
-	ctx := context.Background()
+	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
-	if req.Instruction == handler.ResourceInstructions_UPDATE && h.shouldHandle(req.Desired) {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_ACCEPTED,
-		}); err != nil {
-			return err
-		}
-
+	if h.shouldHandle(req.Desired) {
 		server := req.Desired.GetServer()
-		elb := server.Parent.GetElb() // バリデーション済みなためnilチェック不要
-		if err := h.handle(ctx, req.ScalingJobId, server, elb, sender, false); err != nil {
-			return err
+		elb := server.Parent.GetElb()
+
+		switch req.Instruction {
+		case handler.ResourceInstructions_UPDATE:
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+			return h.handle(ctx, server, elb, false)
 		}
-	} else {
-		return sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_IGNORED,
-		})
 	}
-	return nil
+
+	return ctx.Report(handler.HandleResponse_IGNORED)
 }
 
 func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
-	ctx := context.Background()
+	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
-	if req.Result == handler.PostHandleRequest_UPDATED && h.shouldHandle(req.Desired) {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_ACCEPTED,
-		}); err != nil {
-			return err
-		}
-
+	if h.shouldHandle(req.Desired) {
 		server := req.Desired.GetServer()
-		elb := server.Parent.GetElb() // バリデーション済みなためnilチェック不要
-		if err := h.handle(ctx, req.ScalingJobId, server, elb, sender, true); err != nil {
-			return err
+		elb := server.Parent.GetElb()
+
+		switch req.Result {
+		case handler.PostHandleRequest_UPDATED:
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+			return h.handle(ctx, server, elb, true)
 		}
-	} else {
-		return sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_IGNORED,
-		})
 	}
-	return nil
+
+	return ctx.Report(handler.HandleResponse_IGNORED)
 }
 
 func (h *ServersHandler) shouldHandle(desired *handler.Resource) bool {
@@ -116,11 +101,8 @@ func (h *ServersHandler) shouldHandle(desired *handler.Resource) bool {
 	return false
 }
 
-func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handler.Server, elb *handler.ELB, sender handlers.ResponseSender, attach bool) error {
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: jobID,
-		Status:       handler.HandleResponse_RUNNING,
-	}); err != nil {
+func (h *ServersHandler) handle(ctx *handlers.HandlerContext, server *handler.Server, elb *handler.ELB, attach bool) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
 		return err
 	}
 
@@ -140,11 +122,7 @@ func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handl
 				shouldUpdate = true
 				targetIPAddress = s.IPAddress
 
-				if err := sender.Send(&handler.HandleResponse{
-					ScalingJobId: jobID,
-					Status:       handler.HandleResponse_RUNNING,
-					Log:          fmt.Sprintf("found target server: %s", s.IPAddress),
-				}); err != nil {
+				if err := ctx.Report(handler.HandleResponse_RUNNING, "found target server: %s", s.IPAddress); err != nil {
 					return err
 				}
 
@@ -154,21 +132,11 @@ func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handl
 	}
 
 	if !shouldUpdate {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: jobID,
-			Status:       handler.HandleResponse_DONE,
-			Log:          "target server not found",
-		}); err != nil {
-			return err
-		}
-		return nil
+		return ctx.Report(handler.HandleResponse_DONE, "target server not found")
 	}
 
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: jobID,
-		Status:       handler.HandleResponse_RUNNING,
-		Log:          fmt.Sprintf("updating...: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress),
-	}); err != nil {
+	if err := ctx.Report(handler.HandleResponse_RUNNING,
+		"updating...: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress); err != nil {
 		return err
 	}
 
@@ -187,9 +155,6 @@ func (h *ServersHandler) handle(ctx context.Context, jobID string, server *handl
 		return err
 	}
 
-	return sender.Send(&handler.HandleResponse{
-		ScalingJobId: jobID,
-		Status:       handler.HandleResponse_DONE,
-		Log:          fmt.Sprintf("updated: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress),
-	})
+	return ctx.Report(handler.HandleResponse_RUNNING,
+		"updated: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress)
 }

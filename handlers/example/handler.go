@@ -63,11 +63,12 @@ func (h *Handler) ConfigPath() string {
 
 // Handle Coreからのメッセージのハンドリング
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	// 受付メッセージ送信
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_ACCEPTED,
-	}); err != nil {
+	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+
+	// TODO reqを参照しリクエストを処理すべきか判定
+
+	// 処理すべきリクエストだった場合は受付メッセージ送信
+	if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 		return err
 	}
 
@@ -78,10 +79,7 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 	}
 
 	// 完了メッセージ
-	return sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_DONE,
-	})
+	return ctx.Report(handler.HandleResponse_DONE)
 }
 
 //// PreHandle Coreからのメッセージのハンドリング

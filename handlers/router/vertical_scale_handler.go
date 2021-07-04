@@ -15,9 +15,6 @@
 package router
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
@@ -46,36 +43,21 @@ func (h *VerticalScaleHandler) Version() string {
 }
 
 func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := context.Background()
+	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	router := req.Desired.GetRouter()
 	if router != nil && req.Instruction == handler.ResourceInstructions_UPDATE {
-		if err := sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_ACCEPTED,
-		}); err != nil {
+		if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 			return err
 		}
-
-		if err := h.handleRouter(ctx, req, router, sender); err != nil {
-			return err
-		}
-	} else {
-		return sender.Send(&handler.HandleResponse{
-			ScalingJobId: req.ScalingJobId,
-			Status:       handler.HandleResponse_IGNORED,
-		})
+		return h.handleRouter(ctx, req, router)
 	}
 
-	return nil
+	return ctx.Report(handler.HandleResponse_IGNORED)
 }
 
-func (h *VerticalScaleHandler) handleRouter(ctx context.Context, req *handler.HandleRequest, router *handler.Router, sender handlers.ResponseSender) error {
-	if err := sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_RUNNING,
-		Log:          fmt.Sprintf("plan changing...: {Desired BandWidth:%dMbps}", router.BandWidth),
-	}); err != nil {
+func (h *VerticalScaleHandler) handleRouter(ctx *handlers.HandlerContext, req *handler.HandleRequest, router *handler.Router) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING, "plan changing...: {Desired BandWidth:%dMbps}", router.BandWidth); err != nil {
 		return err
 	}
 
@@ -87,9 +69,6 @@ func (h *VerticalScaleHandler) handleRouter(ctx context.Context, req *handler.Ha
 	if err != nil {
 		return err
 	}
-	return sender.Send(&handler.HandleResponse{
-		ScalingJobId: req.ScalingJobId,
-		Status:       handler.HandleResponse_DONE,
-		Log:          fmt.Sprintf("plan changed: {ID:%s, BandWidth:%dMbps}", updated.ID, updated.BandWidthMbps),
-	})
+	return ctx.Report(handler.HandleResponse_DONE,
+		"plan changed: {ID:%s, BandWidth:%dMbps}", updated.ID, updated.BandWidthMbps)
 }
