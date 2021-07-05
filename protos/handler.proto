@@ -199,6 +199,28 @@ message ServerGroupInstance {
     string packet_filter_id = 12;
     string user_ip_address  = 13;
     NetworkInfo assigned_network = 16; // 新規作成時は空
+    ExposeInfo expose_info = 20;
+  }
+
+  message ExposeInfo {
+    reserved 1 to 10;
+    repeated uint32 ports    = 11;
+
+    string server_group_name = 21; // ELB向け
+
+    uint32 weight            = 31; // GSLB向け
+
+    repeated string vips     = 41; // LB向け
+    HealthCheck health_check = 42; // LB向け
+
+    string record_name       = 51; // DNS向け
+    uint32 ttl               = 52; // DNS向け
+  }
+
+  message HealthCheck {
+    string protocol    = 11;
+    string path        = 12;
+    uint32 status_code = 13;
   }
 }
 
