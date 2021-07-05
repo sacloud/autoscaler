@@ -60,8 +60,8 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient sa
 	if s.EditParameter != nil {
 		errors = multierror.Append(errors, s.EditParameter.Validate()...)
 	}
-	for _, nic := range s.NetworkInterfaces {
-		errors = multierror.Append(errors, nic.Validate(def.MaxSize)...)
+	for i, nic := range s.NetworkInterfaces {
+		errors = multierror.Append(errors, nic.Validate(def.parent, def.MaxSize, i)...)
 	}
 
 	return errors.Errors
@@ -226,9 +226,10 @@ type ServerGroupNICTemplate struct {
 	AssignNetMaskLen int                     `yaml:"assign_netmask_len" validate:"omitempty,min=1,max=32"` // 上流がスイッチの場合(ルータ含む)に割り当てるサブネットマスク長
 	DefaultRoute     string                  `yaml:"default_route" validate:"omitempty,ipv4"`
 	PacketFilterID   string                  `yaml:"packet_filter_id"`
+	ExposeInfo       *ServerGroupNICMetadata `yaml:"expose"`
 }
 
-func (t *ServerGroupNICTemplate) Validate(maxServerNum int) []error {
+func (t *ServerGroupNICTemplate) Validate(parent ResourceDefinition, maxServerNum, nicIndex int) []error {
 	if errs := validate.StructWithMultiError(t); len(errs) > 0 {
 		return errs
 	}
@@ -263,6 +264,10 @@ func (t *ServerGroupNICTemplate) Validate(maxServerNum int) []error {
 					))
 			}
 		}
+	}
+
+	if t.ExposeInfo != nil {
+		errors = multierror.Append(errors, t.ExposeInfo.Validate(parent, nicIndex)...)
 	}
 	return errors.Errors
 }
@@ -320,4 +325,164 @@ func (s *ServerGroupNICUpstream) Selector() *ResourceSelector {
 		return nil
 	}
 	return s.selector
+}
+
+// ServerGroupNICMetadata 上流リソースの操作時に参照されるメタデータ
+type ServerGroupNICMetadata struct {
+	// Ports 公開するポート
+	Ports []int `yaml:"ports" validate:"unique,dive,min=1,max=65535"`
+
+	// ServerGroupName ELBの実サーバとして登録する場合のサーバグループ名
+	ServerGroupName string `yaml:"server_group_name"`
+
+	// Weight GSLBに実サーバとして登録する場合の重み値
+	Weight int `yaml:"weight"`
+
+	// VIP LBに実サーバとして登録する場合の対象VIPリスト
+	//
+	// 省略した場合はこのメタデータがつけられたNICと同じネットワーク内に存在するVIP全てが対象となる
+	VIPs []string `yaml:"vips" validate:"omitempty,dive,ipv4"`
+
+	// HealthCheck LBに実サーバとして登録する場合のヘルスチェック
+	HealthCheck *ServerGroupNICMetadataHealthCheck `yaml:"health_check"`
+
+	// RecordName DNSにレコード登録する場合のレコード名
+	RecordName string `yaml:"record_name"`
+
+	// RecordTTL DNSにレコード登録する場合のTTL
+	RecordTTL int `yaml:"record_ttl" validate:"omitempty,min=10,max=3600000"`
+}
+
+func (m *ServerGroupNICMetadata) Validate(parent ResourceDefinition, nicIndex int) []error {
+	if errs := validate.StructWithMultiError(m); len(errs) > 0 {
+		return errs
+	}
+	errors := &multierror.Error{}
+	if nicIndex > 0 {
+		// グローバルIPを要求する項目がNIC[0]以外で指定されていたらエラーとする
+		format := "%s: can only be specified for the first NIC"
+		if m.ServerGroupName != "" {
+			errors = multierror.Append(errors, fmt.Errorf(format, "server_group_name"))
+		}
+		if m.Weight > 0 {
+			errors = multierror.Append(errors, fmt.Errorf(format, "weight"))
+		}
+		if m.RecordName != "" {
+			errors = multierror.Append(errors, fmt.Errorf(format, "record_name"))
+		}
+		if m.RecordTTL > 0 {
+			errors = multierror.Append(errors, fmt.Errorf(format, "record_ttl"))
+		}
+	}
+
+	if parent != nil {
+		format := "%s: can only be specified if parent resource type is %s"
+		requiredFormat := "%s: required when parent is %s"
+
+		switch parent.Type() {
+		case ResourceTypeELB:
+			if len(m.Ports) == 0 {
+				errors = multierror.Append(errors, fmt.Errorf(requiredFormat, "ports", ResourceTypeELB))
+			}
+			if m.Weight > 0 {
+				errors = multierror.Append(errors, fmt.Errorf(format, "weight", ResourceTypeELB))
+			}
+			if len(m.VIPs) > 0 {
+				errors = multierror.Append(errors, fmt.Errorf(format, "vips", ResourceTypeELB))
+			}
+			if m.HealthCheck != nil {
+				errors = multierror.Append(errors, fmt.Errorf(format, "health_check", ResourceTypeELB))
+			}
+			if m.RecordName != "" {
+				errors = multierror.Append(errors, fmt.Errorf(format, "record_name", ResourceTypeELB))
+			}
+			if m.RecordTTL > 0 {
+				errors = multierror.Append(errors, fmt.Errorf(format, "record_ttl", ResourceTypeELB))
+			}
+		case ResourceTypeGSLB:
+			if m.ServerGroupName != "" {
+				errors = multierror.Append(errors, fmt.Errorf(format, "server_group_name", ResourceTypeGSLB))
+			}
+			if len(m.VIPs) > 0 {
+				errors = multierror.Append(errors, fmt.Errorf(format, "vips", ResourceTypeGSLB))
+			}
+			if m.HealthCheck != nil {
+				errors = multierror.Append(errors, fmt.Errorf(format, "health_check", ResourceTypeGSLB))
+			}
+			if m.RecordName != "" {
+				errors = multierror.Append(errors, fmt.Errorf(format, "record_name", ResourceTypeGSLB))
+			}
+			if m.RecordTTL > 0 {
+				errors = multierror.Append(errors, fmt.Errorf(format, "record_ttl", ResourceTypeGSLB))
+			}
+		case ResourceTypeLoadBalancer:
+			if m.HealthCheck == nil {
+				errors = multierror.Append(errors, fmt.Errorf(requiredFormat, "health_check", ResourceTypeLoadBalancer))
+			}
+			if m.ServerGroupName != "" {
+				errors = multierror.Append(errors, fmt.Errorf(format, "server_group_name", ResourceTypeLoadBalancer))
+			}
+			if m.Weight > 0 {
+				errors = multierror.Append(errors, fmt.Errorf(format, "weight", ResourceTypeLoadBalancer))
+			}
+			if m.RecordName != "" {
+				errors = multierror.Append(errors, fmt.Errorf(format, "record_name", ResourceTypeLoadBalancer))
+			}
+			if m.RecordTTL > 0 {
+				errors = multierror.Append(errors, fmt.Errorf(format, "record_ttl", ResourceTypeLoadBalancer))
+			}
+		case ResourceTypeDNS:
+			if m.ServerGroupName != "" {
+				errors = multierror.Append(errors, fmt.Errorf(format, "server_group_name", ResourceTypeDNS))
+			}
+			if m.Weight > 0 {
+				errors = multierror.Append(errors, fmt.Errorf(format, "weight", ResourceTypeDNS))
+			}
+			if len(m.VIPs) > 0 {
+				errors = multierror.Append(errors, fmt.Errorf(format, "vips", ResourceTypeDNS))
+			}
+			if m.HealthCheck != nil {
+				errors = multierror.Append(errors, fmt.Errorf(format, "health_check", ResourceTypeDNS))
+			}
+		}
+	}
+
+	if m.HealthCheck != nil {
+		errors = multierror.Append(errors, m.HealthCheck.Validate()...)
+	}
+
+	return errors.Errors
+}
+
+type ServerGroupNICMetadataHealthCheck struct {
+	Protocol   string `yaml:"protocol" validate:"required,oneof=http https ping tcp"`
+	Path       string `yaml:"path"`
+	StatusCode int    `yaml:"status_code"`
+}
+
+func (h *ServerGroupNICMetadataHealthCheck) Validate() []error {
+	if errs := validate.StructWithMultiError(h); len(errs) > 0 {
+		return errs
+	}
+
+	errors := &multierror.Error{}
+
+	switch h.Protocol {
+	case "http", "https":
+		if h.Path == "" {
+			errors = multierror.Append(errors, fmt.Errorf("path: required if protocol is http or https"))
+		}
+		if h.StatusCode == 0 {
+			errors = multierror.Append(errors, fmt.Errorf("status_code: required if protocol is http or https"))
+		}
+	default:
+		if h.Path != "" {
+			errors = multierror.Append(errors, fmt.Errorf("path: can not be specified if protocol is not http or https"))
+		}
+		if h.StatusCode > 0 {
+			errors = multierror.Append(errors, fmt.Errorf("status_code: can not be specified if protocol is not http or https"))
+		}
+	}
+
+	return errors.Errors
 }

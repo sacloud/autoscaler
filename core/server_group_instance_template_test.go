@@ -16,6 +16,7 @@ package core
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/goccy/go-yaml"
@@ -379,7 +380,347 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t1 *testing.T) {
-			got := tt.template.Validate(tt.args.maxServerNum)
+			got := tt.template.Validate(nil, tt.args.maxServerNum, 0)
+			require.EqualValues(t, tt.want, got)
+		})
+	}
+}
+
+func TestServerGroupNICMetadata_Validate(t *testing.T) {
+	type args struct {
+		parent   ResourceDefinition
+		nicIndex int
+	}
+	tests := []struct {
+		name   string
+		expose *ServerGroupNICMetadata
+		args   args
+		want   []error
+	}{
+		{
+			name:   "minimum",
+			expose: &ServerGroupNICMetadata{},
+			args:   args{nil, 0},
+			want:   nil,
+		},
+		{
+			name: "global nic metadata with nixIndex == 0",
+			expose: &ServerGroupNICMetadata{
+				Ports:           []int{8080},
+				ServerGroupName: "foobar",
+				Weight:          1,
+				VIPs:            []string{},
+				HealthCheck:     nil,
+				RecordName:      "www",
+				RecordTTL:       10,
+			},
+			args: args{nil, 0},
+			want: nil,
+		},
+		{
+			name: "global nic metadata with nixIndex > 0",
+			expose: &ServerGroupNICMetadata{
+				Ports:           []int{8080},
+				ServerGroupName: "foobar",
+				Weight:          1,
+				VIPs:            []string{},
+				HealthCheck:     nil,
+				RecordName:      "www",
+				RecordTTL:       10,
+			},
+			args: args{nil, 1},
+			want: []error{
+				fmt.Errorf("server_group_name: can only be specified for the first NIC"),
+				fmt.Errorf("weight: can only be specified for the first NIC"),
+				fmt.Errorf("record_name: can only be specified for the first NIC"),
+				fmt.Errorf("record_ttl: can only be specified for the first NIC"),
+			},
+		},
+		{
+			name:   "minimum with ELB",
+			expose: &ServerGroupNICMetadata{},
+			args: args{
+				parent: &ResourceDefELB{
+					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeELB.String()},
+				},
+				nicIndex: 0,
+			},
+			want: []error{
+				fmt.Errorf("ports: required when parent is EnhancedLoadBalancer"),
+			},
+		},
+		{
+			name: "full with ELB",
+			expose: &ServerGroupNICMetadata{
+				Ports:           []int{80},
+				ServerGroupName: "foobar",
+				Weight:          1,
+				VIPs:            []string{"192.168.0.1"},
+				HealthCheck: &ServerGroupNICMetadataHealthCheck{
+					Protocol:   "http",
+					Path:       "/healthz",
+					StatusCode: http.StatusOK,
+				},
+				RecordName: "www",
+				RecordTTL:  10,
+			},
+			args: args{
+				parent: &ResourceDefELB{
+					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeELB.String()},
+				},
+				nicIndex: 0,
+			},
+			want: []error{
+				fmt.Errorf("weight: can only be specified if parent resource type is EnhancedLoadBalancer"),
+				fmt.Errorf("vips: can only be specified if parent resource type is EnhancedLoadBalancer"),
+				fmt.Errorf("health_check: can only be specified if parent resource type is EnhancedLoadBalancer"),
+				fmt.Errorf("record_name: can only be specified if parent resource type is EnhancedLoadBalancer"),
+				fmt.Errorf("record_ttl: can only be specified if parent resource type is EnhancedLoadBalancer"),
+			},
+		},
+		{
+			name:   "minimum with GSLB",
+			expose: &ServerGroupNICMetadata{},
+			args: args{
+				parent: &ResourceDefGSLB{
+					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeGSLB.String()},
+				},
+				nicIndex: 0,
+			},
+			want: nil,
+		},
+		{
+			name: "full with GSLB",
+			expose: &ServerGroupNICMetadata{
+				Ports:           []int{80},
+				ServerGroupName: "foobar",
+				Weight:          1,
+				VIPs:            []string{"192.168.0.1"},
+				HealthCheck: &ServerGroupNICMetadataHealthCheck{
+					Protocol:   "http",
+					Path:       "/healthz",
+					StatusCode: http.StatusOK,
+				},
+				RecordName: "www",
+				RecordTTL:  10,
+			},
+			args: args{
+				parent: &ResourceDefGSLB{
+					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeGSLB.String()},
+				},
+				nicIndex: 0,
+			},
+			want: []error{
+				fmt.Errorf("server_group_name: can only be specified if parent resource type is GSLB"),
+				fmt.Errorf("vips: can only be specified if parent resource type is GSLB"),
+				fmt.Errorf("health_check: can only be specified if parent resource type is GSLB"),
+				fmt.Errorf("record_name: can only be specified if parent resource type is GSLB"),
+				fmt.Errorf("record_ttl: can only be specified if parent resource type is GSLB"),
+			},
+		},
+		{
+			name:   "minimum with LB",
+			expose: &ServerGroupNICMetadata{},
+			args: args{
+				parent: &ResourceDefLoadBalancer{
+					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeLoadBalancer.String()},
+				},
+				nicIndex: 0,
+			},
+			want: []error{
+				fmt.Errorf("health_check: required when parent is LoadBalancer"),
+			},
+		},
+		{
+			name: "full with LB",
+			expose: &ServerGroupNICMetadata{
+				Ports:           []int{80},
+				ServerGroupName: "foobar",
+				Weight:          1,
+				VIPs:            []string{"192.168.0.1"},
+				HealthCheck: &ServerGroupNICMetadataHealthCheck{
+					Protocol:   "http",
+					Path:       "/healthz",
+					StatusCode: http.StatusOK,
+				},
+				RecordName: "www",
+				RecordTTL:  10,
+			},
+			args: args{
+				parent: &ResourceDefLoadBalancer{
+					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeLoadBalancer.String()},
+				},
+				nicIndex: 0,
+			},
+			want: []error{
+				fmt.Errorf("server_group_name: can only be specified if parent resource type is LoadBalancer"),
+				fmt.Errorf("weight: can only be specified if parent resource type is LoadBalancer"),
+				fmt.Errorf("record_name: can only be specified if parent resource type is LoadBalancer"),
+				fmt.Errorf("record_ttl: can only be specified if parent resource type is LoadBalancer"),
+			},
+		},
+		{
+			name:   "minimum with DNS",
+			expose: &ServerGroupNICMetadata{},
+			args: args{
+				parent: &ResourceDefDNS{
+					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeDNS.String()},
+				},
+				nicIndex: 0,
+			},
+			want: nil,
+		},
+		{
+			name: "full with DNS",
+			expose: &ServerGroupNICMetadata{
+				Ports:           []int{80},
+				ServerGroupName: "foobar",
+				Weight:          1,
+				VIPs:            []string{"192.168.0.1"},
+				HealthCheck: &ServerGroupNICMetadataHealthCheck{
+					Protocol:   "http",
+					Path:       "/healthz",
+					StatusCode: http.StatusOK,
+				},
+				RecordName: "www",
+				RecordTTL:  10,
+			},
+			args: args{
+				parent: &ResourceDefDNS{
+					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeDNS.String()},
+				},
+				nicIndex: 0,
+			},
+			want: []error{
+				fmt.Errorf("server_group_name: can only be specified if parent resource type is DNS"),
+				fmt.Errorf("weight: can only be specified if parent resource type is DNS"),
+				fmt.Errorf("vips: can only be specified if parent resource type is DNS"),
+				fmt.Errorf("health_check: can only be specified if parent resource type is DNS"),
+			},
+		},
+		{
+			name: "with invalid health_check",
+			expose: &ServerGroupNICMetadata{
+				VIPs: []string{"192.168.0.1"},
+				HealthCheck: &ServerGroupNICMetadataHealthCheck{
+					Protocol:   "ping",
+					Path:       "/healthz",
+					StatusCode: http.StatusOK,
+				},
+			},
+			args: args{
+				parent: &ResourceDefLoadBalancer{
+					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeLoadBalancer.String()},
+				},
+				nicIndex: 0,
+			},
+			want: []error{
+				fmt.Errorf("path: can not be specified if protocol is not http or https"),
+				fmt.Errorf("status_code: can not be specified if protocol is not http or https"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.expose.Validate(tt.args.parent, tt.args.nicIndex)
+			require.EqualValues(t, tt.want, got)
+		})
+	}
+}
+
+func TestServerGroupNICMetadataHealthCheck_Validate(t *testing.T) {
+	tests := []struct {
+		name string
+		hc   *ServerGroupNICMetadataHealthCheck
+		want []error
+	}{
+		{
+			name: "minimum",
+			hc:   &ServerGroupNICMetadataHealthCheck{},
+			want: []error{
+				fmt.Errorf("protocol: required"),
+			},
+		},
+		{
+			name: "http with path and code",
+			hc: &ServerGroupNICMetadataHealthCheck{
+				Protocol:   "http",
+				Path:       "/",
+				StatusCode: http.StatusOK,
+			},
+			want: nil,
+		},
+		{
+			name: "http without path and code",
+			hc: &ServerGroupNICMetadataHealthCheck{
+				Protocol: "http",
+			},
+			want: []error{
+				fmt.Errorf("path: required if protocol is http or https"),
+				fmt.Errorf("status_code: required if protocol is http or https"),
+			},
+		},
+		{
+			name: "https with path and code",
+			hc: &ServerGroupNICMetadataHealthCheck{
+				Protocol:   "https",
+				Path:       "/",
+				StatusCode: http.StatusOK,
+			},
+			want: nil,
+		},
+		{
+			name: "https without path and code",
+			hc: &ServerGroupNICMetadataHealthCheck{
+				Protocol: "https",
+			},
+			want: []error{
+				fmt.Errorf("path: required if protocol is http or https"),
+				fmt.Errorf("status_code: required if protocol is http or https"),
+			},
+		},
+		{
+			name: "ping with path and code",
+			hc: &ServerGroupNICMetadataHealthCheck{
+				Protocol:   "ping",
+				Path:       "/",
+				StatusCode: http.StatusOK,
+			},
+			want: []error{
+				fmt.Errorf("path: can not be specified if protocol is not http or https"),
+				fmt.Errorf("status_code: can not be specified if protocol is not http or https"),
+			},
+		},
+		{
+			name: "ping without path and code",
+			hc: &ServerGroupNICMetadataHealthCheck{
+				Protocol: "ping",
+			},
+			want: nil,
+		},
+		{
+			name: "tcp with path and code",
+			hc: &ServerGroupNICMetadataHealthCheck{
+				Protocol:   "tcp",
+				Path:       "/",
+				StatusCode: http.StatusOK,
+			},
+			want: []error{
+				fmt.Errorf("path: can not be specified if protocol is not http or https"),
+				fmt.Errorf("status_code: can not be specified if protocol is not http or https"),
+			},
+		},
+		{
+			name: "tcp without path and code",
+			hc: &ServerGroupNICMetadataHealthCheck{
+				Protocol: "ping",
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.hc.Validate()
 			require.EqualValues(t, tt.want, got)
 		})
 	}

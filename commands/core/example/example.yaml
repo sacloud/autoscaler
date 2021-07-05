@@ -85,6 +85,27 @@ resources:
               assign_netmask_len: 24                # NICに割り当てるサブネットマスク長
               default_route: "192.168.12.1"
 
+              # 上流リソースに渡すためのメタデータ
+              expose:
+                ports: [ 80, 443 ] # このNICで上流リソースに公開するポート番号
+
+                # ELB向け
+                server_group_name: "group1"
+
+                ## GSLB向け
+                #weight: 1
+
+                ## LB向け
+                #vips: [ "192.168.11.1" ] # 省略可
+                #health_check:
+                #  protocol: http
+                #  path: "/healthz"
+                #  status_code: 200
+
+                ## DNS向け
+                #record_name: "www"
+                #record_ttl: 10
+
           # ディスク
           disks:
             - name_prefix: "..." # 省略した場合は 'サーバ名+ディスク連番' (例: server-group-001-001)

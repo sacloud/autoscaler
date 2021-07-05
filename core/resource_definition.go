@@ -58,14 +58,17 @@ func (r *ResourceDefBase) Type() ResourceTypes {
 		return ResourceTypeServerGroup
 	case ResourceTypeServerGroupInstance.String():
 		return ResourceTypeServerGroupInstance
-	case ResourceTypeEnhancedLoadBalancer.String(), "ELB":
-		return ResourceTypeEnhancedLoadBalancer
+	case ResourceTypeELB.String(), "ELB":
+		return ResourceTypeELB
 	case ResourceTypeGSLB.String():
 		return ResourceTypeGSLB
 	case ResourceTypeDNS.String():
 		return ResourceTypeDNS
+	case ResourceTypeLoadBalancer.String():
+		return ResourceTypeLoadBalancer
 	}
-	return ResourceTypeUnknown
+
+	return ResourceTypeLoadBalancer
 }
 
 // Children 子リソースを返す(自身は含まない)

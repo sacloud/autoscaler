@@ -21,7 +21,7 @@ const (
 	ResourceTypeServer
 	ResourceTypeServerGroup
 	ResourceTypeServerGroupInstance
-	ResourceTypeEnhancedLoadBalancer
+	ResourceTypeELB
 	ResourceTypeGSLB
 	ResourceTypeDNS
 	ResourceTypeRouter
@@ -36,7 +36,7 @@ func (rt ResourceTypes) String() string {
 		return "ServerGroup"
 	case ResourceTypeServerGroupInstance:
 		return "ServerGroupInstance"
-	case ResourceTypeEnhancedLoadBalancer:
+	case ResourceTypeELB:
 		return "EnhancedLoadBalancer"
 	case ResourceTypeGSLB:
 		return "GSLB"
