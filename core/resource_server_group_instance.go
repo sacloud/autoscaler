@@ -211,11 +211,20 @@ func (r *ResourceServerGroupInstance) computeNetworkInterfaces(ctx *RequestConte
 				upstream = "shared"
 			}
 
+			var exposeInfo *handler.ServerGroupInstance_ExposeInfo
+			if len(r.def.Template.NetworkInterfaces) > i {
+				info := r.def.Template.NetworkInterfaces[i].ExposeInfo
+				if info != nil {
+					exposeInfo = info.ToExposeInfo()
+				}
+			}
+
 			nics = append(nics, &handler.ServerGroupInstance_NIC{
 				Upstream:        upstream,
 				PacketFilterId:  nic.PacketFilterID.String(),
 				UserIpAddress:   nic.UserIPAddress,
 				AssignedNetwork: assignedNetwork(nic, i),
+				ExposeInfo:      exposeInfo,
 			})
 		}
 		return nics, nil
@@ -226,10 +235,21 @@ func (r *ResourceServerGroupInstance) computeNetworkInterfaces(ctx *RequestConte
 		if err != nil {
 			return nil, err
 		}
+
+		var exposeInfo *handler.ServerGroupInstance_ExposeInfo
+		if len(r.def.Template.NetworkInterfaces) > i {
+			info := r.def.Template.NetworkInterfaces[i].ExposeInfo
+			if info != nil {
+				exposeInfo = info.ToExposeInfo()
+			}
+		}
+
 		nic := &handler.ServerGroupInstance_NIC{
 			Upstream:       upstream,
 			PacketFilterId: tmpl.PacketFilterID,
+			ExposeInfo:     exposeInfo,
 		}
+
 		if upstream != "shared" {
 			ip, mask, err := tmpl.IPAddressByIndexFromCidrBlock(r.indexInGroup)
 			if err != nil {
