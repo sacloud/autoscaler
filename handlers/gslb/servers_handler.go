@@ -55,15 +55,23 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Desired) {
-		server := req.Desired.GetServer()
-		gslb := server.Parent.GetGslb()
-
 		switch req.Instruction {
+		case handler.ResourceInstructions_DELETE:
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+
+			instance := req.Desired.GetServerGroupInstance()
+			gslb := instance.Parent.GetGslb()
+			return h.deleteServer(ctx, instance, gslb)
 		case handler.ResourceInstructions_UPDATE:
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}
-			return h.handle(ctx, server, gslb, false)
+
+			server := req.Desired.GetServer()
+			gslb := server.Parent.GetGslb()
+			return h.attachAndDetach(ctx, server, gslb, false)
 		}
 	}
 
@@ -73,15 +81,23 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
-	if req.Result == handler.PostHandleRequest_UPDATED && h.shouldHandle(req.Desired) {
-		server := req.Desired.GetServer()
-		gslb := server.Parent.GetGslb() // バリデーション済みなためnilチェック不要
+	if h.shouldHandle(req.Desired) {
 		switch req.Result {
+		case handler.PostHandleRequest_CREATED:
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+
+			instance := req.Desired.GetServerGroupInstance()
+			gslb := instance.Parent.GetGslb()
+			return h.addServer(ctx, instance, gslb)
 		case handler.PostHandleRequest_UPDATED:
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}
-			return h.handle(ctx, server, gslb, true)
+			server := req.Desired.GetServer()
+			gslb := server.Parent.GetGslb() // バリデーション済みなためnilチェック不要
+			return h.attachAndDetach(ctx, server, gslb, true)
 		}
 	}
 
@@ -96,10 +112,17 @@ func (h *ServersHandler) shouldHandle(desired *handler.Resource) bool {
 			return parent.GetGslb() != nil
 		}
 	}
+	instance := desired.GetServerGroupInstance()
+	if instance != nil {
+		parent := instance.Parent
+		if parent != nil {
+			return parent.GetGslb() != nil
+		}
+	}
 	return false
 }
 
-func (h *ServersHandler) handle(ctx *handlers.HandlerContext, server *handler.Server, gslb *handler.GSLB, attach bool) error {
+func (h *ServersHandler) attachAndDetach(ctx *handlers.HandlerContext, server *handler.Server, gslb *handler.GSLB, attach bool) error {
 	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
 		return err
 	}
@@ -152,4 +175,126 @@ func (h *ServersHandler) handle(ctx *handlers.HandlerContext, server *handler.Se
 	return ctx.Report(handler.HandleResponse_DONE,
 		"updated: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress,
 	)
+}
+
+func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handler.ServerGroupInstance, gslb *handler.GSLB) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
+		return err
+	}
+
+	gslbOp := sacloud.NewGSLBOp(h.APICaller())
+	current, err := gslbOp.Read(ctx, types.StringID(gslb.Id))
+	if err != nil {
+		return err
+	}
+
+	if len(instance.NetworkInterfaces) == 0 {
+		return ctx.Report(handler.HandleResponse_IGNORED, "instance has no NICs")
+	}
+	nic := instance.NetworkInterfaces[0]
+	if nic.ExposeInfo == nil {
+		return ctx.Report(handler.HandleResponse_IGNORED, "instance.network_interface[0] has no expose info")
+	}
+	exposeInfo := nic.ExposeInfo
+
+	shouldUpdate := false
+	// 存在しなければ追加する
+	exist := false
+	for _, s := range current.DestinationServers {
+		if s.IPAddress == nic.AssignedNetwork.IpAddress {
+			exist = true
+			if err := ctx.Report(handler.HandleResponse_RUNNING,
+				"skipped: Server{IP: %s} already exists on GSLB", s.IPAddress); err != nil {
+				return err
+			}
+			break
+		}
+	}
+	if !exist {
+		current.DestinationServers = append(current.DestinationServers, &sacloud.GSLBServer{
+			IPAddress: nic.AssignedNetwork.IpAddress,
+			Enabled:   true,
+			Weight:    types.StringNumber(exposeInfo.Weight),
+		})
+		shouldUpdate = true
+		if err := ctx.Report(handler.HandleResponse_RUNNING,
+			"added: Server{IP: %s}", nic.AssignedNetwork.IpAddress); err != nil {
+			return err
+		}
+	}
+
+	if shouldUpdate {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
+			return err
+		}
+		_, err := gslbOp.UpdateSettings(ctx, current.ID, &sacloud.GSLBUpdateSettingsRequest{
+			HealthCheck:        current.HealthCheck,
+			DelayLoop:          current.DelayLoop,
+			Weighted:           current.Weighted,
+			SorryServer:        current.SorryServer,
+			DestinationServers: current.DestinationServers,
+			SettingsHash:       current.SettingsHash,
+		})
+		if err != nil {
+			return err
+		}
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updated"); err != nil {
+			return err
+		}
+	}
+
+	return ctx.Report(handler.HandleResponse_DONE)
+}
+
+func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *handler.ServerGroupInstance, gslb *handler.GSLB) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
+		return err
+	}
+
+	gslbOp := sacloud.NewGSLBOp(h.APICaller())
+	current, err := gslbOp.Read(ctx, types.StringID(gslb.Id))
+	if err != nil {
+		return err
+	}
+
+	if len(instance.NetworkInterfaces) == 0 {
+		return ctx.Report(handler.HandleResponse_IGNORED, "instance has no NICs")
+	}
+	nic := instance.NetworkInterfaces[0]
+
+	shouldUpdate := false
+	var servers []*sacloud.GSLBServer
+	for _, s := range current.DestinationServers {
+		if s.IPAddress == nic.AssignedNetwork.IpAddress {
+			shouldUpdate = true
+			if err := ctx.Report(handler.HandleResponse_RUNNING,
+				"deleted: Server{IP: %s}", nic.AssignedNetwork.IpAddress); err != nil {
+				return err
+			}
+			continue
+		}
+		servers = append(servers, s)
+	}
+
+	if shouldUpdate {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
+			return err
+		}
+		_, err := gslbOp.UpdateSettings(ctx, current.ID, &sacloud.GSLBUpdateSettingsRequest{
+			HealthCheck:        current.HealthCheck,
+			DelayLoop:          current.DelayLoop,
+			Weighted:           current.Weighted,
+			SorryServer:        current.SorryServer,
+			DestinationServers: servers,
+			SettingsHash:       current.SettingsHash,
+		})
+		if err != nil {
+			return err
+		}
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updated"); err != nil {
+			return err
+		}
+	}
+
+	return ctx.Report(handler.HandleResponse_DONE)
 }
