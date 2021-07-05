@@ -45,6 +45,7 @@ func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, refresh bool)
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
 		}
+		r.instruction = handler.ResourceInstructions_NOOP
 	}
 	var parent Computed
 	if r.parent != nil {

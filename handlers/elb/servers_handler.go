@@ -55,15 +55,22 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Desired) {
-		server := req.Desired.GetServer()
-		elb := server.Parent.GetElb()
-
 		switch req.Instruction {
 		case handler.ResourceInstructions_UPDATE:
+			server := req.Desired.GetServer()
+			elb := server.Parent.GetElb()
+
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}
-			return h.handle(ctx, server, elb, false)
+			return h.attachOrDetach(ctx, server, elb, false)
+		case handler.ResourceInstructions_DELETE:
+			instance := req.Desired.GetServerGroupInstance()
+			elb := instance.Parent.GetElb()
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+			return h.deleteServer(ctx, instance, elb)
 		}
 	}
 
@@ -74,15 +81,21 @@ func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handl
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Desired) {
-		server := req.Desired.GetServer()
-		elb := server.Parent.GetElb()
-
 		switch req.Result {
+		case handler.PostHandleRequest_CREATED:
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+			instance := req.Desired.GetServerGroupInstance()
+			elb := instance.Parent.GetElb()
+			return h.addServer(ctx, instance, elb)
 		case handler.PostHandleRequest_UPDATED:
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}
-			return h.handle(ctx, server, elb, true)
+			server := req.Desired.GetServer()
+			elb := server.Parent.GetElb()
+			return h.attachOrDetach(ctx, server, elb, true)
 		}
 	}
 
@@ -98,10 +111,18 @@ func (h *ServersHandler) shouldHandle(desired *handler.Resource) bool {
 			return elb != nil
 		}
 	}
+	sgInstance := desired.GetServerGroupInstance()
+	if sgInstance != nil {
+		parent := sgInstance.Parent
+		if parent != nil {
+			elb := parent.GetElb()
+			return elb != nil
+		}
+	}
 	return false
 }
 
-func (h *ServersHandler) handle(ctx *handlers.HandlerContext, server *handler.Server, elb *handler.ELB, attach bool) error {
+func (h *ServersHandler) attachOrDetach(ctx *handlers.HandlerContext, server *handler.Server, elb *handler.ELB, attach bool) error {
 	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
 		return err
 	}
@@ -132,7 +153,7 @@ func (h *ServersHandler) handle(ctx *handlers.HandlerContext, server *handler.Se
 	}
 
 	if !shouldUpdate {
-		return ctx.Report(handler.HandleResponse_DONE, "target server not found")
+		return ctx.Report(handler.HandleResponse_IGNORED, "target server not found")
 	}
 
 	if err := ctx.Report(handler.HandleResponse_RUNNING,
@@ -155,6 +176,167 @@ func (h *ServersHandler) handle(ctx *handlers.HandlerContext, server *handler.Se
 		return err
 	}
 
-	return ctx.Report(handler.HandleResponse_RUNNING,
+	return ctx.Report(handler.HandleResponse_DONE,
 		"updated: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress)
+}
+
+func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handler.ServerGroupInstance, elb *handler.ELB) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
+		return err
+	}
+
+	elbOp := sacloud.NewProxyLBOp(h.APICaller())
+	current, err := elbOp.Read(ctx, types.StringID(elb.Id))
+	if err != nil {
+		return err
+	}
+
+	if len(instance.NetworkInterfaces) == 0 {
+		return ctx.Report(handler.HandleResponse_IGNORED, "instance has no NICs")
+	}
+	nic := instance.NetworkInterfaces[0]
+	if nic.ExposeInfo == nil {
+		return ctx.Report(handler.HandleResponse_IGNORED, "instance.network_interface[0] has no expose info")
+	}
+	exposeInfo := nic.ExposeInfo
+
+	type targetAddress struct {
+		ip   string
+		port int
+	}
+	var targets []*targetAddress
+	for _, port := range exposeInfo.Ports {
+		targets = append(targets, &targetAddress{ip: nic.AssignedNetwork.IpAddress, port: int(port)})
+	}
+
+	shouldUpdate := false
+	for _, target := range targets {
+		// 存在しなければ追加する
+		exist := false
+		for _, s := range current.Servers {
+			if s.IPAddress == target.ip && s.Port == target.port {
+				exist = true
+				if err := ctx.Report(handler.HandleResponse_RUNNING,
+					"skipped: Server{IP: %s, Port:%d} already exists on ELB", s.IPAddress, s.Port); err != nil {
+					return err
+				}
+				break
+			}
+		}
+		if !exist {
+			current.Servers = append(current.Servers, &sacloud.ProxyLBServer{
+				IPAddress:   target.ip,
+				Port:        target.port,
+				ServerGroup: exposeInfo.ServerGroupName,
+				Enabled:     true,
+			})
+			shouldUpdate = true
+			if err := ctx.Report(handler.HandleResponse_RUNNING,
+				"added: Server{IP: %s, Port:%d}", target.ip, target.port); err != nil {
+				return err
+			}
+		}
+	}
+
+	if shouldUpdate {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
+			return err
+		}
+		_, err := elbOp.UpdateSettings(ctx, current.ID, &sacloud.ProxyLBUpdateSettingsRequest{
+			HealthCheck:   current.HealthCheck,
+			SorryServer:   current.SorryServer,
+			BindPorts:     current.BindPorts,
+			Servers:       current.Servers,
+			Rules:         current.Rules,
+			LetsEncrypt:   current.LetsEncrypt,
+			StickySession: current.StickySession,
+			Timeout:       current.Timeout,
+			Gzip:          current.Gzip,
+			SettingsHash:  current.SettingsHash,
+		})
+		if err != nil {
+			return err
+		}
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updated"); err != nil {
+			return err
+		}
+	}
+
+	return ctx.Report(handler.HandleResponse_DONE)
+}
+
+func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *handler.ServerGroupInstance, elb *handler.ELB) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
+		return err
+	}
+
+	elbOp := sacloud.NewProxyLBOp(h.APICaller())
+	current, err := elbOp.Read(ctx, types.StringID(elb.Id))
+	if err != nil {
+		return err
+	}
+
+	if len(instance.NetworkInterfaces) == 0 {
+		return ctx.Report(handler.HandleResponse_IGNORED, "instance has no NICs")
+	}
+	nic := instance.NetworkInterfaces[0]
+	if nic.ExposeInfo == nil {
+		return ctx.Report(handler.HandleResponse_IGNORED, "instance.network_interface[0] has no expose info")
+	}
+	exposeInfo := nic.ExposeInfo
+
+	type targetAddress struct {
+		ip   string
+		port int
+	}
+	var targets []*targetAddress
+	for _, port := range exposeInfo.Ports {
+		targets = append(targets, &targetAddress{ip: nic.AssignedNetwork.IpAddress, port: int(port)})
+	}
+
+	shouldUpdate := false
+	var servers []*sacloud.ProxyLBServer
+	for _, s := range current.Servers {
+		exist := false
+		for _, target := range targets {
+			if s.IPAddress == target.ip && s.Port == target.port {
+				shouldUpdate = true
+				exist = true
+				if err := ctx.Report(handler.HandleResponse_RUNNING,
+					"deleted: Server{IP: %s, Port:%d}", target.ip, target.port); err != nil {
+					return err
+				}
+				break
+			}
+		}
+		if !exist {
+			servers = append(servers, s)
+		}
+	}
+
+	if shouldUpdate {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
+			return err
+		}
+		_, err := elbOp.UpdateSettings(ctx, current.ID, &sacloud.ProxyLBUpdateSettingsRequest{
+			HealthCheck:   current.HealthCheck,
+			SorryServer:   current.SorryServer,
+			BindPorts:     current.BindPorts,
+			Servers:       servers,
+			Rules:         current.Rules,
+			LetsEncrypt:   current.LetsEncrypt,
+			StickySession: current.StickySession,
+			Timeout:       current.Timeout,
+			Gzip:          current.Gzip,
+			SettingsHash:  current.SettingsHash,
+		})
+		if err != nil {
+			return err
+		}
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updated"); err != nil {
+			return err
+		}
+	}
+
+	return ctx.Report(handler.HandleResponse_DONE)
 }
