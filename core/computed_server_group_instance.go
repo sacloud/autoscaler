@@ -36,7 +36,7 @@ func (c *computedServerGroupInstance) ID() string {
 	if c.server != nil && !c.server.ID.IsEmpty() {
 		return c.server.ID.String()
 	}
-	return "(known after handle)"
+	return ""
 }
 
 func (c *computedServerGroupInstance) Name() string {
