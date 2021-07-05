@@ -22,6 +22,7 @@ import (
 	"github.com/c-robinson/iplib"
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/helper/query"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -452,6 +453,32 @@ func (m *ServerGroupNICMetadata) Validate(parent ResourceDefinition, nicIndex in
 	}
 
 	return errors.Errors
+}
+
+func (m *ServerGroupNICMetadata) ToExposeInfo() *handler.ServerGroupInstance_ExposeInfo {
+	var ports []uint32
+	for _, p := range m.Ports {
+		ports = append(ports, uint32(p))
+	}
+
+	var healthCheck *handler.ServerGroupInstance_HealthCheck
+	if m.HealthCheck != nil {
+		healthCheck = &handler.ServerGroupInstance_HealthCheck{
+			Protocol:   m.HealthCheck.Protocol,
+			Path:       m.HealthCheck.Path,
+			StatusCode: uint32(m.HealthCheck.StatusCode),
+		}
+	}
+
+	return &handler.ServerGroupInstance_ExposeInfo{
+		Ports:           ports,
+		ServerGroupName: m.ServerGroupName,
+		Weight:          uint32(m.Weight),
+		Vips:            m.VIPs,
+		HealthCheck:     healthCheck,
+		RecordName:      m.RecordName,
+		Ttl:             uint32(m.RecordTTL),
+	}
 }
 
 type ServerGroupNICMetadataHealthCheck struct {
