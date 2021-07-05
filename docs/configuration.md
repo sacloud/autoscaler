@@ -411,6 +411,37 @@ template:
     assign_netmask_len: <int>
     default_route: <string>
     packet_filter_id: <string>
+    
+    # 上流リソースの操作のためのメタデータ
+    # サーバグループの上流にELB/GSLB/LB/DNSを定義している場合のみ指定可能
+    expose:
+      # 公開するポート番号のリスト
+      ports: [ - <number> ] 
+      
+      # ELB向け: 実サーバ登録時のサーバグループ名
+      server_group_name: <string>
+
+      # GSLB向け: 実サーバ登録時の重み値
+      weight: <number>
+
+      # LB向け: 対象VIPのリスト
+      # 省略した場合、このNICと同じネットワーク内に存在するVIP全てが対象となる
+      vips: [ - <string> ]
+      
+      # LB向け: 実サーバ登録時のヘルスチェック
+      health_check:
+        # ヘルスチェックで用いるプロトコル
+        protocol: < "http" | "https" | "ping" | "tcp" >
+        
+        # プロトコルがhttp/httpsの場合のリクエスト先パス 例:/index.html
+        path: <string>
+        # プロトコルがhttp/httpsの場合の期待するレスポンスステータスコード
+        status_code: <number>
+
+      # DNS向け: レコード登録時のレコード名 例:www
+      record_name: <string>
+      # DNS向け: レコード登録時のTTL
+      record_ttl: <number>
 
 # 子リソースの定義(省略可能)
 resources:
