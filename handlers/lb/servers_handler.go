@@ -15,6 +15,9 @@
 package lb
 
 import (
+	"fmt"
+	"net"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
@@ -55,14 +58,21 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Desired) {
-		server := req.Desired.GetServer()
-		lb := server.Parent.GetLoadBalancer()
 		switch req.Instruction {
 		case handler.ResourceInstructions_UPDATE:
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}
-			return h.handle(ctx, server, lb, false)
+			server := req.Desired.GetServer()
+			lb := server.Parent.GetLoadBalancer()
+			return h.attachOrDetach(ctx, server, lb, false)
+		case handler.ResourceInstructions_DELETE:
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+			instance := req.Desired.GetServerGroupInstance()
+			lb := instance.Parent.GetLoadBalancer()
+			return h.deleteServer(ctx, instance, lb)
 		}
 	}
 
@@ -73,15 +83,21 @@ func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handl
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Desired) {
-		server := req.Desired.GetServer()
-		lb := server.Parent.GetLoadBalancer()
 		switch req.Result {
+		case handler.PostHandleRequest_CREATED:
+			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
+				return err
+			}
+			instance := req.Desired.GetServerGroupInstance()
+			lb := instance.Parent.GetLoadBalancer()
+			return h.addServer(ctx, instance, lb)
 		case handler.PostHandleRequest_UPDATED:
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}
-
-			return h.handle(ctx, server, lb, true)
+			server := req.Desired.GetServer()
+			lb := server.Parent.GetLoadBalancer()
+			return h.attachOrDetach(ctx, server, lb, true)
 		}
 	}
 	return ctx.Report(handler.HandleResponse_IGNORED)
@@ -95,10 +111,17 @@ func (h *ServersHandler) shouldHandle(desired *handler.Resource) bool {
 			return parent.GetLoadBalancer() != nil
 		}
 	}
+	instance := desired.GetServerGroupInstance()
+	if instance != nil {
+		parent := instance.Parent
+		if parent != nil {
+			return parent.GetLoadBalancer() != nil
+		}
+	}
 	return false
 }
 
-func (h *ServersHandler) handle(ctx *handlers.HandlerContext, server *handler.Server, lb *handler.LoadBalancer, attach bool) error {
+func (h *ServersHandler) attachOrDetach(ctx *handlers.HandlerContext, server *handler.Server, lb *handler.LoadBalancer, attach bool) error {
 	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
 		return err
 	}
@@ -149,4 +172,204 @@ func (h *ServersHandler) handle(ctx *handlers.HandlerContext, server *handler.Se
 	return ctx.Report(handler.HandleResponse_DONE,
 		"updated: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress,
 	)
+}
+
+func (h *ServersHandler) sameNetwork(ip1 string, mask1 int, ip2 string) (bool, error) {
+	_, net1, err := net.ParseCIDR(fmt.Sprintf("%s/%d", ip1, mask1))
+	if err != nil {
+		return false, err
+	}
+	return net1.Contains(net.ParseIP(ip2)), nil
+}
+
+func (h *ServersHandler) addServerUnderVIP(ctx *handlers.HandlerContext, vip *sacloud.LoadBalancerVirtualIPAddress, ip string, port int, healthCheck *handler.ServerGroupInstance_HealthCheck) (bool, error) {
+	// すでに同じIPアドレスが登録されていないか??
+	exist := false
+	for _, s := range vip.Servers {
+		if s.IPAddress == ip {
+			exist = true
+			if err := ctx.Report(handler.HandleResponse_RUNNING,
+				"skipped: Server{VIP:%s, IP: %s, Port:%d} already exists on ELB", vip.VirtualIPAddress, ip, port); err != nil {
+				return false, err
+			}
+			break
+		}
+	}
+
+	if !exist {
+		vip.Servers = append(vip.Servers, &sacloud.LoadBalancerServer{
+			IPAddress: ip,
+			Port:      types.StringNumber(port),
+			Enabled:   true,
+			HealthCheck: &sacloud.LoadBalancerServerHealthCheck{
+				Protocol:     types.ELoadBalancerHealthCheckProtocol(healthCheck.Protocol),
+				Path:         healthCheck.Path,
+				ResponseCode: types.StringNumber(healthCheck.StatusCode),
+			},
+		})
+		if err := ctx.Report(handler.HandleResponse_RUNNING,
+			"added: Server{VIP:%s, IP: %s, Port:%d}", vip.VirtualIPAddress, ip, port); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+func (h *ServersHandler) addServersUnderVIPs(ctx *handlers.HandlerContext, current *sacloud.LoadBalancer, instance *handler.ServerGroupInstance) (bool, error) {
+	shouldUpdate := false
+	for _, nic := range instance.NetworkInterfaces {
+		if nic.ExposeInfo == nil || len(nic.ExposeInfo.Ports) == 0 || nic.AssignedNetwork == nil {
+			continue
+		}
+
+		fn := func(ip string, port int) error {
+			for _, vip := range h.filteredVIPs(current.VirtualIPAddresses, nic.ExposeInfo) {
+				// 同じネットワーク内にありポートが一致するか?
+				sameNetwork, err := h.sameNetwork(vip.VirtualIPAddress, current.NetworkMaskLen, ip)
+				if err != nil {
+					return err
+				}
+				if !sameNetwork || vip.Port.Int() != port {
+					continue
+				}
+
+				// vip配下に実サーバを追加
+				updated, err := h.addServerUnderVIP(ctx, vip, ip, port, nic.ExposeInfo.HealthCheck)
+				if err != nil {
+					return err
+				}
+				// 1件以上が更新されたらshouldUpdateをtrueにする
+				if updated {
+					shouldUpdate = true
+				}
+			}
+			return nil
+		}
+
+		if err := nic.EachIPAndExposedPort(fn); err != nil {
+			return false, err
+		}
+	}
+	return shouldUpdate, nil
+}
+
+func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handler.ServerGroupInstance, lb *handler.LoadBalancer) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
+		return err
+	}
+
+	lbOp := sacloud.NewLoadBalancerOp(h.APICaller())
+	current, err := lbOp.Read(ctx, lb.Zone, types.StringID(lb.Id))
+	if err != nil {
+		return err
+	}
+
+	if len(instance.NetworkInterfaces) == 0 {
+		return ctx.Report(handler.HandleResponse_IGNORED, "instance has no NICs")
+	}
+
+	// 実サーバを登録
+	shouldUpdate, err := h.addServersUnderVIPs(ctx, current, instance)
+	if err != nil {
+		return err
+	}
+
+	if shouldUpdate {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
+			return err
+		}
+		_, err := lbOp.UpdateSettings(ctx, lb.Zone, current.ID, &sacloud.LoadBalancerUpdateSettingsRequest{
+			VirtualIPAddresses: current.VirtualIPAddresses,
+			SettingsHash:       current.SettingsHash,
+		})
+		if err != nil {
+			return err
+		}
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updated"); err != nil {
+			return err
+		}
+	}
+
+	return ctx.Report(handler.HandleResponse_DONE)
+}
+
+func (h *ServersHandler) filteredVIPs(vips sacloud.LoadBalancerVirtualIPAddresses, exposeInfo *handler.ServerGroupInstance_ExposeInfo) sacloud.LoadBalancerVirtualIPAddresses {
+	if exposeInfo == nil || len(exposeInfo.Vips) == 0 {
+		return vips
+	}
+	var results sacloud.LoadBalancerVirtualIPAddresses
+	for _, vip := range vips {
+		exist := false
+		for _, filter := range exposeInfo.Vips {
+			if vip.VirtualIPAddress == filter {
+				exist = true
+				break
+			}
+		}
+		if exist {
+			results = append(results, vip)
+		}
+	}
+	return results
+}
+
+func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *handler.ServerGroupInstance, lb *handler.LoadBalancer) error {
+	if err := ctx.Report(handler.HandleResponse_RUNNING); err != nil {
+		return err
+	}
+
+	lbOp := sacloud.NewLoadBalancerOp(h.APICaller())
+	current, err := lbOp.Read(ctx, lb.Zone, types.StringID(lb.Id))
+	if err != nil {
+		return err
+	}
+
+	if len(instance.NetworkInterfaces) == 0 {
+		return ctx.Report(handler.HandleResponse_IGNORED, "instance has no NICs")
+	}
+
+	shouldUpdate := false
+	for _, nic := range instance.NetworkInterfaces {
+		fn := func(ip string, port int) error {
+			for _, vip := range h.filteredVIPs(current.VirtualIPAddresses, nic.ExposeInfo) {
+				var servers []*sacloud.LoadBalancerServer
+				for _, server := range vip.Servers {
+					if server.IPAddress == ip && server.Port.Int() == port {
+						shouldUpdate = true
+						if err := ctx.Report(handler.HandleResponse_RUNNING,
+							"deleted: Server{VIP:%s, IP: %s, Port:%d}", vip.VirtualIPAddress, ip, port); err != nil {
+							return err
+						}
+						continue
+					}
+					servers = append(servers, server)
+				}
+				vip.Servers = servers
+			}
+			return nil
+		}
+
+		if err := nic.EachIPAndExposedPort(fn); err != nil {
+			return err
+		}
+	}
+
+	if shouldUpdate {
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
+			return err
+		}
+		_, err := lbOp.UpdateSettings(ctx, lb.Zone, current.ID, &sacloud.LoadBalancerUpdateSettingsRequest{
+			VirtualIPAddresses: current.VirtualIPAddresses,
+			SettingsHash:       current.SettingsHash,
+		})
+		if err != nil {
+			return err
+		}
+		if err := ctx.Report(handler.HandleResponse_RUNNING, "updated"); err != nil {
+			return err
+		}
+	}
+
+	return ctx.Report(handler.HandleResponse_DONE)
 }

@@ -528,6 +528,7 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
+				fmt.Errorf("ports: required when parent is LoadBalancer"),
 				fmt.Errorf("health_check: required when parent is LoadBalancer"),
 			},
 		},
@@ -601,7 +602,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 		{
 			name: "with invalid health_check",
 			expose: &ServerGroupNICMetadata{
-				VIPs: []string{"192.168.0.1"},
+				Ports: []int{80},
+				VIPs:  []string{"192.168.0.1"},
 				HealthCheck: &ServerGroupNICMetadataHealthCheck{
 					Protocol:   "ping",
 					Path:       "/healthz",
