@@ -32,7 +32,7 @@ func NewScalingService(instance *Core) request.ScalingServiceServer {
 }
 
 func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	if err := s.instance.logger.Info("message", "request received", "request-type", requestTypeUp); err != nil {
+	if err := s.instance.logger.Info("request-type", requestTypeUp, "message", "request received"); err != nil {
 		return nil, err
 	}
 	if err := s.instance.logger.Debug("request", req); err != nil {
@@ -59,7 +59,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 }
 
 func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	if err := s.instance.logger.Info("message", "request received", "request-type", requestTypeDown); err != nil {
+	if err := s.instance.logger.Info("request-type", requestTypeDown, "message", "request received"); err != nil {
 		return nil, err
 	}
 	if err := s.instance.logger.Debug("request", req); err != nil {

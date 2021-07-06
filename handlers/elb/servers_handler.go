@@ -198,26 +198,16 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 	if nic.ExposeInfo == nil {
 		return ctx.Report(handler.HandleResponse_IGNORED, "instance.network_interface[0] has no expose info")
 	}
-	exposeInfo := nic.ExposeInfo
-
-	type targetAddress struct {
-		ip   string
-		port int
-	}
-	var targets []*targetAddress
-	for _, port := range exposeInfo.Ports {
-		targets = append(targets, &targetAddress{ip: nic.AssignedNetwork.IpAddress, port: int(port)})
-	}
 
 	shouldUpdate := false
-	for _, target := range targets {
+	fn := func(ip string, port int) error {
 		// 存在しなければ追加する
 		exist := false
 		for _, s := range current.Servers {
-			if s.IPAddress == target.ip && s.Port == target.port {
+			if s.IPAddress == ip && s.Port == port {
 				exist = true
 				if err := ctx.Report(handler.HandleResponse_RUNNING,
-					"skipped: Server{IP: %s, Port:%d} already exists on ELB", s.IPAddress, s.Port); err != nil {
+					"skipped: Server{IP: %s, Port:%d} already exists on ELB", ip, port); err != nil {
 					return err
 				}
 				break
@@ -225,17 +215,21 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 		}
 		if !exist {
 			current.Servers = append(current.Servers, &sacloud.ProxyLBServer{
-				IPAddress:   target.ip,
-				Port:        target.port,
-				ServerGroup: exposeInfo.ServerGroupName,
+				IPAddress:   ip,
+				Port:        port,
+				ServerGroup: nic.ExposeInfo.ServerGroupName,
 				Enabled:     true,
 			})
 			shouldUpdate = true
 			if err := ctx.Report(handler.HandleResponse_RUNNING,
-				"added: Server{IP: %s, Port:%d}", target.ip, target.port); err != nil {
+				"added: Server{IP: %s, Port:%d}", ip, port); err != nil {
 				return err
 			}
 		}
+		return nil
+	}
+	if err := nic.EachIPAndExposedPort(fn); err != nil {
+		return err
 	}
 
 	if shouldUpdate {
@@ -283,35 +277,25 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 	if nic.ExposeInfo == nil {
 		return ctx.Report(handler.HandleResponse_IGNORED, "instance.network_interface[0] has no expose info")
 	}
-	exposeInfo := nic.ExposeInfo
-
-	type targetAddress struct {
-		ip   string
-		port int
-	}
-	var targets []*targetAddress
-	for _, port := range exposeInfo.Ports {
-		targets = append(targets, &targetAddress{ip: nic.AssignedNetwork.IpAddress, port: int(port)})
-	}
 
 	shouldUpdate := false
 	var servers []*sacloud.ProxyLBServer
-	for _, s := range current.Servers {
-		exist := false
-		for _, target := range targets {
-			if s.IPAddress == target.ip && s.Port == target.port {
+	fn := func(ip string, port int) error {
+		for _, s := range current.Servers {
+			if s.IPAddress == ip && s.Port == port {
 				shouldUpdate = true
-				exist = true
 				if err := ctx.Report(handler.HandleResponse_RUNNING,
-					"deleted: Server{IP: %s, Port:%d}", target.ip, target.port); err != nil {
+					"deleted: Server{IP: %s, Port:%d}", ip, port); err != nil {
 					return err
 				}
-				break
+				continue
 			}
-		}
-		if !exist {
 			servers = append(servers, s)
 		}
+		return nil
+	}
+	if err := nic.EachIPAndExposedPort(fn); err != nil {
+		return err
 	}
 
 	if shouldUpdate {

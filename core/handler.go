@@ -21,6 +21,7 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
+	"github.com/sacloud/autoscaler/handlers/dns"
 	"github.com/sacloud/autoscaler/handlers/elb"
 	"github.com/sacloud/autoscaler/handlers/gslb"
 	"github.com/sacloud/autoscaler/handlers/lb"
@@ -37,6 +38,12 @@ type Handlers []*Handler
 // Config.Handlersも参照
 func BuiltinHandlers() Handlers {
 	return Handlers{
+		{
+			Name: "dns-servers-handler",
+			BuiltinHandler: &builtins.Handler{
+				Builtin: dns.NewServersHandler(),
+			},
+		},
 		{
 			Name: "elb-vertical-scaler",
 			BuiltinHandler: &builtins.Handler{
