@@ -28,3 +28,12 @@ func testContext() *RequestContext {
 		resourceGroupName: "web",
 	}, nil, test.Logger)
 }
+
+func testContextDown() *RequestContext {
+	return NewRequestContext(context.Background(), &requestInfo{
+		requestType:       requestTypeDown,
+		source:            "default",
+		action:            "default",
+		resourceGroupName: "web",
+	}, nil, test.Logger)
+}

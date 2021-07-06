@@ -589,3 +589,175 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 		})
 	}
 }
+
+func TestResourceDefServerGroup_desiredPlan(t *testing.T) {
+	type fields struct {
+		MinSize int
+		MaxSize int
+		Plans   []*ServerGroupPlan
+	}
+	type args struct {
+		ctx          *RequestContext
+		currentCount int
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *ServerGroupPlan
+		wantErr bool
+	}{
+		{
+			name: "up without plans / without servers on cloud",
+			fields: fields{
+				MinSize: 0,
+				MaxSize: 1,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContext(),
+				currentCount: 0,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "up without plans / with servers on cloud",
+			fields: fields{
+				MinSize: 0,
+				MaxSize: 1,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContext(),
+				currentCount: 1,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "up without plans / with invalid server count", // max_sizeを超えたサーバがある場合は特に何もしない
+			fields: fields{
+				MinSize: 0,
+				MaxSize: 1,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContext(),
+				currentCount: 2,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 2,
+			},
+			wantErr: false,
+		},
+		{
+			name: "down without plans / without servers on cloud",
+			fields: fields{
+				MinSize: 0,
+				MaxSize: 1,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContextDown(),
+				currentCount: 0,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 0,
+			},
+			wantErr: false,
+		},
+		{
+			name: "down without plans / with servers on cloud",
+			fields: fields{
+				MinSize: 0,
+				MaxSize: 1,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContextDown(),
+				currentCount: 1,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 0,
+			},
+			wantErr: false,
+		},
+		{
+			name: "down without plans / with invalid server state", // max_sizeを超えたサーバがある場合は特に何もしない
+			fields: fields{
+				MinSize: 0,
+				MaxSize: 1,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContextDown(),
+				currentCount: 2,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 2,
+			},
+			wantErr: false,
+		},
+		{
+			name: "up with same min/max size",
+			fields: fields{
+				MinSize: 1,
+				MaxSize: 1,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContext(),
+				currentCount: 0,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "down with same min/max size",
+			fields: fields{
+				MinSize: 1,
+				MaxSize: 1,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContext(),
+				currentCount: 0,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 1,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := &ResourceDefServerGroup{
+				MinSize: tt.fields.MinSize,
+				MaxSize: tt.fields.MaxSize,
+				Plans:   tt.fields.Plans,
+			}
+
+			got, err := d.desiredPlan(tt.args.ctx, tt.args.currentCount)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("desiredPlan() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			require.EqualValues(t, tt.want, got)
+		})
+	}
+}

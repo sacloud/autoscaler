@@ -49,8 +49,17 @@ func (p *ResourcePlans) Sort() {
 //
 // 該当プランが存在しない場合はnilを返す
 func (p *ResourcePlans) Next(resource interface{}) ResourcePlan {
+	plans := *p
+	if len(plans) == 1 {
+		plan := plans[0]
+		if plan.Equals(resource) || !plan.LessThan(resource) {
+			return plan
+		}
+		return nil
+	}
+
 	next := false
-	for _, plan := range *p {
+	for _, plan := range plans {
 		if plan.Equals(resource) || plan.LessThan(resource) {
 			next = true
 			continue
@@ -67,6 +76,14 @@ func (p *ResourcePlans) Next(resource interface{}) ResourcePlan {
 // 該当プランが存在しない場合はnilを返す
 func (p *ResourcePlans) Prev(resource interface{}) ResourcePlan {
 	plans := *p
+	if len(plans) == 1 {
+		plan := plans[0]
+		if plan.Equals(resource) || plan.LessThan(resource) {
+			return plan
+		}
+		return nil
+	}
+
 	var prev ResourcePlan
 	for i, plan := range plans {
 		if i > 0 && (plan.Equals(resource) || !plan.LessThan(resource)) {
