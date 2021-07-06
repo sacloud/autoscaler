@@ -417,6 +417,9 @@ func (m *ServerGroupNICMetadata) Validate(parent ResourceDefinition, nicIndex in
 				errors = multierror.Append(errors, fmt.Errorf(format, "record_ttl", ResourceTypeGSLB))
 			}
 		case ResourceTypeLoadBalancer:
+			if len(m.Ports) == 0 {
+				errors = multierror.Append(errors, fmt.Errorf(requiredFormat, "ports", ResourceTypeLoadBalancer))
+			}
 			if m.HealthCheck == nil {
 				errors = multierror.Append(errors, fmt.Errorf(requiredFormat, "health_check", ResourceTypeLoadBalancer))
 			}
