@@ -160,7 +160,7 @@ func (d *ResourceDefServerGroup) desiredPlan(ctx *RequestContext, currentCount i
 		}
 		return nil, fmt.Errorf("invalid plan: %#v", plan)
 	}
-	return &ServerGroupPlan{Size: currentCount + 1}, nil
+	return &ServerGroupPlan{Size: currentCount}, nil
 }
 
 func (d *ResourceDefServerGroup) resourceIndex(resource Resource) int {
