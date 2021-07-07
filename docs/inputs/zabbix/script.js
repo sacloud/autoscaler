@@ -28,9 +28,6 @@ try {
     if (!params.autoscaler_source) {
         params.autoscaler_source = "default";
     }
-    if (!params.autoscaler_action) {
-        params.autoscaler_action = "default";
-    }
     if (!params.autoscaler_resource_name) {
         params.autoscaler_resource_name = "default";
     }
@@ -39,7 +36,6 @@ try {
     params.autoscaler_endpoint =
         params.autoscaler_endpoint + "/" + params.autoscaler_event_type +
         "?source=" + params.autoscaler_source +
-        "&action=" + params.autoscaler_action +
         "&resource_name=" + params.autoscaler_resource_name;
 
     if (!!params.autoscaler_desired_state_name) {

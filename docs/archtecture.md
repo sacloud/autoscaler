@@ -18,14 +18,18 @@ sacloud/autoscalerは主要コンポーネントを1つの実行ファイルに�
 sacloud/autoscalerの実行ファイルには以下のコンポーネントが含まれています。
 
 - Inputs
-    - Grafana Inputs
-    - AlertManager Inputs
-    - Direct Inputs
+  - AlertManager Inputs
+  - Grafana Inputs
+  - Zabbix Inputs
+  - Direct Inputs
 - Core
 - Handlers
-    - elb-vertical-scaler
-    - elb-servers-handler
-    - gslb-servers-handler
-    - router-vertical-scaler
-    - server-vertical-scaler
+  - dns-servers-handler
+  - elb-vertical-scaler
+  - elb-servers-handler
+  - gslb-servers-handler
+  - load-balancer-servers-handler
+  - router-vertical-scaler
+  - server-horizontal-scaler
+  - server-vertical-scaler
 

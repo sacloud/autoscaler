@@ -25,7 +25,6 @@ Usage:
   autoscaler inputs direct {up | down} [flags]...
 
 Flags:
-      --action string                Name of the action to perform (default "default")
       --desired-state-name string    Name of the desired state defined in Core's configuration file
       --dest string                  Address of the gRPC endpoint of AutoScaler Core (default "unix:autoscaler.sock")
   -h, --help                         help for direct

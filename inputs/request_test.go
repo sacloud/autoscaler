@@ -53,14 +53,6 @@ func TestScalingRequest_Validate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "action",
-			fields: fields{
-				Action: "12",
-			},
-			maxLen:  1,
-			wantErr: true,
-		},
-		{
 			name: "group name",
 			fields: fields{
 				GroupName: "12",
@@ -117,7 +109,6 @@ func TestScalingRequest_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &ScalingRequest{
 				Source:           tt.fields.Source,
-				Action:           tt.fields.Action,
 				ResourceName:     tt.fields.GroupName,
 				RequestType:      tt.fields.RequestType,
 				DesiredStateName: tt.fields.DesiredStateName,

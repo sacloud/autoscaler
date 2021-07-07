@@ -20,10 +20,6 @@
                     <value>default</value>
                 </parameter>
                 <parameter>
-                    <name>autoscaler_action</name>
-                    <value>default</value>
-                </parameter>
-                <parameter>
                     <name>autoscaler_resource_name</name>
                     <value>default</value>
                 </parameter>
@@ -166,9 +162,6 @@ try {&#13;
     if (!params.autoscaler_source) {&#13;
         params.autoscaler_source = &quot;default&quot;;&#13;
     }&#13;
-    if (!params.autoscaler_action) {&#13;
-        params.autoscaler_action = &quot;default&quot;;&#13;
-    }&#13;
     if (!params.autoscaler_resource_name) {&#13;
         params.autoscaler_resource_name = &quot;default&quot;;&#13;
     }&#13;
@@ -177,7 +170,6 @@ try {&#13;
     params.autoscaler_endpoint =&#13;
         params.autoscaler_endpoint + &quot;/&quot; + params.autoscaler_event_type +&#13;
         &quot;?source=&quot; + params.autoscaler_source +&#13;
-        &quot;&amp;action=&quot; + params.autoscaler_action +&#13;
         &quot;&amp;resource-name=&quot; + params.autoscaler_resource_name;&#13;
 &#13;
     if (!!params.autoscaler_desired_state_name) {&#13;

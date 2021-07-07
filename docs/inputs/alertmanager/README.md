@@ -48,13 +48,12 @@ receivers:
 `webhook_configs.url`には以下のパラメータが指定可能です。
 
 - `source`: リクエスト元を識別するための名称。任意の値を利用可能。デフォルト値:`default`
-- `action`: 実行するアクション名。Coreのコンフィギュレーションで定義したアクション名を指定する。デフォルト値:`default`
 - `resource-name`: 操作対象のリソースの名前。Coreのコンフィギュレーションで定義したリソース名を指定する。デフォルト値:`default`
 - `desired-state-name`: 希望する状態の名前。Coreのコンフィギュレーションで定義したプラン名を指定する。特定の時刻に特定のスペックにしたい場合などに利用する。デフォルト値:`""`  
 
 これらのパラメータを複数指定する場合は`&`で繋げて記載します。  
 
-`webhook_configs.url`の記載例: `http://example.com:8080/up?source=grafana&action=action1&resource-name=resource1`
+`webhook_configs.url`の記載例: `http://example.com:8080/up?source=grafana&resource-name=resource1`
 
 
 ## PrometheusのAlert設定
