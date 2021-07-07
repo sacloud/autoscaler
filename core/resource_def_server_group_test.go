@@ -66,10 +66,10 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
+					requestType:  requestTypeUp,
+					source:       "default",
+					action:       "default",
+					resourceName: "default",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -107,10 +107,10 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
+					requestType:  requestTypeUp,
+					source:       "default",
+					action:       "default",
+					resourceName: "default",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -164,10 +164,10 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeDown,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
+					requestType:  requestTypeDown,
+					source:       "default",
+					action:       "default",
+					resourceName: "default",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -212,11 +212,11 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "largest",
+					requestType:      requestTypeUp,
+					source:           "default",
+					action:           "default",
+					resourceName:     "default",
+					desiredStateName: "largest",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -300,11 +300,11 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeDown,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "smallest",
+					requestType:      requestTypeDown,
+					source:           "default",
+					action:           "default",
+					resourceName:     "default",
+					desiredStateName: "smallest",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -349,11 +349,11 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "smallest",
+					requestType:      requestTypeUp,
+					source:           "default",
+					action:           "default",
+					resourceName:     "default",
+					desiredStateName: "smallest",
 				}, nil, test.Logger),
 			},
 			want:    nil,
@@ -381,11 +381,11 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeDown,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "medium",
+					requestType:      requestTypeDown,
+					source:           "default",
+					action:           "default",
+					resourceName:     "default",
+					desiredStateName: "medium",
 				}, nil, test.Logger),
 			},
 			want:    nil,
@@ -413,11 +413,11 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "default",
+					requestType:      requestTypeUp,
+					source:           "default",
+					action:           "default",
+					resourceName:     "default",
+					desiredStateName: "default",
 				}, nil, test.Logger),
 			},
 			want: Resources{

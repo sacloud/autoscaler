@@ -13,7 +13,7 @@ message PreHandleRequest {
   // Inputから引き渡し
   string source              = 1;
   string action              = 2;
-  string resource_group_name = 3;
+  string resource_name       = 3;
 
   // Coreからの指示情報
   string scaling_job_id            = 4;
@@ -26,7 +26,7 @@ message HandleRequest {
   // Inputから引き渡し
   string source              = 1;
   string action              = 2;
-  string resource_group_name = 3;
+  string resource_name       = 3;
 
   // Coreからの指示情報
   string scaling_job_id            = 4;
@@ -48,7 +48,7 @@ message PostHandleRequest {
   // Inputから引き渡し
   string source              = 1;
   string action              = 2;
-  string resource_group_name = 3;
+  string resource_name       = 3;
 
   // Coreからの指示情報
   string scaling_job_id            = 4;

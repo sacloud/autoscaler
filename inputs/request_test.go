@@ -118,7 +118,7 @@ func TestScalingRequest_Validate(t *testing.T) {
 			r := &ScalingRequest{
 				Source:           tt.fields.Source,
 				Action:           tt.fields.Action,
-				GroupName:        tt.fields.GroupName,
+				ResourceName:     tt.fields.GroupName,
 				RequestType:      tt.fields.RequestType,
 				DesiredStateName: tt.fields.DesiredStateName,
 			}

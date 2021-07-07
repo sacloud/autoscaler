@@ -22,18 +22,18 @@ import (
 
 func testContext() *RequestContext {
 	return NewRequestContext(context.Background(), &requestInfo{
-		requestType:       requestTypeUp,
-		source:            "default",
-		action:            "default",
-		resourceGroupName: "web",
+		requestType:  requestTypeUp,
+		source:       "default",
+		action:       "default",
+		resourceName: "web",
 	}, nil, test.Logger)
 }
 
 func testContextDown() *RequestContext {
 	return NewRequestContext(context.Background(), &requestInfo{
-		requestType:       requestTypeDown,
-		source:            "default",
-		action:            "default",
-		resourceGroupName: "web",
+		requestType:  requestTypeDown,
+		source:       "default",
+		action:       "default",
+		resourceName: "web",
 	}, nil, test.Logger)
 }

@@ -199,15 +199,15 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 }
 
 func (c *Core) targetResourceGroup(ctx *RequestContext) (*ResourceDefGroup, error) {
-	groupName := ctx.Request().resourceGroupName
+	groupName := ctx.Request().resourceName
 	if groupName == "" {
-		groupName = defaults.ResourceGroupName
+		groupName = defaults.ResourceName
 	}
 
-	if groupName == defaults.ResourceGroupName {
+	if groupName == defaults.ResourceName {
 		resourceGroups := c.config.Resources.All()
 		if len(resourceGroups) > 1 {
-			return nil, fmt.Errorf("resource group name %q cannot be specified when multiple groups are defined", defaults.ResourceGroupName)
+			return nil, fmt.Errorf("resource group name %q cannot be specified when multiple groups are defined", defaults.ResourceName)
 		}
 
 		return resourceGroups[0], nil

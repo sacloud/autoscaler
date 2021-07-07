@@ -147,11 +147,11 @@ func TestResourceServer2_Compute(t *testing.T) {
 			name: "up",
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "",
+					requestType:      requestTypeUp,
+					source:           "default",
+					action:           "default",
+					resourceName:     "default",
+					desiredStateName: "",
 				}, nil, test.Logger),
 				refresh: false,
 			},
@@ -170,11 +170,11 @@ func TestResourceServer2_Compute(t *testing.T) {
 			name: "down",
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeDown,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "",
+					requestType:      requestTypeDown,
+					source:           "default",
+					action:           "default",
+					resourceName:     "default",
+					desiredStateName: "",
 				}, nil, test.Logger),
 				refresh: false,
 			},

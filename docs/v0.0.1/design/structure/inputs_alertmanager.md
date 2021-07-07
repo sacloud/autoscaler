@@ -40,7 +40,7 @@ AlertManagerが送信するWebhookの構造は以下の通り。
     - パラメータは以下のように指定
         - `source` = `{{ .Inputsのインスタンス名 }}-{{ .groupKey }}` # TODO 要確認
         - `action` = クエリストリングを参照、未指定の場合は`default`
-        - `resource_group_name` = クエリストリングを参照、未指定の場合は`default`
+        - `resource-name` = クエリストリングを参照、未指定の場合は`default`
 
 - `status`が`firing`なリクエストを受け取る都度Coreを呼び出す
     - Core側で同じalert ruleからのwebhookかを`source`で判定し重複処理を防ぐ

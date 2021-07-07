@@ -49,12 +49,12 @@ receivers:
 
 - `source`: リクエスト元を識別するための名称。任意の値を利用可能。デフォルト値:`default`
 - `action`: 実行するアクション名。Coreのコンフィギュレーションで定義したアクション名を指定する。デフォルト値:`default`
-- `resource-group-name`: 操作対象のリソースグループの名前。Coreのコンフィギュレーションで定義したグループ名を指定する。デフォルト値:`default`
+- `resource-name`: 操作対象のリソースの名前。Coreのコンフィギュレーションで定義したリソース名を指定する。デフォルト値:`default`
 - `desired-state-name`: 希望する状態の名前。Coreのコンフィギュレーションで定義したプラン名を指定する。特定の時刻に特定のスペックにしたい場合などに利用する。デフォルト値:`""`  
 
 これらのパラメータを複数指定する場合は`&`で繋げて記載します。  
 
-`webhook_configs.url`の記載例: `http://example.com:8080/up?source=grafana&action=action1&resource-group-name=group1`
+`webhook_configs.url`の記載例: `http://example.com:8080/up?source=grafana&action=action1&resource-name=resource1`
 
 
 ## PrometheusのAlert設定
@@ -78,7 +78,7 @@ groups:
 ```
 
 Note: AutoScalerによる操作でアラート状態が解消できるようなルールを設定してください。  
-AutoScaler Coreは同一の`source`/`action`/`resource-group-name`へのリクエストを冷却期間の間は無視しますが、冷却期間がすぎると再度リクエストを受け付けるようになります。  
+AutoScaler Coreは同一の`resource-name`へのリクエストを冷却期間の間は無視しますが、冷却期間がすぎると再度リクエストを受け付けるようになります。  
 このためアラートの条件設定次第ではスケール動作を繰り返してしまいます。  
 
 ## TLS関連設定

@@ -34,7 +34,7 @@ Zabbixを利用する場合の設定について記載します。
 - `autoscaler_endpoint`: Zabbix Inputsのエンドポイント
 - `autoscaler_source`: リクエスト元を識別するための名称。任意の値を利用可能。デフォルト値:`default`
 - `autoscaler_action`: 実行するアクション名。Coreのコンフィギュレーションで定義したアクション名を指定する。デフォルト値:`default`
-- `autoscaler_resource_group_name`: 操作対象のリソースグループの名前。Coreのコンフィギュレーションで定義したグループ名を指定する。デフォルト値:`default`
+- `autoscaler_resource_name`: 操作対象のリソースの名前。Coreのコンフィギュレーションで定義したリソース名を指定する。デフォルト値:`default`
 - `autoscaler_desired_state_name`: 希望する状態の名前。Coreのコンフィギュレーションで定義したプラン名を指定する。特定の時刻に特定のスペックにしたい場合などに利用する。デフォルト値:`""`  
 
 ## ユーザーへのMediaの追加

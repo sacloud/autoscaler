@@ -7,12 +7,11 @@ Grafana Inputsは起動すると以下2つのWebhook向けエンドポイント�
 - http[s]://example.com/your-inputs-instance-name/up
 - http[s]://example.com/your-inputs-instance-name/down
 
-両エンドポイントともパラメータ`action`と`resource_group_name`を指定する必要がある。  
+両エンドポイントともパラメータ`resource-name`を指定する必要がある。  
 
-指定例: `https://example.com/my-grafana-input/up?action=my_action&resource_group_name=web`
+指定例: `https://example.com/my-grafana-input/up?resource-name=web`
 
-- `action`: 実行するアクションの名前、CoreのConfigurationの`actions`で指定したキーを指定する
-- `resource_group_name`: 処理対象のリソースグループ名、CoreのConfigurationの`resources`で指定したキーを指定する
+- `resource-name`: 処理対象のリソースグループ名、CoreのConfigurationの`resources`で指定したキーを指定する
 
 ### Webhookのハンドリング
 
@@ -52,7 +51,7 @@ Grafanaが送信するWebhookの構造は以下の通り。
   - パラメータは以下のように指定
     - `source` = `{{ .Inputsのインスタンス名 }}-{{ .dashbordId }}-{{ .orgId }}-{{ .panelId }}-{{ .ruleId }}`
     - `action` = クエリストリングを参照、未指定の場合は`default`
-    - `resource_group_name` = クエリストリングを参照、未指定の場合は`default`
+    - `resource-name` = クエリストリングを参照、未指定の場合は`default`
 
 - `state`が`alerting`なリクエストを受け取る都度Coreを呼び出す
   - Core側で同じalert ruleからのwebhookかを`source`で判定し重複処理を防ぐ

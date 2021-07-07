@@ -31,8 +31,8 @@ try {
     if (!params.autoscaler_action) {
         params.autoscaler_action = "default";
     }
-    if (!params.autoscaler_resource_group_name) {
-        params.autoscaler_resource_group_name = "default";
+    if (!params.autoscaler_resource_name) {
+        params.autoscaler_resource_name = "default";
     }
     params.autoscaler_endpoint = (params.autoscaler_endpoint.endsWith('/'))
         ? params.autoscaler_endpoint.slice(0, -1) : params.autoscaler_endpoint;
@@ -40,7 +40,7 @@ try {
         params.autoscaler_endpoint + "/" + params.autoscaler_event_type +
         "?source=" + params.autoscaler_source +
         "&action=" + params.autoscaler_action +
-        "&resource_group_name=" + params.autoscaler_resource_group_name;
+        "&resource_name=" + params.autoscaler_resource_name;
 
     if (!!params.autoscaler_desired_state_name) {
         params.autoscaler_endpoint = params.autoscaler_endpoint + "&desired-state-name=" + params.autoscaler_desired_state_name;

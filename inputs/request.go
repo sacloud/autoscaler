@@ -22,7 +22,7 @@ import (
 type ScalingRequest struct {
 	Source           string `name:"source" validate:"omitempty,printascii,max=1024"`
 	Action           string `name:"action" validate:"omitempty,printascii,max=1024"`
-	GroupName        string `name:"resource-group-name" validate:"omitempty,printascii,max=1024"`
+	ResourceName     string `name:"resource-name" validate:"omitempty,printascii,max=1024"`
 	RequestType      string `name:"request-type" validate:"required,oneof=up down"`
 	DesiredStateName string `name:"desired-state-name" validate:"omitempty,printascii,max=1024"`
 }

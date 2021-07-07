@@ -36,7 +36,7 @@ import (
 var (
 	webhookBodyMaxLen      = int64(64 * 1024) // 64KB
 	allowedQueryStringKeys = []string{
-		"source", "action", "resource-group-name", "desired-state-name",
+		"source", "action", "resource-name", "desired-state-name",
 	}
 )
 
@@ -271,9 +271,9 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRe
 	if action == "" {
 		action = defaults.ActionName
 	}
-	groupName := queryStrings.Get("resource-group-name")
-	if groupName == "" {
-		groupName = defaults.ResourceGroupName
+	resourceName := queryStrings.Get("resource-name")
+	if resourceName == "" {
+		resourceName = defaults.ResourceName
 	}
 	desiredStateName := queryStrings.Get("desired-state-name")
 	if desiredStateName == "" {
@@ -283,7 +283,7 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRe
 	scalingReq := &ScalingRequest{
 		Source:           source,
 		Action:           action,
-		GroupName:        groupName,
+		ResourceName:     resourceName,
 		RequestType:      requestType,
 		DesiredStateName: desiredStateName,
 	}
@@ -349,9 +349,9 @@ func (s *server) send(scalingReq *ScalingRequest) (*request.ScalingResponse, err
 		return nil, fmt.Errorf("invalid request type: %s", scalingReq.RequestType)
 	}
 	return f(ctx, &request.ScalingRequest{
-		Source:            scalingReq.Source,
-		Action:            scalingReq.Action,
-		ResourceGroupName: scalingReq.GroupName,
-		DesiredStateName:  scalingReq.DesiredStateName,
+		Source:           scalingReq.Source,
+		Action:           scalingReq.Action,
+		ResourceName:     scalingReq.ResourceName,
+		DesiredStateName: scalingReq.DesiredStateName,
 	})
 }

@@ -45,11 +45,11 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
 	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
-		requestType:       requestTypeUp,
-		source:            req.Source,
-		action:            req.Action,
-		resourceGroupName: req.ResourceGroupName,
-		desiredStateName:  req.DesiredStateName,
+		requestType:      requestTypeUp,
+		source:           req.Source,
+		action:           req.Action,
+		resourceName:     req.ResourceName,
+		desiredStateName: req.DesiredStateName,
 	}, s.instance.config.AutoScaler.HandlerTLSConfig, s.instance.logger)
 	job, message, err := s.instance.Up(serviceCtx)
 	if err != nil {
@@ -72,11 +72,11 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
 	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
-		requestType:       requestTypeDown,
-		source:            req.Source,
-		action:            req.Action,
-		resourceGroupName: req.ResourceGroupName,
-		desiredStateName:  req.DesiredStateName,
+		requestType:      requestTypeDown,
+		source:           req.Source,
+		action:           req.Action,
+		resourceName:     req.ResourceName,
+		desiredStateName: req.DesiredStateName,
 	}, s.instance.config.AutoScaler.HandlerTLSConfig, s.instance.logger)
 	job, message, err := s.instance.Down(serviceCtx)
 	if err != nil {

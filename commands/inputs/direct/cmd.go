@@ -46,24 +46,24 @@ var Command = &cobra.Command{
 }
 
 type parameter struct {
-	Source            string `name:"--source" validate:"required,printascii,max=1024"`
-	Action            string `name:"--action" validate:"required,printascii,max=1024"`
-	ResourceGroupname string `name:"--resource-group-name" validate:"required,printascii,max=1024"`
-	DesiredStateName  string `name:"--desired-state-name" validate:"omitempty,printascii,max=1024"`
+	Source           string `name:"--source" validate:"required,printascii,max=1024"`
+	Action           string `name:"--action" validate:"required,printascii,max=1024"`
+	ResourceName     string `name:"--resource-name" validate:"required,printascii,max=1024"`
+	DesiredStateName string `name:"--desired-state-name" validate:"omitempty,printascii,max=1024"`
 }
 
 var param = &parameter{
-	Source:            defaults.SourceName,
-	Action:            defaults.ActionName,
-	ResourceGroupname: defaults.ResourceGroupName,
-	DesiredStateName:  "",
+	Source:           defaults.SourceName,
+	Action:           defaults.ActionName,
+	ResourceName:     defaults.ResourceName,
+	DesiredStateName: "",
 }
 
 func init() {
 	flags.SetDestinationFlag(Command)
 	flags.SetInputsConfigFlag(Command)
 	Command.Flags().StringVarP(&param.Action, "action", "", param.Action, "Name of the action to perform")
-	Command.Flags().StringVarP(&param.ResourceGroupname, "resource-group-name", "", param.ResourceGroupname, "Name of the target resource group")
+	Command.Flags().StringVarP(&param.ResourceName, "resource-name", "", param.ResourceName, "Name of the target resource")
 	Command.Flags().StringVarP(&param.Source, "source", "", param.Source, "A string representing the request source, passed to AutoScaler Core")
 	Command.Flags().StringVarP(&param.DesiredStateName, "desired-state-name", "", param.DesiredStateName, "Name of the desired state defined in Core's configuration file")
 }
@@ -106,10 +106,10 @@ func run(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid args: %v", args)
 	}
 	res, err := f(ctx, &request.ScalingRequest{
-		Source:            param.Source,
-		Action:            param.Action,
-		ResourceGroupName: param.ResourceGroupname,
-		DesiredStateName:  param.DesiredStateName,
+		Source:           param.Source,
+		Action:           param.Action,
+		ResourceName:     param.ResourceName,
+		DesiredStateName: param.DesiredStateName,
 	})
 	if err != nil {
 		return err
