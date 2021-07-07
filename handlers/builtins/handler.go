@@ -59,13 +59,14 @@ func (h *Handler) SetAPICaller(caller sacloud.APICaller) {
 
 func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
+	if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
+		return err
+	}
+	if err := logger.Debug("request", req.String()); err != nil {
+		return err
+	}
+
 	if builtin, ok := h.Builtin.(handlers.PreHandler); ok {
-		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
-			return err
-		}
-		if err := logger.Debug("request", req.String()); err != nil {
-			return err
-		}
 		return builtin.PreHandle(req, sender)
 	}
 
@@ -77,13 +78,14 @@ func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.Respo
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
+	if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
+		return err
+	}
+	if err := logger.Debug("request", req.String()); err != nil {
+		return err
+	}
+
 	if builtin, ok := h.Builtin.(handlers.Handler); ok {
-		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
-			return err
-		}
-		if err := logger.Debug("request", req.String()); err != nil {
-			return err
-		}
 		return builtin.Handle(req, sender)
 	}
 
@@ -95,13 +97,14 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 
 func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
+	if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
+		return err
+	}
+	if err := logger.Debug("request", req.String()); err != nil {
+		return err
+	}
+
 	if builtin, ok := h.Builtin.(handlers.PostHandler); ok {
-		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
-			return err
-		}
-		if err := logger.Debug("request", req.String()); err != nil {
-			return err
-		}
 		return builtin.PostHandle(req, sender)
 	}
 
