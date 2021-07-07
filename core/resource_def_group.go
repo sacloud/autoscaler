@@ -37,7 +37,7 @@ func (rdg *ResourceDefGroup) Validate(ctx context.Context, apiClient sacloud.API
 	errors = multierror.Append(errors, rdg.ResourceDefs.Validate(ctx, apiClient)...)
 
 	// set group name prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource def group=%s:", rdg.name)).(*multierror.Error)
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource def group=%s", rdg.name)).(*multierror.Error)
 
 	return errors.Errors
 }

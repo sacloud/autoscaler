@@ -87,7 +87,7 @@ func StructWithMultiError(v interface{}) []error {
 
 func errorFromValidationErr(target interface{}, err validator.FieldError) error {
 	namespaces := strings.Split(err.Namespace(), ".")
-	actualName := strings.Join(namespaces[1:], ".") // .で区切った先頭を除いたもの
+	actualName := namespaces[len(namespaces)-1] // .で区切った末尾の要素
 
 	param := err.Param()
 	detail := err.ActualTag()

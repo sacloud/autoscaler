@@ -79,7 +79,7 @@ func (d *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICall
 	}
 
 	// set prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", d.Type().String())).(*multierror.Error)
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s", d.Type().String())).(*multierror.Error)
 	return errors.Errors
 }
 

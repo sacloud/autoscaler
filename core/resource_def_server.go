@@ -85,7 +85,7 @@ func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APIC
 	}
 
 	// set prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", d.Type().String())).(*multierror.Error)
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s", d.Type().String())).(*multierror.Error)
 	return errors.Errors
 }
 

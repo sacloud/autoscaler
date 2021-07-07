@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
@@ -30,10 +32,11 @@ func (r *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.AP
 
 	fn := func(r ResourceDefinition) error {
 		if err := validate.Struct(r); err != nil {
-			return err
+			return multierror.Prefix(err, fmt.Sprintf("resource=%s", r.Type()))
 		}
 		if errs := r.Validate(ctx, apiClient); len(errs) > 0 {
-			errors = append(errors, errs...)
+			err := multierror.Prefix(&multierror.Error{Errors: errs}, fmt.Sprintf("resource=%s", r.Type())).(*multierror.Error)
+			errors = append(errors, err.Errors...)
 		}
 		return nil
 	}

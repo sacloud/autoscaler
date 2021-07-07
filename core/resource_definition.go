@@ -25,6 +25,7 @@ import (
 // Core起動時のコンフィギュレーションから形成される
 type ResourceDefinition interface {
 	Type() ResourceTypes // リソースの型
+	Name() string
 	String() string
 	Validate(ctx context.Context, apiClient sacloud.APICaller) []error
 
@@ -47,6 +48,7 @@ type ChildResourceDefinition interface {
 // Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceDefBase struct {
 	TypeName string              `yaml:"type" validate:"required,oneof=Server ServerGroup LoadBalancer EnhancedLoadBalancer ELB GSLB DNS"`
+	DefName  string              `yaml:"name" validate:"required"`
 	children ResourceDefinitions `yaml:"-"`
 }
 
@@ -69,6 +71,10 @@ func (r *ResourceDefBase) Type() ResourceTypes {
 	}
 
 	return ResourceTypeLoadBalancer
+}
+
+func (r *ResourceDefBase) Name() string {
+	return r.DefName
 }
 
 // Children 子リソースを返す(自身は含まない)

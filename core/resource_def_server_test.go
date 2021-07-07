@@ -44,7 +44,7 @@ func TestResourceDefServer_Validate(t *testing.T) {
 		}
 		errs := empty.Validate(context.Background(), test.APIClient)
 		require.Len(t, errs, 1)
-		require.EqualError(t, errs[0], "resource=Server: resource not found with selector: ID: , Names: [server-not-found], Zones: [is1a]")
+		require.EqualError(t, errs[0], "resource=Server resource not found with selector: ID: , Names: [server-not-found], Zones: [is1a]")
 	})
 }
 
