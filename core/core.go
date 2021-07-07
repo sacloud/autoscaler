@@ -24,6 +24,7 @@ import (
 	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/metrics"
 	"github.com/sacloud/autoscaler/request"
+	health "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -107,6 +108,7 @@ func (c *Core) run(ctx context.Context) error {
 	}
 	srv := NewScalingService(c)
 	request.RegisterScalingServiceServer(server, srv)
+	health.RegisterHealthServer(server, srv)
 	reflection.Register(server)
 
 	defer func() {

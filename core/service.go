@@ -18,16 +18,20 @@ import (
 	"context"
 
 	"github.com/sacloud/autoscaler/request"
+	"google.golang.org/grpc/codes"
+	health "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/status"
 )
 
 var _ request.ScalingServiceServer = (*ScalingService)(nil)
+var _ health.HealthServer = (*ScalingService)(nil)
 
 type ScalingService struct {
 	request.UnimplementedScalingServiceServer
 	instance *Core
 }
 
-func NewScalingService(instance *Core) request.ScalingServiceServer {
+func NewScalingService(instance *Core) *ScalingService {
 	return &ScalingService{instance: instance}
 }
 
@@ -83,4 +87,16 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 		Status:       job.Status(),
 		Message:      message,
 	}, nil
+}
+
+// Check gRPCヘルスチェックの実装
+func (s *ScalingService) Check(context.Context, *health.HealthCheckRequest) (*health.HealthCheckResponse, error) {
+	return &health.HealthCheckResponse{
+		Status: health.HealthCheckResponse_SERVING,
+	}, nil
+}
+
+// Watch gRPCヘルスチェックの実装
+func (s *ScalingService) Watch(*health.HealthCheckRequest, health.Health_WatchServer) error {
+	return status.Error(codes.Unimplemented, "unimplemented")
 }
