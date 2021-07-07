@@ -1,15 +1,13 @@
 resources:
   web:
-    actions:
-      default:
-        - elb-servers-handler
-        - server-vertical-scaler
     resources:
       - type: ELB
+        name: "elb"
         selector:
           names: ["autoscaler-e2e-test"]
         resources:
           - type: Server
+            name: "server"
             selector:
               names: ["autoscaler-e2e-test"]
               zones: ["is1a"]

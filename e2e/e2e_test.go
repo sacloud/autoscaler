@@ -44,8 +44,8 @@ import (
 const (
 	coreReadyMarker        = `message="autoscaler core started" address=autoscaler.sock`
 	inputsReadyMarker      = `message=started address=127.0.0.1:8080`
-	upJobDoneMarker        = `request-type=Up source=default resource=default action=default status=JOB_DONE`
-	downJobDoneMarker      = `request-type=Down source=default resource=default action=default status=JOB_DONE`
+	upJobDoneMarker        = `request=Up source=default resource=default status=JOB_DONE`
+	downJobDoneMarker      = `request=Down source=default resource=default status=JOB_DONE`
 	inCoolDownTimeMarker   = `job-message="job is in an unacceptable state"`
 	inCoolDownTimeResponse = `"message":"job is in an unacceptable state"`
 )

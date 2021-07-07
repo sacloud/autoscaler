@@ -33,7 +33,7 @@ type RequestContext struct {
 
 // NewRequestContext 新しいリクエストコンテキストを生成する
 func NewRequestContext(parent context.Context, request *requestInfo, tlsConfig *config.TLSStruct, logger *log.Logger) *RequestContext {
-	logger = logger.With("request-type", request.requestType, "source", request.source, "name", request.resourceName)
+	logger = logger.With("request", request.requestType, "source", request.source, "resource", request.resourceName)
 	return &RequestContext{
 		ctx:       parent,
 		request:   request,
