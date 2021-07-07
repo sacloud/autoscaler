@@ -36,6 +36,10 @@ RUN wget https://github.com/sacloud/usacloud/releases/download/v1.1.6/usacloud_l
 RUN unzip usacloud_linux-amd64.zip && rm usacloud_linux-amd64.zip
 RUN mv usacloud /usr/bin/usacloud
 
+# Install grpc_health_probe
+
+RUN go install github.com/grpc-ecosystem/grpc-health-probe@v0.4.2
+
 # Build sacloud/autoscaler
 
 ADD . /go/src/github.com/sacloud/autoscaler

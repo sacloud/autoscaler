@@ -102,6 +102,15 @@ func TestE2E(t *testing.T) {
 		)
 	}
 
+	// grpc-health-probeでSERVINGになっていることを確認
+	out, err := exec.Command("/go/bin/grpc-health-probe", "-addr", "unix:autoscaler.sock").CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), "status: SERVING") {
+		t.Fatalf("grpc-health-prove: unexpected response: %s", string(out))
+	}
+
 	/**************************************************************************
 	 * Step 1-1: スケールアップ
 	 *************************************************************************/
