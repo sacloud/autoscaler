@@ -133,13 +133,12 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 
 	if handleArg.preHandle != nil {
 		if err := handleArg.preHandle(&handler.PreHandleRequest{
-			Source:            req.source,
-			Action:            req.action,
-			ResourceGroupName: req.resourceGroupName,
-			ScalingJobId:      req.ID(),
-			Instruction:       computed.Instruction(),
-			Current:           computed.Current(),
-			Desired:           computed.Desired(),
+			Source:       req.source,
+			ResourceName: req.resourceName,
+			ScalingJobId: req.ID(),
+			Instruction:  computed.Instruction(),
+			Current:      computed.Current(),
+			Desired:      computed.Desired(),
 		}); err != nil {
 			return err
 		}
@@ -147,13 +146,12 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 
 	if handleArg.handle != nil {
 		if err := handleArg.handle(&handler.HandleRequest{
-			Source:            req.source,
-			Action:            req.action,
-			ResourceGroupName: req.resourceGroupName,
-			ScalingJobId:      req.ID(),
-			Instruction:       computed.Instruction(),
-			Current:           computed.Current(),
-			Desired:           computed.Desired(),
+			Source:       req.source,
+			ResourceName: req.resourceName,
+			ScalingJobId: req.ID(),
+			Instruction:  computed.Instruction(),
+			Current:      computed.Current(),
+			Desired:      computed.Desired(),
 		}); err != nil {
 			return err
 		}
@@ -161,13 +159,12 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 
 	if handleArg.postHandle != nil {
 		if err := handleArg.postHandle(&handler.PostHandleRequest{
-			Source:            req.source,
-			Action:            req.action,
-			ResourceGroupName: req.resourceGroupName,
-			ScalingJobId:      req.ID(),
-			Result:            ctx.ComputeResult(computed),
-			Current:           computed.Current(),
-			Desired:           computed.Desired(),
+			Source:       req.source,
+			ResourceName: req.resourceName,
+			ScalingJobId: req.ID(),
+			Result:       ctx.ComputeResult(computed),
+			Current:      computed.Current(),
+			Desired:      computed.Desired(),
 		}); err != nil {
 			return err
 		}

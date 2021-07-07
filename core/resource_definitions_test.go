@@ -17,15 +17,132 @@ package core
 import (
 	"testing"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-
+	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-
 	"github.com/sacloud/autoscaler/handlers/stub"
 	"github.com/sacloud/autoscaler/test"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/stretchr/testify/require"
 )
+
+func TestResourceDefinitions_UnmarshalYAML(t *testing.T) {
+	type args struct {
+		data []byte
+	}
+	tests := []struct {
+		name    string
+		r       ResourceDefinitions
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "unknown key",
+			r:    nil,
+			args: args{
+				data: []byte(`
+- type: Server
+  selector:
+    names: ["test-name"]
+    zones: ["is1a"]
+  unknown_key: "foobar"
+`),
+			},
+			wantErr: true,
+		},
+		{
+			name: "resource group",
+			r: func() ResourceDefinitions {
+				dns := &ResourceDefDNS{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "DNS",
+					},
+					Selector: &ResourceSelector{
+						Names: []string{"test-name"},
+					},
+				}
+				childServer := &ResourceDefServer{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "Server",
+					},
+					Selector: &MultiZoneSelector{
+						ResourceSelector: &ResourceSelector{
+							Names: []string{"test-child"},
+						},
+						Zones: []string{"is1a"},
+					},
+				}
+				childServer.SetParent(dns)
+				dns.children = ResourceDefinitions{childServer}
+
+				return ResourceDefinitions{
+					&ResourceDefServer{
+						ResourceDefBase: &ResourceDefBase{
+							TypeName: "Server",
+						},
+						Selector: &MultiZoneSelector{
+							ResourceSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+							},
+							Zones: []string{"is1a"},
+						},
+						DedicatedCPU: true,
+					},
+					dns,
+					&ResourceDefGSLB{
+						ResourceDefBase: &ResourceDefBase{
+							TypeName: "GSLB",
+						},
+						Selector: &ResourceSelector{
+							Names: []string{"test-name"},
+						},
+					},
+					&ResourceDefELB{
+						ResourceDefBase: &ResourceDefBase{
+							TypeName: "EnhancedLoadBalancer",
+						},
+						Selector: &ResourceSelector{
+							Names: []string{"test-name"},
+						},
+					},
+				}
+			}(),
+			args: args{
+				data: []byte(`
+- type: Server
+  selector:
+    names: ["test-name"]
+    zones: ["is1a"]
+  dedicated_cpu: true
+- type: DNS
+  selector:
+    names: ["test-name"]
+  resources:
+    - type: Server
+      selector:
+        names: ["test-child"]
+        zones: ["is1a"]
+- type: GSLB 
+  selector:
+    names: ["test-name"]
+- type: ELB
+  selector:
+    names: ["test-name"]
+`),
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var target ResourceDefinitions
+			if err := yaml.UnmarshalWithOptions(tt.args.data, &target, yaml.Strict()); (err != nil) != tt.wantErr {
+				t.Errorf("UnmarshalYAML() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			require.EqualValues(t, tt.r, target)
+		})
+	}
+}
 
 func TestResourceDefinitions_HandleAll_havingChildrenDefinitionReturnsMultipleResource(t *testing.T) {
 	ctx := testContext()
@@ -55,7 +172,7 @@ func TestResourceDefinitions_HandleAll_havingChildrenDefinitionReturnsMultipleRe
 			},
 		},
 	}
-	err := defs.HandleAll(ctx, test.APIClient, noopHandlers)
+	err := defs.handleAll(ctx, test.APIClient, noopHandlers, nil, defs)
 	require.True(t, err != nil)
 }
 
@@ -107,7 +224,7 @@ func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
 		},
 	}
 
-	err := defs.HandleAll(ctx, test.APIClient, Handlers{stubHandler})
+	err := defs.handleAll(ctx, test.APIClient, Handlers{stubHandler}, nil, defs)
 	require.NoError(t, err)
 	// 子から先にHandleされているか?
 	require.Equal(t, []string{"server", "dns"}, called)
@@ -123,4 +240,110 @@ var noopHandlers = Handlers{
 			},
 		},
 	},
+}
+
+func TestResourceDefinitions_FilterByResourceName(t *testing.T) {
+	tests := []struct {
+		name         string
+		rds          ResourceDefinitions
+		resourceName string
+		want         ResourceDefinitions
+	}{
+		{
+			name: "minimum",
+			rds: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: nil,
+					},
+				},
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test2",
+					},
+				},
+			},
+			resourceName: "test",
+			want: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: nil,
+					},
+				},
+			},
+		},
+		{
+			name: "not exist",
+			rds: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: nil,
+					},
+				},
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test2",
+					},
+				},
+			},
+			resourceName: "not exist",
+			want:         nil,
+		},
+		{
+			name: "returns parent if child is hit",
+			rds: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: ResourceDefinitions{
+							&stubResourceDef{
+								ResourceDefBase: &ResourceDefBase{
+									TypeName: "stub",
+									DefName:  "child",
+								},
+							},
+						},
+					},
+				},
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test2",
+					},
+				},
+			},
+			resourceName: "test",
+			want: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: ResourceDefinitions{
+							&stubResourceDef{
+								ResourceDefBase: &ResourceDefBase{
+									TypeName: "stub",
+									DefName:  "child",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.rds.FilterByResourceName(tt.resourceName)
+			require.EqualValues(t, tt.want, got)
+		})
+	}
 }

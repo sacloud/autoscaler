@@ -279,7 +279,9 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errs := tt.template.Validate(testContext(), test.APIClient, &ResourceDefServerGroup{
-				Name: "test",
+				ResourceDefBase: &ResourceDefBase{
+					DefName: "test",
+				},
 				Zone: test.Zone,
 			})
 			require.EqualValues(t, tt.want, errs)

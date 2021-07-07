@@ -51,7 +51,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 		{
 			name: "minimum",
 			def: &ResourceDefServerGroup{
-				Name:    "autoscaler",
+				ResourceDefBase: &ResourceDefBase{
+					DefName: "autoscaler",
+				},
 				Zone:    test.Zone,
 				MinSize: 1,
 				MaxSize: 1,
@@ -64,10 +66,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
+					requestType:  requestTypeUp,
+					source:       "default",
+					resourceName: "autoscaler",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -90,7 +91,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 		{
 			name: "scale up",
 			def: &ResourceDefServerGroup{
-				Name:    "resource-def-server-test",
+				ResourceDefBase: &ResourceDefBase{
+					DefName: "resource-def-server-test",
+				},
 				Zone:    test.Zone,
 				MinSize: 1,
 				MaxSize: 3,
@@ -103,10 +106,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
+					requestType:  requestTypeUp,
+					source:       "default",
+					resourceName: "resource-def-server-test",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -145,7 +147,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 		{
 			name: "scale down",
 			def: &ResourceDefServerGroup{
-				Name:    "resource-def-server-test",
+				ResourceDefBase: &ResourceDefBase{
+					DefName: "resource-def-server-test",
+				},
 				Zone:    test.Zone,
 				MinSize: 1,
 				MaxSize: 3,
@@ -158,10 +162,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeDown,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
+					requestType:  requestTypeDown,
+					source:       "default",
+					resourceName: "resource-def-server-test",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -187,7 +190,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 		{
 			name: "scale up with named plans",
 			def: &ResourceDefServerGroup{
-				Name:    "resource-def-server-test",
+				ResourceDefBase: &ResourceDefBase{
+					DefName: "resource-def-server-test",
+				},
 				Zone:    test.Zone,
 				MinSize: 1,
 				MaxSize: 5,
@@ -204,11 +209,10 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "largest",
+					requestType:      requestTypeUp,
+					source:           "default",
+					resourceName:     "resource-def-server-test",
+					desiredStateName: "largest",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -273,7 +277,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 		{
 			name: "scale down with named plans",
 			def: &ResourceDefServerGroup{
-				Name:    "resource-def-server-test",
+				ResourceDefBase: &ResourceDefBase{
+					DefName: "resource-def-server-test",
+				},
 				Zone:    test.Zone,
 				MinSize: 1,
 				MaxSize: 5,
@@ -290,11 +296,10 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeDown,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "smallest",
+					requestType:      requestTypeDown,
+					source:           "default",
+					resourceName:     "resource-def-server-test",
+					desiredStateName: "smallest",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -320,7 +325,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 		{
 			name: "scale up without valid named plan",
 			def: &ResourceDefServerGroup{
-				Name:    "resource-def-server-test",
+				ResourceDefBase: &ResourceDefBase{
+					DefName: "resource-def-server-test",
+				},
 				Zone:    test.Zone,
 				MinSize: 1,
 				MaxSize: 5,
@@ -337,11 +344,10 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "smallest",
+					requestType:      requestTypeUp,
+					source:           "default",
+					resourceName:     "resource-def-server-test",
+					desiredStateName: "smallest",
 				}, nil, test.Logger),
 			},
 			want:    nil,
@@ -350,7 +356,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 		{
 			name: "scale down without valid named plan",
 			def: &ResourceDefServerGroup{
-				Name:    "resource-def-server-test",
+				ResourceDefBase: &ResourceDefBase{
+					DefName: "resource-def-server-test",
+				},
 				Zone:    test.Zone,
 				MinSize: 1,
 				MaxSize: 5,
@@ -367,11 +375,10 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeDown,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "medium",
+					requestType:      requestTypeDown,
+					source:           "default",
+					resourceName:     "resource-def-server-test",
+					desiredStateName: "medium",
 				}, nil, test.Logger),
 			},
 			want:    nil,
@@ -380,7 +387,9 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 		{
 			name: "scale up with named plans without desired state name",
 			def: &ResourceDefServerGroup{
-				Name:    "resource-def-server-test",
+				ResourceDefBase: &ResourceDefBase{
+					DefName: "resource-def-server-test",
+				},
 				Zone:    test.Zone,
 				MinSize: 1,
 				MaxSize: 5,
@@ -397,11 +406,10 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			args: args{
 				ctx: NewRequestContext(context.Background(), &requestInfo{
-					requestType:       requestTypeUp,
-					source:            "default",
-					action:            "default",
-					resourceGroupName: "default",
-					desiredStateName:  "default",
+					requestType:      requestTypeUp,
+					source:           "default",
+					resourceName:     "resource-def-server-test",
+					desiredStateName: "default",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -469,8 +477,8 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: "ServerGroup",
+					DefName:  "test",
 				},
-				Name:    "test",
 				Zone:    "is1a",
 				MinSize: 2,
 				MaxSize: 1,
@@ -491,8 +499,8 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: "ServerGroup",
+					DefName:  "test",
 				},
-				Name:    "test",
 				Zone:    "is1a",
 				MinSize: 1,
 				MaxSize: 1,
@@ -581,7 +589,9 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d := &ResourceDefServerGroup{
-				Name: tt.defName,
+				ResourceDefBase: &ResourceDefBase{
+					DefName: tt.defName,
+				},
 			}
 			got, index := d.determineServerName(tt.resources)
 			require.EqualValues(t, tt.want, got)
@@ -747,6 +757,10 @@ func TestResourceDefServerGroup_desiredPlan(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d := &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					DefName:  "default",
+					TypeName: "ServerGroup",
+				},
 				MinSize: tt.fields.MinSize,
 				MaxSize: tt.fields.MaxSize,
 				Plans:   tt.fields.Plans,

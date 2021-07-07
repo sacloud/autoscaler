@@ -184,44 +184,32 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	ctx = ctx.WithJobStatus(job)
 
 	//対象リソースグループを取得
-	rdg, err := c.targetResourceGroup(ctx)
+	rds, err := c.targetResourceDef(ctx)
 	if err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
 		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
 		return job, "", err
 	}
 
-	if err := rdg.ValidateActions(ctx.Request().action, c.config.Handlers()); err != nil {
-		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
-		return job, "", err
-	}
-
-	go rdg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
+	go rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) // nolint
 	return job, "", nil
 }
 
-func (c *Core) targetResourceGroup(ctx *RequestContext) (*ResourceDefGroup, error) {
-	groupName := ctx.Request().resourceGroupName
-	if groupName == "" {
-		groupName = defaults.ResourceGroupName
+func (c *Core) ResourceName(name string) string {
+	if name == "" || name == defaults.ResourceName {
+		name = c.config.Resources[0].Name()
 	}
+	return name
+}
 
-	if groupName == defaults.ResourceGroupName {
-		resourceGroups := c.config.Resources.All()
-		if len(resourceGroups) > 1 {
-			return nil, fmt.Errorf("resource group name %q cannot be specified when multiple groups are defined", defaults.ResourceGroupName)
-		}
-
-		return resourceGroups[0], nil
+func (c *Core) targetResourceDef(ctx *RequestContext) (ResourceDefinitions, error) {
+	name := ctx.Request().resourceName
+	defs := c.config.Resources.FilterByResourceName(name)
+	if len(defs) > 0 {
+		return defs, nil
 	}
-
-	rg, ok := c.config.Resources.GetOk(groupName)
-	if !ok {
-		return nil, fmt.Errorf("resource group %q not found", groupName)
-	}
-	return rg, nil
+	return nil, fmt.Errorf("resource %q not found", name)
 }

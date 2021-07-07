@@ -25,7 +25,7 @@ import (
 
 // JobStatus スケールアウト/イン/アップ/ダウンなどの各種ジョブを表す
 //
-// Inputsからのリクエストパラメータ Source/Action/ResourceGroupNameごとに作成される
+// Inputsからのリクエストパラメータ ResourceNameごとに作成される
 type JobStatus struct {
 	requestType   RequestTypes
 	id            string

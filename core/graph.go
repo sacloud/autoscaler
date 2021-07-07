@@ -22,13 +22,13 @@ import (
 )
 
 type Graph struct {
-	defGroups *ResourceDefGroups
+	resources ResourceDefinitions
 	children  []tree.Node
 }
 
-func NewGraph(defGroups *ResourceDefGroups) *Graph {
+func NewGraph(resources ResourceDefinitions) *Graph {
 	return &Graph{
-		defGroups: defGroups,
+		resources: resources,
 	}
 }
 
@@ -42,16 +42,12 @@ func (n *Graph) Children() []tree.Node {
 
 func (g *Graph) Tree(ctx *RequestContext, apiClient sacloud.APICaller) (string, error) {
 	g.children = []tree.Node{}
-	for _, group := range g.defGroups.All() {
-		groupNode := &GroupNode{name: group.name}
-		for _, def := range group.ResourceDefs {
-			nodes, err := g.nodes(ctx, apiClient, def)
-			if err != nil {
-				return "", err
-			}
-			groupNode.children = append(groupNode.children, nodes...)
+	for _, def := range g.resources {
+		nodes, err := g.nodes(ctx, apiClient, def)
+		if err != nil {
+			return "", err
 		}
-		g.children = append(g.children, groupNode)
+		g.children = append(g.children, nodes...)
 	}
 	return tree.SprintHrn(g), nil
 }

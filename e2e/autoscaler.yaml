@@ -1,26 +1,22 @@
 resources:
-  web:
-    actions:
-      default:
-        - elb-servers-handler
-        - server-vertical-scaler
+  - type: ELB
+    name: "elb"
+    selector:
+      names: ["autoscaler-e2e-test"]
     resources:
-      - type: ELB
+      - type: Server
+        name: "server"
         selector:
           names: ["autoscaler-e2e-test"]
-        resources:
-          - type: Server
-            selector:
-              names: ["autoscaler-e2e-test"]
-              zones: ["is1a"]
-            option:
-              shutdown_force: true
-            plans:
-              - core: 1
-                memory: 1
-              - core: 2
-                memory: 2
-              - core: 4
-                memory: 4
+          zones: ["is1a"]
+        option:
+          shutdown_force: true
+        plans:
+          - core: 1
+            memory: 1
+          - core: 2
+            memory: 2
+          - core: 4
+            memory: 4
 autoscaler:
   cooldown: 30

@@ -56,11 +56,10 @@ func TestHandler_Handle(t *testing.T) {
 			name: "scale up",
 			args: args{
 				req: &handler.HandleRequest{
-					Source:            "default",
-					Action:            "default",
-					ResourceGroupName: "default",
-					ScalingJobId:      "1",
-					Instruction:       handler.ResourceInstructions_UPDATE,
+					Source:       "default",
+					ResourceName: "default",
+					ScalingJobId: "1",
+					Instruction:  handler.ResourceInstructions_UPDATE,
 					Desired: &handler.Resource{
 						Resource: &handler.Resource_Server{
 							Server: &handler.Server{

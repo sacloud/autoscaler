@@ -6,32 +6,22 @@ sacloud/autoscalerのコンフィギュレーションファイルはYAML形式�
 
 ```yaml
 # 操作対象のリソースの定義
+# スケールさせたいリソース群をここで定義する
 resources:
-  web: # リソースグループの名前、任意の名称を指定可能
-    
-    # アクションの定義: Up/Downリクエスト時に指定するアクション名をここで定義する
-    # アクションごとにハンドラーを限定したい場合に利用したいハンドラーを指定する
-    # actions:
-    #   server-vertical-scaling:
-    #     - server-vertical-scaler
-    #     - elb-servers-handler
-    #   elb-vertical-scaling:
-    #     - elb-vertical-scaler
-
-    # スケールさせたいリソース群をここで定義する
+  # GSLB(配下のサーバが垂直スケールする際にサーバのデタッチ&アタッチが行われる)
+  - type: GSLB
+    name: "gslb"
+    selector:
+      names: ["example-gslb"]
     resources:
-      # GSLB(配下のサーバが垂直スケールする際にサーバのデタッチ&アタッチが行われる)
-      - type: GSLB
+      # サーバ(垂直スケール)
+      - type: Server
+        naem: "server"
         selector:
-          names: ["example-gslb"]
-        resources:
-          # サーバ(垂直スケール)
-          - type: Server
-            selector:
-              names: ["example"]
-              zones: ["is1a"]
-            option:
-              shutdown_force: true
+          names: ["example"]
+          zones: ["is1a"]
+        option:
+          shutdown_force: true
 
 # カスタムハンドラーの定義
 # handlers:
@@ -53,7 +43,7 @@ autoscaler:
 ```yaml
 # オートスケール対象リソースの定義
 resources:
-  <resource_def_groups>
+  [ - <resource_definition> ]
 
 # カスタムハンドラーのリスト(省略可能)
 handlers: 
@@ -74,56 +64,17 @@ sakuracloud:
 
 ## 各要素の詳細
 
-- [\<resource_def_groups\>](#resource_def_groups)
-  - [\<resource_def_group\>](#resource_def_group)
-    - [\<action\>](#action)
-    - [\<resource_definition\>](#resource_definition) 
-      - [\<resource_def_dns\>](#resource_def_dns)
-      - [\<resource_def_elb\>](#resource_def_elb)
-      - [\<resource_def_gslb\>](#resource_def_gslb)
-      - [\<resource_def_load_balancer\>](#resource_def_load_balancer)
-      - [\<resource_def_router\>](#resource_def_router)
-      - [\<resource_def_server\>](#resource_def_server)
-      - [\<resource_def_server_group\>](#resource_def_server_group)
+- [\<resource_definition\>](#resource_definition) 
+  - [\<resource_def_dns\>](#resource_def_dns)
+  - [\<resource_def_elb\>](#resource_def_elb)
+  - [\<resource_def_gslb\>](#resource_def_gslb)
+  - [\<resource_def_load_balancer\>](#resource_def_load_balancer)
+  - [\<resource_def_router\>](#resource_def_router)
+  - [\<resource_def_server\>](#resource_def_server)
+  - [\<resource_def_server_group\>](#resource_def_server_group)
 - [\<handler\>](#handler)
 - [\<autoscaler_config\>](#autoscaler_config)
 - 
-
-### \<resource_def_groups\>
-
-操作したいさくらのクラウド上のリソースのグループ(リソースグループ)を定義します。
-グループ名とresource_def_groupのmapとして指定します。
-
-ここで指定したグループ名はInputsから処理対象のリソースを指定するパラメータとして利用されます。  
-
-```yaml
-{ <string> : <resource_def_group> }
-```
-
-### \<resource_def_group\>
-
-このリソースグループに対するアクションと対象リソースを定義します。
-
-```yaml
-# アクションのリスト(省略可能)
-actions: 
-  [ - <action> ]
-
-# 操作対象リソース定義のリスト(必須)
-resources:
-  [ - <resource_definition> ]
-```
-
-### \<action\>
-
-リソースグループに対し、有効にするハンドラーの組み合わせを定義します。  
-アクション名とハンドラ名のリストのmapとして指定します。
-ここで指定したアクション名はInputsから処理対象のアクションを指定するパラメータとして利用されます。  
-ハンドラー名にはビルトインハンドラーの名前、もしくはトップレベルの\<handlers\>で指定したカスタムハンドラーの名前を指定可能です。
-
-```yaml
-{ <string> : [ - <string> ] }
-```
 
 ### \<resource_definition\>
 
@@ -140,6 +91,7 @@ DNSリソースの定義
 
 ```yaml
 type: "DNS"
+name: <string>
 selector:
   # idかnamesのどちらかを指定、必須
   id: <string | number>
@@ -161,6 +113,7 @@ resources:
 
 ```yaml
 type: "ELB" # or EnhancedLoadBalancer
+name: <string>
 selector:
   # idかnamesのどちらかを指定、必須
   id: <string | number>
@@ -199,6 +152,7 @@ GSLBの定義。
 
 ```yaml
 type: "GSLB"
+name: <string>
 selector:
   # idかnamesのどちらかを指定、必須
   id: <string | number>
@@ -219,6 +173,7 @@ resources:
 
 ```yaml
 type: "LoadBalancer"
+name: <string>
 selector:
   # idかnamesのどちらかを指定、必須
   id: <string | number>
@@ -239,7 +194,8 @@ resources:
 ここで定義したリソースは垂直スケール可能になります(ハンドラ`router-vertical-scaler`)。  
 
 ```yaml
-type: "Router" 
+type: "Router"
+name: <string>
 selector:
   # idかnamesのどちらかを指定、必須
   id: <string | number>
@@ -282,7 +238,8 @@ plans:
 ここで定義したリソースは垂直スケール可能になります(ハンドラ`server-vertical-scaler`)。
 
 ```yaml
-type: "Server" 
+type: "Server"
+name: <string>
 selector:
   # idかnamesのどちらかを指定、必須
   id: <string | number>
@@ -340,9 +297,7 @@ plans:
 
 ```yaml
 type: "ServerGroup"
-  
-# グループ名、グループ内の各サーバ名のプレフィックスとなる
-name: <string>
+name: <string> #グループ内の各サーバ名のプレフィックスとなる
 zone: <"is1a" | "is1b" | "tk1a" | "tk1b" | "tk1v">
   
 # 最小/最大サーバ数

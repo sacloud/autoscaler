@@ -29,7 +29,6 @@ import (
 type ResourceDefServerGroup struct {
 	*ResourceDefBase `yaml:",inline" validate:"required"`
 
-	Name string `yaml:"name" validate:"required"` // {{ .Name }}{{ .Number }}
 	Zone string `yaml:"zone" validate:"required,zone"`
 
 	MinSize int `yaml:"min_size" validate:"min=0,ltefield=MaxSize"`
@@ -44,7 +43,7 @@ type ResourceDefServerGroup struct {
 }
 
 func (d *ResourceDefServerGroup) String() string {
-	return fmt.Sprintf("Zone: %s, Name: %s", d.Zone, d.Name)
+	return fmt.Sprintf("Zone: %s, Name: %s", d.Zone, d.Name())
 }
 
 func (d *ResourceDefServerGroup) Parent() ResourceDefinition {
@@ -65,7 +64,7 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud
 	errors = multierror.Append(errors, d.Template.Validate(ctx, apiClient, d)...)
 
 	// set prefix
-	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s:", d.Type().String())).(*multierror.Error)
+	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s", d.Type().String())).(*multierror.Error)
 	return errors.Errors
 }
 
@@ -149,6 +148,9 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 }
 
 func (d *ResourceDefServerGroup) desiredPlan(ctx *RequestContext, currentCount int) (*ServerGroupPlan, error) {
+	if ctx.Request().resourceName != d.Name() {
+		return &ServerGroupPlan{Size: currentCount}, nil
+	}
 	plans := d.resourcePlans()
 	plan, err := desiredPlan(ctx, currentCount, plans)
 	if err != nil {
@@ -175,7 +177,7 @@ func (d *ResourceDefServerGroup) resourceIndex(resource Resource) int {
 
 func (d *ResourceDefServerGroup) serverNameByIndex(index int) string {
 	nameFormat := "%s-%03d" // TODO フォーマット指定可能にする
-	return fmt.Sprintf(nameFormat, d.Name, index+1)
+	return fmt.Sprintf(nameFormat, d.Name(), index+1)
 }
 
 func (d *ResourceDefServerGroup) determineServerName(resources Resources) (string, int) {
@@ -197,7 +199,7 @@ func (d *ResourceDefServerGroup) determineServerName(resources Resources) (strin
 
 func (d *ResourceDefServerGroup) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.Server, error) {
 	serverOp := sacloud.NewServerOp(apiClient)
-	selector := &ResourceSelector{Names: []string{d.Name}}
+	selector := &ResourceSelector{Names: []string{d.Name()}}
 	found, err := serverOp.Find(ctx, d.Zone, selector.findCondition())
 	if err != nil {
 		return nil, fmt.Errorf("computing status failed: %s", err)

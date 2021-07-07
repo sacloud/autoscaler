@@ -27,7 +27,7 @@ func TestConfig_Load(t *testing.T) {
 	type fields struct {
 		SakuraCloud *SakuraCloud
 		Handlers    Handlers
-		Resources   *ResourceDefGroups
+		Resources   ResourceDefinitions
 		AutoScaler  AutoScalerConfig
 	}
 	type args struct {
@@ -54,26 +54,21 @@ func TestConfig_Load(t *testing.T) {
 						Endpoint: "unix:autoscaler-handlers-fake.sock",
 					},
 				},
-				Resources: func() *ResourceDefGroups {
-					rgs := newResourceDefGroups()
-					rg := &ResourceDefGroup{}
-					rg.ResourceDefs = ResourceDefinitions{
-						&ResourceDefServer{
-							ResourceDefBase: &ResourceDefBase{
-								TypeName: "Server",
-							},
-							Selector: &MultiZoneSelector{
-								ResourceSelector: &ResourceSelector{
-									Names: []string{"test-name"},
-								},
-								Zones: []string{"is1a"},
-							},
-							DedicatedCPU: true,
+				Resources: ResourceDefinitions{
+					&ResourceDefServer{
+						ResourceDefBase: &ResourceDefBase{
+							DefName:  "test-name",
+							TypeName: "Server",
 						},
-					}
-					rgs.Set("web", rg)
-					return rgs
-				}(),
+						Selector: &MultiZoneSelector{
+							ResourceSelector: &ResourceSelector{
+								Names: []string{"test-name"},
+							},
+							Zones: []string{"is1a"},
+						},
+						DedicatedCPU: true,
+					},
+				},
 				AutoScaler: AutoScalerConfig{
 					CoolDownSec: 30,
 					ServerTLSConfig: &config.TLSStruct{
@@ -108,13 +103,12 @@ handlers:
   - name: "fake"
     endpoint: "unix:autoscaler-handlers-fake.sock"
 resources:
-  web: 
-    resources:
-      - type: Server
-        selector:
-          names: ["test-name"]
-          zones: ["is1a"]
-        dedicated_cpu: true
+  - type: Server
+    name: "test-name"
+    selector:
+      names: ["test-name"]
+      zones: ["is1a"]
+    dedicated_cpu: true
 autoscaler:
   cooldown: 30
   server_tls_config:

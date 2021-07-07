@@ -33,10 +33,10 @@ import (
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
 type Config struct {
-	SakuraCloud    *SakuraCloud       `yaml:"sakuracloud"`                   // さくらのクラウドAPIのクレデンシャル
-	CustomHandlers Handlers           `yaml:"handlers"`                      // カスタムハンドラーの定義
-	Resources      *ResourceDefGroups `yaml:"resources" validate:"required"` // リソースグループの定義
-	AutoScaler     AutoScalerConfig   `yaml:"autoscaler"`                    // オートスケーラー自体の動作設定
+	SakuraCloud    *SakuraCloud        `yaml:"sakuracloud"`                   // さくらのクラウドAPIのクレデンシャル
+	CustomHandlers Handlers            `yaml:"handlers"`                      // カスタムハンドラーの定義
+	Resources      ResourceDefinitions `yaml:"resources" validate:"required"` // リソースの定義
+	AutoScaler     AutoScalerConfig    `yaml:"autoscaler"`                    // オートスケーラー自体の動作設定
 }
 
 // NewConfigFromPath 指定のファイルパスからコンフィギュレーションを読み取ってConfigを作成する
@@ -87,11 +87,15 @@ func (c *Config) APIClient() sacloud.APICaller {
 //
 // ビルトインハンドラはAPIクライアントが注入された状態で返される
 func (c *Config) Handlers() Handlers {
-	handlers := BuiltinHandlers()
-	for _, h := range handlers {
+	var handlers Handlers
+	for _, h := range BuiltinHandlers() {
+		if h.Disabled {
+			continue
+		}
 		if h, ok := h.BuiltinHandler.(builtins.SakuraCloudAPICaller); ok {
 			h.SetAPICaller(c.SakuraCloud.APIClient())
 		}
+		handlers = append(handlers, h)
 	}
 	return append(handlers, c.CustomHandlers...)
 }
@@ -113,7 +117,7 @@ func (c *Config) Validate(ctx context.Context) error {
 
 	// Resources
 	errors := &multierror.Error{}
-	if errs := c.Resources.Validate(ctx, c.APIClient(), c.Handlers()); len(errs) > 0 {
+	if errs := c.Resources.Validate(ctx, c.APIClient()); len(errs) > 0 {
 		errors = multierror.Append(errors, errs...)
 	}
 

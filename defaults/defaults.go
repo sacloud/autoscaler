@@ -22,10 +22,9 @@ const (
 	CoreExporterAddr = ":8081"                // CoreのExporterがリッスンするデフォルトのアドレス
 	ListenAddress    = ":8080"                // Inputsがリッスンするデフォルトのアドレス
 
-	ActionName        = "default"
-	ResourceGroupName = "default"
-	SourceName        = "default"
-	DesiredStateName  = "default"
+	ResourceName     = "default"
+	SourceName       = "default"
+	DesiredStateName = "default"
 
 	CoolDownTime = 10 * time.Minute // 同一ジョブの実行制御のための冷却期間
 )

@@ -26,6 +26,8 @@ sacloud/autoscalerはGrafanaやAlertManagerなどの監視ツールからのWebh
 - `gslb-servers-handler`: GSLB配下のサーバのデタッチ/アタッチ
 - `load-balancer-servers-handler`: LB配下のサーバのデタッチ/アタッチ
   
+- `dns-servers-handler`: サーバが水平スケールする際のAレコード登録/削除
+  
 #### 水平スケール系
 
 - `server-horizontal-scaler`: サーバの水平スケール

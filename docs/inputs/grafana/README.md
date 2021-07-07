@@ -29,13 +29,12 @@ AutoScaler CoreへのUpまたはDownリクエストを送信するためのWebho
 Urlには以下のパラメータが指定可能です。
 
 - `source`: リクエスト元を識別するための名称。任意の値を利用可能。デフォルト値:`default`
-- `action`: 実行するアクション名。Coreのコンフィギュレーションで定義したアクション名を指定する。デフォルト値:`default`
-- `resource-group-name`: 操作対象のリソースグループの名前。Coreのコンフィギュレーションで定義したグループ名を指定する。デフォルト値:`default`
+- `resource-name`: 操作対象のリソースの名前。Coreのコンフィギュレーションで定義したリソース名を指定する。デフォルト値:`default`
 - `desired-state-name`: 希望する状態の名前。Coreのコンフィギュレーションで定義したプラン名を指定する。特定の時刻に特定のスペックにしたい場合などに利用する。デフォルト値:`""`  
 
 これらのパラメータを複数指定する場合は`&`で繋げて記載します。  
 
-Urlの記載例: `http://example.com:8080/up?source=grafana&action=action1&resource-group-name=group1`
+Urlの記載例: `http://example.com:8080/up?source=grafana&resource-name=resource1`
 
 #### Config Fileによるプロビジョニングを行う場合の例
 
@@ -54,7 +53,7 @@ notifiers:
       autoResolve: true
       httpMethod: "POST"
       uploadImage: false
-      url: "http://example.com:8080/up?source=grafana&action=action1&resource-group-name=group1"
+      url: "http://example.com:8080/up?source=grafana&resource-name=resource1"
 ```
 
 #### APIで登録する場合の例
@@ -78,7 +77,7 @@ Authorization: Bearer eyJrIjoiT0tTcG1pUlY2RnVKZTFVaDFsNFZXdE9ZWmNrMkZYbk
     "autoResolve": true,
     "httpMethod": "POST",
     "uploadImage": false,
-    "url": "http://example.com:8080/up?source=grafana&action=action1&resource-group-name=group1"
+    "url": "http://example.com:8080/up?source=grafana&resource-name=resource1"
   }
 }
 ```
@@ -86,7 +85,7 @@ Authorization: Bearer eyJrIjoiT0tTcG1pUlY2RnVKZTFVaDFsNFZXdE9ZWmNrMkZYbk
 ## GrafanaでのAlert設定
 
 Note: AutoScalerによる操作でアラート状態が解消できるようなルールを設定してください。  
-AutoScaler Coreは同一の`source`/`action`/`resource-group-name`へのリクエストを冷却期間の間は無視しますが、冷却期間がすぎると再度リクエストを受け付けるようになります。  
+AutoScaler Coreは同一の`resource-group-name`へのリクエストを冷却期間の間は無視しますが、冷却期間がすぎると再度リクエストを受け付けるようになります。  
 このためアラートの条件設定次第ではスケール動作を繰り返してしまいます。  
 
 ## TLS関連設定

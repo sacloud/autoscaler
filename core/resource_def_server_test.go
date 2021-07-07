@@ -44,7 +44,7 @@ func TestResourceDefServer_Validate(t *testing.T) {
 		}
 		errs := empty.Validate(context.Background(), test.APIClient)
 		require.Len(t, errs, 1)
-		require.EqualError(t, errs[0], "resource=Server: resource not found with selector: ID: , Names: [server-not-found], Zones: [is1a]")
+		require.EqualError(t, errs[0], "resource=Server resource not found with selector: ID: , Names: [server-not-found], Zones: [is1a]")
 	})
 }
 
@@ -117,6 +117,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		notFound := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
+				DefName:  "default",
 			},
 			Selector: &MultiZoneSelector{
 				ResourceSelector: &ResourceSelector{
@@ -134,6 +135,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		running := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
+				DefName:  "default",
 			},
 			Selector: &MultiZoneSelector{
 				ResourceSelector: &ResourceSelector{
@@ -171,6 +173,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		server := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
+				DefName:  "default",
 			},
 			Selector: &MultiZoneSelector{
 				ResourceSelector: &ResourceSelector{

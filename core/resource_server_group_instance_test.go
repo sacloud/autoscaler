@@ -56,8 +56,8 @@ func TestResourceServerGroupInstance_computeNetworkInterfaces(t *testing.T) {
 				def: &ResourceDefServerGroup{
 					ResourceDefBase: &ResourceDefBase{
 						TypeName: "ServerGroup",
+						DefName:  "autoscaler",
 					},
-					Name:    "autoscaler",
 					Zone:    test.Zone,
 					MinSize: 1,
 					MaxSize: 1,

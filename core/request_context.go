@@ -33,7 +33,7 @@ type RequestContext struct {
 
 // NewRequestContext 新しいリクエストコンテキストを生成する
 func NewRequestContext(parent context.Context, request *requestInfo, tlsConfig *config.TLSStruct, logger *log.Logger) *RequestContext {
-	logger = logger.With("request-type", request.requestType, "source", request.source, "group", request.resourceGroupName, "action", request.action)
+	logger = logger.With("request", request.requestType, "source", request.source, "resource", request.resourceName)
 	return &RequestContext{
 		ctx:       parent,
 		request:   request,
@@ -49,11 +49,10 @@ func (c *RequestContext) WithJobStatus(job *JobStatus) *RequestContext {
 	return &RequestContext{
 		ctx: c,
 		request: &requestInfo{
-			requestType:       c.request.requestType,
-			source:            c.request.source,
-			action:            c.request.action,
-			resourceGroupName: c.request.resourceGroupName,
-			desiredStateName:  c.request.desiredStateName,
+			requestType:      c.request.requestType,
+			source:           c.request.source,
+			resourceName:     c.request.resourceName,
+			desiredStateName: c.request.desiredStateName,
 		},
 		logger:    c.logger,
 		job:       job,

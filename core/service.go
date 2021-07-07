@@ -36,7 +36,7 @@ func NewScalingService(instance *Core) *ScalingService {
 }
 
 func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	if err := s.instance.logger.Info("request-type", requestTypeUp, "message", "request received"); err != nil {
+	if err := s.instance.logger.Info("request", requestTypeUp, "message", "request received"); err != nil {
 		return nil, err
 	}
 	if err := s.instance.logger.Debug("request", req); err != nil {
@@ -45,11 +45,10 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
 	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
-		requestType:       requestTypeUp,
-		source:            req.Source,
-		action:            req.Action,
-		resourceGroupName: req.ResourceGroupName,
-		desiredStateName:  req.DesiredStateName,
+		requestType:      requestTypeUp,
+		source:           req.Source,
+		resourceName:     s.instance.ResourceName(req.ResourceName),
+		desiredStateName: req.DesiredStateName,
 	}, s.instance.config.AutoScaler.HandlerTLSConfig, s.instance.logger)
 	job, message, err := s.instance.Up(serviceCtx)
 	if err != nil {
@@ -63,7 +62,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 }
 
 func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	if err := s.instance.logger.Info("request-type", requestTypeDown, "message", "request received"); err != nil {
+	if err := s.instance.logger.Info("request", requestTypeDown, "message", "request received"); err != nil {
 		return nil, err
 	}
 	if err := s.instance.logger.Debug("request", req); err != nil {
@@ -72,11 +71,10 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
 	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
-		requestType:       requestTypeDown,
-		source:            req.Source,
-		action:            req.Action,
-		resourceGroupName: req.ResourceGroupName,
-		desiredStateName:  req.DesiredStateName,
+		requestType:      requestTypeDown,
+		source:           req.Source,
+		resourceName:     s.instance.ResourceName(req.ResourceName),
+		desiredStateName: req.DesiredStateName,
 	}, s.instance.config.AutoScaler.HandlerTLSConfig, s.instance.logger)
 	job, message, err := s.instance.Down(serviceCtx)
 	if err != nil {

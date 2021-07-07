@@ -20,72 +20,43 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-func (rdg *ResourceDefGroup) UnmarshalYAML(data []byte) error {
-	var rawMap map[string]interface{}
-	if err := yaml.UnmarshalWithOptions(data, &rawMap, yaml.Strict()); err != nil {
+func (rds *ResourceDefinitions) UnmarshalYAML(data []byte) error {
+	var rawResources []interface{}
+	if err := yaml.UnmarshalWithOptions(data, &rawResources, yaml.Strict()); err != nil {
 		return err
 	}
 
-	group := &ResourceDefGroup{}
-	rawResources, ok := rawMap["resources"]
-	if !ok || rawResources == nil {
-		return fmt.Errorf("resources block required")
-	}
-	resources := rawResources.([]interface{})
-	for _, rawResource := range resources {
+	resourceDefs := ResourceDefinitions{}
+	for _, rawResource := range rawResources {
 		v, ok := rawResource.(map[string]interface{})
 		if !ok {
 			return fmt.Errorf("invalid value: resource: %s", rawResource)
 		}
-		resource, err := rdg.unmarshalResourceDefFromMap(v)
+		resource, err := rds.unmarshalResourceDefFromMap(v)
 		if err != nil {
 			return err
 		}
 
-		rdg.setParentResource(nil, resource)
-		group.ResourceDefs = append(group.ResourceDefs, resource)
+		rds.setParentResource(nil, resource)
+		resourceDefs = append(resourceDefs, resource)
 	}
 
-	if rawActions, ok := rawMap["actions"]; ok {
-		group.Actions = Actions{}
-
-		actions, ok := rawActions.(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("invalid value: actions: %s", rawActions)
-		}
-		for k, v := range actions {
-			var handlers []string
-
-			v, ok := v.([]interface{})
-			if !ok {
-				return fmt.Errorf("invalid value: actions: %s", v)
-			}
-			for _, v := range v {
-				if v, ok := v.(string); ok {
-					handlers = append(handlers, v)
-				}
-			}
-
-			group.Actions[k] = handlers
-		}
-	}
-
-	*rdg = *group
+	*rds = resourceDefs
 	return nil
 }
 
-func (rdg *ResourceDefGroup) setParentResource(parent, r ResourceDefinition) {
+func (rds *ResourceDefinitions) setParentResource(parent, r ResourceDefinition) {
 	if parent != nil {
 		if v, ok := r.(ChildResourceDefinition); ok {
 			v.SetParent(parent)
 		}
 	}
 	for _, child := range r.Children() {
-		rdg.setParentResource(r, child)
+		rds.setParentResource(r, child)
 	}
 }
 
-func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interface{}) (ResourceDefinition, error) {
+func (rds *ResourceDefinitions) unmarshalResourceDefFromMap(data map[string]interface{}) (ResourceDefinition, error) {
 	rawTypeName, ok := data["type"]
 	if !ok {
 		return nil, fmt.Errorf("'type' field required: %v", data)
@@ -100,7 +71,7 @@ func (rdg *ResourceDefGroup) unmarshalResourceDefFromMap(data map[string]interfa
 		if children, ok := rawChildren.([]interface{}); ok {
 			for _, child := range children {
 				if c, ok := child.(map[string]interface{}); ok {
-					r, err := rdg.unmarshalResourceDefFromMap(c)
+					r, err := rds.unmarshalResourceDefFromMap(c)
 					if err != nil {
 						return nil, err
 					}

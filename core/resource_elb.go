@@ -74,7 +74,7 @@ func (r *ResourceELB) Compute(ctx *RequestContext, refresh bool) (Computed, erro
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
 	}
 
-	if !refresh {
+	if !refresh && ctx.Request().resourceName == r.def.Name() {
 		plan, err := r.desiredPlan(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("computing desired plan failed: %s", err)

@@ -36,11 +36,10 @@ func (r RequestTypes) String() string {
 }
 
 type requestInfo struct {
-	requestType       RequestTypes
-	source            string
-	action            string
-	resourceGroupName string
-	desiredStateName  string
+	requestType      RequestTypes
+	source           string
+	resourceName     string
+	desiredStateName string
 }
 
 func (r *requestInfo) String() string {
@@ -51,5 +50,5 @@ func (r *requestInfo) String() string {
 //
 // RequestTypesのUp/Downの違いやDesiredStateNameの違いを問わずに値を決めるため、同一リソースに対するアクションが実行中かの判定に利用できる
 func (r *requestInfo) ID() string {
-	return r.resourceGroupName
+	return r.resourceName
 }
