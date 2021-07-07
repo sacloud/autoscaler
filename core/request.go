@@ -38,7 +38,6 @@ func (r RequestTypes) String() string {
 type requestInfo struct {
 	requestType      RequestTypes
 	source           string
-	action           string
 	resourceName     string
 	desiredStateName string
 }

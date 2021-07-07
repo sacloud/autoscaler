@@ -55,7 +55,6 @@ func TestHandler_Handle(t *testing.T) {
 			args: args{
 				req: &handler.HandleRequest{
 					Source:       "default",
-					Action:       "default",
 					ResourceName: "default",
 					ScalingJobId: "1",
 					Instruction:  handler.ResourceInstructions_UPDATE,

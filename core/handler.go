@@ -134,7 +134,6 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 	if handleArg.preHandle != nil {
 		if err := handleArg.preHandle(&handler.PreHandleRequest{
 			Source:       req.source,
-			Action:       req.action,
 			ResourceName: req.resourceName,
 			ScalingJobId: req.ID(),
 			Instruction:  computed.Instruction(),
@@ -148,7 +147,6 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 	if handleArg.handle != nil {
 		if err := handleArg.handle(&handler.HandleRequest{
 			Source:       req.source,
-			Action:       req.action,
 			ResourceName: req.resourceName,
 			ScalingJobId: req.ID(),
 			Instruction:  computed.Instruction(),
@@ -162,7 +160,6 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 	if handleArg.postHandle != nil {
 		if err := handleArg.postHandle(&handler.PostHandleRequest{
 			Source:       req.source,
-			Action:       req.action,
 			ResourceName: req.resourceName,
 			ScalingJobId: req.ID(),
 			Result:       ctx.ComputeResult(computed),

@@ -22,7 +22,6 @@ const (
 	CoreExporterAddr = ":8081"                // CoreのExporterがリッスンするデフォルトのアドレス
 	ListenAddress    = ":8080"                // Inputsがリッスンするデフォルトのアドレス
 
-	ActionName       = "default"
 	ResourceName     = "default"
 	SourceName       = "default"
 	DesiredStateName = "default"

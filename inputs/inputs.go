@@ -36,7 +36,7 @@ import (
 var (
 	webhookBodyMaxLen      = int64(64 * 1024) // 64KB
 	allowedQueryStringKeys = []string{
-		"source", "action", "resource-name", "desired-state-name",
+		"source", "resource-name", "desired-state-name",
 	}
 )
 
@@ -267,10 +267,6 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRe
 	if source == "" {
 		source = defaults.SourceName
 	}
-	action := queryStrings.Get("action")
-	if action == "" {
-		action = defaults.ActionName
-	}
 	resourceName := queryStrings.Get("resource-name")
 	if resourceName == "" {
 		resourceName = defaults.ResourceName
@@ -282,7 +278,6 @@ func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRe
 
 	scalingReq := &ScalingRequest{
 		Source:           source,
-		Action:           action,
 		ResourceName:     resourceName,
 		RequestType:      requestType,
 		DesiredStateName: desiredStateName,
@@ -350,7 +345,6 @@ func (s *server) send(scalingReq *ScalingRequest) (*request.ScalingResponse, err
 	}
 	return f(ctx, &request.ScalingRequest{
 		Source:           scalingReq.Source,
-		Action:           scalingReq.Action,
 		ResourceName:     scalingReq.ResourceName,
 		DesiredStateName: scalingReq.DesiredStateName,
 	})

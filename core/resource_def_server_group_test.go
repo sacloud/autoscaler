@@ -68,7 +68,6 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:  requestTypeUp,
 					source:       "default",
-					action:       "default",
 					resourceName: "default",
 				}, nil, test.Logger),
 			},
@@ -109,7 +108,6 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:  requestTypeUp,
 					source:       "default",
-					action:       "default",
 					resourceName: "default",
 				}, nil, test.Logger),
 			},
@@ -166,7 +164,6 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:  requestTypeDown,
 					source:       "default",
-					action:       "default",
 					resourceName: "default",
 				}, nil, test.Logger),
 			},
@@ -214,7 +211,6 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeUp,
 					source:           "default",
-					action:           "default",
 					resourceName:     "default",
 					desiredStateName: "largest",
 				}, nil, test.Logger),
@@ -302,7 +298,6 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeDown,
 					source:           "default",
-					action:           "default",
 					resourceName:     "default",
 					desiredStateName: "smallest",
 				}, nil, test.Logger),
@@ -351,7 +346,6 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeUp,
 					source:           "default",
-					action:           "default",
 					resourceName:     "default",
 					desiredStateName: "smallest",
 				}, nil, test.Logger),
@@ -383,7 +377,6 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeDown,
 					source:           "default",
-					action:           "default",
 					resourceName:     "default",
 					desiredStateName: "medium",
 				}, nil, test.Logger),
@@ -415,7 +408,6 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeUp,
 					source:           "default",
-					action:           "default",
 					resourceName:     "default",
 					desiredStateName: "default",
 				}, nil, test.Logger),

@@ -47,14 +47,12 @@ var Command = &cobra.Command{
 
 type parameter struct {
 	Source           string `name:"--source" validate:"required,printascii,max=1024"`
-	Action           string `name:"--action" validate:"required,printascii,max=1024"`
 	ResourceName     string `name:"--resource-name" validate:"required,printascii,max=1024"`
 	DesiredStateName string `name:"--desired-state-name" validate:"omitempty,printascii,max=1024"`
 }
 
 var param = &parameter{
 	Source:           defaults.SourceName,
-	Action:           defaults.ActionName,
 	ResourceName:     defaults.ResourceName,
 	DesiredStateName: "",
 }
@@ -62,7 +60,6 @@ var param = &parameter{
 func init() {
 	flags.SetDestinationFlag(Command)
 	flags.SetInputsConfigFlag(Command)
-	Command.Flags().StringVarP(&param.Action, "action", "", param.Action, "Name of the action to perform")
 	Command.Flags().StringVarP(&param.ResourceName, "resource-name", "", param.ResourceName, "Name of the target resource")
 	Command.Flags().StringVarP(&param.Source, "source", "", param.Source, "A string representing the request source, passed to AutoScaler Core")
 	Command.Flags().StringVarP(&param.DesiredStateName, "desired-state-name", "", param.DesiredStateName, "Name of the desired state defined in Core's configuration file")
@@ -107,7 +104,6 @@ func run(_ *cobra.Command, args []string) error {
 	}
 	res, err := f(ctx, &request.ScalingRequest{
 		Source:           param.Source,
-		Action:           param.Action,
 		ResourceName:     param.ResourceName,
 		DesiredStateName: param.DesiredStateName,
 	})
