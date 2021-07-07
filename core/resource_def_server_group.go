@@ -148,6 +148,9 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 }
 
 func (d *ResourceDefServerGroup) desiredPlan(ctx *RequestContext, currentCount int) (*ServerGroupPlan, error) {
+	if ctx.Request().resourceName != d.Name() {
+		return &ServerGroupPlan{Size: currentCount}, nil
+	}
 	plans := d.resourcePlans()
 	plan, err := desiredPlan(ctx, currentCount, plans)
 	if err != nil {

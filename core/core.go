@@ -198,16 +198,18 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	return job, "", nil
 }
 
+func (c *Core) ResourceName(name string) string {
+	if name == "" || name == defaults.ResourceName {
+		name = c.config.Resources[0].Name()
+	}
+	return name
+}
+
 func (c *Core) targetResourceDef(ctx *RequestContext) (ResourceDefinitions, error) {
 	name := ctx.Request().resourceName
-	if name == "" {
-		name = defaults.ResourceName
+	defs := c.config.Resources.FilterByResourceName(name)
+	if len(defs) > 0 {
+		return defs, nil
 	}
-
-	if name == defaults.ResourceName {
-		return ResourceDefinitions{c.config.Resources[0]}, nil
-	}
-
-	// TODO ResourceNameからResourceDefを探す処理を実装
-	return ResourceDefinitions{c.config.Resources[0]}, nil
+	return nil, fmt.Errorf("resource %q not found", name)
 }

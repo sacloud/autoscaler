@@ -44,8 +44,8 @@ import (
 const (
 	coreReadyMarker        = `message="autoscaler core started" address=autoscaler.sock`
 	inputsReadyMarker      = `message=started address=127.0.0.1:8080`
-	upJobDoneMarker        = `request=Up source=default resource=default status=JOB_DONE`
-	downJobDoneMarker      = `request=Down source=default resource=default status=JOB_DONE`
+	upJobDoneMarker        = `request=Up source=default resource=server status=JOB_DONE`
+	downJobDoneMarker      = `request=Down source=default resource=server status=JOB_DONE`
 	inCoolDownTimeMarker   = `job-message="job is in an unacceptable state"`
 	inCoolDownTimeResponse = `"message":"job is in an unacceptable state"`
 )
@@ -114,8 +114,8 @@ func TestE2E(t *testing.T) {
 	/**************************************************************************
 	 * Step 1-1: スケールアップ
 	 *************************************************************************/
-	// Grafana InputsにWebhookでUpリクエストを送信(source/action/resource-nameはデフォルト)
-	resp, err := http.Post("http://127.0.0.1:8080/up", "text/plain", bytes.NewReader(grafanaWebhookBody))
+	// Grafana InputsにWebhookでUpリクエストを送信
+	resp, err := http.Post("http://127.0.0.1:8080/up?resource-name=server", "text/plain", bytes.NewReader(grafanaWebhookBody))
 	if err != nil {
 		fatalWithStderrOutputs(t, err)
 	}
@@ -149,7 +149,7 @@ func TestE2E(t *testing.T) {
 	/**************************************************************************
 	 * Step 1-3: 冷却期間の確認
 	 *************************************************************************/
-	resp, err = http.Post("http://127.0.0.1:8080/up", "text/plain", bytes.NewReader(grafanaWebhookBody))
+	resp, err = http.Post("http://127.0.0.1:8080/up?resource-name=server", "text/plain", bytes.NewReader(grafanaWebhookBody))
 	if err != nil {
 		fatalWithStderrOutputs(t, err)
 	}
@@ -176,8 +176,8 @@ func TestE2E(t *testing.T) {
 	/**************************************************************************
 	 * Step 2-1: スケールダウン
 	 *************************************************************************/
-	// Grafana InputsにWebhookでDownリクエストを送信(source/action/resource-nameはデフォルト)
-	resp, err = http.Post("http://127.0.0.1:8080/down", "text/plain", bytes.NewReader(grafanaWebhookBody))
+	// Grafana InputsにWebhookでDownリクエストを送信
+	resp, err = http.Post("http://127.0.0.1:8080/down?resource-name=server", "text/plain", bytes.NewReader(grafanaWebhookBody))
 	if err != nil {
 		fatalWithStderrOutputs(t, err)
 	}

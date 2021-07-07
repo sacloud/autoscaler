@@ -68,7 +68,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:  requestTypeUp,
 					source:       "default",
-					resourceName: "default",
+					resourceName: "autoscaler",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -108,7 +108,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:  requestTypeUp,
 					source:       "default",
-					resourceName: "default",
+					resourceName: "resource-def-server-test",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -164,7 +164,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:  requestTypeDown,
 					source:       "default",
-					resourceName: "default",
+					resourceName: "resource-def-server-test",
 				}, nil, test.Logger),
 			},
 			want: Resources{
@@ -211,7 +211,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeUp,
 					source:           "default",
-					resourceName:     "default",
+					resourceName:     "resource-def-server-test",
 					desiredStateName: "largest",
 				}, nil, test.Logger),
 			},
@@ -298,7 +298,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeDown,
 					source:           "default",
-					resourceName:     "default",
+					resourceName:     "resource-def-server-test",
 					desiredStateName: "smallest",
 				}, nil, test.Logger),
 			},
@@ -346,7 +346,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeUp,
 					source:           "default",
-					resourceName:     "default",
+					resourceName:     "resource-def-server-test",
 					desiredStateName: "smallest",
 				}, nil, test.Logger),
 			},
@@ -377,7 +377,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeDown,
 					source:           "default",
-					resourceName:     "default",
+					resourceName:     "resource-def-server-test",
 					desiredStateName: "medium",
 				}, nil, test.Logger),
 			},
@@ -408,7 +408,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				ctx: NewRequestContext(context.Background(), &requestInfo{
 					requestType:      requestTypeUp,
 					source:           "default",
-					resourceName:     "default",
+					resourceName:     "resource-def-server-test",
 					desiredStateName: "default",
 				}, nil, test.Logger),
 			},
@@ -757,6 +757,10 @@ func TestResourceDefServerGroup_desiredPlan(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d := &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					DefName:  "default",
+					TypeName: "ServerGroup",
+				},
 				MinSize: tt.fields.MinSize,
 				MaxSize: tt.fields.MaxSize,
 				Plans:   tt.fields.Plans,

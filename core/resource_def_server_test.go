@@ -117,6 +117,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		notFound := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
+				DefName:  "default",
 			},
 			Selector: &MultiZoneSelector{
 				ResourceSelector: &ResourceSelector{
@@ -134,6 +135,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		running := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
+				DefName:  "default",
 			},
 			Selector: &MultiZoneSelector{
 				ResourceSelector: &ResourceSelector{
@@ -171,6 +173,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		server := &ResourceDefServer{
 			ResourceDefBase: &ResourceDefBase{
 				TypeName: "Server",
+				DefName:  "default",
 			},
 			Selector: &MultiZoneSelector{
 				ResourceSelector: &ResourceSelector{

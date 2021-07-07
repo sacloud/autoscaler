@@ -18,14 +18,11 @@ import (
 	"testing"
 
 	"github.com/goccy/go-yaml"
-
-	"github.com/sacloud/libsacloud/v2/sacloud"
-
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-
 	"github.com/sacloud/autoscaler/handlers/stub"
 	"github.com/sacloud/autoscaler/test"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/stretchr/testify/require"
 )
 
@@ -243,4 +240,110 @@ var noopHandlers = Handlers{
 			},
 		},
 	},
+}
+
+func TestResourceDefinitions_FilterByResourceName(t *testing.T) {
+	tests := []struct {
+		name         string
+		rds          ResourceDefinitions
+		resourceName string
+		want         ResourceDefinitions
+	}{
+		{
+			name: "minimum",
+			rds: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: nil,
+					},
+				},
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test2",
+					},
+				},
+			},
+			resourceName: "test",
+			want: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: nil,
+					},
+				},
+			},
+		},
+		{
+			name: "not exist",
+			rds: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: nil,
+					},
+				},
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test2",
+					},
+				},
+			},
+			resourceName: "not exist",
+			want:         nil,
+		},
+		{
+			name: "returns parent if child is hit",
+			rds: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: ResourceDefinitions{
+							&stubResourceDef{
+								ResourceDefBase: &ResourceDefBase{
+									TypeName: "stub",
+									DefName:  "child",
+								},
+							},
+						},
+					},
+				},
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test2",
+					},
+				},
+			},
+			resourceName: "test",
+			want: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "test",
+						children: ResourceDefinitions{
+							&stubResourceDef{
+								ResourceDefBase: &ResourceDefBase{
+									TypeName: "stub",
+									DefName:  "child",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.rds.FilterByResourceName(tt.resourceName)
+			require.EqualValues(t, tt.want, got)
+		})
+	}
 }

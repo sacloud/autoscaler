@@ -75,6 +75,35 @@ func (rds *ResourceDefinitions) walk(targets ResourceDefinitions, fn resourceDef
 	return nil
 }
 
+func (rds *ResourceDefinitions) FilterByResourceName(name string) ResourceDefinitions {
+	for _, r := range *rds {
+		if result := rds.filterByResourceName(name, nil, r); result != nil {
+			return ResourceDefinitions{result}
+		}
+	}
+	return nil
+}
+
+func (rds *ResourceDefinitions) filterByResourceName(name string, parent ResourceDefinition, current ResourceDefinition) ResourceDefinition {
+	if current.Name() == name {
+		if parent != nil {
+			return parent
+		}
+		return current
+	}
+	children := current.Children()
+	for _, r := range children {
+		p := parent
+		if p == nil {
+			p = current
+		}
+		if found := rds.filterByResourceName(name, p, r); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
 func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers) {
 	job := ctx.Job()
 	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)

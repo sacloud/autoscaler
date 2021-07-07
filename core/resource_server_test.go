@@ -107,6 +107,7 @@ func TestResourceServer2_Compute(t *testing.T) {
 	def := &ResourceDefServer{
 		ResourceDefBase: &ResourceDefBase{
 			TypeName: "",
+			DefName:  "default",
 			children: nil,
 		},
 		Selector: &MultiZoneSelector{
