@@ -87,11 +87,15 @@ func (c *Config) APIClient() sacloud.APICaller {
 //
 // ビルトインハンドラはAPIクライアントが注入された状態で返される
 func (c *Config) Handlers() Handlers {
-	handlers := BuiltinHandlers()
-	for _, h := range handlers {
+	var handlers Handlers
+	for _, h := range BuiltinHandlers() {
+		if h.Disabled {
+			continue
+		}
 		if h, ok := h.BuiltinHandler.(builtins.SakuraCloudAPICaller); ok {
 			h.SetAPICaller(c.SakuraCloud.APIClient())
 		}
+		handlers = append(handlers, h)
 	}
 	return append(handlers, c.CustomHandlers...)
 }

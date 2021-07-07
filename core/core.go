@@ -191,12 +191,6 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 		return job, "", err
 	}
 
-	if err := rdg.ValidateActions(ctx.Request().action, c.config.Handlers()); err != nil {
-		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
-		return job, "", err
-	}
-
 	go rdg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)

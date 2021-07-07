@@ -51,11 +51,7 @@ web:
 			name: "resource group",
 			r: func() *ResourceDefGroups {
 				rgs := newResourceDefGroups()
-				rg := &ResourceDefGroup{
-					Actions: Actions{
-						"foobar": []string{"handler1", "handler2"},
-					},
-				}
+				rg := &ResourceDefGroup{}
 
 				dns := &ResourceDefDNS{
 					ResourceDefBase: &ResourceDefBase{
