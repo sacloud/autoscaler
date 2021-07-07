@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sacloud/autoscaler/request"
+
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sacloud/autoscaler/validate"
@@ -27,7 +29,7 @@ import (
 // ResourceDefinitions リソースのリスト
 type ResourceDefinitions []ResourceDefinition
 
-func (r *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (rds *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	var errors []error
 
 	fn := func(r ResourceDefinition) error {
@@ -41,7 +43,7 @@ func (r *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.AP
 		return nil
 	}
 
-	if err := r.walk(*r, fn); err != nil {
+	if err := rds.walk(*rds, fn); err != nil {
 		errors = append(errors, err)
 	}
 	return errors
@@ -49,7 +51,7 @@ func (r *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.AP
 
 type resourceDefWalkFunc func(def ResourceDefinition) error
 
-func (r *ResourceDefinitions) walk(targets ResourceDefinitions, fn resourceDefWalkFunc) error {
+func (rds *ResourceDefinitions) walk(targets ResourceDefinitions, fn resourceDefWalkFunc) error {
 	noopFunc := func(_ ResourceDefinition) error {
 		return nil
 	}
@@ -65,7 +67,7 @@ func (r *ResourceDefinitions) walk(targets ResourceDefinitions, fn resourceDefWa
 			if err := fn(child); err != nil {
 				return err
 			}
-			if err := r.walk(child.Children(), fn); err != nil {
+			if err := rds.walk(child.Children(), fn); err != nil {
 				return err
 			}
 		}
@@ -73,11 +75,22 @@ func (r *ResourceDefinitions) walk(targets ResourceDefinitions, fn resourceDefWa
 	return nil
 }
 
-func (r *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers) error {
-	return r.handleAll(ctx, apiClient, handlers, nil, *r)
+func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers) {
+	job := ctx.Job()
+	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) // nolint
+
+	if err := rds.handleAll(ctx, apiClient, handlers, nil, *rds); err != nil {
+		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
+		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "error", err) // nolint
+		return
+	}
+
+	job.SetStatus(request.ScalingJobStatus_JOB_DONE)
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_DONE) // nolint
 }
 
-func (r *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers, parentResource Resource, defs ResourceDefinitions) error {
+func (rds *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers, parentResource Resource, defs ResourceDefinitions) error {
 	for _, def := range defs {
 		resources, err := def.Compute(ctx, apiClient)
 		if err != nil {
@@ -95,12 +108,12 @@ func (r *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.A
 				resource.SetParent(parentResource)
 			}
 			if len(children) > 0 {
-				if err := r.handleAll(ctx, apiClient, handlers, resource, children); err != nil {
+				if err := rds.handleAll(ctx, apiClient, handlers, resource, children); err != nil {
 					return err
 				}
 			}
 
-			if err := r.handleResource(ctx, handlers, resource); err != nil {
+			if err := rds.handleResource(ctx, handlers, resource); err != nil {
 				return err
 			}
 		}
@@ -108,7 +121,7 @@ func (r *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.A
 	return nil
 }
 
-func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers Handlers, resource Resource) error {
+func (rds *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers Handlers, resource Resource) error {
 	computed, err := resource.Compute(parentCtx, false)
 	if err != nil {
 		return err
@@ -125,7 +138,7 @@ func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers
 	handlingCtx := NewHandlingContext(parentCtx, computed).WithLogger("type", computed.Type(), "zone", zone, "id", id, "name", computed.Name())
 
 	// preHandle
-	if err := r.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
+	if err := rds.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
 		ctx := handlingCtx.WithLogger("step", "PreHandle", "handler", h.Name)
 		if h.BuiltinHandler != nil {
 			h.BuiltinHandler.SetLogger(ctx.Logger())
@@ -136,7 +149,7 @@ func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers
 	}
 
 	// handle
-	if err := r.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
+	if err := rds.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
 		ctx := handlingCtx.WithLogger("step", "Handle", "handler", h.Name)
 		if h.BuiltinHandler != nil {
 			h.BuiltinHandler.SetLogger(ctx.Logger())
@@ -160,7 +173,7 @@ func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers
 	computed = refreshed
 
 	// postHandle
-	if err := r.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
+	if err := rds.handleAllByFunc(computed, handlers, func(h *Handler, c Computed) error {
 		ctx := handlingCtx.WithLogger("step", "PostHandle", "handler", h.Name)
 		if h.BuiltinHandler != nil {
 			h.BuiltinHandler.SetLogger(ctx.Logger())
@@ -173,7 +186,7 @@ func (r *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers
 	return nil
 }
 
-func (r *ResourceDefinitions) handleAllByFunc(computed Computed, handlers Handlers, fn func(*Handler, Computed) error) error {
+func (rds *ResourceDefinitions) handleAllByFunc(computed Computed, handlers Handlers, fn func(*Handler, Computed) error) error {
 	for _, handler := range handlers {
 		if err := fn(handler, computed); err != nil {
 			return err

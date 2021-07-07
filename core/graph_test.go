@@ -26,7 +26,7 @@ func TestGraph_Tree(t *testing.T) {
 	client := test.APIClient
 
 	type fields struct {
-		defGroups *ResourceDefGroups
+		resources ResourceDefinitions
 	}
 	tests := []struct {
 		name    string
@@ -37,39 +37,20 @@ func TestGraph_Tree(t *testing.T) {
 		{
 			name: "basic",
 			fields: fields{
-				defGroups: &ResourceDefGroups{
-					groups: map[string]*ResourceDefGroup{
-						"web": {
-							name: "web",
-							ResourceDefs: ResourceDefinitions{
+				resources: ResourceDefinitions{
+					&stubResourceDef{
+						ResourceDefBase: &ResourceDefBase{
+							TypeName: "Stub",
+							children: ResourceDefinitions{
 								&stubResourceDef{
 									ResourceDefBase: &ResourceDefBase{
 										TypeName: "Stub",
-										children: ResourceDefinitions{
-											&stubResourceDef{
-												ResourceDefBase: &ResourceDefBase{
-													TypeName: "Stub",
-												},
-												computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
-													return Resources{
-														&stubResource{
-															ResourceBase: &ResourceBase{
-																resourceType: ResourceTypeServer,
-															},
-															computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
-																return nil, nil
-															},
-														},
-													}, nil
-												},
-											},
-										},
 									},
 									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
 										return Resources{
 											&stubResource{
 												ResourceBase: &ResourceBase{
-													resourceType: ResourceTypeDNS,
+													resourceType: ResourceTypeServer,
 												},
 												computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
 													return nil, nil
@@ -80,14 +61,25 @@ func TestGraph_Tree(t *testing.T) {
 								},
 							},
 						},
+						computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+							return Resources{
+								&stubResource{
+									ResourceBase: &ResourceBase{
+										resourceType: ResourceTypeDNS,
+									},
+									computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
+										return nil, nil
+									},
+								},
+							}, nil
+						},
 					},
 				},
 			},
 			want: `
 Sacloud AutoScaler
-└─ Group: web
+└─ stub
    └─ stub
-      └─ stub
 `,
 			wantErr: false,
 		},
@@ -95,7 +87,7 @@ Sacloud AutoScaler
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := &Graph{
-				defGroups: tt.fields.defGroups,
+				resources: tt.fields.resources,
 			}
 			got, err := g.Tree(ctx, client)
 			if (err != nil) != tt.wantErr {

@@ -184,38 +184,30 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	ctx = ctx.WithJobStatus(job)
 
 	//対象リソースグループを取得
-	rdg, err := c.targetResourceGroup(ctx)
+	rds, err := c.targetResourceDef(ctx)
 	if err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
 		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
 		return job, "", err
 	}
 
-	go rdg.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
+	go rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) // nolint
 	return job, "", nil
 }
 
-func (c *Core) targetResourceGroup(ctx *RequestContext) (*ResourceDefGroup, error) {
-	groupName := ctx.Request().resourceName
-	if groupName == "" {
-		groupName = defaults.ResourceName
+func (c *Core) targetResourceDef(ctx *RequestContext) (ResourceDefinitions, error) {
+	name := ctx.Request().resourceName
+	if name == "" {
+		name = defaults.ResourceName
 	}
 
-	if groupName == defaults.ResourceName {
-		resourceGroups := c.config.Resources.All()
-		if len(resourceGroups) > 1 {
-			return nil, fmt.Errorf("resource group name %q cannot be specified when multiple groups are defined", defaults.ResourceName)
-		}
-
-		return resourceGroups[0], nil
+	if name == defaults.ResourceName {
+		return ResourceDefinitions{c.config.Resources[0]}, nil
 	}
 
-	rg, ok := c.config.Resources.GetOk(groupName)
-	if !ok {
-		return nil, fmt.Errorf("resource group %q not found", groupName)
-	}
-	return rg, nil
+	// TODO ResourceNameからResourceDefを探す処理を実装
+	return ResourceDefinitions{c.config.Resources[0]}, nil
 }
