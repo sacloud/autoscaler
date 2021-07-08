@@ -336,5 +336,8 @@ func (s *builtinResponseSender) Send(res *handler.HandleResponse) error {
 		kvs = append(kvs, "log", res.Log)
 	}
 
+	if res.Status == handler.HandleResponse_IGNORED && res.Log == "" {
+		return s.ctx.Logger().Debug(kvs...)
+	}
 	return s.ctx.Logger().Info(kvs...)
 }
