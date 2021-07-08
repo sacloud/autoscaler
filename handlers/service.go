@@ -59,7 +59,7 @@ func (h *handleService) listenAndServe(ctx context.Context) error {
 	return grpcServer.Serve(listener)
 }
 
-func (h *handleService) PreHandle(req *handler.PreHandleRequest, server handler.HandleService_PreHandleServer) error {
+func (h *handleService) PreHandle(req *handler.HandleRequest, server handler.HandleService_PreHandleServer) error {
 	logger := h.Handler.GetLogger().With(
 		"scaling-job-id", req.ScalingJobId,
 		"step", "PreHandle",

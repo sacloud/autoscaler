@@ -123,7 +123,7 @@ func (h *Handler) PostHandle(ctx *HandlingContext, computed Computed) error {
 }
 
 type handleArg struct {
-	preHandle  func(request *handler.PreHandleRequest) error
+	preHandle  func(request *handler.HandleRequest) error
 	handle     func(request *handler.HandleRequest) error
 	postHandle func(request *handler.PostHandleRequest) error
 }
@@ -132,12 +132,11 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 	req := ctx.Request()
 
 	if handleArg.preHandle != nil {
-		if err := handleArg.preHandle(&handler.PreHandleRequest{
+		if err := handleArg.preHandle(&handler.HandleRequest{
 			Source:       req.source,
 			ResourceName: req.resourceName,
 			ScalingJobId: req.ID(),
 			Instruction:  computed.Instruction(),
-			Current:      computed.Current(),
 			Desired:      computed.Desired(),
 		}); err != nil {
 			return err
@@ -150,7 +149,6 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 			ResourceName: req.resourceName,
 			ScalingJobId: req.ID(),
 			Instruction:  computed.Instruction(),
-			Current:      computed.Current(),
 			Desired:      computed.Desired(),
 		}); err != nil {
 			return err
@@ -164,7 +162,6 @@ func (h *Handler) handle(ctx *HandlingContext, computed Computed, handleArg *han
 			ScalingJobId: req.ID(),
 			Result:       ctx.ComputeResult(computed),
 			Current:      computed.Current(),
-			Desired:      computed.Desired(),
 		}); err != nil {
 			return err
 		}
@@ -177,7 +174,7 @@ func (h *Handler) preHandleBuiltin(ctx *HandlingContext, computed Computed) erro
 	handleArg := &handleArg{}
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PreHandler); ok {
-		handleArg.preHandle = func(req *handler.PreHandleRequest) error {
+		handleArg.preHandle = func(req *handler.HandleRequest) error {
 			return actualHandler.PreHandle(req, &builtinResponseSender{ctx: ctx})
 		}
 	}
@@ -229,7 +226,7 @@ func (h *Handler) preHandleExternal(ctx *HandlingContext, computed Computed) err
 
 	client := handler.NewHandleServiceClient(conn)
 	handleArg := &handleArg{
-		preHandle: func(req *handler.PreHandleRequest) error {
+		preHandle: func(req *handler.HandleRequest) error {
 			res, err := client.PreHandle(ctx, req)
 			if err != nil {
 				return err

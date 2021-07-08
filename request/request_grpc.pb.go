@@ -33,7 +33,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ScalingServiceClient interface {
+	// Up スケールアップ or スケールアウトのリクエスト
 	Up(ctx context.Context, in *ScalingRequest, opts ...grpc.CallOption) (*ScalingResponse, error)
+	// Down スケールダウン or スケールインのリクエスト
 	Down(ctx context.Context, in *ScalingRequest, opts ...grpc.CallOption) (*ScalingResponse, error)
 }
 
@@ -67,7 +69,9 @@ func (c *scalingServiceClient) Down(ctx context.Context, in *ScalingRequest, opt
 // All implementations must embed UnimplementedScalingServiceServer
 // for forward compatibility
 type ScalingServiceServer interface {
+	// Up スケールアップ or スケールアウトのリクエスト
 	Up(context.Context, *ScalingRequest) (*ScalingResponse, error)
+	// Down スケールダウン or スケールインのリクエスト
 	Down(context.Context, *ScalingRequest) (*ScalingResponse, error)
 	mustEmbedUnimplementedScalingServiceServer()
 }

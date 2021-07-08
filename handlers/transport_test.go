@@ -31,7 +31,7 @@ type fakeHandleService struct {
 	handler.UnimplementedHandleServiceServer
 }
 
-func (s *fakeHandleService) PreHandle(*handler.PreHandleRequest, handler.HandleService_PreHandleServer) error {
+func (s *fakeHandleService) PreHandle(*handler.HandleRequest, handler.HandleService_PreHandleServer) error {
 	return nil
 }
 func (s *fakeHandleService) Handle(*handler.HandleRequest, handler.HandleService_HandleServer) error {

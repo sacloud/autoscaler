@@ -78,12 +78,7 @@ func (h *VerticalScaleHandler) handleServer(ctx *handlers.HandlerContext, req *h
 			return err
 		}
 
-		force := false
-		if server.Option != nil {
-			force = server.Option.ShutdownForce
-		}
-
-		if err := power.ShutdownServer(ctx, serverOp, server.Zone, types.StringID(server.Id), force); err != nil {
+		if err := power.ShutdownServer(ctx, serverOp, server.Zone, types.StringID(server.Id), server.ShutdownForce); err != nil {
 			return err
 		}
 

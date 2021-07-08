@@ -35,6 +35,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ジョブのステータス
 type ScalingJobStatus int32
 
 const (
@@ -96,14 +97,24 @@ func (ScalingJobStatus) EnumDescriptor() ([]byte, []int) {
 	return file_request_proto_rawDescGZIP(), []int{0}
 }
 
+// Scalingサービスのリクエストパラメータ
 type ScalingRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Source           string `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
-	ResourceName     string `protobuf:"bytes,2,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
-	DesiredStateName string `protobuf:"bytes,3,opt,name=desired_state_name,json=desiredStateName,proto3" json:"desired_state_name,omitempty"` // 希望するスケール(プランなど)につけた名前
+	// 呼び出し元を示すラベル値、Coreでの処理には影響しない。デフォルト値: "default"
+	Source string `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	// 操作対象のリソース名。リソース名にはCoreのコンフィギュレーションの中で定義した名前を指定する
+	// 対応するリソース名がCoreで見つけられなかった場合はエラーを返す
+	//
+	// デフォルト値: "default"
+	// デフォルト値を指定した場合はCoreのコンフィギュレーションで定義された先頭のリソースが操作対象となる
+	ResourceName string `protobuf:"bytes,2,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
+	// 希望するスケール(プランなど)につけた名前
+	// 特定のスケールに一気にスケールを変更したい場合に指定する
+	// 指定する名前はCoreのコンフィギュレーションで定義しておく必要がある
+	DesiredStateName string `protobuf:"bytes,3,opt,name=desired_state_name,json=desiredStateName,proto3" json:"desired_state_name,omitempty"`
 }
 
 func (x *ScalingRequest) Reset() {
@@ -159,14 +170,21 @@ func (x *ScalingRequest) GetDesiredStateName() string {
 	return ""
 }
 
+// Scalingサービスのレスポンス
 type ScalingResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ScalingJobId string           `protobuf:"bytes,1,opt,name=scaling_job_id,json=scalingJobId,proto3" json:"scaling_job_id,omitempty"`
-	Status       ScalingJobStatus `protobuf:"varint,2,opt,name=status,proto3,enum=autoscaler.ScalingJobStatus" json:"status,omitempty"`
-	Message      string           `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	// スケールジョブのID
+	// リクエストパラメータに応じてCoreがジョブを起動しIDを割り当てたもの
+	ScalingJobId string `protobuf:"bytes,1,opt,name=scaling_job_id,json=scalingJobId,proto3" json:"scaling_job_id,omitempty"`
+	// スケールジョブのステータス
+	// Coreがリクエストを処理した段階のステータスを返す
+	Status ScalingJobStatus `protobuf:"varint,2,opt,name=status,proto3,enum=autoscaler.ScalingJobStatus" json:"status,omitempty"`
+	// Coreからのメッセージ
+	// 何らかの事情でリクエストを受け付けられなかった場合の理由が記載される
+	Message string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 }
 
 func (x *ScalingResponse) Reset() {

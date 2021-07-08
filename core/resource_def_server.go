@@ -28,15 +28,11 @@ type ResourceDefServer struct {
 	*ResourceDefBase `yaml:",inline" validate:"required"`
 	Selector         *MultiZoneSelector `yaml:"selector" validate:"required"`
 
-	DedicatedCPU bool                `yaml:"dedicated_cpu"`
-	Plans        []*ServerPlan       `yaml:"plans"`
-	Option       ServerScalingOption `yaml:"option"`
+	DedicatedCPU  bool          `yaml:"dedicated_cpu"`
+	Plans         []*ServerPlan `yaml:"plans"`
+	ShutdownForce bool          `yaml:"shutdown_force"`
 
 	parent ResourceDefinition
-}
-
-type ServerScalingOption struct {
-	ShutdownForce bool `yaml:"shutdown_force"`
 }
 
 func (d *ResourceDefServer) String() string {

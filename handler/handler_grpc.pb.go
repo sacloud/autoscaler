@@ -33,8 +33,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HandleServiceClient interface {
-	PreHandle(ctx context.Context, in *PreHandleRequest, opts ...grpc.CallOption) (HandleService_PreHandleClient, error)
+	// リソース操作の前イベント
+	PreHandle(ctx context.Context, in *HandleRequest, opts ...grpc.CallOption) (HandleService_PreHandleClient, error)
+	// リソース操作
 	Handle(ctx context.Context, in *HandleRequest, opts ...grpc.CallOption) (HandleService_HandleClient, error)
+	// リソース操作の後イベント
 	PostHandle(ctx context.Context, in *PostHandleRequest, opts ...grpc.CallOption) (HandleService_PostHandleClient, error)
 }
 
@@ -46,7 +49,7 @@ func NewHandleServiceClient(cc grpc.ClientConnInterface) HandleServiceClient {
 	return &handleServiceClient{cc}
 }
 
-func (c *handleServiceClient) PreHandle(ctx context.Context, in *PreHandleRequest, opts ...grpc.CallOption) (HandleService_PreHandleClient, error) {
+func (c *handleServiceClient) PreHandle(ctx context.Context, in *HandleRequest, opts ...grpc.CallOption) (HandleService_PreHandleClient, error) {
 	stream, err := c.cc.NewStream(ctx, &HandleService_ServiceDesc.Streams[0], "/autoscaler.HandleService/PreHandle", opts...)
 	if err != nil {
 		return nil, err
@@ -146,8 +149,11 @@ func (x *handleServicePostHandleClient) Recv() (*HandleResponse, error) {
 // All implementations must embed UnimplementedHandleServiceServer
 // for forward compatibility
 type HandleServiceServer interface {
-	PreHandle(*PreHandleRequest, HandleService_PreHandleServer) error
+	// リソース操作の前イベント
+	PreHandle(*HandleRequest, HandleService_PreHandleServer) error
+	// リソース操作
 	Handle(*HandleRequest, HandleService_HandleServer) error
+	// リソース操作の後イベント
 	PostHandle(*PostHandleRequest, HandleService_PostHandleServer) error
 	mustEmbedUnimplementedHandleServiceServer()
 }
@@ -156,7 +162,7 @@ type HandleServiceServer interface {
 type UnimplementedHandleServiceServer struct {
 }
 
-func (UnimplementedHandleServiceServer) PreHandle(*PreHandleRequest, HandleService_PreHandleServer) error {
+func (UnimplementedHandleServiceServer) PreHandle(*HandleRequest, HandleService_PreHandleServer) error {
 	return status.Errorf(codes.Unimplemented, "method PreHandle not implemented")
 }
 func (UnimplementedHandleServiceServer) Handle(*HandleRequest, HandleService_HandleServer) error {
@@ -179,7 +185,7 @@ func RegisterHandleServiceServer(s grpc.ServiceRegistrar, srv HandleServiceServe
 }
 
 func _HandleService_PreHandle_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(PreHandleRequest)
+	m := new(HandleRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
