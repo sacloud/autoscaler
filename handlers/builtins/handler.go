@@ -59,7 +59,7 @@ func (h *Handler) SetAPICaller(caller sacloud.APICaller) {
 
 func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
-	if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
+	if err := logger.Debug("status", handler.HandleResponse_RECEIVED); err != nil {
 		return err
 	}
 	if err := logger.Debug("request", req.String()); err != nil {
@@ -70,7 +70,7 @@ func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.Response
 		return builtin.PreHandle(req, sender)
 	}
 
-	if err := logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
+	if err := logger.Debug("status", handler.HandleResponse_IGNORED); err != nil {
 		return err
 	}
 	return logger.Debug("request", req.String())
@@ -78,7 +78,7 @@ func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.Response
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
-	if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
+	if err := logger.Debug("status", handler.HandleResponse_RECEIVED); err != nil {
 		return err
 	}
 	if err := logger.Debug("request", req.String()); err != nil {
@@ -89,7 +89,7 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 		return builtin.Handle(req, sender)
 	}
 
-	if err := logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
+	if err := logger.Debug("status", handler.HandleResponse_IGNORED); err != nil {
 		return err
 	}
 	return logger.Debug("request", req.String())
@@ -97,7 +97,7 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 
 func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
-	if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
+	if err := logger.Debug("status", handler.HandleResponse_RECEIVED); err != nil {
 		return err
 	}
 	if err := logger.Debug("request", req.String()); err != nil {
@@ -108,7 +108,7 @@ func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.Res
 		return builtin.PostHandle(req, sender)
 	}
 
-	if err := logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
+	if err := logger.Debug("status", handler.HandleResponse_IGNORED); err != nil {
 		return err
 	}
 	return logger.Debug("request", req.String())
