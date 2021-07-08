@@ -57,7 +57,7 @@ func (h *Handler) SetAPICaller(caller sacloud.APICaller) {
 	}
 }
 
-func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
 	if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
 		return err

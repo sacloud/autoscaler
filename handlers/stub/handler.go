@@ -25,7 +25,7 @@ import (
 
 // Handler 単体テスト用のスタブハンドラ
 type Handler struct {
-	PreHandleFunc  func(*handler.PreHandleRequest, handlers.ResponseSender) error
+	PreHandleFunc  func(*handler.HandleRequest, handlers.ResponseSender) error
 	HandleFunc     func(*handler.HandleRequest, handlers.ResponseSender) error
 	PostHandleFunc func(*handler.PostHandleRequest, handlers.ResponseSender) error
 	Logger         *log.Logger
@@ -56,7 +56,7 @@ func (h *Handler) SetLogger(logger *log.Logger) {
 	h.Logger = logger
 }
 
-func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	if h.PreHandleFunc != nil {
 		return h.PreHandleFunc(req, sender)
 	}

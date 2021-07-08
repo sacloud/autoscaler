@@ -9,8 +9,7 @@ resources:
         selector:
           names: ["autoscaler-e2e-test"]
           zones: ["is1a"]
-        option:
-          shutdown_force: true
+        shutdown_force: true
         plans:
           - core: 1
             memory: 1

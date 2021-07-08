@@ -61,7 +61,7 @@ type Handler interface {
 
 // PreHandler CoreからのPreHandleリクエストを処理するためのインターフェース
 type PreHandler interface {
-	PreHandle(*handler.PreHandleRequest, ResponseSender) error
+	PreHandle(*handler.HandleRequest, ResponseSender) error
 }
 
 // PostHandler CoreからのPostHandleリクエストを処理するためのインターフェース

@@ -3,36 +3,46 @@ option go_package = "github.com/sacloud/autoscaler/handler";
 
 package autoscaler;
 
+// Handlersサービス定義
+//
+// sacloud/autoscalerのHandlersがサービスを公開し、Coreがクライアントとして実装する
+// 一連のrpcは操作対象のリソースごとに順次呼ばれる
+//
+// 例: 親リソース(リソース1)+子リソース(リソース2)を操作する場合以下の順で呼ばれる
+//
+//   - リソース2: PreHandle
+//   - リソース2: Handle
+//   - リソース2: PostHandle
+//
+//   - リソース1: PreHandle
+//   - リソース1: Handle
+//   - リソース1: PostHandle
 service HandleService {
-  rpc PreHandle(PreHandleRequest) returns (stream HandleResponse);
+  // リソース操作の前イベント
+  rpc PreHandle(HandleRequest) returns (stream HandleResponse);
+  // リソース操作
   rpc Handle(HandleRequest) returns (stream HandleResponse);
+  // リソース操作の後イベント
   rpc PostHandle(PostHandleRequest) returns (stream HandleResponse);
 }
 
-message PreHandleRequest {
-  // Inputから引き渡し
-  string source        = 1;
-  string resource_name = 2;
-
-  // Coreからの指示情報
-  string scaling_job_id            = 4;
-  ResourceInstructions instruction = 5;
-  Resource current                 = 6;
-  Resource desired                 = 7;
-}
-
+// PreHandle/Handle時のリクエストパラメータ
 message HandleRequest {
   // Inputから引き渡し
   string source        = 1;
   string resource_name = 2;
 
-  // Coreからの指示情報
-  string scaling_job_id            = 4;
-  ResourceInstructions instruction = 5;
-  Resource current                 = 6;
-  Resource desired                 = 7;
+  // スケールジョブのID
+  string scaling_job_id            = 3;
+
+  // ハンドラーへの指示
+  ResourceInstructions instruction = 4;
+
+  // リソースのあるべき姿
+  Resource desired                 = 5;
 }
 
+// PostHandle時のリクエストパラメータ
 message PostHandleRequest {
   // Handleの結果を表す
   enum ResourceHandleResults {
@@ -47,53 +57,56 @@ message PostHandleRequest {
   string source        = 1;
   string resource_name = 2;
 
-  // Coreからの指示情報
-  string scaling_job_id            = 4;
-  ResourceHandleResults result     = 5;
-  Resource current                 = 6;
-  Resource desired                 = 7;
+  // スケールジョブのID
+  string scaling_job_id        = 3;
+
+  // Handleの結果
+  ResourceHandleResults result = 4;
+
+  // Handleの結果を反映した、リソースの現在の状態
+  Resource current             = 5;
 }
 
+// Handlersからのストリームレスポンス
 message HandleResponse {
   enum Status {
-    reserved 5 to 10;
+    reserved 1 to 10;
 
-    UNKNOWN         = 0;
-    RECEIVED        = 1;
-    ACCEPTED        = 2;
-    RUNNING         = 3;
-    DONE            = 4;
-    IGNORED         = 11;
-    CANCELED        = 12;
-    FAILED          = 13;
+    UNKNOWN  = 0;
+
+    RECEIVED = 11;
+    ACCEPTED = 12;
+    RUNNING  = 13;
+    DONE     = 14;
+    IGNORED  = 15;
+    CANCELED = 16;
+    FAILED   = 17;
   }
 
-  string scaling_job_id   = 1;
-  Status status = 2;
-  string log    = 3; // stdout & stderr
+  string scaling_job_id = 1;
+  Status status         = 2;
+  string log            = 3; // Handlersが出力する追加的なメッセージ
 }
 
 // Handlersが対象リソースをどう扱うべきかを示す
 enum ResourceInstructions {
-  UNKNOWN      = 0;
-  CREATE       = 1;
-  UPDATE       = 2;
-  DELETE       = 3;
-  NOOP         = 4; // 特に変更の必要がない状態を示す。参照用のリソースなどで利用される。
+  UNKNOWN = 0;
+  CREATE  = 1;
+  UPDATE  = 2;
+  DELETE  = 3;
+  NOOP    = 4; // 特に変更の必要がない状態、参照用のリソースなどで利用される
 }
 
-
-
-// リソース型
+// 汎用リソース型
 message Resource {
   oneof resource {
-    Server server                               = 10;
-    ServerGroupInstance server_group_instance   = 11;
-    ELB elb                                     = 12;
-    GSLB gslb                                   = 13;
-    DNS dns                                     = 14;
-    Router router                               = 15;
-    LoadBalancer load_balancer                  = 16;
+    Server server                              = 1;
+    ServerGroupInstance server_group_instance  = 2;
+    ELB elb                                    = 3;
+    GSLB gslb                                  = 4;
+    DNS dns                                    = 5;
+    Router router                              = 6;
+    LoadBalancer load_balancer                 = 7;
   }
 }
 
@@ -107,114 +120,111 @@ message Server {
   uint32 memory                         = 14;
   bool dedicated_cpu                    = 15;
   repeated NetworkInfo assigned_network = 16;
-
-  // common
-  string name          = 90;
-
-  // TODO option.shutdown_forceをインラインにする
-  ServerScalingOption option            = 101;
+  string name                           = 17;
+  bool shutdown_force                   = 18;
 }
 
 message ServerGroupInstance {
-  Parent parent                    = 1;
+  Parent parent                   = 1;
   reserved 2 to 10;
 
-  string id                             = 11; // 新規作成指示時は空
-  string zone                           = 12;
+  string id                       = 11; // 新規作成指示時は空
+  string zone                     = 12;
 
   // plan
-  uint32 core                           = 13;
-  uint32 memory                         = 14;
-  bool dedicated_cpu                    = 15;
-  string private_host_id                = 16;
+  uint32 core                     = 13;
+  uint32 memory                   = 14;
+  bool dedicated_cpu              = 15;
+  string private_host_id          = 16;
 
   // disks
-  repeated Disk disks                   = 20;
-  EditParameter edit_parameter          = 21; // 1番目のディスクにのみ有効
+  repeated Disk disks             = 17;
+  EditParameter edit_parameter    = 18; // 1番目のディスクにのみ有効
 
   // networks
-  repeated NIC network_interfaces       = 30;
+  repeated NIC network_interfaces = 19;
 
   // misc
-  string cd_rom_id  = 40;
-  string interface_driver = 41;
+  string cd_rom_id                = 20;
+  string interface_driver         = 21;
 
   // common
-  string name          = 90;
-  repeated string tags = 91;
-  string description   = 92;
-  string icon_id       = 93;
-  bool shutdown_force  = 94;
+  string name                     = 22;
+  repeated string tags            = 23;
+  string description              = 24;
+  string icon_id                  = 25;
+  bool shutdown_force             = 26;
 
   // ******** messages ***********
 
   message Disk {
     reserved 1 to 10;
 
-    string id                             = 11; // 新規作成指示時は空
-    string zone                           = 12;
-
-    // 以降のパラメータは新規作成時のみ設定される
+    string id                = 11; // 新規作成指示時は空
+    string zone              = 12;
 
     // sources
-    string source_archive_id = 21;
-    string source_disk_id    = 22;
+    string source_archive_id = 13;
+    string source_disk_id    = 14;
 
     // spec
-    string plan              = 31; // ssd or hdd
-    string connection        = 32; // virtio or ide
-    uint32 size              = 33;
+    string plan              = 15; // ssd or hdd
+    string connection        = 16; // virtio or ide
+    uint32 size              = 17;
 
     // common
-    string name          = 90;
-    repeated string tags = 91;
-    string description   = 92;
-    string icon_id       = 93;
+    string name              = 18;
+    repeated string tags     = 19;
+    string description       = 20;
+    string icon_id           = 21;
   }
 
-  message EditParameter { // 新規作成時のみ設定される
+  message EditParameter {
     reserved 1 to 10;
+
     string host_name           = 11;
     string password            = 12;
     bool disable_password_auth = 13;
     bool enable_dhcp           = 14;
     bool change_partition_uuid = 15;
 
-    string ip_address       = 21;
-    uint32 network_mask_len = 22;
-    string default_route    = 23;
+    string ip_address          = 16;
+    uint32 network_mask_len    = 17;
+    string default_route       = 18;
 
-    repeated string ssh_keys    = 31;
-    repeated string ssh_key_ids = 32;
+    repeated string ssh_keys    = 19;
+    repeated string ssh_key_ids = 20;
 
-    repeated string startup_scripts = 41;
+    repeated string startup_scripts = 21;
   }
 
   message NIC {
     reserved 1 to 10;
-    string upstream         = 11;
-    string packet_filter_id = 12;
-    string user_ip_address  = 13;
-    NetworkInfo assigned_network = 16; // 新規作成時は空
-    ExposeInfo expose_info = 20;
+
+    string upstream              = 11;
+    string packet_filter_id      = 12;
+    string user_ip_address       = 13;
+    NetworkInfo assigned_network = 14;
+    ExposeInfo expose_info       = 15;
   }
 
+  // NICに紐づくネットワーク公開情報
+  // 上流リソースの操作のための定義を含む
   message ExposeInfo {
     reserved 1 to 10;
+
     repeated uint32 ports    = 11;
-
-    string server_group_name = 21; // ELB向け
-
-    uint32 weight            = 31; // GSLB向け
-
-    repeated string vips     = 41; // LB向け
-    HealthCheck health_check = 42; // LB向け
-
-    string record_name       = 51; // DNS向け
-    uint32 ttl               = 52; // DNS向け
+    string server_group_name = 12; // ELB向け
+    uint32 weight            = 13; // GSLB向け
+    repeated string vips     = 14; // LB向け
+    HealthCheck health_check = 15; // LB向け
+    string record_name       = 16; // DNS向け
+    uint32 ttl               = 17; // DNS向け
   }
 
   message HealthCheck {
+    reserved 1 to 10;
+
     string protocol    = 11;
     string path        = 12;
     uint32 status_code = 13;
@@ -222,54 +232,50 @@ message ServerGroupInstance {
 }
 
 message ELB {
-  Parent parent                    = 1;
   reserved 2 to 10;
+  Parent parent             = 1;
 
-  string id                        = 11;
-  string region                    = 12;
-  uint32 plan                      = 13;
-  string virtual_ip_address        = 14;
-  string fqdn                      = 15;
-
-  // common
-  string name          = 90;
+  string id                 = 11;
+  string region             = 12;
+  uint32 plan               = 13;
+  string virtual_ip_address = 14;
+  string fqdn               = 15;
+  string name               = 16;
 }
 
 message GSLB {
   reserved 1 to 10;
 
-  string id                        = 11;
-  string fqdn                      = 12;
-  repeated GSLBServer servers      = 13;
-
-  // common
-  string name          = 90;
+  string id                   = 11;
+  string fqdn                 = 12;
+  repeated GSLBServer servers = 13;
+  string name                 = 14;
 }
 
 message GSLBServer {
-  string ip_address = 1;
-  bool enabled      = 2;
-  uint32 weight     = 3;
+  reserved 1 to 10;
+
+  string ip_address = 11;
+  bool enabled      = 12;
+  uint32 weight     = 13;
 }
 
 
 message DNS {
   reserved 1 to 10;
 
-  string id                        = 11;
-  string zone                      = 12;
-  repeated string dns_servers      = 13;
+  string id                   = 11;
+  string zone                 = 12;
+  repeated string dns_servers = 13;
 }
 
 message Router {
   reserved 1 to 10;
 
-  string id                        = 11;
-  string zone                      = 12;
-  uint32 band_width                  = 13;
-
-  // common
-  string name          = 90;
+  string id         = 11;
+  string zone       = 12;
+  uint32 band_width = 13;
+  string name       = 14;
 }
 
 message LoadBalancer {
@@ -278,20 +284,22 @@ message LoadBalancer {
   string id                                     = 11;
   string zone                                   = 12;
   repeated LoadBalancerVIP virtual_ip_addresses = 13;
-
-  // common
-  string name          = 90;
+  string name                                   = 14;
 }
 
 message LoadBalancerVIP {
-  string ip_address = 1;
-  uint32 port = 2;
-  repeated LoadBalancerServer servers = 3;
+  reserved 1 to 10;
+
+  string ip_address                   = 11;
+  uint32 port                         = 12;
+  repeated LoadBalancerServer servers = 13;
 }
 
 message LoadBalancerServer {
-  string ip_address = 1;
-  bool enabled      = 2;
+  reserved 1 to 10;
+
+  string ip_address = 11;
+  bool enabled      = 12;
 }
 
 message Parent {
@@ -306,12 +314,10 @@ message Parent {
 }
 
 message NetworkInfo {
-  string ip_address = 1;
-  uint32 netmask = 2;
-  string gateway = 3;
-  uint32 index   = 4;
-}
+  reserved 1 to 10;
 
-message ServerScalingOption {
-  bool shutdown_force = 1;
+  string ip_address = 11;
+  uint32 netmask    = 12;
+  string gateway    = 13;
+  uint32 index      = 14;
 }

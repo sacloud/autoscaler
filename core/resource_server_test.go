@@ -56,11 +56,9 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 		Selector: &MultiZoneSelector{
 			ResourceSelector: &ResourceSelector{},
 		},
-		DedicatedCPU: false,
-		Plans:        nil,
-		Option: ServerScalingOption{
-			ShutdownForce: false,
-		},
+		DedicatedCPU:  false,
+		Plans:         nil,
+		ShutdownForce: false,
 	}
 
 	// Newした時にIDマーカータグが付与されるはず
@@ -120,9 +118,7 @@ func TestResourceServer2_Compute(t *testing.T) {
 			{Core: 2, Memory: 4, Name: "plan2"},
 			{Core: 4, Memory: 8, Name: "plan3"},
 		},
-		Option: ServerScalingOption{
-			ShutdownForce: false,
-		},
+		ShutdownForce: false,
 	}
 	resource := &ResourceServer{
 		ResourceBase: &ResourceBase{

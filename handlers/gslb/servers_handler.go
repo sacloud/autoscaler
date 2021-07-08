@@ -51,7 +51,7 @@ func (h *ServersHandler) Version() string {
 	return version.FullVersion()
 }
 
-func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
+func (h *ServersHandler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Desired) {
@@ -81,21 +81,21 @@ func (h *ServersHandler) PreHandle(req *handler.PreHandleRequest, sender handler
 func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
-	if h.shouldHandle(req.Desired) {
+	if h.shouldHandle(req.Current) {
 		switch req.Result {
 		case handler.PostHandleRequest_CREATED:
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}
 
-			instance := req.Desired.GetServerGroupInstance()
+			instance := req.Current.GetServerGroupInstance()
 			gslb := instance.Parent.GetGslb()
 			return h.addServer(ctx, instance, gslb)
 		case handler.PostHandleRequest_UPDATED:
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}
-			server := req.Desired.GetServer()
+			server := req.Current.GetServer()
 			gslb := server.Parent.GetGslb() // バリデーション済みなためnilチェック不要
 			return h.attachAndDetach(ctx, server, gslb, true)
 		}

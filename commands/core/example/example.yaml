@@ -35,8 +35,7 @@ resources:
           - core: 4
             memory: 8
         # スケール時の動作オプション
-        option:
-          shutdown_force: true
+        shutdown_force: true
 
       # サーバ(水平スケール)
       - type: ServerGroup

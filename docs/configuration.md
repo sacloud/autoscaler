@@ -20,8 +20,7 @@ resources:
         selector:
           names: ["example"]
           zones: ["is1a"]
-        option:
-          shutdown_force: true
+        shutdown_force: true
 
 # カスタムハンドラーの定義
 # handlers:
@@ -252,10 +251,8 @@ selector:
   # コア専有プランを利用するか
   dedicated_cpu: <boolean>
   
-  # 垂直スケール動作のオプションを指定(省略可能)
-  option:
-    # 強制シャットダウンを行うか(ACPIが利用できないサーバの場合trueにする)
-    shutdown_force: <boolean> 
+  # 強制シャットダウンを行うか(ACPIが利用できないサーバの場合trueにする)
+  shutdown_force: <boolean> 
   
   # 垂直スケールさせる範囲(省略可能)
   plans:

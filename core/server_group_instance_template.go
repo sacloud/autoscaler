@@ -145,6 +145,8 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient saclou
 		errors = multierror.Append(errors, err)
 	}
 
+	// TODO サイズのバリデーション
+
 	return errors.Errors
 }
 

@@ -72,9 +72,7 @@ func (c *computedServer) Current() *handler.Resource {
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
 					AssignedNetwork: c.assignedNetwork(),
 					Parent:          c.parents(),
-					Option: &handler.ServerScalingOption{
-						ShutdownForce: c.resource.def.Option.ShutdownForce,
-					},
+					ShutdownForce:   c.resource.def.ShutdownForce,
 				},
 			},
 		}
@@ -95,9 +93,7 @@ func (c *computedServer) Desired() *handler.Resource {
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
 					AssignedNetwork: c.assignedNetwork(),
 					Parent:          c.parents(),
-					Option: &handler.ServerScalingOption{
-						ShutdownForce: c.resource.def.Option.ShutdownForce,
-					},
+					ShutdownForce:   c.resource.def.ShutdownForce,
 				},
 			},
 		}
