@@ -1,4 +1,4 @@
-syntax = "proto3";
+syntax            = "proto3";
 option go_package = "github.com/sacloud/autoscaler/request";
 
 package autoscaler;
@@ -15,27 +15,28 @@ service ScalingService {
 
 // Scalingサービスのリクエストパラメータ
 message ScalingRequest {
-  // 呼び出し元を示すラベル値、Coreでの処理には影響しない。デフォルト値: "default"
-  string source              = 1;
+  // 呼び出し元を示すラベル値、Coreでの処理には影響しない。デフォルト値:
+  // "default"
+  string source = 1;
 
   // 操作対象のリソース名。リソース名にはCoreのコンフィギュレーションの中で定義した名前を指定する
   // 対応するリソース名がCoreで見つけられなかった場合はエラーを返す
   //
   // デフォルト値: "default"
   // デフォルト値を指定した場合はCoreのコンフィギュレーションで定義された先頭のリソースが操作対象となる
-  string resource_name       = 2;
+  string resource_name = 2;
 
   // 希望するスケール(プランなど)につけた名前
   // 特定のスケールに一気にスケールを変更したい場合に指定する
   // 指定する名前はCoreのコンフィギュレーションで定義しておく必要がある
-  string desired_state_name  = 3;
+  string desired_state_name = 3;
 }
 
 // Scalingサービスのレスポンス
 message ScalingResponse {
   // スケールジョブのID
   // リクエストパラメータに応じてCoreがジョブを起動しIDを割り当てたもの
-  string scaling_job_id   = 1;
+  string scaling_job_id = 1;
 
   // スケールジョブのステータス
   // Coreがリクエストを処理した段階のステータスを返す
@@ -43,16 +44,16 @@ message ScalingResponse {
 
   // Coreからのメッセージ
   // 何らかの事情でリクエストを受け付けられなかった場合の理由が記載される
-  string message          = 3;
+  string message = 3;
 }
 
 // ジョブのステータス
 enum ScalingJobStatus {
-  JOB_UNKNOWN         = 0;
-  JOB_ACCEPTED        = 1;
-  JOB_RUNNING         = 2;
-  JOB_DONE            = 3;
-  JOB_CANCELED        = 4;
-  JOB_IGNORED         = 5;
-  JOB_FAILED          = 6;
+  JOB_UNKNOWN  = 0;
+  JOB_ACCEPTED = 1;
+  JOB_RUNNING  = 2;
+  JOB_DONE     = 3;
+  JOB_CANCELED = 4;
+  JOB_IGNORED  = 5;
+  JOB_FAILED   = 6;
 }

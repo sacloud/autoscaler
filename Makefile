@@ -34,6 +34,7 @@ clean:
 
 .PHONY: tools
 tools:
+	echo "[INFO] please install clang-format manually if you would like to edit .proto"
 	(cd tools; go install golang.org/x/tools/cmd/goimports)
 	(cd tools; go install golang.org/x/tools/cmd/stringer)
 	(cd tools; go install github.com/sacloud/addlicense)
@@ -92,6 +93,10 @@ goimports:
 .PHONY: fmt
 fmt:
 	find . -name '*.go' | grep -v vendor | xargs gofmt -s -w
+
+.PHONY: fmt-proto
+fmt-proto:
+	find $(CURDIR)/protos/ -name "*.proto" | xargs clang-format -i
 
 .PHONY: build-textlint
 build-textlint:
