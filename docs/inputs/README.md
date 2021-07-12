@@ -6,7 +6,7 @@
 - [AlertManager Inputs](./alertmanager)
 - [Grafana Inputs](./grafana)
 - [Zabbix Inputs](./zabbix)
-- [Webhook Inputs](./zabbix)
+- [Webhook Inputs](./webhook)
 - [Direct Inputs](./direct)
 
 各Inputs共通の設定については以下を参照してください。  

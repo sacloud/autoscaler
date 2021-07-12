@@ -78,7 +78,7 @@ Global Flags:
 ```
 
 Note: Coreはデフォルトだと`unix:autoscaler.sock`でリッスンします。  
-Inputsを別のマシン上で動かす場合などは`--addr`フラグで`http://192.0.2.1:8080`のようなアドレスを指定する必要があります。  
+Inputsを別のマシン上で動かす場合などは`--addr`フラグで`192.0.2.1:8080`や`your-host-name.com:8080`のようなアドレスを指定する必要があります。  
 
 ## Inputsの起動
 
