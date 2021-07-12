@@ -2,7 +2,7 @@ terraform {
   required_providers {
     sakuracloud = {
       source  = "sacloud/sakuracloud"
-      version = "2.9.2"
+      version = "2.10.0"
     }
   }
 }
@@ -13,13 +13,40 @@ provider "sakuracloud" {
 
 # Server
 resource "sakuracloud_server" "server" {
+  count = 2
+
   name   = "autoscaler-e2e-test"
   core   = 1
   memory = 1
+
   network_interface {
     upstream = "shared"
   }
-  force_shutdown = true
+
+  disks = [sakuracloud_disk.disk[count.index].id]
+
+  disk_edit_parameter {
+    hostname        = "autoscaler-e2e-test"
+    disable_pw_auth = true
+    note {
+      id = sakuracloud_note.startupscript.id
+    }
+  }
+}
+
+resource "sakuracloud_note" "startupscript" {
+  name    = "autoscaler-e2e-test"
+  content = file("startup-script.sh")
+}
+
+resource "sakuracloud_disk" "disk" {
+  count             = 2
+  name              = "autosxaler-e2e-test"
+  source_archive_id = data.sakuracloud_archive.ubuntu.id
+}
+
+data "sakuracloud_archive" "ubuntu" {
+  os_type = "ubuntu2004"
 }
 
 # ELB
@@ -30,9 +57,9 @@ resource "sakuracloud_proxylb" "autoscaler-e2e-test" {
   region  = "is1"
 
   health_check {
-    protocol   = "tcp"
+    protocol   = "http"
     delay_loop = 10
-    port       = 80
+    path       = "/"
   }
 
   bind_port {
@@ -44,8 +71,11 @@ resource "sakuracloud_proxylb" "autoscaler-e2e-test" {
     }
   }
 
-  server {
-    ip_address = sakuracloud_server.server.ip_address
-    port       = 80
+  dynamic "server" {
+    for_each = sakuracloud_server.server
+    content {
+      ip_address = server["value"].ip_address
+      port       = 80
+    }
   }
 }

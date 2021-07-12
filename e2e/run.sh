@@ -33,8 +33,9 @@ if [ -n "$SKIP_CLEANUP" ]; then
 : "Cleanup skipped"
 else
 : "Cleaning up Infrastructures..."
-usacloud server delete -y -f --zone is1a `usacloud server read -q --zone is1a autoscaler-e2e-test` > /dev/null 2>&1
-usacloud proxy-lb delete -y `usacloud proxy-lb read -q autoscaler-e2e-test` > /dev/null 2>&1
+usacloud server delete -y -f --zone is1a --with-disks `usacloud server list -q --zone is1a --names autoscaler-e2e-test` > /dev/null 2>&1
+usacloud proxy-lb delete -y `usacloud proxy-lb list -q --names autoscaler-e2e-test` > /dev/null 2>&1
+usacloud startup-script delete -y `usacloud startup-script list -q --names autoscaler-e2e-test` > /dev/null 2>&1
 fi
 
 echo "Done: $RESULT"

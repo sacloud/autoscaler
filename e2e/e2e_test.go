@@ -56,6 +56,9 @@ var (
 	outputs  []string
 	mu       sync.Mutex
 
+	proxyLBReadyTimeout = 5 * time.Minute
+	e2eTestTimeout = 20 * time.Minute
+
 	//go:embed webhook.json
 	grafanaWebhookBody []byte
 )
@@ -79,15 +82,25 @@ var apiCaller = api.NewCaller(&api.CallerOptions{
 
 func TestMain(m *testing.M) {
 	setup()
-	result := m.Run()
-	teardown()
-	os.Exit(result)
+	defer teardown()
+
+	m.Run()
 }
 
 func TestE2E(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), e2eTestTimeout)
+	defer cancel()
+
 	/**************************************************************************
-	 * Step 0: 現在のリソースのプランを確認
+	 * Step 0: 現在のクラウド上のリソースの確認/ポーリング開始
 	 *************************************************************************/
+
+	// ProxyLBへのHTTPリクエストが通るようになるまで待ち & ポーリング開始
+	if err := waitProxyLBAndStartHTTPRequestLoop(ctx, t); err != nil {
+		t.Fatal(err)
+	}
+
+	// サーバプランの確認(前提)
 	server, err := fetchSakuraCloudServer()
 	if err != nil {
 		t.Fatal(err)
@@ -103,7 +116,7 @@ func TestE2E(t *testing.T) {
 	}
 
 	// grpc-health-probeでSERVINGになっていることを確認
-	out, err := exec.Command("/go/bin/grpc-health-probe", "-addr", "unix:autoscaler.sock").CombinedOutput()
+	out, err := exec.Command("grpc-health-probe", "-addr", "unix:autoscaler.sock").CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,8 +137,8 @@ func TestE2E(t *testing.T) {
 			fmt.Sprintf("Grafana Inputs returns unexpected status code: expected: 200 actual: %d", resp.StatusCode))
 	}
 
-	// Coreのジョブ完了まで待機(強制シャットダウンを行うので数分程度で通常は数分で完了する)
-	if err := waitOutput(upJobDoneMarker, 3*time.Minute); err != nil {
+	// Coreのジョブ完了まで待機
+	if err := waitOutput(upJobDoneMarker, 10*time.Minute); err != nil {
 		fatalWithStderrOutputs(t, err)
 	}
 
@@ -187,7 +200,7 @@ func TestE2E(t *testing.T) {
 	}
 
 	// Coreのジョブ完了まで待機
-	if err := waitOutput(downJobDoneMarker, 3*time.Minute); err != nil {
+	if err := waitOutput(downJobDoneMarker, 10*time.Minute); err != nil {
 		fatalWithStderrOutputs(t, err)
 	}
 
@@ -303,6 +316,46 @@ func isMarkerExistInOutputs(marker string) bool {
 	return false
 }
 
+func waitForProxyLBReady(url string, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	doneCh := make(chan error)
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				doneCh <- ctx.Err()
+				return
+			case <-ticker.C:
+				if err := httpRequestToProxyLB(url); err != nil {
+					continue
+				}
+				doneCh <- nil
+				return
+			}
+		}
+	}()
+
+	return <-doneCh
+}
+
+func httpRequestToProxyLB(url string) error {
+	res, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("got unexpected status code: %d", res.StatusCode)
+	}
+	return nil
+}
+
 func logOutputs() {
 	mu.Lock()
 	defer mu.Unlock()
@@ -331,4 +384,47 @@ func fetchSakuraCloudServer() (*sacloud.Server, error) {
 		return nil, fmt.Errorf("server 'autoscaler-e2e-test' not found on is1a zone")
 	}
 	return found.Servers[0], nil
+}
+
+func waitProxyLBAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error {
+	elbOp := sacloud.NewProxyLBOp(apiCaller)
+	found, err := elbOp.Find(context.Background(),  &sacloud.FindCondition{
+		Count: 1,
+		Filter: search.Filter{
+			search.Key("Name"): search.ExactMatch("autoscaler-e2e-test"),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(found.ProxyLBs) == 0 {
+		return fmt.Errorf("proxylb 'autoscaler-e2e-test' not found")
+	}
+	elb := found.ProxyLBs[0]
+
+	// vip宛にリクエストが通るまで待機
+	url := fmt.Sprintf("http://%s", elb.VirtualIPAddress)
+	if err := waitForProxyLBReady(url, proxyLBReadyTimeout); err != nil {
+		t.Fatal(err)
+	}
+
+	// リクエストが通るようになったら定期的にリクエストを送り、正常なレスポンス(StatusCode==200)を得られていることを確認し続ける
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <- ctx.Done():
+				return
+			case <-ticker.C:
+				if err := httpRequestToProxyLB(url); err != nil {
+					t.Error(err)
+					return
+				}
+			}
+		}
+	}()
+	return nil
 }
