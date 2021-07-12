@@ -37,8 +37,7 @@ func (rds *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.
 			return multierror.Prefix(err, fmt.Sprintf("resource=%s", r.Type()))
 		}
 		if errs := r.Validate(ctx, apiClient); len(errs) > 0 {
-			err := multierror.Prefix(&multierror.Error{Errors: errs}, fmt.Sprintf("resource=%s", r.Type())).(*multierror.Error)
-			errors = append(errors, err.Errors...)
+			errors = append(errors, errs...)
 		}
 		return nil
 	}

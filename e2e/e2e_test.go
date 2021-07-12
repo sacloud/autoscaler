@@ -57,7 +57,7 @@ var (
 	mu       sync.Mutex
 
 	proxyLBReadyTimeout = 5 * time.Minute
-	e2eTestTimeout = 20 * time.Minute
+	e2eTestTimeout      = 20 * time.Minute
 
 	//go:embed webhook.json
 	grafanaWebhookBody []byte
@@ -388,7 +388,7 @@ func fetchSakuraCloudServer() (*sacloud.Server, error) {
 
 func waitProxyLBAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error {
 	elbOp := sacloud.NewProxyLBOp(apiCaller)
-	found, err := elbOp.Find(context.Background(),  &sacloud.FindCondition{
+	found, err := elbOp.Find(context.Background(), &sacloud.FindCondition{
 		Count: 1,
 		Filter: search.Filter{
 			search.Key("Name"): search.ExactMatch("autoscaler-e2e-test"),
@@ -416,7 +416,7 @@ func waitProxyLBAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error
 
 		for {
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 				return
 			case <-ticker.C:
 				if err := httpRequestToProxyLB(url); err != nil {

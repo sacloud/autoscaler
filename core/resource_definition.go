@@ -47,7 +47,7 @@ type ChildResourceDefinition interface {
 //
 // Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceDefBase struct {
-	TypeName string              `yaml:"type" validate:"required,oneof=Server ServerGroup LoadBalancer EnhancedLoadBalancer ELB GSLB DNS"`
+	TypeName string              `yaml:"type" validate:"required,oneof=DNS EnhancedLoadBalancer ELB GSLB LoadBalancer Router Server ServerGroup"`
 	DefName  string              `yaml:"name" validate:"required"`
 	children ResourceDefinitions `yaml:"-"`
 }
@@ -66,11 +66,13 @@ func (r *ResourceDefBase) Type() ResourceTypes {
 		return ResourceTypeGSLB
 	case ResourceTypeDNS.String():
 		return ResourceTypeDNS
+	case ResourceTypeRouter.String():
+		return ResourceTypeRouter
 	case ResourceTypeLoadBalancer.String():
 		return ResourceTypeLoadBalancer
 	}
 
-	return ResourceTypeLoadBalancer
+	return ResourceTypeUnknown
 }
 
 func (r *ResourceDefBase) Name() string {
