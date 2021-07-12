@@ -18,6 +18,7 @@ import (
 	"github.com/sacloud/autoscaler/commands/inputs/alertmanager"
 	"github.com/sacloud/autoscaler/commands/inputs/direct"
 	"github.com/sacloud/autoscaler/commands/inputs/grafana"
+	"github.com/sacloud/autoscaler/commands/inputs/webhook"
 	"github.com/sacloud/autoscaler/commands/inputs/zabbix"
 	"github.com/spf13/cobra"
 )
@@ -32,6 +33,7 @@ var subCommands = []*cobra.Command{
 	alertmanager.Command,
 	direct.Command,
 	grafana.Command,
+	webhook.Command,
 	zabbix.Command,
 }
 

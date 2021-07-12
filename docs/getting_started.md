@@ -93,9 +93,12 @@ $ autoscaler inputs alertmanager
 
 # Zabbix Inputsの場合
 $ autoscaler inputs zabbix
+
+# 汎用Webhook Inputsの場合
+$ autoscaler inputs webhook --accept-http-methods "POST,PUT" --executable-path your-executable-path.sh
 ```
 
 ## Grafana/AlertManager/Zabbixの設定
 
-Grafana、AlertManager、またはZabbixでアラートの設定、およびWebhookでの通知設定が必要です。  
+Grafana、AlertManager、またはZabbixを利用する場合、各プロダクト側でアラートの設定、およびWebhookでの通知設定が必要です。  
 詳細は[Inputsドキュメント](./inputs)を参照してください。  
