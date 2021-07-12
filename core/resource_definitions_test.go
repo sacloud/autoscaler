@@ -15,6 +15,7 @@
 package core
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/goccy/go-yaml"
@@ -343,6 +344,90 @@ func TestResourceDefinitions_FilterByResourceName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.rds.FilterByResourceName(tt.resourceName)
+			require.EqualValues(t, tt.want, got)
+		})
+	}
+}
+
+func TestResourceDefinitions_Validate(t *testing.T) {
+	tests := []struct {
+		name string
+		rds  ResourceDefinitions
+		want []error
+	}{
+		{
+			name: "no error",
+			rds: ResourceDefinitions{
+				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "DNS", DefName: "stub1"}},
+			},
+			want: nil,
+		},
+		{
+			name: "duplicated",
+			rds: ResourceDefinitions{
+				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "DNS", DefName: "duplicated"}},
+				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "DNS", DefName: "duplicated"}},
+			},
+			want: []error{
+				fmt.Errorf("resource name duplicated is duplicated"),
+			},
+		},
+		{
+			name: "duplicated with nested defs",
+			rds: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "DNS",
+						DefName:  "duplicated",
+						children: ResourceDefinitions{
+							&stubResourceDef{
+								ResourceDefBase: &ResourceDefBase{
+									TypeName: "DNS",
+									DefName:  "stub1-1",
+									children: ResourceDefinitions{
+										&stubResourceDef{
+											ResourceDefBase: &ResourceDefBase{
+												TypeName: "DNS",
+												DefName:  "stub1-1-1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "DNS",
+						DefName:  "stub2",
+						children: ResourceDefinitions{
+							&stubResourceDef{
+								ResourceDefBase: &ResourceDefBase{
+									TypeName: "DNS",
+									DefName:  "stub2-1",
+									children: ResourceDefinitions{
+										&stubResourceDef{
+											ResourceDefBase: &ResourceDefBase{
+												TypeName: "DNS",
+												DefName:  "duplicated",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []error{
+				fmt.Errorf("resource name duplicated is duplicated"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.rds.Validate(testContext(), test.APIClient)
 			require.EqualValues(t, tt.want, got)
 		})
 	}

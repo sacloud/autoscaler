@@ -31,14 +31,19 @@ type ResourceDefinitions []ResourceDefinition
 
 func (rds *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	var errors []error
+	names := make(map[string]struct{})
 
 	fn := func(r ResourceDefinition) error {
 		if err := validate.Struct(r); err != nil {
-			return multierror.Prefix(err, fmt.Sprintf("resource=%s", r.Type()))
+			errors = append(errors, multierror.Prefix(err, fmt.Sprintf("resource=%s", r.Type())))
 		}
 		if errs := r.Validate(ctx, apiClient); len(errs) > 0 {
 			errors = append(errors, errs...)
 		}
+		if _, exist := names[r.Name()]; exist {
+			errors = append(errors, fmt.Errorf("resource name %s is duplicated", r.Name()))
+		}
+		names[r.Name()] = struct{}{}
 		return nil
 	}
 
