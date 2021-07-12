@@ -9,12 +9,33 @@
 - 何らかのWebhookを受信可能であること
 - InputsからAutoScaler Coreへの疎通が可能なこと
 
+### Webhook送信側の設定
+
+監視ツールなどでAutoScaler CoreへのUpまたはDownリクエストを送信するためのWebhookを設定します。  
+
+送信先URLは以下のようにします。
+
+- スケールアップ/スケールアウト用のエンドポイント: `<Webhook InputsのURL>/up?[key=value]...`
+- スケールダウン/スケールイン用のエンドポイント: `<Webhook InputsのURL>/down?[key=value]...`
+
+URLには以下のパラメータが指定可能です。
+
+- `source`: リクエスト元を識別するための名称。任意の値を利用可能。デフォルト値:`default`
+- `resource-name`: 操作対象のリソースの名前。Coreのコンフィギュレーションで定義したリソース名を指定する。デフォルト値:`default`
+- `desired-state-name`: 希望する状態の名前。Coreのコンフィギュレーションで定義したプラン名を指定する。特定の時刻に特定のスペックにしたい場合などに利用する。デフォルト値:`""`
+
+これらのパラメータを複数指定する場合は`&`で繋げて記載します。
+
+Urlの記載例: `http://example.com:8080/up?source=grafana&resource-name=resource1`
+
 ## 利用例: MackerelのWebhookを利用する場合
 
 [Mackerel](https://mackerel.io)のWebhookでの通知を利用する例です。
 
-まず、Webhookのボディを解析し、AutoScalerでハンドルすべきリクエストなのかを判定するためのスクリプトを作成します。  
+あらかじめMackerel側でWebhookを送信するための設定をしておきます。  
 参考: [Mackerelヘルプ: Webhookにアラートを通知する](https://mackerel.io/ja/docs/entry/howto/alerts/webhook)  
+
+次に、Webhookのボディを解析し、AutoScalerでハンドルすべきリクエストなのかを判定するためのスクリプトを作成します。  
 
 ここでは`jq`コマンドを利用し、Webhookのボディの`alert.status`が`warning`だった場合はハンドルするようにします。  
 以下の内容で`mackerel.sh`ファイルを作成します。
