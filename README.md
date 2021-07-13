@@ -1,6 +1,13 @@
 # AutoScaler
 
 ![logo.svg](./docs/images/logo.svg)
+
+[![released](https://badgen.net/github/release/sacloud/autoscaler/stable)](https://github.com/sacloud/autoscaler/releases/latest)
+![Test Status](https://github.com/sacloud/terraform-provider-sakuracloud/workflows/Tests/badge.svg)
+[![documents](https://img.shields.io/badge/documents-docs.usacloud.jp-green)](https://docs.usacloud.jp/autoscaler/)
+[![license](https://badgen.net/github/license/sacloud/autoscaler)](LICENSE.txt)
+[![Slack](https://img.shields.io/badge/Slack-Sacloud%20Workspace-brightgreen)](https://join.slack.com/t/sacloud/shared_invite/zt-ohsdpv2t-_Bi1_F0jDAAmWjoMQCmAxg)
+
 [sacloud/autoscaler](https://github.com/sacloud/autoscaler) はさくらのクラウド上のリソースのオートスケーリングを行うためのツールです。
 
 ## Overview
@@ -34,7 +41,7 @@ sacloud/autoscalerはGrafanaやAlertManagerなどの監視ツールからのWebh
 
 ## Getting Started
 
-[Getting Started Guide](./docs/getting_started.md)を参照してください。
+[Getting Started Guide](https://docs.usacloud.jp/autoscaler/getting_started/)を参照してください。
 
 ## License
 
