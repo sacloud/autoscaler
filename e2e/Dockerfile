@@ -27,12 +27,12 @@ RUN  apt-get update && apt-get -y install \
 
 # Install Terraform
 
-RUN wget https://releases.hashicorp.com/terraform/1.0.0/terraform_1.0.0_linux_amd64.zip
-RUN unzip terraform_1.0.0_linux_amd64.zip && rm terraform_1.0.0_linux_amd64.zip
+RUN wget https://releases.hashicorp.com/terraform/1.0.2/terraform_1.0.2_linux_amd64.zip
+RUN unzip terraform_1.0.2_linux_amd64.zip && rm terraform_1.0.2_linux_amd64.zip
 RUN mv terraform /usr/bin/terraform
 
 # Install Usacloud
-RUN wget https://github.com/sacloud/usacloud/releases/download/v1.1.6/usacloud_linux-amd64.zip
+RUN wget https://github.com/sacloud/usacloud/releases/download/v1.2.0/usacloud_linux-amd64.zip
 RUN unzip usacloud_linux-amd64.zip && rm usacloud_linux-amd64.zip
 RUN mv usacloud /usr/bin/usacloud
 
