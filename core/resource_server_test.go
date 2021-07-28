@@ -21,6 +21,7 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/test"
+	"github.com/sacloud/libsacloud/v2/helper/plans"
 	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -61,7 +62,6 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 		ShutdownForce: false,
 	}
 
-	// Newした時にIDマーカータグが付与されるはず
 	resource, err := NewResourceServer(ctx, test.APIClient, def, test.Zone, server)
 	require.NoError(t, err)
 	require.NotNil(t, resource)
@@ -70,24 +70,17 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 
 	server, err = serverOp.Read(ctx, test.Zone, server.ID)
 	require.NoError(t, err)
-	require.EqualValues(t, types.Tags{resourceIDMarkerTag(server.ID)}, server.Tags)
 
 	// IDを変えるためにプラン変更を実施
-	updated, err := serverOp.ChangePlan(ctx, test.Zone, server.ID, &sacloud.ServerChangePlanRequest{
-		CPU:                  1,
-		MemoryMB:             2 * size.GiB,
-		ServerPlanGeneration: types.PlanGenerations.Default,
-		ServerPlanCommitment: types.Commitments.Standard,
-	})
+	updated, err := plans.ChangeServerPlan(ctx, test.APIClient, test.Zone, server.ID,
+		1, 2*size.GiB, types.Commitments.Standard, types.PlanGenerations.Default)
 	require.NoError(t, err)
 
 	// refresh実施
 	_, err = resource.Compute(ctx, true)
 	require.NoError(t, err)
 
-	server, err = serverOp.Read(ctx, test.Zone, updated.ID)
-	require.NoError(t, err)
-	require.EqualValues(t, types.Tags{resourceIDMarkerTag(updated.ID)}, server.Tags)
+	require.EqualValues(t, plans.AppendPreviousIDTagIfAbsent(types.Tags{}, server.ID), resource.server.Tags)
 
 	// cleanup
 	if err := serverOp.Delete(ctx, test.Zone, updated.ID); err != nil {

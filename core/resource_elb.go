@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/libsacloud/v2/helper/query"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
@@ -30,16 +31,12 @@ type ResourceELB struct {
 }
 
 func NewResourceELB(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefELB, elb *sacloud.ProxyLB) (*ResourceELB, error) {
-	resource := &ResourceELB{
+	return &ResourceELB{
 		ResourceBase: &ResourceBase{resourceType: ResourceTypeELB},
 		apiClient:    apiClient,
 		elb:          elb,
 		def:          def,
-	}
-	if err := resource.setResourceIDTag(ctx); err != nil {
-		return nil, err
-	}
-	return resource, nil
+	}, nil
 }
 
 func (r *ResourceELB) String() string {
@@ -103,57 +100,11 @@ func (r *ResourceELB) desiredPlan(ctx *RequestContext) (*ELBPlan, error) {
 	return nil, nil
 }
 
-func (r *ResourceELB) setResourceIDTag(ctx *RequestContext) error {
-	tags, changed := SetupTagsWithResourceID(r.elb.Tags, r.elb.ID)
-	if changed {
-		elbOp := sacloud.NewProxyLBOp(r.apiClient)
-		updated, err := elbOp.Update(ctx, r.elb.ID, &sacloud.ProxyLBUpdateRequest{
-			HealthCheck:   r.elb.HealthCheck,
-			SorryServer:   r.elb.SorryServer,
-			BindPorts:     r.elb.BindPorts,
-			Servers:       r.elb.Servers,
-			Rules:         r.elb.Rules,
-			LetsEncrypt:   r.elb.LetsEncrypt,
-			StickySession: r.elb.StickySession,
-			Timeout:       r.elb.Timeout,
-			Gzip:          r.elb.Gzip,
-			SettingsHash:  r.elb.SettingsHash,
-			Name:          r.elb.Name,
-			Description:   r.elb.Description,
-			Tags:          tags,
-			IconID:        r.elb.IconID,
-		})
-		if err != nil {
-			return err
-		}
-		r.elb = updated
-	}
-	return nil
-}
-
 func (r *ResourceELB) refresh(ctx *RequestContext) error {
-	elbOp := sacloud.NewProxyLBOp(r.apiClient)
-
-	// まずキャッシュしているリソースのIDで検索
-	elb, err := elbOp.Read(ctx, r.elb.ID)
+	elb, err := query.ReadProxyLB(ctx, r.apiClient, r.elb.ID)
 	if err != nil {
-		if sacloud.IsNotFoundError(err) {
-			// 見つからなかったらIDマーカータグを元に検索
-			found, err := elbOp.Find(ctx, FindConditionWithResourceIDTag(r.elb.ID))
-			if err != nil {
-				return err
-			}
-			if len(found.ProxyLBs) == 0 {
-				return fmt.Errorf("elb not found with: Filter='%s'", resourceIDMarkerTag(r.elb.ID))
-			}
-			if len(found.ProxyLBs) > 1 {
-				return fmt.Errorf("invalid state: found multiple elb with: Filter='%s'", resourceIDMarkerTag(r.elb.ID))
-			}
-			elb = found.ProxyLBs[0]
-		} else {
-			return err
-		}
+		return err
 	}
 	r.elb = elb
-	return r.setResourceIDTag(ctx)
+	return nil
 }

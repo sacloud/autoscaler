@@ -19,7 +19,7 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/helper/plans"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
@@ -61,11 +61,7 @@ func (h *VerticalScaleHandler) handleRouter(ctx *handlers.HandlerContext, req *h
 		return err
 	}
 
-	routerOp := sacloud.NewInternetOp(h.APICaller())
-
-	updated, err := routerOp.UpdateBandWidth(ctx, router.Zone, types.StringID(router.Id), &sacloud.InternetUpdateBandWidthRequest{
-		BandWidthMbps: int(router.BandWidth),
-	})
+	updated, err := plans.ChangeRouterPlan(ctx, h.APICaller(), router.Zone, types.StringID(router.Id), int(router.BandWidth))
 	if err != nil {
 		return err
 	}

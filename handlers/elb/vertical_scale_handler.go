@@ -19,7 +19,7 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/helper/plans"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
@@ -57,16 +57,12 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 }
 
 func (h *VerticalScaleHandler) handleELB(ctx *handlers.HandlerContext, req *handler.HandleRequest, elb *handler.ELB) error {
-	elbOp := sacloud.NewProxyLBOp(h.APICaller())
-
 	if err := ctx.Report(handler.HandleResponse_RUNNING,
 		"plan changing...: {Desired CPS:%d}", elb.Plan); err != nil {
 		return err
 	}
 
-	updated, err := elbOp.ChangePlan(ctx, types.StringID(elb.Id), &sacloud.ProxyLBChangePlanRequest{
-		ServiceClass: types.ProxyLBServiceClass(types.EProxyLBPlan(elb.Plan), types.EProxyLBRegion(elb.Region)),
-	})
+	updated, err := plans.ChangeProxyLBPlan(ctx, h.APICaller(), types.StringID(elb.Id), int(elb.Plan))
 	if err != nil {
 		return err
 	}

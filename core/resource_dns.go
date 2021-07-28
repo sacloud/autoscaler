@@ -30,16 +30,12 @@ type ResourceDNS struct {
 }
 
 func NewResourceDNS(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefDNS, dns *sacloud.DNS) (*ResourceDNS, error) {
-	resource := &ResourceDNS{
+	return &ResourceDNS{
 		ResourceBase: &ResourceBase{resourceType: ResourceTypeDNS},
 		apiClient:    apiClient,
 		dns:          dns,
 		def:          def,
-	}
-	if err := resource.setResourceIDTag(ctx); err != nil {
-		return nil, err
-	}
-	return resource, nil
+	}, nil
 }
 
 func (r *ResourceDNS) String() string {
@@ -68,48 +64,13 @@ func (r *ResourceDNS) Compute(ctx *RequestContext, refresh bool) (Computed, erro
 	return computed, nil
 }
 
-func (r *ResourceDNS) setResourceIDTag(ctx *RequestContext) error {
-	tags, changed := SetupTagsWithResourceID(r.dns.Tags, r.dns.ID)
-	if changed {
-		dnsOp := sacloud.NewDNSOp(r.apiClient)
-		updated, err := dnsOp.Update(ctx, r.dns.ID, &sacloud.DNSUpdateRequest{
-			Description:  r.dns.Description,
-			Tags:         tags,
-			IconID:       r.dns.IconID,
-			Records:      r.dns.Records,
-			SettingsHash: r.dns.SettingsHash,
-		})
-		if err != nil {
-			return err
-		}
-		r.dns = updated
-	}
-	return nil
-}
-
 func (r *ResourceDNS) refresh(ctx *RequestContext) error {
 	dnsOp := sacloud.NewDNSOp(r.apiClient)
 
-	// まずキャッシュしているリソースのIDで検索
 	dns, err := dnsOp.Read(ctx, r.dns.ID)
 	if err != nil {
-		if sacloud.IsNotFoundError(err) {
-			// 見つからなかったらIDマーカータグを元に検索
-			found, err := dnsOp.Find(ctx, FindConditionWithResourceIDTag(r.dns.ID))
-			if err != nil {
-				return err
-			}
-			if len(found.DNS) == 0 {
-				return fmt.Errorf("dns not found with: Filter='%s'", resourceIDMarkerTag(r.dns.ID))
-			}
-			if len(found.DNS) > 1 {
-				return fmt.Errorf("invalid state: found multiple dns with: Filter='%s'", resourceIDMarkerTag(r.dns.ID))
-			}
-			dns = found.DNS[0]
-		} else {
-			return err
-		}
+		return err
 	}
 	r.dns = dns
-	return r.setResourceIDTag(ctx)
+	return nil
 }
