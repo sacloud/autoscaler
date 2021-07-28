@@ -300,8 +300,8 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/sacloud/ftps v1.1.0/go.mod h1:h4awhOi3PEyhKLj1FpXjoVV5yVkmRUU+d5L95EwX2JU=
-github.com/sacloud/libsacloud/v2 v2.19.1 h1:BDbIFC6FRw3NN1l3ASZM3GUNXehyauAINFB5PstgXjo=
-github.com/sacloud/libsacloud/v2 v2.19.1/go.mod h1:EPYsXh1SxP10pD6J7a0nK67gd03wAq413TSfCfl5sjc=
+github.com/sacloud/libsacloud/v2 v2.22.0 h1:kYHezSFHN9giqEw10aU2OJg3Bqt8Mtq9VGNaGDdLxOs=
+github.com/sacloud/libsacloud/v2 v2.22.0/go.mod h1:EPYsXh1SxP10pD6J7a0nK67gd03wAq413TSfCfl5sjc=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
 github.com/shivamMg/ppds v0.0.1 h1:idK2dpaen652zOO+OmcwmyoPNncBNqfHjF/14eS5JIk=
 github.com/shivamMg/ppds v0.0.1/go.mod h1:hb39VqUO6qfkb9zBBQPTIV1vWBtI7yQsG0wr3pN78fM=
