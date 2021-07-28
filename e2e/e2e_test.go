@@ -51,10 +51,11 @@ const (
 )
 
 var (
-	coreCmd  = exec.Command("autoscaler", "server", "start")
-	inputCmd = exec.Command("autoscaler", "inputs", "grafana", "--addr", "127.0.0.1:8080")
-	outputs  []string
-	mu       sync.Mutex
+	coreCmd    = exec.Command("autoscaler", "server", "start")
+	inputCmd   = exec.Command("autoscaler", "inputs", "grafana", "--addr", "127.0.0.1:8080")
+	refreshCmd = exec.Command("terraform", "refresh")
+	outputs    []string
+	mu         sync.Mutex
 
 	proxyLBReadyTimeout = 5 * time.Minute
 	e2eTestTimeout      = 20 * time.Minute
@@ -186,6 +187,9 @@ func TestE2E(t *testing.T) {
 	// 冷却期間待機
 	time.Sleep(30 * time.Second)
 
+	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
+	refreshCmd.Run() // nolint
+
 	/**************************************************************************
 	 * Step 2-1: スケールダウン
 	 *************************************************************************/
@@ -220,6 +224,8 @@ func TestE2E(t *testing.T) {
 			),
 		)
 	}
+	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
+	refreshCmd.Run() // nolint
 }
 
 func setup() {

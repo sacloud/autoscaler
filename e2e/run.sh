@@ -17,12 +17,12 @@
 set -x
 
 : "Provisioning Infrastructures on SAKURA Cloud..."
+rm -rf .terraform*
+rm -f terraform.tfstate*
 terraform init
 terraform apply -auto-approve
 
 : "Setting up..."
-rm -rf .terraform*
-rm -f terraform.tfstate*
 rm -f autoscaler.sock
 
 : "Running e2e test..."
@@ -33,9 +33,7 @@ if [ -n "$SKIP_CLEANUP" ]; then
 : "Cleanup skipped"
 else
 : "Cleaning up Infrastructures..."
-usacloud server delete -y -f --zone is1a --with-disks `usacloud server list -q --zone is1a --names autoscaler-e2e-test` > /dev/null 2>&1
-usacloud proxy-lb delete -y `usacloud proxy-lb list -q --names autoscaler-e2e-test` > /dev/null 2>&1
-usacloud startup-script delete -y `usacloud startup-script list -q --names autoscaler-e2e-test` > /dev/null 2>&1
+terraform destroy -auto-approve
 fi
 
 echo "Done: $RESULT"
