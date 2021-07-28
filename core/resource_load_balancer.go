@@ -31,17 +31,13 @@ type ResourceLoadBalancer struct {
 }
 
 func NewResourceLoadBalancer(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefLoadBalancer, zone string, lb *sacloud.LoadBalancer) (*ResourceLoadBalancer, error) {
-	resource := &ResourceLoadBalancer{
+	return &ResourceLoadBalancer{
 		ResourceBase: &ResourceBase{resourceType: ResourceTypeLoadBalancer},
 		apiClient:    apiClient,
 		lb:           lb,
 		def:          def,
 		zone:         zone,
-	}
-	if err := resource.setResourceIDTag(ctx); err != nil {
-		return nil, err
-	}
-	return resource, nil
+	}, nil
 }
 
 func (r *ResourceLoadBalancer) String() string {
@@ -71,49 +67,11 @@ func (r *ResourceLoadBalancer) Compute(ctx *RequestContext, refresh bool) (Compu
 	return computed, nil
 }
 
-func (r *ResourceLoadBalancer) setResourceIDTag(ctx *RequestContext) error {
-	tags, changed := SetupTagsWithResourceID(r.lb.Tags, r.lb.ID)
-	if changed {
-		lbOp := sacloud.NewLoadBalancerOp(r.apiClient)
-		updated, err := lbOp.Update(ctx, r.zone, r.lb.ID, &sacloud.LoadBalancerUpdateRequest{
-			Name:               r.lb.Name,
-			Description:        r.lb.Description,
-			Tags:               tags,
-			IconID:             r.lb.IconID,
-			VirtualIPAddresses: r.lb.VirtualIPAddresses,
-			SettingsHash:       r.lb.SettingsHash,
-		})
-		if err != nil {
-			return err
-		}
-		r.lb = updated
-	}
-	return nil
-}
-
 func (r *ResourceLoadBalancer) refresh(ctx *RequestContext) error {
-	lbOp := sacloud.NewLoadBalancerOp(r.apiClient)
-
-	// まずキャッシュしているリソースのIDで検索
-	lb, err := lbOp.Read(ctx, r.zone, r.lb.ID)
+	lb, err := sacloud.NewLoadBalancerOp(r.apiClient).Read(ctx, r.zone, r.lb.ID)
 	if err != nil {
-		if sacloud.IsNotFoundError(err) {
-			// 見つからなかったらIDマーカータグを元に検索
-			found, err := lbOp.Find(ctx, r.zone, FindConditionWithResourceIDTag(r.lb.ID))
-			if err != nil {
-				return err
-			}
-			if len(found.LoadBalancers) == 0 {
-				return fmt.Errorf("lb not found with: Filter='%s'", resourceIDMarkerTag(r.lb.ID))
-			}
-			if len(found.LoadBalancers) > 1 {
-				return fmt.Errorf("invalid state: found multiple lb with: Filter='%s'", resourceIDMarkerTag(r.lb.ID))
-			}
-			lb = found.LoadBalancers[0]
-		} else {
-			return err
-		}
+		return err
 	}
 	r.lb = lb
-	return r.setResourceIDTag(ctx)
+	return nil
 }

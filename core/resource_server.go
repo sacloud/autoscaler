@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/libsacloud/v2/helper/query"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
@@ -42,7 +43,7 @@ type ResourceServer struct {
 }
 
 func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefServer, zone string, server *sacloud.Server) (*ResourceServer, error) {
-	resource := &ResourceServer{
+	return &ResourceServer{
 		ResourceBase: &ResourceBase{
 			resourceType: ResourceTypeServer,
 		},
@@ -50,11 +51,7 @@ func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *Re
 		zone:      zone,
 		server:    server,
 		def:       def,
-	}
-	if err := resource.setResourceIDTag(ctx); err != nil {
-		return nil, err
-	}
-	return resource, nil
+	}, nil
 }
 
 func (r *ResourceServer) String() string {
@@ -120,49 +117,11 @@ func (r *ResourceServer) desiredPlan(ctx *RequestContext) (*ServerPlan, error) {
 	return nil, nil
 }
 
-func (r *ResourceServer) setResourceIDTag(ctx *RequestContext) error {
-	tags, changed := SetupTagsWithResourceID(r.server.Tags, r.server.ID)
-	if changed {
-		serverOp := sacloud.NewServerOp(r.apiClient)
-		updated, err := serverOp.Update(ctx, r.zone, r.server.ID, &sacloud.ServerUpdateRequest{
-			Name:            r.server.Name,
-			Description:     r.server.Description,
-			Tags:            tags,
-			IconID:          r.server.IconID,
-			PrivateHostID:   r.server.PrivateHostID,
-			InterfaceDriver: r.server.InterfaceDriver,
-		})
-		if err != nil {
-			return err
-		}
-		r.server = updated
-	}
-	return nil
-}
-
 func (r *ResourceServer) refresh(ctx *RequestContext) error {
-	serverOp := sacloud.NewServerOp(r.apiClient)
-
-	// まずキャッシュしているリソースのIDで検索
-	server, err := serverOp.Read(ctx, r.zone, r.server.ID)
+	server, err := query.ReadServer(ctx, r.apiClient, r.zone, r.server.ID)
 	if err != nil {
-		if sacloud.IsNotFoundError(err) {
-			// 見つからなかったらIDマーカータグを元に検索
-			found, err := serverOp.Find(ctx, r.zone, FindConditionWithResourceIDTag(r.server.ID))
-			if err != nil {
-				return err
-			}
-			if len(found.Servers) == 0 {
-				return fmt.Errorf("server not found with: Filter='%s'", resourceIDMarkerTag(r.server.ID))
-			}
-			if len(found.Servers) > 1 {
-				return fmt.Errorf("invalid state: found multiple server with: Filter='%s'", resourceIDMarkerTag(r.server.ID))
-			}
-			server = found.Servers[0]
-		} else {
-			return err
-		}
+		return err
 	}
 	r.server = server
-	return r.setResourceIDTag(ctx)
+	return nil
 }

@@ -30,16 +30,12 @@ type ResourceGSLB struct {
 }
 
 func NewResourceGSLB(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefGSLB, gslb *sacloud.GSLB) (*ResourceGSLB, error) {
-	resource := &ResourceGSLB{
+	return &ResourceGSLB{
 		ResourceBase: &ResourceBase{resourceType: ResourceTypeGSLB},
 		apiClient:    apiClient,
 		gslb:         gslb,
 		def:          def,
-	}
-	if err := resource.setResourceIDTag(ctx); err != nil {
-		return nil, err
-	}
-	return resource, nil
+	}, nil
 }
 
 func (r *ResourceGSLB) String() string {
@@ -68,53 +64,11 @@ func (r *ResourceGSLB) Compute(ctx *RequestContext, refresh bool) (Computed, err
 	return computed, nil
 }
 
-func (r *ResourceGSLB) setResourceIDTag(ctx *RequestContext) error {
-	tags, changed := SetupTagsWithResourceID(r.gslb.Tags, r.gslb.ID)
-	if changed {
-		gslbOp := sacloud.NewGSLBOp(r.apiClient)
-		updated, err := gslbOp.Update(ctx, r.gslb.ID, &sacloud.GSLBUpdateRequest{
-			Name:               r.gslb.Name,
-			Description:        r.gslb.Description,
-			Tags:               tags,
-			IconID:             r.gslb.IconID,
-			HealthCheck:        r.gslb.HealthCheck,
-			DelayLoop:          r.gslb.DelayLoop,
-			Weighted:           r.gslb.Weighted,
-			SorryServer:        r.gslb.SorryServer,
-			DestinationServers: r.gslb.DestinationServers,
-			SettingsHash:       r.gslb.SettingsHash,
-		})
-		if err != nil {
-			return err
-		}
-		r.gslb = updated
-	}
-	return nil
-}
-
 func (r *ResourceGSLB) refresh(ctx *RequestContext) error {
-	gslbOp := sacloud.NewGSLBOp(r.apiClient)
-
-	// まずキャッシュしているリソースのIDで検索
-	gslb, err := gslbOp.Read(ctx, r.gslb.ID)
+	gslb, err := sacloud.NewGSLBOp(r.apiClient).Read(ctx, r.gslb.ID)
 	if err != nil {
-		if sacloud.IsNotFoundError(err) {
-			// 見つからなかったらIDマーカータグを元に検索
-			found, err := gslbOp.Find(ctx, FindConditionWithResourceIDTag(r.gslb.ID))
-			if err != nil {
-				return err
-			}
-			if len(found.GSLBs) == 0 {
-				return fmt.Errorf("gslb not found with: Filter='%s'", resourceIDMarkerTag(r.gslb.ID))
-			}
-			if len(found.GSLBs) > 1 {
-				return fmt.Errorf("invalid state: found multiple gslb with: Filter='%s'", resourceIDMarkerTag(r.gslb.ID))
-			}
-			gslb = found.GSLBs[0]
-		} else {
-			return err
-		}
+		return err
 	}
 	r.gslb = gslb
-	return r.setResourceIDTag(ctx)
+	return nil
 }

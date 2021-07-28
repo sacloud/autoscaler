@@ -19,8 +19,8 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
+	"github.com/sacloud/libsacloud/v2/helper/plans"
 	"github.com/sacloud/libsacloud/v2/helper/power"
-	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
@@ -97,12 +97,12 @@ func (h *VerticalScaleHandler) handleServer(ctx *handlers.HandlerContext, req *h
 	if server.DedicatedCpu {
 		commitment = types.Commitments.DedicatedCPU
 	}
-	updated, err := serverOp.ChangePlan(ctx, server.Zone, types.StringID(server.Id), &sacloud.ServerChangePlanRequest{
-		CPU:                  int(server.Core),
-		MemoryMB:             int(server.Memory * size.GiB),
-		ServerPlanGeneration: types.PlanGenerations.Default, // TODO プランの世代はどう指定するか?
-		ServerPlanCommitment: commitment,
-	})
+	updated, err := plans.ChangeServerPlan(ctx, h.APICaller(), server.Zone, types.StringID(server.Id),
+		int(server.Core),
+		int(server.Memory),
+		commitment,
+		types.PlanGenerations.Default, // TODO プランの世代はどう指定するか?
+	)
 	if err != nil {
 		return err
 	}
