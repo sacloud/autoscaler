@@ -43,11 +43,16 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 		return nil, err
 	}
 
+	resourceName, err := s.instance.ResourceName(req.ResourceName)
+	if err != nil {
+		return nil, err
+	}
+
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
 	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
 		requestType:      requestTypeUp,
 		source:           req.Source,
-		resourceName:     s.instance.ResourceName(req.ResourceName),
+		resourceName:     resourceName,
 		desiredStateName: req.DesiredStateName,
 	}, s.instance.config.AutoScaler.HandlerTLSConfig, s.instance.logger)
 	job, message, err := s.instance.Up(serviceCtx)
@@ -69,11 +74,16 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 		return nil, err
 	}
 
+	resourceName, err := s.instance.ResourceName(req.ResourceName)
+	if err != nil {
+		return nil, err
+	}
+
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
 	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
 		requestType:      requestTypeDown,
 		source:           req.Source,
-		resourceName:     s.instance.ResourceName(req.ResourceName),
+		resourceName:     resourceName,
 		desiredStateName: req.DesiredStateName,
 	}, s.instance.config.AutoScaler.HandlerTLSConfig, s.instance.logger)
 	job, message, err := s.instance.Down(serviceCtx)

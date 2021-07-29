@@ -198,11 +198,14 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	return job, "", nil
 }
 
-func (c *Core) ResourceName(name string) string {
+func (c *Core) ResourceName(name string) (string, error) {
 	if name == "" || name == defaults.ResourceName {
+		if len(c.config.Resources) > 1 {
+			return "", fmt.Errorf("request parameter 'ResourceName' is required when core's configuration has more than one resource definition")
+		}
 		name = c.config.Resources[0].Name()
 	}
-	return name
+	return name, nil
 }
 
 func (c *Core) targetResourceDef(ctx *RequestContext) (ResourceDefinitions, error) {
