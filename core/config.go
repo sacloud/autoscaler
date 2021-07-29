@@ -115,6 +115,8 @@ func (c *Config) Validate(ctx context.Context) error {
 	// 変更される可能性があるためこのタイミングで初期化する
 	validate.InitValidatorAlias(sacloud.SakuraCloudZones)
 
+	// TODO カスタムHandlerとの疎通チェック
+
 	// Resources
 	errors := &multierror.Error{}
 	if errs := c.Resources.Validate(ctx, c.APIClient()); len(errs) > 0 {

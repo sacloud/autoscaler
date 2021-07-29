@@ -20,6 +20,7 @@ import (
 	"github.com/sacloud/autoscaler/commands/completion"
 	"github.com/sacloud/autoscaler/commands/core"
 	"github.com/sacloud/autoscaler/commands/flags"
+	"github.com/sacloud/autoscaler/commands/handlers"
 	"github.com/sacloud/autoscaler/commands/inputs"
 	cmdVersion "github.com/sacloud/autoscaler/commands/version"
 	"github.com/sacloud/autoscaler/version"
@@ -40,6 +41,7 @@ var subCommands = []*cobra.Command{
 	inputs.Command,
 	core.Command,
 	cmdVersion.Command,
+	handlers.Command,
 }
 
 func init() {

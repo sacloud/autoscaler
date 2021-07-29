@@ -33,6 +33,8 @@ type handleService struct {
 }
 
 func (h *handleService) listenAndServe(ctx context.Context) error {
+	errCh := make(chan error)
+
 	metrics.InitErrorCount("core")
 	opts := &grpcutil.ListenerOption{
 		Address:    h.Handler.ListenAddress(),
@@ -56,7 +58,22 @@ func (h *handleService) listenAndServe(ctx context.Context) error {
 		cleanup()
 	}()
 
-	return grpcServer.Serve(listener)
+	go func() {
+		if err := h.Handler.GetLogger().Info("message", "started", "address", listener.Addr().String()); err != nil {
+			errCh <- err
+		}
+		if err := grpcServer.Serve(listener); err != nil {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+		h.Handler.GetLogger().Info("message", "shutting down", "error", ctx.Err()) // nolint
+	}
+	return ctx.Err()
 }
 
 func (h *handleService) PreHandle(req *handler.HandleRequest, server handler.HandleService_PreHandleServer) error {

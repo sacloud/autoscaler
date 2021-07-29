@@ -22,6 +22,12 @@ import (
 	"github.com/sacloud/autoscaler/metrics"
 )
 
+const (
+	HandlerTypePreHandle  = "pre-handle"
+	HandlerTypeHandle     = "handle"
+	HandlerTypePostHandle = "post-handle"
+)
+
 // Serve 指定のハンドラでgRPCサーバをスタート/リッスンする
 func Serve(ctx context.Context, handler CustomHandler) error {
 	handler.SetLogger(handler.GetLogger().With("from", handlerFullName(handler)))
