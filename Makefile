@@ -80,7 +80,7 @@ e2e-test:
 	    -e SAKURACLOUD_ACCESS_TOKEN \
 	    -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
 	    -e SKIP_CLEANUP \
-	    ghcr.io/sacloud/autoscaler:e2e sh -c "cd e2e;./run.sh"
+	    ghcr.io/sacloud/autoscaler:e2e sh -c "./run.sh"
 
 .PHONY: lint
 lint:

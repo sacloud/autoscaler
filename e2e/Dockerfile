@@ -31,11 +31,6 @@ RUN wget https://releases.hashicorp.com/terraform/1.0.2/terraform_1.0.2_linux_am
 RUN unzip terraform_1.0.2_linux_amd64.zip && rm terraform_1.0.2_linux_amd64.zip
 RUN mv terraform /usr/bin/terraform
 
-# Install Usacloud
-RUN wget https://github.com/sacloud/usacloud/releases/download/v1.2.0/usacloud_linux-amd64.zip
-RUN unzip usacloud_linux-amd64.zip && rm usacloud_linux-amd64.zip
-RUN mv usacloud /usr/bin/usacloud
-
 # Install grpc_health_probe
 
 RUN go install github.com/grpc-ecosystem/grpc-health-probe@v0.4.2
