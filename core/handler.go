@@ -314,13 +314,18 @@ func (h *Handler) handleHandlerResponse(ctx *HandlingContext, receiver handlerRe
 		if err != nil {
 			return err
 		}
-		if err := ctx.Logger().Info("status", stat.Status); err != nil {
-			return err
-		}
+		kvs := []interface{}{"status", stat.Status}
 		if stat.Log != "" {
-			if err := ctx.Logger().Debug("log", stat.Log); err != nil {
+			kvs = append(kvs, "log", stat.Log)
+		}
+
+		if stat.Status == handler.HandleResponse_IGNORED && stat.Log == "" {
+			if err := ctx.Logger().Debug(kvs...); err != nil {
 				return err
 			}
+		}
+		if err := ctx.Logger().Info(kvs...); err != nil {
+			return err
 		}
 	}
 	return nil

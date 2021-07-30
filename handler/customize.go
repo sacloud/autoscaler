@@ -14,6 +14,8 @@
 
 package handler
 
+import "encoding/json"
+
 func (x *ServerGroupInstance_NIC) EachIPAndExposedPort(fn func(ip string, port int) error) error {
 	if x == nil || x.ExposeInfo == nil || x.AssignedNetwork == nil {
 		return nil
@@ -25,4 +27,26 @@ func (x *ServerGroupInstance_NIC) EachIPAndExposedPort(fn func(ip string, port i
 		}
 	}
 	return nil
+}
+
+func (x *HandleRequest) JSON() []byte {
+	if x == nil {
+		return nil
+	}
+	data, err := json.Marshal(x)
+	if err != nil {
+		return nil
+	}
+	return data
+}
+
+func (x *PostHandleRequest) JSON() []byte {
+	if x == nil {
+		return nil
+	}
+	data, err := json.Marshal(x)
+	if err != nil {
+		return nil
+	}
+	return data
 }
