@@ -22,6 +22,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/sacloud/autoscaler/grpcutil"
+	health "google.golang.org/grpc/health/grpc_health_v1"
+
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/config"
@@ -115,10 +118,14 @@ func (c *Config) Validate(ctx context.Context) error {
 	// 変更される可能性があるためこのタイミングで初期化する
 	validate.InitValidatorAlias(sacloud.SakuraCloudZones)
 
+	errors := &multierror.Error{}
+
 	// TODO カスタムHandlerとの疎通チェック
+	if errs := c.ValidateCustomHandlers(ctx); len(errs) > 0 {
+		errors = multierror.Append(errors, errs...)
+	}
 
 	// Resources
-	errors := &multierror.Error{}
 	if errs := c.Resources.Validate(ctx, c.APIClient()); len(errs) > 0 {
 		errors = multierror.Append(errors, errs...)
 	}
@@ -129,6 +136,47 @@ func (c *Config) Validate(ctx context.Context) error {
 	}
 
 	return errors.ErrorOrNil()
+}
+
+func (c *Config) ValidateCustomHandlers(ctx context.Context) []error {
+	var errs []error
+
+	for _, handler := range c.CustomHandlers {
+		if err := c.ValidateCustomHandler(ctx, handler); err != nil {
+			errs = append(errs, fmt.Errorf("handler %q returns error: %s", handler.Name, err))
+		}
+	}
+	return errs
+}
+
+func (c *Config) ValidateCustomHandler(ctx context.Context, handler *Handler) error {
+	opt := &grpcutil.DialOption{
+		Destination: handler.Endpoint,
+		DialOpts:    grpcutil.ClientErrorCountInterceptor("core_to_handlers"),
+	}
+	if c.AutoScaler.HandlerTLSConfig != nil {
+		cred, err := c.AutoScaler.HandlerTLSConfig.TransportCredentials()
+		if err != nil {
+			return err
+		}
+		opt.TransportCredentials = cred
+	}
+
+	conn, cleanup, err := grpcutil.DialContext(ctx, opt)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+
+	client := health.NewHealthClient(conn)
+	res, err := client.Check(ctx, &health.HealthCheckRequest{})
+	if err != nil {
+		return err
+	}
+	if res.Status != health.HealthCheckResponse_SERVING {
+		return fmt.Errorf("got unexpected status: %s", res.Status)
+	}
+	return nil
 }
 
 // AutoScalerConfig オートスケーラー自体の動作設定

@@ -20,7 +20,10 @@ import (
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/metrics"
+	"google.golang.org/grpc/codes"
+	health "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 var _ handler.HandleServiceServer = (*handleService)(nil)
@@ -51,6 +54,7 @@ func (h *handleService) listenAndServe(ctx context.Context) error {
 	}
 
 	handler.RegisterHandleServiceServer(grpcServer, h)
+	health.RegisterHealthServer(grpcServer, h)
 	reflection.Register(grpcServer)
 
 	defer func() {
@@ -143,4 +147,16 @@ func (h *handleService) PostHandle(req *handler.PostHandleRequest, server handle
 		return err
 	}
 	return logger.Debug("request", req.String())
+}
+
+// Check gRPCヘルスチェックの実装
+func (s *handleService) Check(context.Context, *health.HealthCheckRequest) (*health.HealthCheckResponse, error) {
+	return &health.HealthCheckResponse{
+		Status: health.HealthCheckResponse_SERVING,
+	}, nil
+}
+
+// Watch gRPCヘルスチェックの実装
+func (s *handleService) Watch(*health.HealthCheckRequest, health.Health_WatchServer) error {
+	return status.Error(codes.Unimplemented, "unimplemented")
 }
