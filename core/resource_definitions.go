@@ -53,6 +53,22 @@ func (rds *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.
 	return errors
 }
 
+func (rds *ResourceDefinitions) ResourceNames() []string {
+	nameMap := make(map[string]struct{})
+	fn := func(r ResourceDefinition) error {
+		nameMap[r.Name()] = struct{}{}
+		return nil
+	}
+
+	rds.walk(*rds, fn) // nolint
+
+	var names []string
+	for name := range nameMap {
+		names = append(names, name)
+	}
+	return names
+}
+
 type resourceDefWalkFunc func(def ResourceDefinition) error
 
 func (rds *ResourceDefinitions) walk(targets ResourceDefinitions, fn resourceDefWalkFunc) error {
