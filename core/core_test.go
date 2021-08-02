@@ -80,6 +80,25 @@ func TestCore_ResourceName(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "default resource name with nested definition",
+			resources: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "stub",
+						DefName:  "name1",
+						children: ResourceDefinitions{
+							&stubResourceDef{
+								ResourceDefBase: &ResourceDefBase{TypeName: "stub", DefName: "name2"},
+							},
+						},
+					},
+				},
+			},
+			args:    defaults.ResourceName,
+			want:    "",
+			wantErr: true,
+		},
+		{
 			name: "not exist name with definitions",
 			resources: ResourceDefinitions{
 				&stubResourceDef{
