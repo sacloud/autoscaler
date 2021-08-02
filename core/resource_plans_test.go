@@ -269,3 +269,105 @@ func Test_desiredPlan(t *testing.T) {
 		})
 	}
 }
+
+func TestResourcePlans_within(t *testing.T) {
+	type args struct {
+		resource interface{}
+	}
+	tests := []struct {
+		name string
+		p    ResourcePlans
+		args args
+		want bool
+	}{
+		{
+			name: "empty plans",
+			p:    ResourcePlans{},
+			args: args{
+				resource: 1,
+			},
+			want: false,
+		},
+		{
+			name: "single plan: less than",
+			p: ResourcePlans{
+				&stubResourcePlan{memorySize: 1},
+			},
+			args: args{
+				resource: 0,
+			},
+			want: false,
+		},
+		{
+			name: "single plan: equals",
+			p: ResourcePlans{
+				&stubResourcePlan{memorySize: 1},
+			},
+			args: args{
+				resource: 1,
+			},
+			want: true,
+		},
+		{
+			name: "single plan: greater than",
+			p: ResourcePlans{
+				&stubResourcePlan{memorySize: 1},
+			},
+			args: args{
+				resource: 2,
+			},
+			want: false,
+		},
+		{
+			name: "plans: less than",
+			p: ResourcePlans{
+				&stubResourcePlan{memorySize: 1},
+				&stubResourcePlan{memorySize: 2},
+			},
+			args: args{
+				resource: 0,
+			},
+			want: false,
+		},
+		{
+			name: "plans: within 1",
+			p: ResourcePlans{
+				&stubResourcePlan{memorySize: 1},
+				&stubResourcePlan{memorySize: 2},
+			},
+			args: args{
+				resource: 1,
+			},
+			want: true,
+		},
+		{
+			name: "plans: within 2",
+			p: ResourcePlans{
+				&stubResourcePlan{memorySize: 1},
+				&stubResourcePlan{memorySize: 2},
+			},
+			args: args{
+				resource: 2,
+			},
+			want: true,
+		},
+		{
+			name: "plans: out: greater than",
+			p: ResourcePlans{
+				&stubResourcePlan{memorySize: 1},
+				&stubResourcePlan{memorySize: 2},
+			},
+			args: args{
+				resource: 3,
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.p.within(tt.args.resource); got != tt.want {
+				t.Errorf("within() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -618,6 +618,74 @@ func TestResourceDefServerGroup_desiredPlan(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "up: currentCount has smaller value than min_size",
+			fields: fields{
+				MinSize: 1,
+				MaxSize: 3,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContext(),
+				currentCount: 0,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "up: currentCount has larger value than max_size",
+			fields: fields{
+				MinSize: 1,
+				MaxSize: 3,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContext(),
+				currentCount: 4,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 4,
+			},
+			wantErr: false,
+		},
+		{
+			name: "down with resources that are outside the scope of the plans:max",
+			fields: fields{
+				MinSize: 1,
+				MaxSize: 3,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContextDown(),
+				currentCount: 4,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 3,
+			},
+			wantErr: false,
+		},
+		{
+			name: "down with resources that are outside the scope of the plans:min",
+			fields: fields{
+				MinSize: 1,
+				MaxSize: 3,
+				Plans:   nil,
+			},
+			args: args{
+				ctx:          testContextDown(),
+				currentCount: 0,
+			},
+			want: &ServerGroupPlan{
+				Name: "",
+				Size: 0,
+			},
+			wantErr: false,
+		},
+		{
 			name: "up without plans / without servers on cloud",
 			fields: fields{
 				MinSize: 0,
@@ -703,7 +771,7 @@ func TestResourceDefServerGroup_desiredPlan(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "down without plans / with invalid server state", // max_sizeを超えたサーバがある場合は特に何もしない
+			name: "down without plans / with invalid server state", // max_sizeを超えたサーバがある場合のdownはmax_sizeを返す
 			fields: fields{
 				MinSize: 0,
 				MaxSize: 1,
@@ -715,7 +783,7 @@ func TestResourceDefServerGroup_desiredPlan(t *testing.T) {
 			},
 			want: &ServerGroupPlan{
 				Name: "",
-				Size: 2,
+				Size: 1,
 			},
 			wantErr: false,
 		},
