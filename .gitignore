@@ -12,4 +12,7 @@ autoscaler.yaml
 e2e/.terraform*
 e2e/terraform*
 
+examples/terraform/.terraform*
+examples/terraform/terraform*
+
 work/
