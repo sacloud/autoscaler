@@ -92,7 +92,7 @@ func (c *Config) APIClient() sacloud.APICaller {
 func (c *Config) Handlers() Handlers {
 	var handlers Handlers
 	for _, h := range BuiltinHandlers() {
-		if h.Disabled {
+		if c.handlerDisabled(h) {
 			continue
 		}
 		if h, ok := h.BuiltinHandler.(builtins.SakuraCloudAPICaller); ok {
@@ -101,6 +101,23 @@ func (c *Config) Handlers() Handlers {
 		handlers = append(handlers, h)
 	}
 	return append(handlers, c.CustomHandlers...)
+}
+
+func (c *Config) handlerDisabled(h *Handler) bool {
+	conf := c.AutoScaler.HandlersConfig
+	// configで指定されているか?
+	if conf != nil {
+		// 全体が無効にされているか?
+		if conf.Disabled {
+			return true
+		}
+		// 個別に無効にされているか?
+		if v, ok := conf.Handlers[h.Name]; ok {
+			return v.Disabled
+		}
+	}
+	// デフォルト値
+	return h.Disabled
 }
 
 // Validate 現在のConfig値のバリデーション
@@ -120,7 +137,6 @@ func (c *Config) Validate(ctx context.Context) error {
 
 	errors := &multierror.Error{}
 
-	// TODO カスタムHandlerとの疎通チェック
 	if errs := c.ValidateCustomHandlers(ctx); len(errs) > 0 {
 		errors = multierror.Append(errors, errs...)
 	}
@@ -131,8 +147,12 @@ func (c *Config) Validate(ctx context.Context) error {
 	}
 
 	// AutoScalerConfig
-	if err := c.AutoScaler.Validate(ctx); err != nil {
-		errors = multierror.Append(errors, err)
+	if errs := c.AutoScaler.Validate(ctx); len(errs) > 0 {
+		errors = multierror.Append(errors, errs...)
+	}
+
+	if len(c.Handlers()) == 0 {
+		errors = multierror.Append(errors, fmt.Errorf("one or more handlers are required"))
 	}
 
 	return errors.ErrorOrNil()
@@ -185,10 +205,11 @@ type AutoScalerConfig struct {
 	ServerTLSConfig  *config.TLSStruct      `yaml:"server_tls_config"`  // CoreへのgRPC接続のTLS設定
 	HandlerTLSConfig *config.TLSStruct      `yaml:"handler_tls_config"` // HandlersへのgRPC接続のTLS設定
 	ExporterConfig   *config.ExporterConfig `yaml:"exporter_config"`    // Exporter設定
+	HandlersConfig   *HandlersConfig        `yaml:"handlers_config"`    // ビルトインハンドラーの設定
 }
 
-func (c *AutoScalerConfig) Validate(context.Context) error {
-	return nil
+func (c *AutoScalerConfig) Validate(ctx context.Context) []error {
+	return c.HandlersConfig.Validate(ctx)
 }
 
 func (c *AutoScalerConfig) JobCoolDownTime() time.Duration {
@@ -201,4 +222,35 @@ func (c *AutoScalerConfig) JobCoolDownTime() time.Duration {
 
 func (c *AutoScalerConfig) ExporterEnabled() bool {
 	return c.ExporterConfig != nil && c.ExporterConfig.Enabled
+}
+
+// HandlersConfig ビルトインハンドラ全体の設定
+type HandlersConfig struct {
+	Disabled bool                      `yaml:"disabled"` // trueの場合ビルトインハンドラ全体を無効にする
+	Handlers map[string]*HandlerConfig `yaml:"handlers"` // ハンドラごとの設定、ハンドラ名をキーにもつ
+}
+
+func (c *HandlersConfig) Validate(context.Context) []error {
+	if c == nil {
+		return nil
+	}
+	errors := &multierror.Error{}
+	for name := range c.Handlers {
+		exist := false
+		for _, h := range BuiltinHandlers() {
+			if h.Name == name {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			errors = multierror.Append(fmt.Errorf("invalid key: %s", name))
+		}
+	}
+	return errors.Errors
+}
+
+// HandlerConfig ビルトインハンドラの設定
+type HandlerConfig struct {
+	Disabled bool `yaml:"disabled"`
 }
