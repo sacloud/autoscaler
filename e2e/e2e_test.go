@@ -53,7 +53,7 @@ const (
 var (
 	coreCmd    = exec.Command("autoscaler", "server", "start")
 	inputCmd   = exec.Command("autoscaler", "inputs", "grafana", "--addr", "127.0.0.1:8080")
-	refreshCmd = exec.Command("terraform", "refresh")
+	refreshCmd = exec.Command("terraform", "apply", "-refresh-only", "-auto-approve")
 	outputs    []string
 	mu         sync.Mutex
 
