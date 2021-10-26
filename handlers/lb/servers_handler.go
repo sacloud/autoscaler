@@ -168,6 +168,9 @@ func (h *ServersHandler) attachOrDetach(ctx *handlers.HandlerContext, server *ha
 	}); err != nil {
 		return err
 	}
+	if err := lbOp.Config(ctx, lb.Zone, types.StringID(lb.Id)); err != nil {
+		return err
+	}
 
 	return ctx.Report(handler.HandleResponse_DONE,
 		"updated: {Enabled:%t, IPAddress:%s}", attach, targetIPAddress,
@@ -286,6 +289,9 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 		if err != nil {
 			return err
 		}
+		if err := lbOp.Config(ctx, lb.Zone, types.StringID(lb.Id)); err != nil {
+			return err
+		}
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updated"); err != nil {
 			return err
 		}
@@ -364,6 +370,9 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 			SettingsHash:       current.SettingsHash,
 		})
 		if err != nil {
+			return err
+		}
+		if err := lbOp.Config(ctx, lb.Zone, types.StringID(lb.Id)); err != nil {
 			return err
 		}
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updated"); err != nil {
