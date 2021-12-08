@@ -41,7 +41,7 @@ tools:
 	(cd tools; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc)
 	(cd tools; go install google.golang.org/protobuf/cmd/protoc-gen-go)
 	(cd tools; go install github.com/google/go-licenses)
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.40.0/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.40.0
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.43.0/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.43.0
 
 .PHONY: gen
 gen: gen-request gen-handler
