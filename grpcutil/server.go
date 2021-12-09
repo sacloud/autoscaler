@@ -35,11 +35,11 @@ func Server(opt *ListenerOption) (*grpc.Server, net.Listener, func(), error) {
 	target := ParseTarget(opt.Address, false)
 
 	schema := "tcp"
-	if target.Scheme == "unix" || target.Scheme == "unix-abstract" {
+	if target.Scheme == "unix" || target.Scheme == "unix-abstract" { // nolint:staticcheck
 		schema = "unix"
 	}
 
-	listener, err := net.Listen(schema, target.Endpoint)
+	listener, err := net.Listen(schema, target.Endpoint) // nolint:staticcheck
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("net.Listen failed: %s", err)
 	}
@@ -47,8 +47,8 @@ func Server(opt *ListenerOption) (*grpc.Server, net.Listener, func(), error) {
 	cleanup := func() {
 		listener.Close() // nolint
 		if schema == "unix" {
-			if _, err := os.Stat(target.Endpoint); err == nil {
-				if err := os.RemoveAll(target.Endpoint); err != nil {
+			if _, err := os.Stat(target.Endpoint); err == nil { // nolint:staticcheck
+				if err := os.RemoveAll(target.Endpoint); err != nil { // nolint:staticcheck
 					log.Printf("cleanup failed: %s", err) // nolint
 				}
 			}
