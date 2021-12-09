@@ -32,14 +32,12 @@ type ListenerOption struct {
 
 // Server 指定のオプションでリッスン構成をした後でリッスンし、*grpc.Serverとクリーンアップ用のfuncを返す
 func Server(opt *ListenerOption) (*grpc.Server, net.Listener, func(), error) {
-	target := ParseTarget(opt.Address, false)
-
-	schema := "tcp"
-	if target.Scheme == "unix" || target.Scheme == "unix-abstract" { // nolint:staticcheck
-		schema = "unix"
+	schema, endpoint, err := parseTarget(opt.Address)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("parseTarget failed: %s", err)
 	}
 
-	listener, err := net.Listen(schema, target.Endpoint) // nolint:staticcheck
+	listener, err := net.Listen(schema, endpoint)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("net.Listen failed: %s", err)
 	}
@@ -47,8 +45,8 @@ func Server(opt *ListenerOption) (*grpc.Server, net.Listener, func(), error) {
 	cleanup := func() {
 		listener.Close() // nolint
 		if schema == "unix" {
-			if _, err := os.Stat(target.Endpoint); err == nil { // nolint:staticcheck
-				if err := os.RemoveAll(target.Endpoint); err != nil { // nolint:staticcheck
+			if _, err := os.Stat(endpoint); err == nil {
+				if err := os.RemoveAll(endpoint); err != nil {
 					log.Printf("cleanup failed: %s", err) // nolint
 				}
 			}

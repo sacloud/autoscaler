@@ -24,69 +24,28 @@
 package grpcutil
 
 import (
+	"net/url"
 	"strings"
-
-	"google.golang.org/grpc/resolver"
 )
 
-// split2 returns the values from strings.SplitN(s, sep, 2).
-// If sep is not found, it returns ("", "", false) instead.
-func split2(s, sep string) (string, string, bool) {
-	spl := strings.SplitN(s, sep, 2)
-	if len(spl) < 2 {
-		return "", "", false
+func parseTarget(target string) (string, string, error) {
+	if !strings.HasPrefix(target, "unix:") && !strings.HasPrefix(target, "unix-abstract:") {
+		target = "tcp:" + target
 	}
-	return spl[0], spl[1], true
-}
 
-// ParseTarget splits target into a resolver.Target struct containing scheme,
-// authority and endpoint. skipUnixColonParsing indicates that the parse should
-// not parse "unix:[path]" cases. This should be true in cases where a custom
-// dialer is present, to prevent a behavior change.
-//
-// If target is not a valid scheme://authority/endpoint as specified in
-// https://github.com/grpc/grpc/blob/master/doc/naming.md,
-// it returns {Endpoint: target}.
-func ParseTarget(target string, skipUnixColonParsing bool) (ret resolver.Target) {
-	var ok bool
-	if strings.HasPrefix(target, "unix-abstract:") {
-		if strings.HasPrefix(target, "unix-abstract://") {
-			// Maybe, with Authority specified, try to parse it
-			var remain string
-			ret.Scheme, remain, _ = split2(target, "://")         // nolint:staticcheck
-			ret.Authority, ret.Endpoint, ok = split2(remain, "/") // nolint:staticcheck
-			if !ok {
-				// No Authority, add the "//" back
-				ret.Endpoint = "//" + remain // nolint:staticcheck
-			} else {
-				// Found Authority, add the "/" back
-				ret.Endpoint = "/" + ret.Endpoint // nolint:staticcheck
-			}
-		} else {
-			// Without Authority specified, split target on ":"
-			ret.Scheme, ret.Endpoint, _ = split2(target, ":") // nolint:staticcheck
-		}
-		return ret
+	u, err := url.Parse(target)
+	if err != nil {
+		return "", "", err
 	}
-	ret.Scheme, ret.Endpoint, ok = split2(target, "://") // nolint:staticcheck
-	if !ok {
-		if strings.HasPrefix(target, "unix:") && !skipUnixColonParsing {
-			// Handle the "unix:[local/path]" and "unix:[/absolute/path]" cases,
-			// because splitting on :// only handles the
-			// "unix://[/absolute/path]" case. Only handle if the dialer is nil,
-			// to avoid a behavior change with custom dialers.
-			return resolver.Target{Scheme: "unix", Endpoint: target[len("unix:"):]} // nolint:staticcheck
-		}
-		return resolver.Target{Endpoint: target} // nolint:staticcheck
+
+	schema := "tcp"
+	if u.Scheme == "unix" || u.Scheme == "unix-abstract" {
+		schema = "unix"
 	}
-	ret.Authority, ret.Endpoint, ok = split2(ret.Endpoint, "/") // nolint:staticcheck
-	if !ok {
-		return resolver.Target{Endpoint: target} // nolint:staticcheck
+
+	endpoint := u.Path
+	if endpoint == "" {
+		endpoint = u.Opaque
 	}
-	if ret.Scheme == "unix" { // nolint:staticcheck
-		// Add the "/" back in the unix case, so the unix resolver receives the
-		// actual endpoint in the "unix://[/absolute/path]" case.
-		ret.Endpoint = "/" + ret.Endpoint // nolint:staticcheck
-	}
-	return ret
+	return schema, endpoint, nil
 }
