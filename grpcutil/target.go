@@ -53,40 +53,40 @@ func ParseTarget(target string, skipUnixColonParsing bool) (ret resolver.Target)
 		if strings.HasPrefix(target, "unix-abstract://") {
 			// Maybe, with Authority specified, try to parse it
 			var remain string
-			ret.Scheme, remain, _ = split2(target, "://")
-			ret.Authority, ret.Endpoint, ok = split2(remain, "/")
+			ret.Scheme, remain, _ = split2(target, "://")         // nolint:staticcheck
+			ret.Authority, ret.Endpoint, ok = split2(remain, "/") // nolint:staticcheck
 			if !ok {
 				// No Authority, add the "//" back
-				ret.Endpoint = "//" + remain
+				ret.Endpoint = "//" + remain // nolint:staticcheck
 			} else {
 				// Found Authority, add the "/" back
-				ret.Endpoint = "/" + ret.Endpoint
+				ret.Endpoint = "/" + ret.Endpoint // nolint:staticcheck
 			}
 		} else {
 			// Without Authority specified, split target on ":"
-			ret.Scheme, ret.Endpoint, _ = split2(target, ":")
+			ret.Scheme, ret.Endpoint, _ = split2(target, ":") // nolint:staticcheck
 		}
 		return ret
 	}
-	ret.Scheme, ret.Endpoint, ok = split2(target, "://")
+	ret.Scheme, ret.Endpoint, ok = split2(target, "://") // nolint:staticcheck
 	if !ok {
 		if strings.HasPrefix(target, "unix:") && !skipUnixColonParsing {
 			// Handle the "unix:[local/path]" and "unix:[/absolute/path]" cases,
 			// because splitting on :// only handles the
 			// "unix://[/absolute/path]" case. Only handle if the dialer is nil,
 			// to avoid a behavior change with custom dialers.
-			return resolver.Target{Scheme: "unix", Endpoint: target[len("unix:"):]}
+			return resolver.Target{Scheme: "unix", Endpoint: target[len("unix:"):]} // nolint:staticcheck
 		}
-		return resolver.Target{Endpoint: target}
+		return resolver.Target{Endpoint: target} // nolint:staticcheck
 	}
-	ret.Authority, ret.Endpoint, ok = split2(ret.Endpoint, "/")
+	ret.Authority, ret.Endpoint, ok = split2(ret.Endpoint, "/") // nolint:staticcheck
 	if !ok {
-		return resolver.Target{Endpoint: target}
+		return resolver.Target{Endpoint: target} // nolint:staticcheck
 	}
-	if ret.Scheme == "unix" {
+	if ret.Scheme == "unix" { // nolint:staticcheck
 		// Add the "/" back in the unix case, so the unix resolver receives the
 		// actual endpoint in the "unix://[/absolute/path]" case.
-		ret.Endpoint = "/" + ret.Endpoint
+		ret.Endpoint = "/" + ret.Endpoint // nolint:staticcheck
 	}
 	return ret
 }
