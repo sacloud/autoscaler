@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2021 The Usacloud Authors
+# Copyright 2021-2022 The sacloud/autoscaler Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 GO_FILES        ?=$(shell find . -name '*.go')
-AUTHOR          ?="The sacloud Authors"
-COPYRIGHT_YEAR  ?="2021"
+AUTHOR          ?="The sacloud/autoscaler Authors"
+COPYRIGHT_YEAR  ?="2021-2022"
 COPYRIGHT_FILES ?=$$(find . \( -name "*.dockerfile" -or -name "*.go" -or -name "*.sh" -or -name "*.pl" -or -name "*.bats" -or -name "*.bash" \) -print | grep -v "/vendor/")
 BUILD_LDFLAGS   ?= "-s -w -X github.com/sacloud/autoscaler/version.Revision=`git rev-parse --short HEAD`"
 
