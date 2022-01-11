@@ -26,7 +26,7 @@ terraform apply -auto-approve
 rm -f autoscaler.sock
 
 : "Running e2e test..."
-go test -v -tags=e2e ./...
+go test -v -tags=e2e -timeout 240m ./...
 RESULT=$?
 
 if [ -n "$SKIP_CLEANUP" ]; then

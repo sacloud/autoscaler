@@ -13,7 +13,7 @@ provider "sakuracloud" {
 
 # Server
 resource "sakuracloud_server" "server" {
-  count = 2
+  count = 3
 
   name   = "autoscaler-e2e-test"
   core   = 1
@@ -40,7 +40,7 @@ resource "sakuracloud_note" "startupscript" {
 }
 
 resource "sakuracloud_disk" "disk" {
-  count             = 2
+  count             = 3
   name              = "autosxaler-e2e-test"
   source_archive_id = data.sakuracloud_archive.ubuntu.id
 }

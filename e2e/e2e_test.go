@@ -96,7 +96,7 @@ func TestE2E(t *testing.T) {
 	/**************************************************************************
 	 * Step 0: 現在のクラウド上のリソースの確認/ポーリング開始
 	 *************************************************************************/
-
+	log.Println("step0: setup")
 	// ProxyLBへのHTTPリクエストが通るようになるまで待ち & ポーリング開始
 	if err := waitProxyLBAndStartHTTPRequestLoop(ctx, t); err != nil {
 		t.Fatal(err)
@@ -129,6 +129,8 @@ func TestE2E(t *testing.T) {
 	/**************************************************************************
 	 * Step 1-1: スケールアップ
 	 *************************************************************************/
+	log.Println("step1-1: scale up")
+
 	// Grafana InputsにWebhookでUpリクエストを送信
 	resp, err := http.Post("http://127.0.0.1:8080/up?resource-name=server", "text/plain", bytes.NewReader(grafanaWebhookBody))
 	if err != nil {
@@ -147,6 +149,7 @@ func TestE2E(t *testing.T) {
 	/**************************************************************************
 	 * Step 1-2: スケールアップ結果の確認
 	 *************************************************************************/
+	log.Println("step1-2: check results")
 	server, err = fetchSakuraCloudServer()
 	if err != nil {
 		t.Fatal(err)
@@ -164,6 +167,7 @@ func TestE2E(t *testing.T) {
 	/**************************************************************************
 	 * Step 1-3: 冷却期間の確認
 	 *************************************************************************/
+	log.Println("step1-3: cooling down")
 	resp, err = http.Post("http://127.0.0.1:8080/up?resource-name=server", "text/plain", bytes.NewReader(grafanaWebhookBody))
 	if err != nil {
 		fatalWithStderrOutputs(t, err)
@@ -194,6 +198,7 @@ func TestE2E(t *testing.T) {
 	/**************************************************************************
 	 * Step 2-1: スケールダウン
 	 *************************************************************************/
+	log.Println("step2-1: scale down")
 	// Grafana InputsにWebhookでDownリクエストを送信
 	resp, err = http.Post("http://127.0.0.1:8080/down?resource-name=server", "text/plain", bytes.NewReader(grafanaWebhookBody))
 	if err != nil {
@@ -212,6 +217,7 @@ func TestE2E(t *testing.T) {
 	/**************************************************************************
 	 * Step 2-2: スケールダウン結果の確認
 	 *************************************************************************/
+	log.Println("step2-2: check results")
 	server, err = fetchSakuraCloudServer()
 	if err != nil {
 		t.Fatal(err)
@@ -227,9 +233,13 @@ func TestE2E(t *testing.T) {
 	}
 	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
 	refreshCmd.Run() // nolint
+
+	outputLogs()
 }
 
 func setup() {
+	log.SetPrefix("[E2E] ")
+
 	coreOutputs, err := coreCmd.StderrPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -250,11 +260,11 @@ func setup() {
 	go collectOutputs("[Grafana Inputs]", inputOutputs)
 
 	if err := waitOutput(coreReadyMarker, 3*time.Second); err != nil {
-		logOutputs()
+		outputLogs()
 		log.Fatal(err)
 	}
 	if err := waitOutput(inputsReadyMarker, 3*time.Second); err != nil {
-		logOutputs()
+		outputLogs()
 		log.Fatal(err)
 	}
 }
@@ -363,14 +373,14 @@ func httpRequestToProxyLB(url string) error {
 	return nil
 }
 
-func logOutputs() {
+func outputLogs() {
 	mu.Lock()
 	defer mu.Unlock()
 	log.Println("Outputs:::\n" + strings.Join(outputs, "\n"))
 }
 
 func fatalWithStderrOutputs(t *testing.T, args ...interface{}) {
-	logOutputs()
+	outputLogs()
 	t.Fatal(args...)
 }
 
@@ -427,6 +437,7 @@ func waitProxyLBAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error
 				return
 			case <-ticker.C:
 				if err := httpRequestToProxyLB(url); err != nil {
+					log.Println("[ERROR]", err)
 					t.Error(err)
 					return
 				}
