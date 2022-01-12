@@ -318,8 +318,8 @@ github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb
 github.com/sacloud/ftps v1.1.0/go.mod h1:h4awhOi3PEyhKLj1FpXjoVV5yVkmRUU+d5L95EwX2JU=
 github.com/sacloud/go-http v0.0.4 h1:+vgx/uCctcGiHMe8jE+qirMKd3+d73MNZXK7nrUo0po=
 github.com/sacloud/go-http v0.0.4/go.mod h1:aYTXNuAnPmD6Ar3ktDaR1gPxJCPv2CqpppcYciy1hmo=
-github.com/sacloud/libsacloud/v2 v2.31.2-0.20220112064440-6fdc2bf5ee3b h1:0nRwizbMismhVcj2iSIhLmxvG4tDTx8Q0LSvKoJCHCw=
-github.com/sacloud/libsacloud/v2 v2.31.2-0.20220112064440-6fdc2bf5ee3b/go.mod h1:QDsX+iHidP+o/AfOHvl44oeQew3cdfgoswqP2dQy2tk=
+github.com/sacloud/libsacloud/v2 v2.32.0 h1:7j1Vi374NfzRmgOxt6yh9wob33FfT2N0YqPGJgt4/QY=
+github.com/sacloud/libsacloud/v2 v2.32.0/go.mod h1:QDsX+iHidP+o/AfOHvl44oeQew3cdfgoswqP2dQy2tk=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
 github.com/shivamMg/ppds v0.0.1 h1:idK2dpaen652zOO+OmcwmyoPNncBNqfHjF/14eS5JIk=
 github.com/shivamMg/ppds v0.0.1/go.mod h1:hb39VqUO6qfkb9zBBQPTIV1vWBtI7yQsG0wr3pN78fM=
