@@ -4,7 +4,7 @@ Description=SakuraCloud AutoScaler AlertManager Inputs
 [Service]
 User=autoscaler
 EnvironmentFile=/etc/autoscaler/inputs_alertmanager.config
-ExecStart=/usr/local/sbin/autoscaler inputs alertmanager $OPTIONS
+ExecStart=/usr/local/bin/autoscaler inputs alertmanager $OPTIONS
 Restart=always
 
 [Install]
