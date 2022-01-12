@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"runtime"
 	"sync"
 
@@ -31,52 +30,46 @@ import (
 
 type SakuraCloud struct {
 	Credential `yaml:",inline"`
-	// TODO 項目追加
+	Profile    string `yaml:"profile"`
 
 	apiClient sacloud.APICaller
 	initOnce  sync.Once
+	initError error
 }
 
 // APIClient シングルトンなAPIクライアントを返す
 func (sc *SakuraCloud) APIClient() sacloud.APICaller {
 	sc.initOnce.Do(func() {
-		token := sc.Token
-		if token == "" {
-			token = os.Getenv("SAKURACLOUD_ACCESS_TOKEN")
+		optEnvAndProfile, err := api.DefaultOptionWithProfile(sc.Profile)
+		if err != nil {
+			sc.initError = err
+			return
 		}
-		secret := sc.Secret
-		if secret == "" {
-			secret = os.Getenv("SAKURACLOUD_ACCESS_TOKEN_SECRET")
+		opts := &api.CallerOptions{
+			AccessToken:       sc.Token,
+			AccessTokenSecret: sc.Secret,
+			HTTPClient:        &http.Client{},
+			UserAgent: fmt.Sprintf(
+				"sacloud/autoscaler/v%s (%s/%s; +https://github.com/sacloud/autoscaler) libsacloud/%s",
+				version.Version,
+				runtime.GOOS,
+				runtime.GOARCH,
+				libsacloud.Version,
+			),
 		}
-
-		ua := fmt.Sprintf(
-			"sacloud/autoscaler/v%s (%s/%s; +https://github.com/sacloud/autoscaler) libsacloud/%s",
-			version.Version,
-			runtime.GOOS,
-			runtime.GOARCH,
-			libsacloud.Version,
-		)
-
-		httpClient := &http.Client{}
-		sc.apiClient = api.NewCaller(&api.CallerOptions{
-			AccessToken:          token,
-			AccessTokenSecret:    secret,
-			HTTPClient:           httpClient,
-			HTTPRequestTimeout:   300,
-			HTTPRequestRateLimit: 10,
-			RetryMax:             10,
-			UserAgent:            ua,
-			TraceAPI:             os.Getenv("SAKURACLOUD_TRACE") != "",
-			TraceHTTP:            os.Getenv("SAKURACLOUD_TRACE") != "",
-			FakeMode:             os.Getenv("FAKE_MODE") != "",
-		})
+		sc.apiClient = api.NewCaller(optEnvAndProfile, opts)
 	})
 	return sc.apiClient
 }
 
 // Validate 有効なAPIキーが指定されており、必要なパーミッションが割り当てられていることを確認する
 func (sc *SakuraCloud) Validate(ctx context.Context) error {
-	authStatus, err := sacloud.NewAuthStatusOp(sc.APIClient()).Read(ctx)
+	apiClient := sc.APIClient()
+	if sc.initError != nil {
+		return fmt.Errorf("initializing API Client failed: %s", sc.initError)
+	}
+
+	authStatus, err := sacloud.NewAuthStatusOp(apiClient).Read(ctx)
 	if err != nil {
 		if err, ok := err.(sacloud.APIError); ok {
 			return fmt.Errorf("reading SAKURA cloud account info failed: %s", err.Message())
