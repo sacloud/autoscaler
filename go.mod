@@ -11,7 +11,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.29.0
-	github.com/sacloud/libsacloud/v2 v2.28.1-0.20211206013343-22cec9b427cb
+	github.com/sacloud/libsacloud/v2 v2.31.2-0.20220112064440-6fdc2bf5ee3b
 	github.com/shivamMg/ppds v0.0.1
 	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.7.0
