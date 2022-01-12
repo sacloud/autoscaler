@@ -1,5 +1,5 @@
-# 操作対象のリソースの定義
-# スケールさせたいリソース群をここで定義する
+## 操作対象のリソースの定義
+## スケールさせたいリソース群をここで定義する
 resources:
   # サーバ(垂直スケール)
   - type: Server
@@ -180,29 +180,29 @@ resources:
       - band_width: 250
       - band_width: 500
 
-# カスタムハンドラーの定義
+## カスタムハンドラーの定義
 # handlers:
 #   - name: "example"
 #     endpoint: "unix:example-handler.sock" # or "localhost:8081"
 
-# オートスケーラーの動作設定
+## オートスケーラーの動作設定
 autoscaler:
   cooldown: 600 # ジョブの連続実行を抑止するためのクールダウン期間を秒数で指定。デフォルト: 600(10分)
 
-# CoreのgRPCエンドポイントのTLS設定(省略可)
+#  # CoreのgRPCエンドポイントのTLS設定(省略可)
 #  server_tls_config:
 #    cert_file: path/to/server-cert.pem
 #    key_file: /path/to/server-key.pem
 #    client_auth_type: RequireAndVerifyClientCert
 #    client_ca_file: path/to/ca-cert.pem
 
-# カスタムハンドラへのgRPC接続のTLS設定(省略可)
+#  # カスタムハンドラへのgRPC接続のTLS設定(省略可)
 #  handler_tls_config:
 #    cert_file: path/to/server-cert.pem
 #    key_file: path/to/server-key.pem
 #    root_ca_file: path/to/root-ca-chain.pem
 
-# Exporterの設定
+#  # Exporterの設定
 #  exporter_config:
 #    enabled: true
 #    address: ":8081"
@@ -211,3 +211,13 @@ autoscaler:
 #      key_file: /path/to/server-key.pem
 #      client_auth_type: RequireAndVerifyClientCert
 #      client_ca_file: path/to/ca-cert.pem
+
+## さくらのクラウドAPIクライアントの設定(省略可)
+#sakuracloud:
+#  # プロファイル名を指定(環境変数SAKURACLOUD_PROFILEでの指定も可能)
+#  profile: your-profile-name
+#
+#  # APIトークン/シークレットを指定
+#  # (環境変数SAKURACLOUD_ACCESS_TOKEN/SAKURACLOUD_ACCESS_TOKEN_SECRETでの指定も可能)
+#  token: your-token
+#  secret: your-secret
