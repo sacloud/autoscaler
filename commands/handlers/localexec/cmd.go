@@ -27,7 +27,7 @@ import (
 )
 
 var Command = &cobra.Command{
-	Use:   "local-exec [flags]... {path/to/your/executable}",
+	Use:   "local-exec [flags]...",
 	Short: "Handler for executing a shell script",
 	Args:  cobra.NoArgs,
 	PreRunE: flags.ValidateMultiFunc(true,
