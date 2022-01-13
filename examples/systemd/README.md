@@ -13,7 +13,7 @@
 
 ### `autoscaler`コマンドのインストール先
 
-デフォルトでは`/usr/local/sbin`配下に`autoscaler`をインストールしておく必要があります。  
+デフォルトでは`/usr/local/bin`配下に`autoscaler`をインストールしておく必要があります。  
 インストール先を変更している場合は`*.service`に記載されているパスを変更してください。  
 
 ### ユニットファイル
@@ -28,7 +28,7 @@
 ### AutoScalerのコンフィギュレーション
 
 デフォルトでは`/etc/autoscaler/autoscaler.yaml`を利用します。  
-`/usr/local/sbin/autoscaler core example`コマンドで雛形を出力し作成してください。  
+`/usr/local/bin/autoscaler core example`コマンドで雛形を出力し作成してください。  
 
 ### デフォルトの動作
 
