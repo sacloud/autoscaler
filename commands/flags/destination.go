@@ -15,27 +15,63 @@
 package flags
 
 import (
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
 
 type destinationFlags struct {
-	Destination string `name:"--dest" validate:"required,printascii"`
+	Destination string `name:"--dest" validate:"omitempty,printascii"`
 }
 
-var destination = &destinationFlags{
-	Destination: defaults.CoreSocketAddr,
-}
+var (
+	destination     = &destinationFlags{}
+	destinationDesc = fmt.Sprintf(
+		`Address of the gRPC endpoint of AutoScaler Core. 
+If no value is specified, it will search for a valid value among the following values and use it.
+[%s]`,
+		strings.Join(defaults.CoreSocketAddrCandidates, ", "),
+	)
+)
 
 func SetDestinationFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&destination.Destination, "dest", "", destination.Destination, "Address of the gRPC endpoint of AutoScaler Core")
+	cmd.Flags().StringVarP(&destination.Destination, "dest", "", destination.Destination, destinationDesc)
 }
 
 func ValidateDestinationFlags(*cobra.Command, []string) error {
-	return validate.Struct(destination)
+	if err := validate.Struct(destination); err != nil {
+		return err
+	}
+	if defaultDestination() == "" {
+		return fmt.Errorf(
+			"--dest: Core's socket file is not found in [%s]",
+			strings.Join(defaults.CoreSocketAddrCandidates, ", "),
+		)
+	}
+	return nil
 }
 
 func Destination() string {
-	return destination.Destination
+	if destination.Destination != "" {
+		return destination.Destination
+	}
+	return defaultDestination()
+}
+
+func defaultDestination() string {
+	for _, dest := range defaults.CoreSocketAddrCandidates {
+		_, endpoint, err := grpcutil.ParseTarget(dest)
+		if err != nil {
+			panic(err) // defaultsでの定義誤り
+		}
+		if _, err := os.Stat(endpoint); err == nil {
+			return dest
+		}
+	}
+	return ""
 }
