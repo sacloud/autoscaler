@@ -81,9 +81,6 @@ func (v *StringOrFilePath) UnmarshalYAML(data []byte) error {
 	}
 	content, err := os.ReadFile(path)
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
 		content = []byte(str)
 	}
 	*v = StringOrFilePath(content)

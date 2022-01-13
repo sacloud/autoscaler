@@ -103,7 +103,8 @@ type ScalingRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// 呼び出し元を示すラベル値、Coreでの処理には影響しない。デフォルト値: "default"
+	// 呼び出し元を示すラベル値、Coreでの処理には影響しない。デフォルト値:
+	// "default"
 	Source string `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
 	// 操作対象のリソース名。リソース名にはCoreのコンフィギュレーションの中で定義した名前を指定する
 	// 対応するリソース名がCoreで見つけられなかった場合はエラーを返す

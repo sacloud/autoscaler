@@ -42,6 +42,7 @@ type ServerGroupInstanceTemplate struct {
 	Plan              *ServerGroupInstancePlan     `yaml:"plan" validate:"required"`
 	Disks             []*ServerGroupDiskTemplate   `yaml:"disks" validate:"max=4"`
 	EditParameter     *ServerGroupDiskEditTemplate `yaml:"edit_parameter"`
+	CloudConfig       ServerGroupCloudConfig       `yaml:",inline"`
 	NetworkInterfaces []*ServerGroupNICTemplate    `yaml:"network_interfaces" validate:"max=10"`
 }
 
@@ -58,9 +59,19 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient sa
 	for _, disk := range s.Disks {
 		errors = multierror.Append(errors, disk.Validate(ctx, apiClient, def.Zone)...)
 	}
-	if s.EditParameter != nil {
+
+	// TODO EditParameter/CloudConfigそれぞれにおいて、Disks[0]が存在&対応していることを検証
+	//  https://github.com/sacloud/autoscaler/issues/255 の対応時に合わせて対応する。
+
+	switch {
+	case s.EditParameter != nil && !s.CloudConfig.Empty():
+		errors = multierror.Append(errors, fmt.Errorf("only one of edit_parameter and cloud_config can be specified"))
+	case s.EditParameter != nil:
 		errors = multierror.Append(errors, s.EditParameter.Validate()...)
+	case !s.CloudConfig.Empty():
+		errors = multierror.Append(errors, s.CloudConfig.Validate()...)
 	}
+
 	for i, nic := range s.NetworkInterfaces {
 		errors = multierror.Append(errors, nic.Validate(def.parent, def.MaxSize, i)...)
 	}
@@ -145,7 +156,7 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient saclou
 		errors = multierror.Append(errors, err)
 	}
 
-	// TODO サイズのバリデーション
+	// TODO プラン/サイズがクラウド上で有効な値になっているか検証
 
 	return errors.Errors
 }
@@ -219,6 +230,27 @@ func (t *ServerGroupDiskEditTemplate) Validate() []error {
 
 	if t.Disabled && hasValue {
 		return []error{fmt.Errorf("disabled=true but a value is specified")}
+	}
+	return nil
+}
+
+type ServerGroupCloudConfig struct {
+	CloudConfig StringOrFilePath `yaml:"cloud_config"`
+}
+
+func (c ServerGroupCloudConfig) String() string {
+	return c.CloudConfig.String()
+}
+
+func (c ServerGroupCloudConfig) Empty() bool {
+	return c.CloudConfig.String() == ""
+}
+
+func (c ServerGroupCloudConfig) Validate() []error {
+	var m map[string]interface{}
+	opts := []yaml.DecodeOption{yaml.Strict(), yaml.DisallowDuplicateKey()}
+	if err := yaml.UnmarshalWithOptions([]byte(c.CloudConfig.String()), &m, opts...); err != nil {
+		return []error{fmt.Errorf("invalid cloud-config: %s", err)}
 	}
 	return nil
 }
