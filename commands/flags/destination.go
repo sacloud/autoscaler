@@ -47,7 +47,7 @@ func ValidateDestinationFlags(*cobra.Command, []string) error {
 	if err := validate.Struct(destination); err != nil {
 		return err
 	}
-	if defaultDestination() == "" {
+	if destination.Destination == "" && defaultDestination() == "" {
 		return fmt.Errorf(
 			"--dest: Core's socket file is not found in [%s]",
 			strings.Join(defaults.CoreSocketAddrCandidates, ", "),
