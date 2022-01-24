@@ -139,7 +139,10 @@ message ServerGroupInstance {
 
   // disks
   repeated Disk disks          = 17;
+
+  // ディスクの修正関連
   EditParameter edit_parameter = 18;  // 1番目のディスクにのみ有効
+  string cloud_config = 27;
 
   // networks
   repeated NIC network_interfaces = 19;
@@ -154,6 +157,8 @@ message ServerGroupInstance {
   string          description    = 24;
   string          icon_id        = 25;
   bool            shutdown_force = 26;
+
+
 
   // ******** messages ***********
 

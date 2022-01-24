@@ -30,10 +30,11 @@ func TestServerGroupInstanceTemplate_UnmarshalYAML(t *testing.T) {
 		data []byte
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		expect  *ServerGroupInstanceTemplate
+		name        string
+		args        args
+		wantErr     bool
+		wantErrText string
+		expect      *ServerGroupInstanceTemplate
 	}{
 		{
 			name: "invalid",
@@ -55,6 +56,40 @@ plan:
 				Plan: &ServerGroupInstancePlan{
 					Core:   1,
 					Memory: 1,
+				},
+			},
+		},
+		{
+			name: "cloud-config",
+			args: args{
+				data: []byte(`
+plan:
+  core: 1
+  memory: 1
+disks:
+  - source_archive:
+      names: ["Ubuntu", "cloudimg"]
+    size: 20
+cloud_config: "#cloud-config"
+`),
+			},
+			expect: &ServerGroupInstanceTemplate{
+				Plan: &ServerGroupInstancePlan{
+					Core:   1,
+					Memory: 1,
+				},
+				Disks: []*ServerGroupDiskTemplate{
+					{
+						SourceArchiveSelector: &NameOrSelector{
+							ResourceSelector: ResourceSelector{
+								Names: []string{"Ubuntu", "cloudimg"},
+							},
+						},
+						Size: 20,
+					},
+				},
+				CloudConfig: ServerGroupCloudConfig{
+					CloudConfig: "#cloud-config",
 				},
 			},
 		},
@@ -273,6 +308,27 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 			want: []error{
 				fmt.Errorf("tags: unique"),
 				fmt.Errorf("interface_driver: oneof=virtio e1000"),
+			},
+		},
+		{
+			name: "cloud-config",
+			template: &ServerGroupInstanceTemplate{
+				Plan: &ServerGroupInstancePlan{
+					Core:   1,
+					Memory: 1,
+				},
+				// Note: 本来はcloudimgを指定すべきだが、fakeデータには含まれないため代わりにUbuntuを指定しておく
+				Disks: []*ServerGroupDiskTemplate{
+					{
+						OSType: "ubuntu",
+						Size:   20,
+					},
+				},
+				EditParameter: &ServerGroupDiskEditTemplate{Disabled: true},
+				CloudConfig:   ServerGroupCloudConfig{CloudConfig: "#cloud-config"},
+			},
+			want: []error{
+				fmt.Errorf("only one of edit_parameter and cloud_config can be specified"),
 			},
 		},
 	}

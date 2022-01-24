@@ -26,6 +26,9 @@ type computedServerGroupInstance struct {
 
 	disks             []*handler.ServerGroupInstance_Disk
 	diskEditParameter *handler.ServerGroupInstance_EditParameter
+
+	cloudConfig string
+
 	networkInterfaces []*handler.ServerGroupInstance_NIC
 
 	parent   Computed                     // 親Resourceのcomputed
@@ -86,6 +89,7 @@ func (c *computedServerGroupInstance) computeResource() *handler.Resource {
 					PrivateHostId:     c.server.PrivateHostID.String(),
 					Disks:             c.disks,
 					EditParameter:     c.diskEditParameter,
+					CloudConfig:       c.cloudConfig,
 					NetworkInterfaces: c.networkInterfaces,
 					CdRomId:           c.server.CDROMID.String(),
 					InterfaceDriver:   c.server.InterfaceDriver.String(),

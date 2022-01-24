@@ -162,7 +162,7 @@ func (h *HorizontalScaleHandler) createServer(ctx *handlers.HandlerContext, req 
 	if err := ctx.Report(handler.HandleResponse_RUNNING, "starting..."); err != nil {
 		return err
 	}
-	if err := power.BootServer(ctx, serverOp, server.Zone, createdServer.ID); err != nil {
+	if err := power.BootServer(ctx, serverOp, server.Zone, createdServer.ID, server.CloudConfig); err != nil {
 		return err
 	}
 

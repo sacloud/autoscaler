@@ -76,6 +76,7 @@ func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, refresh bool)
 		zone:              r.zone,
 		disks:             disks,
 		diskEditParameter: editParameter,
+		cloudConfig:       r.def.Template.CloudConfig.String(),
 		networkInterfaces: nics,
 		parent:            parent,
 		resource:          r,
