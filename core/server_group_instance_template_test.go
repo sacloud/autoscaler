@@ -317,17 +317,13 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 					Core:   1,
 					Memory: 1,
 				},
-				// Note: fakeドライバーにcloudimgが登録されるまでコメントアウト
-				//Disks: []*ServerGroupDiskTemplate{
-				//	{
-				//		SourceArchiveSelector: &NameOrSelector{
-				//			ResourceSelector: ResourceSelector{
-				//				Names: []string{"Ubuntu", "cloudimg"},
-				//			},
-				//		},
-				//		Size: 20,
-				//	},
-				//},
+				// Note: 本来はcloudimgを指定すべきだが、fakeデータには含まれないため代わりにUbuntuを指定しておく
+				Disks: []*ServerGroupDiskTemplate{
+					{
+						OSType: "ubuntu",
+						Size:   20,
+					},
+				},
 				EditParameter: &ServerGroupDiskEditTemplate{Disabled: true},
 				CloudConfig:   ServerGroupCloudConfig{CloudConfig: "#cloud-config"},
 			},
