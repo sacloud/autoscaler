@@ -50,11 +50,17 @@ func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) 
 
 // LoadAndValidate 指定のファイルパスからコンフィグを読み込み、バリデーションを行う
 func LoadAndValidate(ctx context.Context, configPath string, logger *log.Logger) (*Config, error) {
+	if err := logger.Debug("message", "loading config", "config", configPath); err != nil {
+		return nil, err
+	}
 	config, err := NewConfigFromPath(configPath)
 	if err != nil {
 		return nil, err
 	}
 
+	if err := logger.Debug("message", "validating config"); err != nil {
+		return nil, err
+	}
 	if err := config.Validate(ctx); err != nil {
 		return nil, err
 	}
@@ -63,6 +69,9 @@ func LoadAndValidate(ctx context.Context, configPath string, logger *log.Logger)
 
 // Start 指定のファイルパスからコンフィグを読み込み、gRPCサーバとしてリッスンを開始する
 func Start(ctx context.Context, addr, configPath string, logger *log.Logger) error {
+	if err := logger.Info("message", "starting..."); err != nil {
+		return err
+	}
 	instance, err := newInstanceFromConfig(ctx, addr, configPath, logger)
 	if err != nil {
 		return err
@@ -139,7 +148,7 @@ func (c *Core) run(ctx context.Context) error {
 	}
 
 	go func() {
-		if err := c.logger.Info("message", "autoscaler core started", "address", listener.Addr().String()); err != nil {
+		if err := c.logger.Info("message", "started", "address", listener.Addr().String()); err != nil {
 			errCh <- err
 		}
 		if err := server.Serve(listener); err != nil {
