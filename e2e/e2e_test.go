@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	coreReadyMarker        = `message="autoscaler core started" address=autoscaler.sock`
+	coreReadyMarker        = `message="started" address=autoscaler.sock`
 	inputsReadyMarker      = `message=started address=127.0.0.1:8080`
 	upJobDoneMarker        = `request=Up source=default resource=server status=JOB_DONE`
 	downJobDoneMarker      = `request=Down source=default resource=server status=JOB_DONE`
