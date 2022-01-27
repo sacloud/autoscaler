@@ -65,6 +65,7 @@ func TestConfig_Load(t *testing.T) {
 						Selector: &MultiZoneSelector{
 							ResourceSelector: &ResourceSelector{
 								Names: []string{"test-name"},
+								Tags:  []string{"test-tag"},
 							},
 							Zones: []string{"is1a"},
 						},
@@ -109,6 +110,7 @@ resources:
     name: "test-name"
     selector:
       names: ["test-name"]
+      tags: ["test-tag"]
       zones: ["is1a"]
     dedicated_cpu: true
 autoscaler:
