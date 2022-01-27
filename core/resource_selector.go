@@ -60,13 +60,14 @@ func (rs *MultiZoneSelector) Validate() error {
 
 // ResourceSelector さくらのクラウド上で対象リソースを特定するための情報を提供する
 type ResourceSelector struct {
-	ID    types.ID `yaml:"id" validate:"required_without_all=Names"`
-	Names []string `yaml:"names" validate:"required_without_all=ID"`
+	ID    types.ID `yaml:"id" validate:"required_without_all=Tags Names"`
+	Tags  []string `yaml:"tags" validate:"required_without_all=ID Names"`
+	Names []string `yaml:"names" validate:"required_without_all=ID Tags"`
 }
 
 func (rs *ResourceSelector) String() string {
 	if rs != nil {
-		return fmt.Sprintf("ID: %s, Names: %s", rs.ID, rs.Names)
+		return fmt.Sprintf("ID: %s, Names: %s, Tags: %s", rs.ID, rs.Names, rs.Tags)
 	}
 	return ""
 }
@@ -81,6 +82,9 @@ func (rs *ResourceSelector) findCondition() *sacloud.FindCondition {
 	if len(rs.Names) != 0 {
 		fc.Filter[search.Key("Name")] = search.PartialMatch(rs.Names...)
 	}
+	if len(rs.Tags) != 0 {
+		fc.Filter[search.Key("Tags.Name")] = search.PartialMatch(rs.Tags...)
+	}
 	return fc
 }
 
@@ -89,8 +93,8 @@ func (rs *ResourceSelector) Validate() error {
 		return err
 	}
 
-	if !rs.ID.IsEmpty() && len(rs.Names) > 0 {
-		return fmt.Errorf("selector.ID and selector.Names: cannot specify both")
+	if !rs.ID.IsEmpty() && (len(rs.Names) > 0 || len(rs.Tags) > 0) {
+		return fmt.Errorf("selector.ID and (selector.Names or selector.Tags): cannot specify both")
 	}
 	return nil
 }
