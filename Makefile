@@ -72,7 +72,6 @@ test:
 	go test $(TESTARGS) -v ./...
 
 .PHONY: e2e-test
-
 e2e-test:
 	docker run -it --rm \
 	    -v $$(PWD):/work \
@@ -81,6 +80,10 @@ e2e-test:
 	    -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
 	    -e SKIP_CLEANUP \
 	    ghcr.io/sacloud/autoscaler:e2e sh -c "./run.sh"
+
+.PHONY: e2e-image
+e2e-image:
+	docker build -t ghcr.io/sacloud/autoscaler:e2e -f e2e/Dockerfile .
 
 .PHONY: lint
 lint:

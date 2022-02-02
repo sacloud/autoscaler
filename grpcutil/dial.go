@@ -16,7 +16,11 @@ package grpcutil
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strings"
 
+	"github.com/sacloud/autoscaler/defaults"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -27,8 +31,32 @@ type DialOption struct {
 	DialOpts             []grpc.DialOption
 }
 
+func (opt *DialOption) destination() string {
+	if opt.Destination != "" {
+		return opt.Destination
+	}
+	for _, dest := range defaults.CoreSocketAddrCandidates {
+		_, endpoint, err := parseTarget(dest)
+		if err != nil {
+			panic(err) // defaultsでの定義誤り
+		}
+		if _, err := os.Stat(endpoint); err == nil {
+			return dest
+		}
+	}
+	return ""
+}
+
 // DialContext 指定のオプションでgRPCクライアント接続を行い、コネクションとクリーンアップ用funcを返す
 func DialContext(ctx context.Context, opt *DialOption) (*grpc.ClientConn, func(), error) {
+	dest := opt.destination()
+	if dest == "" {
+		return nil, nil, fmt.Errorf(
+			"default socket file not found in [%s]",
+			strings.Join(defaults.CoreSocketAddrCandidates, ", "),
+		)
+	}
+
 	var dialOpts []grpc.DialOption
 	if opt.TransportCredentials != nil {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(opt.TransportCredentials))
@@ -37,7 +65,7 @@ func DialContext(ctx context.Context, opt *DialOption) (*grpc.ClientConn, func()
 	}
 	dialOpts = append(dialOpts, opt.DialOpts...)
 
-	conn, err := grpc.DialContext(ctx, opt.Destination, dialOpts...)
+	conn, err := grpc.DialContext(ctx, dest, dialOpts...)
 	if err != nil {
 		return nil, nil, err
 	}

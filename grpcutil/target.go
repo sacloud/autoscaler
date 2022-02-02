@@ -28,8 +28,8 @@ import (
 	"strings"
 )
 
-// ParseTarget gRPCエンドポイントアドレス文字列を受け取り、スキーマ/エンドポイントをパースして返す
-func ParseTarget(target string) (string, string, error) {
+// parseTarget gRPCエンドポイントアドレス文字列を受け取り、スキーマ/エンドポイントをパースして返す
+func parseTarget(target string) (string, string, error) {
 	if !strings.HasPrefix(target, "unix:") && !strings.HasPrefix(target, "unix-abstract:") {
 		target = "tcp:" + target
 	}

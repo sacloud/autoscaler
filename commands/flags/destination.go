@@ -16,11 +16,9 @@ package flags
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/sacloud/autoscaler/defaults"
-	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
@@ -44,34 +42,9 @@ func SetDestinationFlag(cmd *cobra.Command) {
 }
 
 func ValidateDestinationFlags(*cobra.Command, []string) error {
-	if err := validate.Struct(destination); err != nil {
-		return err
-	}
-	if destination.Destination == "" && defaultDestination() == "" {
-		return fmt.Errorf(
-			"--dest: Core's socket file is not found in [%s]",
-			strings.Join(defaults.CoreSocketAddrCandidates, ", "),
-		)
-	}
-	return nil
+	return validate.Struct(destination)
 }
 
 func Destination() string {
-	if destination.Destination != "" {
-		return destination.Destination
-	}
-	return defaultDestination()
-}
-
-func defaultDestination() string {
-	for _, dest := range defaults.CoreSocketAddrCandidates {
-		_, endpoint, err := grpcutil.ParseTarget(dest)
-		if err != nil {
-			panic(err) // defaultsでの定義誤り
-		}
-		if _, err := os.Stat(endpoint); err == nil {
-			return dest
-		}
-	}
-	return ""
+	return destination.Destination
 }
