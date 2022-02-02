@@ -159,3 +159,59 @@ func TestResourceSelector_findCondition(t *testing.T) {
 		})
 	}
 }
+
+func TestResourceSelector_isEmpty(t *testing.T) {
+	type fields struct {
+		ID    types.ID
+		Tags  []string
+		Names []string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{
+			name:   "empty",
+			fields: fields{},
+			want:   true,
+		},
+		{
+			name:   "with empty Names",
+			fields: fields{Names: []string{""}},
+			want:   true,
+		},
+		{
+			name:   "with empty Tags",
+			fields: fields{Tags: []string{""}},
+			want:   true,
+		},
+		{
+			name:   "with ID",
+			fields: fields{ID: types.ID(1)},
+			want:   false,
+		},
+		{
+			name:   "with Names",
+			fields: fields{Names: []string{"names"}},
+			want:   false,
+		},
+		{
+			name:   "with Tags",
+			fields: fields{Tags: []string{"tags"}},
+			want:   false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rs := &ResourceSelector{
+				ID:    tt.fields.ID,
+				Tags:  tt.fields.Tags,
+				Names: tt.fields.Names,
+			}
+			if got := rs.isEmpty(); got != tt.want {
+				t.Errorf("isEmpty() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

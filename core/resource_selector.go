@@ -16,6 +16,7 @@ package core
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -70,6 +71,10 @@ func (rs *ResourceSelector) String() string {
 		return fmt.Sprintf("ID: %s, Names: %s, Tags: %s", rs.ID, rs.Names, rs.Tags)
 	}
 	return ""
+}
+
+func (rs *ResourceSelector) isEmpty() bool {
+	return rs.ID.IsEmpty() && strings.Join(rs.Tags, "") == "" && strings.Join(rs.Names, "") == ""
 }
 
 func (rs *ResourceSelector) findCondition() *sacloud.FindCondition {

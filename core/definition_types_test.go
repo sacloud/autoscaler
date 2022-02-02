@@ -45,6 +45,14 @@ func TestNameOrSelector_UnmarshalYAML(t *testing.T) {
 			data: []byte(`names: ["foobar1", "foobar2"]`),
 			want: NameOrSelector{ResourceSelector{Names: []string{"foobar1", "foobar2"}}},
 		},
+		{
+			name: "with unknown fields",
+			data: []byte(`
+names: ["foobar1", "foobar2"]
+zones: ["is1a"] # unknown field
+`),
+			want: NameOrSelector{ResourceSelector{Names: []string{"foobar1", "foobar2"}}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

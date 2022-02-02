@@ -31,7 +31,8 @@ type NameOrSelector struct {
 func (v *NameOrSelector) UnmarshalYAML(data []byte) error {
 	// セレクタとしてUnmarshalしてみてエラーだったら文字列と見なす
 	var selector ResourceSelector
-	if err := yaml.UnmarshalWithOptions(data, &selector, yaml.Strict()); err != nil {
+	err := yaml.UnmarshalWithOptions(data, &selector, yaml.DisallowDuplicateKey())
+	if err != nil || selector.isEmpty() {
 		selector = ResourceSelector{
 			Names: []string{string(data)},
 		}
