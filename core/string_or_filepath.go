@@ -15,52 +15,11 @@
 package core
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/goccy/go-yaml"
 	"github.com/mitchellh/go-homedir"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
-
-// NameOrSelector 名前(文字列)、もしくはResourceSelectorを表すstruct
-type NameOrSelector struct {
-	ResourceSelector
-}
-
-func (v *NameOrSelector) UnmarshalYAML(data []byte) error {
-	// セレクタとしてUnmarshalしてみてエラーだったら文字列と見なす
-	var selector ResourceSelector
-	if err := yaml.UnmarshalWithOptions(data, &selector, yaml.Strict()); err != nil {
-		selector = ResourceSelector{
-			Names: []string{string(data)},
-		}
-	}
-	*v = NameOrSelector{ResourceSelector: selector}
-	return nil
-}
-
-// IDOrSelector ID(文字列)、もしくはResourceSelectorを表すstruct
-type IDOrSelector struct {
-	ResourceSelector
-}
-
-func (v *IDOrSelector) UnmarshalYAML(data []byte) error {
-	// セレクタとしてUnmarshalしてみてエラーだったら文字列と見なす
-	var selector ResourceSelector
-	if err := yaml.UnmarshalWithOptions(data, &selector, yaml.Strict()); err != nil {
-		str := string(data)
-		id := types.StringID(str)
-		if id.IsEmpty() && str != "" {
-			return fmt.Errorf("invalid IDOrSelector value: %q", str)
-		}
-		selector = ResourceSelector{
-			ID: id,
-		}
-	}
-	*v = IDOrSelector{ResourceSelector: selector}
-	return nil
-}
 
 // StringOrFilePath 文字列 or ファイルパス
 //

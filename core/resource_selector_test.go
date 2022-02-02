@@ -17,6 +17,7 @@ package core
 import (
 	"testing"
 
+	"github.com/goccy/go-yaml"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/search"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -156,6 +157,39 @@ func TestResourceSelector_findCondition(t *testing.T) {
 			}
 			got := rs.findCondition()
 			require.EqualValues(t, tt.want, got)
+		})
+	}
+}
+
+func TestNameOrSelector_UnmarshalYAML(t *testing.T) {
+	tests := []struct {
+		name string
+		data []byte
+		want NameOrSelector
+	}{
+		{
+			name: "empty",
+			data: []byte(``),
+			want: NameOrSelector{ResourceSelector{}},
+		},
+		{
+			name: "name",
+			data: []byte(`foobar`),
+			want: NameOrSelector{ResourceSelector{Names: []string{"foobar"}}},
+		},
+		{
+			name: "selector",
+			data: []byte(`names: ["foobar1", "foobar2"]`),
+			want: NameOrSelector{ResourceSelector{Names: []string{"foobar1", "foobar2"}}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var v NameOrSelector
+			if err := yaml.UnmarshalWithOptions(tt.data, &v, yaml.Strict()); err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			require.EqualValues(t, tt.want, v)
 		})
 	}
 }
