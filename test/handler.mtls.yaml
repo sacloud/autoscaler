@@ -1,5 +1,5 @@
 tls_config:
-  cert_file: server-cert.pem
-  key_file: server-key.pem
+  cert_file: ./test/server-cert.pem
+  key_file: ./test/server-key.pem
   client_auth_type: RequireAndVerifyClientCert
-  client_ca_file: ca-cert.pem
+  client_ca_file: ./test/ca-cert.pem
