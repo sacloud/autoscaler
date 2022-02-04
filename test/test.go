@@ -19,6 +19,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sacloud/autoscaler/config"
+
 	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -99,4 +101,13 @@ func AddTestSwitch(t *testing.T, name string) (*sacloud.Switch, func()) {
 			t.Logf("[WARN] deleting switch failed: %s", err)
 		}
 	}
+}
+
+func StringOrFilePath(t *testing.T, s string) config.StringOrFilePath {
+	v, err := config.NewStringOrFilePath(s)
+	if err != nil {
+		t.Logf("[WARN] invaild StringOrFilePath value: %s", s)
+		return config.StringOrFilePath{}
+	}
+	return *v
 }

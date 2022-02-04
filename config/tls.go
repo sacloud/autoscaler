@@ -27,11 +27,11 @@ import (
 )
 
 type TLSStruct struct {
-	TLSCertPath string `yaml:"cert_file"`
-	TLSKeyPath  string `yaml:"key_file"`
-	ClientAuth  string `yaml:"client_auth_type"`
-	ClientCAs   string `yaml:"client_ca_file"` // NoClientCert | RequestClientCert | RequireAnyClientCert | VerifyClientCertIfGiven | RequireAndVerifyClientCert
-	RootCAs     string `yaml:"root_ca_file"`
+	TLSCert    StringOrFilePath `yaml:"cert_file"`
+	TLSKey     StringOrFilePath `yaml:"key_file"`
+	ClientAuth string           `yaml:"client_auth_type"` // NoClientCert | RequestClientCert | RequireAnyClientCert | VerifyClientCertIfGiven | RequireAndVerifyClientCert
+	ClientCAs  StringOrFilePath `yaml:"client_ca_file"`
+	RootCAs    StringOrFilePath `yaml:"root_ca_file"`
 }
 
 var ErrNoTLSConfig = errors.New("TLS config is not present")
@@ -61,27 +61,23 @@ func LoadTLSConfigFromReader(configPath string, reader io.Reader) (*tls.Config, 
 }
 
 func (t *TLSStruct) TLSConfig() (*tls.Config, error) {
-	if t.TLSCertPath == "" && t.TLSKeyPath == "" && t.ClientAuth == "" && t.ClientCAs == "" && t.RootCAs == "" {
+	if t.TLSCert.Empty() && t.TLSKey.Empty() && t.ClientAuth == "" && t.ClientCAs.Empty() && t.RootCAs.Empty() {
 		return nil, ErrNoTLSConfig
 	}
 
 	cfg := &tls.Config{}
 
-	if t.TLSCertPath != "" && t.TLSKeyPath != "" {
-		cert, err := tls.LoadX509KeyPair(t.TLSCertPath, t.TLSKeyPath)
+	if !t.TLSCert.Empty() && !t.TLSKey.Empty() {
+		cert, err := tls.X509KeyPair(t.TLSCert.Bytes(), t.TLSKey.Bytes())
 		if err != nil {
 			return nil, fmt.Errorf("failed to load X509KeyPair: %s", err)
 		}
 		cfg.Certificates = []tls.Certificate{cert}
 	}
 
-	if t.ClientCAs != "" {
+	if !t.ClientCAs.Empty() {
 		clientCAPool := x509.NewCertPool()
-		clientCAFile, err := os.ReadFile(t.ClientCAs)
-		if err != nil {
-			return nil, err
-		}
-		clientCAPool.AppendCertsFromPEM(clientCAFile)
+		clientCAPool.AppendCertsFromPEM(t.ClientCAs.Bytes())
 		cfg.ClientCAs = clientCAPool
 	}
 
@@ -100,17 +96,13 @@ func (t *TLSStruct) TLSConfig() (*tls.Config, error) {
 		return nil, errors.New("Invalid ClientAuth: " + t.ClientAuth)
 	}
 
-	if t.ClientCAs != "" && cfg.ClientAuth == tls.NoClientCert {
+	if !t.ClientCAs.Empty() && cfg.ClientAuth == tls.NoClientCert {
 		return nil, errors.New("Client CA's have been configured without a Client Auth Policy")
 	}
 
-	if t.RootCAs != "" {
+	if !t.RootCAs.Empty() {
 		rootCAPool := x509.NewCertPool()
-		rootCAFile, err := os.ReadFile(t.RootCAs)
-		if err != nil {
-			return nil, err
-		}
-		rootCAPool.AppendCertsFromPEM(rootCAFile)
+		rootCAPool.AppendCertsFromPEM(t.RootCAs.Bytes())
 		cfg.RootCAs = rootCAPool
 	}
 
