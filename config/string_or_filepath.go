@@ -59,6 +59,16 @@ func (v *StringOrFilePath) String() string {
 	return v.content
 }
 
+// Bytes .
+func (v *StringOrFilePath) Bytes() []byte {
+	return []byte(v.content)
+}
+
+// Empty vの文字列、またはvがファイルパスの場合はファイルの内容が空だった場合にtrueを返す
+func (v *StringOrFilePath) Empty() bool {
+	return v.content == ""
+}
+
 // IsFilePath vの文字列がファイルパスであるかの判定結果を返す
 func (v *StringOrFilePath) IsFilePath() bool {
 	return v.isFilePath

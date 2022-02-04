@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	"github.com/goccy/go-yaml"
-
 	"github.com/sacloud/autoscaler/config"
+	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -75,24 +75,24 @@ func TestConfig_Load(t *testing.T) {
 				AutoScaler: AutoScalerConfig{
 					CoolDownSec: 30,
 					ServerTLSConfig: &config.TLSStruct{
-						TLSCertPath: "server.crt",
-						TLSKeyPath:  "server.key",
-						ClientAuth:  "RequireAndVerifyClientCert",
-						ClientCAs:   "ca.crt",
+						TLSCert:    test.StringOrFilePath(t, "server.crt"),
+						TLSKey:     test.StringOrFilePath(t, "server.key"),
+						ClientAuth: "RequireAndVerifyClientCert",
+						ClientCAs:  test.StringOrFilePath(t, "ca.crt"),
 					},
 					HandlerTLSConfig: &config.TLSStruct{
-						TLSCertPath: "server.crt",
-						TLSKeyPath:  "server.key",
-						RootCAs:     "ca.crt",
+						TLSCert: test.StringOrFilePath(t, "server.crt"),
+						TLSKey:  test.StringOrFilePath(t, "server.key"),
+						RootCAs: test.StringOrFilePath(t, "ca.crt"),
 					},
 					ExporterConfig: &config.ExporterConfig{
 						Enabled: true,
 						Address: "localhost:8080",
 						TLSConfig: &config.TLSStruct{
-							TLSCertPath: "server.crt",
-							TLSKeyPath:  "server.key",
-							ClientAuth:  "RequireAndVerifyClientCert",
-							ClientCAs:   "ca.crt",
+							TLSCert:    test.StringOrFilePath(t, "server.crt"),
+							TLSKey:     test.StringOrFilePath(t, "server.key"),
+							ClientCAs:  test.StringOrFilePath(t, "ca.crt"),
+							ClientAuth: "RequireAndVerifyClientCert",
 						},
 					},
 				},

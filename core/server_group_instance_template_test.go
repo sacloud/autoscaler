@@ -20,16 +20,10 @@ import (
 	"testing"
 
 	"github.com/goccy/go-yaml"
-	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"github.com/stretchr/testify/require"
 )
-
-func dummyCloudConfigValue() config.StringOrFilePath {
-	v, _ := config.NewStringOrFilePath("#cloud-config")
-	return *v
-}
 
 func TestServerGroupInstanceTemplate_UnmarshalYAML(t *testing.T) {
 	type args struct {
@@ -95,7 +89,7 @@ cloud_config: "#cloud-config"
 					},
 				},
 				CloudConfig: ServerGroupCloudConfig{
-					CloudConfig: dummyCloudConfigValue(),
+					CloudConfig: test.StringOrFilePath(t, "#cloud-config"),
 				},
 			},
 		},
@@ -331,7 +325,7 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 					},
 				},
 				EditParameter: &ServerGroupDiskEditTemplate{Disabled: true},
-				CloudConfig:   ServerGroupCloudConfig{CloudConfig: dummyCloudConfigValue()},
+				CloudConfig:   ServerGroupCloudConfig{CloudConfig: test.StringOrFilePath(t, "#cloud-config")},
 			},
 			want: []error{
 				fmt.Errorf("only one of edit_parameter and cloud_config can be specified"),

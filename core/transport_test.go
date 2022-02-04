@@ -22,6 +22,7 @@ import (
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/request"
+	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -67,12 +68,12 @@ func TestTransport(t *testing.T) {
 			name:       "h2",
 			listenAddr: "localhost:0",
 			coreTLSConfig: &config.TLSStruct{
-				TLSCertPath: "./test/server-cert.pem",
-				TLSKeyPath:  "./test/server-key.pem",
-				ClientAuth:  "NoClientCert",
+				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
+				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
+				ClientAuth: "NoClientCert",
 			},
 			clientTLSConfig: &config.TLSStruct{
-				RootCAs: "./test/ca-cert.pem",
+				RootCAs: test.StringOrFilePath(t, "./test/ca-cert.pem"),
 			},
 			wantError: false,
 		},
@@ -80,9 +81,9 @@ func TestTransport(t *testing.T) {
 			name:       "h2 without client's RootCAs config",
 			listenAddr: "localhost:0",
 			coreTLSConfig: &config.TLSStruct{
-				TLSCertPath: "./test/server-cert.pem",
-				TLSKeyPath:  "./test/server-key.pem",
-				ClientAuth:  "NoClientCert",
+				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
+				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
+				ClientAuth: "NoClientCert",
 			},
 			wantError: true,
 		},
@@ -90,13 +91,13 @@ func TestTransport(t *testing.T) {
 			name:       "h2 without client cert",
 			listenAddr: "localhost:0",
 			coreTLSConfig: &config.TLSStruct{
-				TLSCertPath: "./test/server-cert.pem",
-				TLSKeyPath:  "./test/server-key.pem",
-				ClientAuth:  "RequireAndVerifyClientCert",
-				ClientCAs:   "./test/ca-cert.pem",
+				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
+				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
+				ClientCAs:  test.StringOrFilePath(t, "./test/ca-cert.pem"),
+				ClientAuth: "RequireAndVerifyClientCert",
 			},
 			clientTLSConfig: &config.TLSStruct{
-				RootCAs: "./test/ca-cert.pem",
+				RootCAs: test.StringOrFilePath(t, "./test/ca-cert.pem"),
 			},
 			wantError: true,
 		},
@@ -104,15 +105,15 @@ func TestTransport(t *testing.T) {
 			name:       "h2 with invalid client cert",
 			listenAddr: "localhost:0",
 			coreTLSConfig: &config.TLSStruct{
-				TLSCertPath: "./test/server-cert.pem",
-				TLSKeyPath:  "./test/server-key.pem",
-				ClientAuth:  "RequireAndVerifyClientCert",
-				ClientCAs:   "./test/ca-cert.pem",
+				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
+				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
+				ClientCAs:  test.StringOrFilePath(t, "./test/ca-cert.pem"),
+				ClientAuth: "RequireAndVerifyClientCert",
 			},
 			clientTLSConfig: &config.TLSStruct{
-				RootCAs:     "./test/ca-cert.pem",
-				TLSCertPath: "./test/invalid-client-cert.pem",
-				TLSKeyPath:  "./test/invalid-client-key.pem",
+				RootCAs: test.StringOrFilePath(t, "./test/ca-cert.pem"),
+				TLSCert: test.StringOrFilePath(t, "./test/invalid-client-cert.pem"),
+				TLSKey:  test.StringOrFilePath(t, "./test/invalid-client-key.pem"),
 			},
 			wantError: true,
 		},
@@ -120,15 +121,15 @@ func TestTransport(t *testing.T) {
 			name:       "h2 with valid client cert",
 			listenAddr: "localhost:0",
 			coreTLSConfig: &config.TLSStruct{
-				TLSCertPath: "./test/server-cert.pem",
-				TLSKeyPath:  "./test/server-key.pem",
-				ClientAuth:  "RequireAndVerifyClientCert",
-				ClientCAs:   "./test/ca-cert.pem",
+				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
+				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
+				ClientCAs:  test.StringOrFilePath(t, "./test/ca-cert.pem"),
+				ClientAuth: "RequireAndVerifyClientCert",
 			},
 			clientTLSConfig: &config.TLSStruct{
-				RootCAs:     "./test/ca-cert.pem",
-				TLSCertPath: "./test/client-cert.pem",
-				TLSKeyPath:  "./test/client-key.pem",
+				RootCAs: test.StringOrFilePath(t, "./test/ca-cert.pem"),
+				TLSCert: test.StringOrFilePath(t, "./test/client-cert.pem"),
+				TLSKey:  test.StringOrFilePath(t, "./test/client-key.pem"),
 			},
 			wantError: false,
 		},
