@@ -25,27 +25,61 @@ import (
 //
 // ファイルパスを指定した場合、ファイルのデータがメモリ内に保持されるため、
 // サイズが大きくなるケースでは利用しないようにする
-type StringOrFilePath string
+type StringOrFilePath struct {
+	content    string
+	isFilePath bool
+}
+
+func NewStringOrFilePath(s string) (*StringOrFilePath, error) {
+	content, isFilePath, err := stringOrFilePath(s)
+	if err != nil {
+		return nil, err
+	}
+	return &StringOrFilePath{
+		content:    content,
+		isFilePath: isFilePath,
+	}, nil
+}
 
 func (v *StringOrFilePath) UnmarshalYAML(data []byte) error {
-	var str string
-	if err := yaml.Unmarshal(data, &str); err != nil {
+	var s string
+	if err := yaml.Unmarshal(data, &s); err != nil {
 		return err
 	}
-
-	// パスとして存在する場合はファイルを読み取る、そうでない場合はそのまま
-	path, err := homedir.Expand(str)
+	val, err := NewStringOrFilePath(s)
 	if err != nil {
 		return err
 	}
-	content, err := os.ReadFile(path)
-	if err != nil {
-		content = []byte(str)
-	}
-	*v = StringOrFilePath(content)
+	*v = *val
 	return nil
 }
 
+// StringOrFilePath Stringer実装
 func (v *StringOrFilePath) String() string {
-	return string(*v)
+	return v.content
+}
+
+// IsFilePath vの文字列がファイルパスであるかの判定結果を返す
+func (v *StringOrFilePath) IsFilePath() bool {
+	return v.isFilePath
+}
+
+func stringOrFilePath(s string) (string, bool, error) {
+	path, err := homedir.Expand(s)
+	if err != nil {
+		return "", false, err
+	}
+
+	isFilePath := true
+	content, err := os.ReadFile(path)
+
+	if err != nil {
+		// Note:
+		// ファイル不存在以外のエラーも全て無視している。
+		// このためエラーが発生していても警告を出さずに処理を進めてしまう。
+		// 運用上問題になるケースは少ないと思われるが、将来的にここでログ出力が行えるようになったら対応すべき。
+		isFilePath = false
+		content = []byte(s)
+	}
+	return string(content), isFilePath, nil
 }

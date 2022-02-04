@@ -15,8 +15,6 @@
 package config
 
 import (
-	"io"
-	"os"
 	"testing"
 
 	"github.com/goccy/go-yaml"
@@ -24,16 +22,6 @@ import (
 )
 
 func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
-	file, err := os.CreateTemp("", "TestStringOrFilePath")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(file.Name())
-
-	if _, err := io.WriteString(file, "dummy-file"); err != nil {
-		t.Fatal(err)
-	}
-
 	tests := []struct {
 		name string
 		data []byte
@@ -42,17 +30,26 @@ func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 		{
 			name: "empty",
 			data: []byte(``),
-			want: StringOrFilePath(""),
+			want: StringOrFilePath{
+				content:    "",
+				isFilePath: false,
+			},
 		},
 		{
 			name: "string",
 			data: []byte(`foobar`),
-			want: StringOrFilePath("foobar"),
+			want: StringOrFilePath{
+				content:    "foobar",
+				isFilePath: false,
+			},
 		},
 		{
 			name: "file",
-			data: []byte(file.Name()),
-			want: StringOrFilePath("dummy-file"),
+			data: []byte("dummy.txt"),
+			want: StringOrFilePath{
+				content:    "dummy",
+				isFilePath: true,
+			},
 		},
 	}
 	for _, tt := range tests {
