@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/goccy/go-yaml"
 	"google.golang.org/grpc/credentials"
@@ -58,16 +57,7 @@ func LoadTLSConfigFromReader(configPath string, reader io.Reader) (*tls.Config, 
 	if err := yaml.UnmarshalWithOptions(data, conf, yaml.Strict()); err != nil {
 		return nil, err
 	}
-	conf.SetDirectory(filepath.Dir(configPath))
-
 	return conf.TLSConfig()
-}
-
-func (t *TLSStruct) SetDirectory(dir string) {
-	t.TLSCertPath = joinDir(dir, t.TLSCertPath)
-	t.TLSKeyPath = joinDir(dir, t.TLSKeyPath)
-	t.ClientCAs = joinDir(dir, t.ClientCAs)
-	t.RootCAs = joinDir(dir, t.RootCAs)
 }
 
 func (t *TLSStruct) TLSConfig() (*tls.Config, error) {
@@ -133,11 +123,4 @@ func (t *TLSStruct) TransportCredentials() (credentials.TransportCredentials, er
 		return nil, err
 	}
 	return credentials.NewTLS(tlsConfig), nil
-}
-
-func joinDir(dir, path string) string {
-	if path == "" || filepath.IsAbs(path) {
-		return path
-	}
-	return filepath.Join(dir, path)
 }

@@ -16,7 +16,6 @@ package inputs
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/config"
@@ -46,16 +45,6 @@ func LoadConfigFromPath(path string) (*Config, error) {
 	c := &Config{}
 	if err := yaml.UnmarshalWithOptions(data, c, yaml.Strict()); err != nil {
 		return nil, err
-	}
-
-	if c.ServerTLSConfig != nil {
-		c.ServerTLSConfig.SetDirectory(filepath.Dir(path))
-	}
-	if c.CoreTLSConfig != nil {
-		c.CoreTLSConfig.SetDirectory(filepath.Dir(path))
-	}
-	if c.ExporterConfig != nil && c.ExporterConfig.TLSConfig != nil {
-		c.ExporterConfig.TLSConfig.SetDirectory(filepath.Dir(path))
 	}
 
 	return c, nil

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/sacloud/autoscaler/grpcutil"
@@ -55,12 +54,6 @@ func NewConfigFromPath(filePath string) (*Config, error) {
 		return nil, err
 	}
 
-	if c.AutoScaler.ServerTLSConfig != nil {
-		c.AutoScaler.ServerTLSConfig.SetDirectory(filepath.Dir(filePath))
-	}
-	if c.AutoScaler.HandlerTLSConfig != nil {
-		c.AutoScaler.HandlerTLSConfig.SetDirectory(filepath.Dir(filePath))
-	}
 	return c, nil
 }
 
