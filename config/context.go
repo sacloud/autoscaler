@@ -23,6 +23,7 @@ import (
 
 var (
 	_ LoadConfigHolder = &LoadConfigContext{}
+	_ LoggerHolder     = &LoadConfigContext{}
 	_ context.Context  = &LoadConfigContext{}
 )
 
@@ -38,6 +39,10 @@ type LoadConfigHolder interface {
 	StrictMode() bool
 }
 
+type LoggerHolder interface {
+	Logger() *log.Logger
+}
+
 func NewLoadConfigContext(ctx context.Context, strict bool, logger *log.Logger) context.Context {
 	if logger == nil {
 		logger = log.NewLogger(nil)
@@ -47,6 +52,10 @@ func NewLoadConfigContext(ctx context.Context, strict bool, logger *log.Logger) 
 
 func (c *LoadConfigContext) StrictMode() bool {
 	return c.strict
+}
+
+func (c *LoadConfigContext) Logger() *log.Logger {
+	return c.logger
 }
 
 // Deadline context.Context実装

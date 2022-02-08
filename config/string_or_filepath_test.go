@@ -15,10 +15,12 @@
 package config
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
 	"github.com/goccy/go-yaml"
+	"github.com/sacloud/autoscaler/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,6 +29,7 @@ func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 		name       string
 		data       []byte
 		strictMode bool
+		warning    string
 		want       StringOrFilePath
 	}{
 		{
@@ -65,12 +68,16 @@ func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := NewLoadConfigContext(context.Background(), tt.strictMode, nil)
+			logBuf := bytes.NewBufferString("")
+			ctx := NewLoadConfigContext(context.Background(), tt.strictMode, log.NewLogger(&log.LoggerOption{
+				Writer: logBuf,
+			}))
 			var v StringOrFilePath
 			if err := yaml.UnmarshalWithContext(ctx, tt.data, &v, yaml.Strict()); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
 			require.EqualValues(t, tt.want, v)
+			require.Equal(t, tt.warning, logBuf.String())
 		})
 	}
 }

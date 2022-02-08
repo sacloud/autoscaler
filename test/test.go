@@ -104,7 +104,7 @@ func AddTestSwitch(t *testing.T, name string) (*sacloud.Switch, func()) {
 }
 
 func StringOrFilePath(t *testing.T, s string) config.StringOrFilePath {
-	v, err := config.NewStringOrFilePath(s, false)
+	v, err := config.NewStringOrFilePath(context.Background(), s)
 	if err != nil {
 		t.Logf("[WARN] invaild StringOrFilePath value: %s", s)
 		return config.StringOrFilePath{}
