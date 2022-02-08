@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"testing"
 
 	"github.com/goccy/go-yaml"
@@ -23,9 +24,10 @@ import (
 
 func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 	tests := []struct {
-		name string
-		data []byte
-		want StringOrFilePath
+		name       string
+		data       []byte
+		strictMode bool
+		want       StringOrFilePath
 	}{
 		{
 			name: "empty",
@@ -51,11 +53,21 @@ func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 				isFilePath: true,
 			},
 		},
+		{
+			name:       "strict",
+			data:       []byte("dummy.txt"),
+			strictMode: true,
+			want: StringOrFilePath{
+				content:    "dummy.txt",
+				isFilePath: false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := NewLoadConfigContext(context.Background(), tt.strictMode)
 			var v StringOrFilePath
-			if err := yaml.UnmarshalWithOptions(tt.data, &v, yaml.Strict()); err != nil {
+			if err := yaml.UnmarshalWithContext(ctx, tt.data, &v, yaml.Strict()); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
 			require.EqualValues(t, tt.want, v)

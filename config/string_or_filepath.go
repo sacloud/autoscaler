@@ -31,7 +31,13 @@ type StringOrFilePath struct {
 	isFilePath bool
 }
 
-func NewStringOrFilePath(s string) (*StringOrFilePath, error) {
+func NewStringOrFilePath(s string, strict bool) (*StringOrFilePath, error) {
+	if strict {
+		return &StringOrFilePath{
+			content:    s,
+			isFilePath: false,
+		}, nil
+	}
 	content, isFilePath, err := stringOrFilePath(s)
 	if err != nil {
 		return nil, err
@@ -43,11 +49,16 @@ func NewStringOrFilePath(s string) (*StringOrFilePath, error) {
 }
 
 func (v *StringOrFilePath) UnmarshalYAML(ctx context.Context, data []byte) error {
+	strict := false
+	if config, ok := ctx.(LoadConfigHolder); ok {
+		strict = config.StrictMode()
+	}
+
 	var s string
 	if err := yaml.Unmarshal(data, &s); err != nil {
 		return err
 	}
-	val, err := NewStringOrFilePath(s)
+	val, err := NewStringOrFilePath(s, strict)
 	if err != nil {
 		return err
 	}
