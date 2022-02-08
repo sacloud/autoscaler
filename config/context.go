@@ -17,6 +17,8 @@ package config
 import (
 	"context"
 	"time"
+
+	"github.com/sacloud/autoscaler/log"
 )
 
 var (
@@ -28,6 +30,7 @@ var (
 type LoadConfigContext struct {
 	parent context.Context
 	strict bool
+	logger *log.Logger
 }
 
 // LoadConfigHolder コンフィグのロードオプションを保持しているかを示すインターフェース
@@ -35,8 +38,11 @@ type LoadConfigHolder interface {
 	StrictMode() bool
 }
 
-func NewLoadConfigContext(ctx context.Context, strict bool) context.Context {
-	return &LoadConfigContext{parent: ctx, strict: strict}
+func NewLoadConfigContext(ctx context.Context, strict bool, logger *log.Logger) context.Context {
+	if logger == nil {
+		logger = log.NewLogger(nil)
+	}
+	return &LoadConfigContext{parent: ctx, strict: strict, logger: logger}
 }
 
 func (c *LoadConfigContext) StrictMode() bool {

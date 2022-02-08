@@ -65,7 +65,7 @@ func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := NewLoadConfigContext(context.Background(), tt.strictMode)
+			ctx := NewLoadConfigContext(context.Background(), tt.strictMode, nil)
 			var v StringOrFilePath
 			if err := yaml.UnmarshalWithContext(ctx, tt.data, &v, yaml.Strict()); err != nil {
 				t.Fatalf("unexpected error: %s", err)

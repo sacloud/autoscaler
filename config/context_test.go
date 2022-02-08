@@ -25,7 +25,7 @@ func Test_NewLoadConfigContext(t *testing.T) {
 	parent := context.Background()
 	strict := true
 
-	ctx := NewLoadConfigContext(parent, strict)
+	ctx := NewLoadConfigContext(parent, strict, nil)
 	require.Implements(t, (*LoadConfigHolder)(nil), ctx)
 	require.Equal(t, strict, ctx.(LoadConfigHolder).StrictMode())
 }
