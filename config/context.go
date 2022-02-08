@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package core
+package config
 
 import (
 	"context"
@@ -20,12 +20,12 @@ import (
 )
 
 var (
-	_ LoadConfigHolder = &loadConfigContext{}
-	_ context.Context  = &loadConfigContext{}
+	_ LoadConfigHolder = &LoadConfigContext{}
+	_ context.Context  = &LoadConfigContext{}
 )
 
-// loadConfigContext コンフィグのロードオプションを保持するcontext.Context実装
-type loadConfigContext struct {
+// LoadConfigContext コンフィグのロードオプションを保持するcontext.Context実装
+type LoadConfigContext struct {
 	parent context.Context
 	strict bool
 }
@@ -35,30 +35,30 @@ type LoadConfigHolder interface {
 	StrictMode() bool
 }
 
-func newLoadConfigContext(ctx context.Context, strict bool) context.Context {
-	return &loadConfigContext{parent: ctx, strict: strict}
+func NewLoadConfigContext(ctx context.Context, strict bool) context.Context {
+	return &LoadConfigContext{parent: ctx, strict: strict}
 }
 
-func (c *loadConfigContext) StrictMode() bool {
+func (c *LoadConfigContext) StrictMode() bool {
 	return c.strict
 }
 
 // Deadline context.Context実装
-func (c *loadConfigContext) Deadline() (time.Time, bool) {
+func (c *LoadConfigContext) Deadline() (time.Time, bool) {
 	return c.parent.Deadline()
 }
 
 // Done context.Context実装
-func (c *loadConfigContext) Done() <-chan struct{} {
+func (c *LoadConfigContext) Done() <-chan struct{} {
 	return c.parent.Done()
 }
 
 // Err context.Context実装
-func (c *loadConfigContext) Err() error {
+func (c *LoadConfigContext) Err() error {
 	return c.parent.Err()
 }
 
 // Value context.Context実装
-func (c *loadConfigContext) Value(key interface{}) interface{} {
+func (c *LoadConfigContext) Value(key interface{}) interface{} {
 	return c.parent.Value(key)
 }

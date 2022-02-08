@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package core
+package config
 
 import (
 	"context"
@@ -21,11 +21,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_newLoadConfigContext(t *testing.T) {
+func Test_NewLoadConfigContext(t *testing.T) {
 	parent := context.Background()
 	strict := true
 
-	ctx := newLoadConfigContext(parent, strict)
+	ctx := NewLoadConfigContext(parent, strict)
 	require.Implements(t, (*LoadConfigHolder)(nil), ctx)
 	require.Equal(t, strict, ctx.(LoadConfigHolder).StrictMode())
 }

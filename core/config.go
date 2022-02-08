@@ -21,16 +21,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/sacloud/autoscaler/grpcutil"
-	health "google.golang.org/grpc/health/grpc_health_v1"
-
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/sacloud"
+	health "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
@@ -59,7 +58,7 @@ func NewConfigFromPath(ctx context.Context, filePath string, strictMode bool) (*
 }
 
 func (c *Config) load(ctx context.Context, reader io.Reader) error {
-	ctx = newLoadConfigContext(ctx, c.strictMode)
+	ctx = config.NewLoadConfigContext(ctx, c.strictMode)
 
 	data, err := io.ReadAll(reader)
 	if err != nil {
@@ -118,7 +117,7 @@ func (c *Config) handlerDisabled(h *Handler) bool {
 
 // Validate 現在のConfig値のバリデーション
 func (c *Config) Validate(ctx context.Context) error {
-	ctx = newLoadConfigContext(ctx, c.strictMode)
+	ctx = config.NewLoadConfigContext(ctx, c.strictMode)
 
 	if err := validate.Struct(c); err != nil {
 		return err
