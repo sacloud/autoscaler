@@ -42,7 +42,7 @@ type Config struct {
 }
 
 // NewConfigFromPath 指定のファイルパスからコンフィギュレーションを読み取ってConfigを作成する
-func NewConfigFromPath(filePath string) (*Config, error) {
+func NewConfigFromPath(ctx context.Context, filePath string) (*Config, error) {
 	reader, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("opening configuration file failed: %s error: %s", filePath, err)
@@ -50,19 +50,19 @@ func NewConfigFromPath(filePath string) (*Config, error) {
 	defer reader.Close()
 
 	c := &Config{}
-	if err := c.load(reader); err != nil {
+	if err := c.load(ctx, reader); err != nil {
 		return nil, err
 	}
 
 	return c, nil
 }
 
-func (c *Config) load(reader io.Reader) error {
+func (c *Config) load(ctx context.Context, reader io.Reader) error {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("loading configuration failed: %s", err)
 	}
-	if err := yaml.UnmarshalWithOptions(data, c, yaml.Strict()); err != nil {
+	if err := yaml.UnmarshalWithContext(ctx, data, c, yaml.Strict()); err != nil {
 		return fmt.Errorf(yaml.FormatError(err, false, true))
 	}
 

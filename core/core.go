@@ -53,7 +53,7 @@ func LoadAndValidate(ctx context.Context, configPath string, logger *log.Logger)
 	if err := logger.Debug("message", "loading config", "config", configPath); err != nil {
 		return nil, err
 	}
-	config, err := NewConfigFromPath(configPath)
+	config, err := NewConfigFromPath(ctx, configPath)
 	if err != nil {
 		return nil, err
 	}

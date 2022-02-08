@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"os"
 
 	"github.com/goccy/go-yaml"
@@ -41,7 +42,7 @@ func NewStringOrFilePath(s string) (*StringOrFilePath, error) {
 	}, nil
 }
 
-func (v *StringOrFilePath) UnmarshalYAML(data []byte) error {
+func (v *StringOrFilePath) UnmarshalYAML(ctx context.Context, data []byte) error {
 	var s string
 	if err := yaml.Unmarshal(data, &s); err != nil {
 		return err
