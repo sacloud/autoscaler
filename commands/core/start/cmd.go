@@ -29,9 +29,12 @@ import (
 var Command = &cobra.Command{
 	Use:   "start [flags]...",
 	Short: "start autoscaler's core server",
-	PreRunE: func(*cobra.Command, []string) error {
-		return validate.Struct(param)
-	},
+	PreRunE: flags.ValidateMultiFunc(true,
+		func(*cobra.Command, []string) error {
+			return validate.Struct(param)
+		},
+		flags.ValidateStrictModeFlags,
+	),
 	RunE: run,
 }
 
@@ -48,10 +51,11 @@ var param = &parameter{
 func init() {
 	Command.Flags().StringVar(&param.ListenAddress, "addr", param.ListenAddress, "Address of the gRPC endpoint to listen to")
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
+	flags.SetStrictModeFlag(Command)
 }
 
 func run(*cobra.Command, []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	return core.Start(ctx, param.ListenAddress, param.ConfigPath, flags.NewLogger())
+	return core.Start(ctx, param.ListenAddress, param.ConfigPath, flags.StrictMode(), flags.NewLogger())
 }

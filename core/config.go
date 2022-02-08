@@ -39,17 +39,18 @@ type Config struct {
 	CustomHandlers Handlers            `yaml:"handlers"`                      // カスタムハンドラーの定義
 	Resources      ResourceDefinitions `yaml:"resources" validate:"required"` // リソースの定義
 	AutoScaler     AutoScalerConfig    `yaml:"autoscaler"`                    // オートスケーラー自体の動作設定
+	strictMode     bool
 }
 
 // NewConfigFromPath 指定のファイルパスからコンフィギュレーションを読み取ってConfigを作成する
-func NewConfigFromPath(ctx context.Context, filePath string) (*Config, error) {
+func NewConfigFromPath(ctx context.Context, filePath string, strictMode bool) (*Config, error) {
 	reader, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("opening configuration file failed: %s error: %s", filePath, err)
 	}
 	defer reader.Close()
 
-	c := &Config{}
+	c := &Config{strictMode: strictMode}
 	if err := c.load(ctx, reader); err != nil {
 		return nil, err
 	}
@@ -58,6 +59,8 @@ func NewConfigFromPath(ctx context.Context, filePath string) (*Config, error) {
 }
 
 func (c *Config) load(ctx context.Context, reader io.Reader) error {
+	ctx = newLoadConfigContext(ctx, c.strictMode)
+
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("loading configuration failed: %s", err)
@@ -115,6 +118,8 @@ func (c *Config) handlerDisabled(h *Handler) bool {
 
 // Validate 現在のConfig値のバリデーション
 func (c *Config) Validate(ctx context.Context) error {
+	ctx = newLoadConfigContext(ctx, c.strictMode)
+
 	if err := validate.Struct(c); err != nil {
 		return err
 	}
