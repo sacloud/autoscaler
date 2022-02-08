@@ -16,6 +16,7 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"testing"
 
@@ -147,7 +148,7 @@ autoscaler:
 				AutoScaler:     tt.fields.AutoScaler,
 			}
 			c := &Config{}
-			if err := c.load(tt.args.reader); (err != nil) != tt.wantErr {
+			if err := c.load(context.Background(), tt.args.reader); (err != nil) != tt.wantErr {
 				t.Errorf("Load() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

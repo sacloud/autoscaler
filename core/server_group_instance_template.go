@@ -339,7 +339,7 @@ type ServerGroupNICUpstream struct {
 	selector *ResourceSelector
 }
 
-func (s *ServerGroupNICUpstream) UnmarshalYAML(data []byte) error {
+func (s *ServerGroupNICUpstream) UnmarshalYAML(ctx context.Context, data []byte) error {
 	if string(data) == "shared" {
 		*s = ServerGroupNICUpstream{raw: data, shared: true}
 		return nil

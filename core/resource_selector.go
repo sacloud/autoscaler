@@ -15,6 +15,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/goccy/go-yaml"
@@ -105,7 +106,7 @@ type NameOrSelector struct {
 	ResourceSelector
 }
 
-func (v *NameOrSelector) UnmarshalYAML(data []byte) error {
+func (v *NameOrSelector) UnmarshalYAML(ctx context.Context, data []byte) error {
 	// セレクタとしてUnmarshalしてみてエラーだったら文字列と見なす
 	var selector ResourceSelector
 	if err := yaml.UnmarshalWithOptions(data, &selector, yaml.Strict()); err != nil {
