@@ -50,6 +50,9 @@ func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) 
 
 // LoadAndValidate 指定のファイルパスからコンフィグを読み込み、バリデーションを行う
 func LoadAndValidate(ctx context.Context, configPath string, strictMode bool, logger *log.Logger) (*Config, error) {
+	if logger == nil {
+		logger = log.NewLogger(nil)
+	}
 	if err := logger.Debug("message", "loading config", "config", configPath); err != nil {
 		return nil, err
 	}
