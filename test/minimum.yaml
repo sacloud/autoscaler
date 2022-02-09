@@ -1,0 +1,7 @@
+resources:
+  - type: ELB
+    name: "example"
+    selector:
+      names: ["example"]
+autoscaler:
+  cooldown: 5

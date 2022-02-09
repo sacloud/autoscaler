@@ -18,10 +18,12 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/config"
+	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
 )
@@ -246,6 +248,99 @@ func TestConfig_Handlers(t *testing.T) {
 				wantNames = append(wantNames, h.Name)
 			}
 			require.EqualValues(t, gotNames, wantNames)
+		})
+	}
+}
+
+func TestConfig_Validate(t *testing.T) {
+	os.Setenv("SAKURACLOUD_FAKE_MODE", "1")
+	defer test.AddTestELB(t, "example")()
+
+	resources := ResourceDefinitions{
+		&ResourceDefELB{
+			ResourceDefBase: &ResourceDefBase{
+				TypeName: "EnhancedLoadBalancer",
+				DefName:  "example",
+			},
+			Selector: &ResourceSelector{
+				Names: []string{"example"},
+			},
+		},
+	}
+
+	type fields struct {
+		SakuraCloud    *SakuraCloud
+		CustomHandlers Handlers
+		Resources      ResourceDefinitions
+		AutoScaler     AutoScalerConfig
+		strictMode     bool
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "minimum",
+			fields: fields{
+				SakuraCloud: &SakuraCloud{strictMode: false},
+				Resources:   resources,
+			},
+			wantErr: false,
+		},
+		{
+			name: "strict with sakuracloud.profile",
+			fields: fields{
+				strictMode:  true,
+				SakuraCloud: &SakuraCloud{strictMode: true, Profile: "foobar"},
+				Resources:   resources,
+			},
+			wantErr: true,
+		},
+		{
+			name: "strict with exporter",
+			fields: fields{
+				strictMode:  true,
+				SakuraCloud: &SakuraCloud{strictMode: true},
+				Resources:   resources,
+				AutoScaler: AutoScalerConfig{
+					ExporterConfig: &config.ExporterConfig{
+						Enabled: true,
+						Address: ":8080",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "strict with custom handlers",
+			fields: fields{
+				strictMode:  true,
+				SakuraCloud: &SakuraCloud{strictMode: true},
+				Resources:   resources,
+				CustomHandlers: Handlers{
+					{
+						Name:     "example",
+						Endpoint: "unix:example.sock",
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Config{
+				SakuraCloud:    tt.fields.SakuraCloud,
+				CustomHandlers: tt.fields.CustomHandlers,
+				Resources:      tt.fields.Resources,
+				AutoScaler:     tt.fields.AutoScaler,
+				strictMode:     tt.fields.strictMode,
+				logger:         log.NewLogger(nil),
+			}
+			if err := c.Validate(context.Background()); (err != nil) != tt.wantErr {
+				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }

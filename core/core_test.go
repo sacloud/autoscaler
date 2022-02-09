@@ -15,9 +15,12 @@
 package core
 
 import (
+	"context"
+	"os"
 	"testing"
 
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -127,6 +130,103 @@ func TestCore_ResourceName(t *testing.T) {
 				return
 			}
 			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestLoadAndValidate(t *testing.T) {
+	os.Setenv("SAKURACLOUD_FAKE_MODE", "1")
+	defer test.AddTestELB(t, "example")()
+
+	type args struct {
+		configPath string
+		strictMode bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *Config
+		wantErr bool
+	}{
+		{
+			name: "empty",
+			args: args{
+				configPath: "",
+				strictMode: false,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "minimum",
+			args: args{
+				configPath: "./test/minimum.yaml",
+				strictMode: false,
+			},
+			want: &Config{
+				SakuraCloud: &SakuraCloud{},
+				Resources: ResourceDefinitions{
+					&ResourceDefELB{
+						ResourceDefBase: &ResourceDefBase{
+							TypeName: "EnhancedLoadBalancer",
+							DefName:  "example",
+						},
+						Selector: &ResourceSelector{
+							Names: []string{"example"},
+						},
+					},
+				},
+				AutoScaler: AutoScalerConfig{
+					CoolDownSec: 5,
+				},
+				strictMode: false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "minimum with strict mode",
+			args: args{
+				configPath: "./test/minimum.yaml",
+				strictMode: true,
+			},
+			want: &Config{
+				SakuraCloud: &SakuraCloud{},
+				Resources: ResourceDefinitions{
+					&ResourceDefELB{
+						ResourceDefBase: &ResourceDefBase{
+							TypeName: "EnhancedLoadBalancer",
+							DefName:  "example",
+						},
+						Selector: &ResourceSelector{
+							Names: []string{"example"},
+						},
+					},
+				},
+				AutoScaler: AutoScalerConfig{
+					CoolDownSec: 5,
+				},
+				strictMode: true, // 引数での指定がConfigに引き継がれているはず
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := LoadAndValidate(context.Background(), tt.args.configPath, tt.args.strictMode, nil)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LoadAndValidate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != nil {
+				require.Equal(t, tt.want.AutoScaler, got.AutoScaler)
+				require.Equal(t, tt.want.CustomHandlers, got.CustomHandlers)
+
+				require.Equal(t, tt.want.SakuraCloud.Credential, got.SakuraCloud.Credential)
+				require.Equal(t, tt.want.SakuraCloud.Profile, got.SakuraCloud.Profile)
+
+				require.Equal(t, tt.want.Resources, got.Resources)
+				require.Equal(t, tt.want.strictMode, got.strictMode)
+			}
 		})
 	}
 }

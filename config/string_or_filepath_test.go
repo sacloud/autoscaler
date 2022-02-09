@@ -15,17 +15,22 @@
 package config
 
 import (
+	"bytes"
+	"context"
 	"testing"
 
 	"github.com/goccy/go-yaml"
+	"github.com/sacloud/autoscaler/log"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 	tests := []struct {
-		name string
-		data []byte
-		want StringOrFilePath
+		name       string
+		data       []byte
+		strictMode bool
+		warning    string
+		want       StringOrFilePath
 	}{
 		{
 			name: "empty",
@@ -51,14 +56,28 @@ func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 				isFilePath: true,
 			},
 		},
+		{
+			name:       "strict",
+			data:       []byte("dummy.txt"),
+			strictMode: true,
+			want: StringOrFilePath{
+				content:    "dummy.txt",
+				isFilePath: false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			logBuf := bytes.NewBufferString("")
+			ctx := NewLoadConfigContext(context.Background(), tt.strictMode, log.NewLogger(&log.LoggerOption{
+				Writer: logBuf,
+			}))
 			var v StringOrFilePath
-			if err := yaml.UnmarshalWithOptions(tt.data, &v, yaml.Strict()); err != nil {
+			if err := yaml.UnmarshalWithContext(ctx, tt.data, &v, yaml.Strict()); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
 			require.EqualValues(t, tt.want, v)
+			require.Equal(t, tt.warning, logBuf.String())
 		})
 	}
 }

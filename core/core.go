@@ -49,11 +49,14 @@ func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) 
 }
 
 // LoadAndValidate 指定のファイルパスからコンフィグを読み込み、バリデーションを行う
-func LoadAndValidate(ctx context.Context, configPath string, logger *log.Logger) (*Config, error) {
+func LoadAndValidate(ctx context.Context, configPath string, strictMode bool, logger *log.Logger) (*Config, error) {
+	if logger == nil {
+		logger = log.NewLogger(nil)
+	}
 	if err := logger.Debug("message", "loading config", "config", configPath); err != nil {
 		return nil, err
 	}
-	config, err := NewConfigFromPath(ctx, configPath)
+	config, err := NewConfigFromPath(ctx, configPath, strictMode, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -68,19 +71,19 @@ func LoadAndValidate(ctx context.Context, configPath string, logger *log.Logger)
 }
 
 // Start 指定のファイルパスからコンフィグを読み込み、gRPCサーバとしてリッスンを開始する
-func Start(ctx context.Context, addr, configPath string, logger *log.Logger) error {
+func Start(ctx context.Context, addr, configPath string, strictMode bool, logger *log.Logger) error {
 	if err := logger.Info("message", "starting..."); err != nil {
 		return err
 	}
-	instance, err := newInstanceFromConfig(ctx, addr, configPath, logger)
+	instance, err := newInstanceFromConfig(ctx, addr, configPath, strictMode, logger)
 	if err != nil {
 		return err
 	}
 	return instance.run(ctx)
 }
 
-func newInstanceFromConfig(ctx context.Context, addr, configPath string, logger *log.Logger) (*Core, error) {
-	config, err := LoadAndValidate(ctx, configPath, logger)
+func newInstanceFromConfig(ctx context.Context, addr, configPath string, strictMode bool, logger *log.Logger) (*Core, error) {
+	config, err := LoadAndValidate(ctx, configPath, strictMode, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +95,8 @@ func newInstanceFromConfig(ctx context.Context, addr, configPath string, logger 
 	return instance, nil
 }
 
-func ResourcesTree(parentCtx context.Context, addr, configPath string, logger *log.Logger) (string, error) {
-	instance, err := newInstanceFromConfig(parentCtx, addr, configPath, logger)
+func ResourcesTree(parentCtx context.Context, addr, configPath string, strictMode bool, logger *log.Logger) (string, error) {
+	instance, err := newInstanceFromConfig(parentCtx, addr, configPath, strictMode, logger)
 	if err != nil {
 		return "", err
 	}

@@ -20,6 +20,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/mitchellh/go-homedir"
+	"github.com/sacloud/autoscaler/log"
 )
 
 // StringOrFilePath 文字列 or ファイルパス
@@ -31,8 +32,24 @@ type StringOrFilePath struct {
 	isFilePath bool
 }
 
-func NewStringOrFilePath(s string) (*StringOrFilePath, error) {
-	content, isFilePath, err := stringOrFilePath(s)
+func NewStringOrFilePath(ctx context.Context, s string) (*StringOrFilePath, error) {
+	strict := false
+	logger := log.NewLogger(nil)
+
+	if config, ok := ctx.(LoadConfigHolder); ok {
+		strict = config.StrictMode()
+	}
+	if config, ok := ctx.(LoggerHolder); ok {
+		logger = config.Logger()
+	}
+
+	if strict {
+		return &StringOrFilePath{
+			content:    s,
+			isFilePath: false,
+		}, nil
+	}
+	content, isFilePath, err := stringOrFilePath(s, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +64,7 @@ func (v *StringOrFilePath) UnmarshalYAML(ctx context.Context, data []byte) error
 	if err := yaml.Unmarshal(data, &s); err != nil {
 		return err
 	}
-	val, err := NewStringOrFilePath(s)
+	val, err := NewStringOrFilePath(ctx, s)
 	if err != nil {
 		return err
 	}
@@ -75,7 +92,11 @@ func (v *StringOrFilePath) IsFilePath() bool {
 	return v.isFilePath
 }
 
-func stringOrFilePath(s string) (string, bool, error) {
+func stringOrFilePath(s string, logger *log.Logger) (string, bool, error) {
+	if logger == nil {
+		logger = log.NewLogger(nil)
+	}
+
 	path, err := homedir.Expand(s)
 	if err != nil {
 		return "", false, err
@@ -85,10 +106,11 @@ func stringOrFilePath(s string) (string, bool, error) {
 	content, err := os.ReadFile(path)
 
 	if err != nil {
-		// Note:
-		// ファイル不存在以外のエラーも全て無視している。
-		// このためエラーが発生していても警告を出さずに処理を進めてしまう。
-		// 運用上問題になるケースは少ないと思われるが、将来的にここでログ出力が行えるようになったら対応すべき。
+		if !os.IsNotExist(err) {
+			if err := logger.Warn("message", "got unknown error while processing StringOrFilePath", "error", err); err != nil {
+				return "", false, err
+			}
+		}
 		isFilePath = false
 		content = []byte(s)
 	}

@@ -32,20 +32,28 @@ type SakuraCloud struct {
 	Credential `yaml:",inline"`
 	Profile    string `yaml:"profile"`
 
-	apiClient sacloud.APICaller
-	initOnce  sync.Once
-	initError error
+	strictMode bool
+	apiClient  sacloud.APICaller
+	initOnce   sync.Once
+	initError  error
 }
 
 // APIClient シングルトンなAPIクライアントを返す
 func (sc *SakuraCloud) APIClient() sacloud.APICaller {
 	sc.initOnce.Do(func() {
-		optEnvAndProfile, err := api.DefaultOptionWithProfile(sc.Profile)
-		if err != nil {
-			sc.initError = err
-			return
+		options := []*api.CallerOptions{
+			api.OptionsFromEnv(),
 		}
-		opts := &api.CallerOptions{
+		if !sc.strictMode {
+			opt, err := api.OptionsFromProfile(sc.Profile)
+			if err != nil {
+				sc.initError = err
+				return
+			}
+			options = append(options, opt)
+		}
+
+		options = append(options, &api.CallerOptions{
 			AccessToken:       sc.Token,
 			AccessTokenSecret: sc.Secret,
 			HTTPClient:        &http.Client{},
@@ -56,8 +64,8 @@ func (sc *SakuraCloud) APIClient() sacloud.APICaller {
 				runtime.GOARCH,
 				libsacloud.Version,
 			),
-		}
-		sc.apiClient = api.NewCaller(optEnvAndProfile, opts)
+		})
+		sc.apiClient = api.NewCaller(options...)
 	})
 	return sc.apiClient
 }
