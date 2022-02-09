@@ -21,8 +21,6 @@ import (
 
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -138,7 +136,7 @@ func TestCore_ResourceName(t *testing.T) {
 
 func TestLoadAndValidate(t *testing.T) {
 	os.Setenv("SAKURACLOUD_FAKE_MODE", "1")
-	defer initTestLoadAndValidate(t)()
+	defer test.AddTestELB(t, "example")()
 
 	type args struct {
 		configPath string
@@ -230,21 +228,5 @@ func TestLoadAndValidate(t *testing.T) {
 				require.Equal(t, tt.want.strictMode, got.strictMode)
 			}
 		})
-	}
-}
-
-func initTestLoadAndValidate(t *testing.T) func() {
-	ctx := context.Background()
-	client := sacloud.NewProxyLBOp(test.APIClient)
-	elb, err := client.Create(ctx, &sacloud.ProxyLBCreateRequest{
-		Plan: types.ProxyLBPlans.CPS100,
-		Name: "example",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return func() {
-		client.Delete(ctx, elb.ID) // nolint
 	}
 }

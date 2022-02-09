@@ -74,6 +74,7 @@ func (c *Config) load(ctx context.Context, reader io.Reader) error {
 	if c.SakuraCloud == nil {
 		c.SakuraCloud = &SakuraCloud{}
 	}
+	c.SakuraCloud.strictMode = c.strictMode
 	return nil
 }
 
@@ -137,6 +138,7 @@ func (c *Config) Validate(ctx context.Context) error {
 
 	errors := &multierror.Error{}
 
+	// CustomHandlers
 	if errs := c.ValidateCustomHandlers(ctx); len(errs) > 0 {
 		errors = multierror.Append(errors, errs...)
 	}
@@ -151,8 +153,24 @@ func (c *Config) Validate(ctx context.Context) error {
 		errors = multierror.Append(errors, errs...)
 	}
 
+	// All Handlers (Builtin + Custom)
 	if len(c.Handlers()) == 0 {
 		errors = multierror.Append(errors, fmt.Errorf("one or more handlers are required"))
+	}
+
+	if c.strictMode {
+		// プロファイル指定を制限
+		if c.SakuraCloud.Profile != "" {
+			errors = multierror.Append(errors, fmt.Errorf("sakuracloud.profile cannot be specified when in strict mode"))
+		}
+		// exporterを有効にすることを制限
+		if c.AutoScaler.ExporterEnabled() {
+			errors = multierror.Append(errors, fmt.Errorf("autoscaler.exporter_config cannot be specified when in strict mode"))
+		}
+		// カスタムハンドラを定義することを制限
+		if len(c.CustomHandlers) > 0 {
+			errors = multierror.Append(errors, fmt.Errorf("handlers cannot be specified when in strict mode"))
+		}
 	}
 
 	return errors.ErrorOrNil()
