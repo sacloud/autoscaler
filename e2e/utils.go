@@ -15,10 +15,43 @@
 package e2e
 
 import (
+	"context"
 	"log"
 	"os"
-	"os/exec"
+	"sync"
+
+	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/hc-install/product"
+	"github.com/hashicorp/hc-install/releases"
+	"github.com/hashicorp/terraform-exec/tfexec"
 )
+
+var (
+	installTerraformOnce sync.Once
+	execPath             string
+)
+
+func newTerraform() (*tfexec.Terraform, error) {
+	var initErr error
+	installTerraformOnce.Do(func() {
+		installer := &releases.ExactVersion{
+			Product: product.Terraform,
+			Version: version.Must(version.NewVersion("1.0.9")),
+		}
+
+		installed, err := installer.Install(context.Background())
+		if err != nil {
+			initErr = err
+			return
+		}
+		execPath = installed
+	})
+	if initErr != nil {
+		return nil, initErr
+	}
+
+	return tfexec.NewTerraform(".", execPath)
+}
 
 func TerraformInit() error {
 	stateFile := "terraform.tfstate"
@@ -27,15 +60,28 @@ func TerraformInit() error {
 			return err
 		}
 	}
-	return exec.Command("terraform", "init").Run()
+
+	tf, err := newTerraform()
+	if err != nil {
+		return err
+	}
+	return tf.Init(context.Background())
 }
 
 func TerraformApply() error {
-	return exec.Command("terraform", "apply", "-auto-approve").Run()
+	tf, err := newTerraform()
+	if err != nil {
+		return err
+	}
+	return tf.Apply(context.Background())
 }
 
 func TerraformRefresh() error {
-	return exec.Command("terraform", "apply", "-refresh-only", "-auto-approve").Run()
+	tf, err := newTerraform()
+	if err != nil {
+		return err
+	}
+	return tf.Refresh(context.Background())
 }
 
 func TerraformDestroy() error {
@@ -43,7 +89,11 @@ func TerraformDestroy() error {
 		log.Println("Cleanup skipped")
 		return nil
 	}
-	return exec.Command("terraform", "destroy", "-auto-approve").Run()
+	tf, err := newTerraform()
+	if err != nil {
+		return err
+	}
+	return tf.Destroy(context.Background())
 }
 
 func CleanupAutoScalerSocketFile() error {
