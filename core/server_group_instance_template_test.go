@@ -89,7 +89,7 @@ cloud_config: "#cloud-config"
 					},
 				},
 				CloudConfig: ServerGroupCloudConfig{
-					CloudConfig: "#cloud-config",
+					CloudConfig: test.StringOrFilePath(t, "#cloud-config"),
 				},
 			},
 		},
@@ -325,7 +325,7 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 					},
 				},
 				EditParameter: &ServerGroupDiskEditTemplate{Disabled: true},
-				CloudConfig:   ServerGroupCloudConfig{CloudConfig: "#cloud-config"},
+				CloudConfig:   ServerGroupCloudConfig{CloudConfig: test.StringOrFilePath(t, "#cloud-config")},
 			},
 			want: []error{
 				fmt.Errorf("only one of edit_parameter and cloud_config can be specified"),

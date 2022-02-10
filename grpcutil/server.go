@@ -32,7 +32,7 @@ type ListenerOption struct {
 
 // Server 指定のオプションでリッスン構成をした後でリッスンし、*grpc.Serverとクリーンアップ用のfuncを返す
 func Server(opt *ListenerOption) (*grpc.Server, net.Listener, func(), error) {
-	schema, endpoint, err := ParseTarget(opt.Address)
+	schema, endpoint, err := parseTarget(opt.Address)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("ParseTarget failed: %s", err)
 	}

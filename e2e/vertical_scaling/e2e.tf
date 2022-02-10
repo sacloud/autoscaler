@@ -15,7 +15,8 @@ provider "sakuracloud" {
 resource "sakuracloud_server" "server" {
   count = 3
 
-  name   = "autoscaler-e2e-test"
+  name   = "autoscaler-e2e-vertical-scaling-${count.index}"
+  tags   = ["autoscaler-e2e-vertical-scaling"]
   core   = 1
   memory = 1
 
@@ -26,7 +27,7 @@ resource "sakuracloud_server" "server" {
   disks = [sakuracloud_disk.disk[count.index].id]
 
   disk_edit_parameter {
-    hostname        = "autoscaler-e2e-test"
+    hostname        = "autoscaler-e2e-vertical-scaling-${count.index}"
     disable_pw_auth = true
     note {
       id = sakuracloud_note.startupscript.id
@@ -35,13 +36,13 @@ resource "sakuracloud_server" "server" {
 }
 
 resource "sakuracloud_note" "startupscript" {
-  name    = "autoscaler-e2e-test"
+  name    = "autoscaler-e2e-vertical-scaling"
   content = file("startup-script.sh")
 }
 
 resource "sakuracloud_disk" "disk" {
   count             = 3
-  name              = "autosxaler-e2e-test"
+  name              = "autoscaler-e2e-vertical-scaling-${count.index}"
   source_archive_id = data.sakuracloud_archive.ubuntu.id
 }
 
@@ -51,7 +52,7 @@ data "sakuracloud_archive" "ubuntu" {
 
 # ELB
 resource "sakuracloud_proxylb" "autoscaler-e2e-test" {
-  name    = "autoscaler-e2e-test"
+  name    = "autoscaler-e2e-vertical-scaling"
   plan    = 100
   timeout = 10
   region  = "is1"

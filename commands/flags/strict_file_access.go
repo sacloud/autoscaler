@@ -12,17 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build tools
-// +build tools
-
-package main
+package flags
 
 import (
-	_ "github.com/google/go-licenses"
-	_ "github.com/grpc-ecosystem/grpc-health-probe"
-	_ "github.com/sacloud/addlicense"
-	_ "golang.org/x/tools/cmd/goimports"
-	_ "golang.org/x/tools/cmd/stringer"
-	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
-	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+	"github.com/sacloud/autoscaler/validate"
+	"github.com/spf13/cobra"
 )
+
+type strictModeFlags struct {
+	Flag bool `name:"--strict-mode"`
+}
+
+var strictMode = &strictModeFlags{}
+
+func SetStrictModeFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(
+		&strictMode.Flag, "strict", "", strictMode.Flag,
+		"Restricting external file loading, etc. in configuration",
+	)
+}
+
+func ValidateStrictModeFlags(*cobra.Command, []string) error {
+	return validate.Struct(strictMode)
+}
+
+func StrictMode() bool {
+	return strictMode.Flag
+}

@@ -15,8 +15,10 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/search"
@@ -96,5 +98,22 @@ func (rs *ResourceSelector) Validate() error {
 	if !rs.ID.IsEmpty() && (len(rs.Names) > 0 || len(rs.Tags) > 0) {
 		return fmt.Errorf("selector.ID and (selector.Names or selector.Tags): cannot specify both")
 	}
+	return nil
+}
+
+// NameOrSelector 名前(文字列)、もしくはResourceSelectorを表すstruct
+type NameOrSelector struct {
+	ResourceSelector
+}
+
+func (v *NameOrSelector) UnmarshalYAML(ctx context.Context, data []byte) error {
+	// セレクタとしてUnmarshalしてみてエラーだったら文字列と見なす
+	var selector ResourceSelector
+	if err := yaml.UnmarshalWithOptions(data, &selector, yaml.Strict()); err != nil {
+		selector = ResourceSelector{
+			Names: []string{string(data)},
+		}
+	}
+	*v = NameOrSelector{ResourceSelector: selector}
 	return nil
 }

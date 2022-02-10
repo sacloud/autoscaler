@@ -22,6 +22,7 @@ import (
 	"github.com/c-robinson/iplib"
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/helper/query"
@@ -209,16 +210,16 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 }
 
 type ServerGroupDiskEditTemplate struct {
-	Disabled            bool               `yaml:"disabled"`         // ディスクの修正を行わない場合にtrue
-	HostNamePrefix      string             `yaml:"host_name_prefix"` // からの場合は{{ .ServerName }} 、そうでなければ {{ .HostNamePrefix }}{{ .Number }}
-	Password            string             `yaml:"password"`         // グループ内のサーバは全部一緒になるが良いか??
-	DisablePasswordAuth bool               `yaml:"disable_pw_auth"`
-	EnableDHCP          bool               `yaml:"enable_dhcp"`
-	ChangePartitionUUID bool               `yaml:"change_partition_uuid"`
-	StartupScripts      []StringOrFilePath `yaml:"startup_scripts"`
+	Disabled            bool                      `yaml:"disabled"`         // ディスクの修正を行わない場合にtrue
+	HostNamePrefix      string                    `yaml:"host_name_prefix"` // からの場合は{{ .ServerName }} 、そうでなければ {{ .HostNamePrefix }}{{ .Number }}
+	Password            string                    `yaml:"password"`         // グループ内のサーバは全部一緒になるが良いか??
+	DisablePasswordAuth bool                      `yaml:"disable_pw_auth"`
+	EnableDHCP          bool                      `yaml:"enable_dhcp"`
+	ChangePartitionUUID bool                      `yaml:"change_partition_uuid"`
+	StartupScripts      []config.StringOrFilePath `yaml:"startup_scripts"`
 
-	SSHKeys   []StringOrFilePath `yaml:"ssh_keys"`
-	SSHKeyIDs []string           `yaml:"ssh_key_ids"`
+	SSHKeys   []config.StringOrFilePath `yaml:"ssh_keys"`
+	SSHKeyIDs []string                  `yaml:"ssh_key_ids"`
 }
 
 func (t *ServerGroupDiskEditTemplate) Validate() []error {
@@ -235,7 +236,7 @@ func (t *ServerGroupDiskEditTemplate) Validate() []error {
 }
 
 type ServerGroupCloudConfig struct {
-	CloudConfig StringOrFilePath `yaml:"cloud_config"`
+	CloudConfig config.StringOrFilePath `yaml:"cloud_config"`
 }
 
 func (c ServerGroupCloudConfig) String() string {
@@ -338,7 +339,7 @@ type ServerGroupNICUpstream struct {
 	selector *ResourceSelector
 }
 
-func (s *ServerGroupNICUpstream) UnmarshalYAML(data []byte) error {
+func (s *ServerGroupNICUpstream) UnmarshalYAML(ctx context.Context, data []byte) error {
 	if string(data) == "shared" {
 		*s = ServerGroupNICUpstream{raw: data, shared: true}
 		return nil

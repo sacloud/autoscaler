@@ -24,6 +24,10 @@ export GOPROXY=https://proxy.golang.org
 .PHONY: default
 default: set-license fmt goimports lint test build
 
+.PHONY: install
+install:
+	go install
+
 .PHONY: run
 run:
 	go run $(CURDIR)/main.go $(ARGS)
@@ -34,13 +38,14 @@ clean:
 
 .PHONY: tools
 tools:
-	echo "[INFO] please install clang-format manually if you would like to edit .proto"
+	@echo "[INFO] please install clang-format manually if you would like to edit .proto"
 	(cd tools; go install golang.org/x/tools/cmd/goimports)
 	(cd tools; go install golang.org/x/tools/cmd/stringer)
 	(cd tools; go install github.com/sacloud/addlicense)
 	(cd tools; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc)
 	(cd tools; go install google.golang.org/protobuf/cmd/protoc-gen-go)
 	(cd tools; go install github.com/google/go-licenses)
+	(cd tools; go install github.com/grpc-ecosystem/grpc-health-probe)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.43.0/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.43.0
 
 .PHONY: gen
@@ -72,15 +77,9 @@ test:
 	go test $(TESTARGS) -v ./...
 
 .PHONY: e2e-test
-
-e2e-test:
-	docker run -it --rm \
-	    -v $$(PWD):/work \
-	    -w /work/e2e \
-	    -e SAKURACLOUD_ACCESS_TOKEN \
-	    -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
-	    -e SKIP_CLEANUP \
-	    ghcr.io/sacloud/autoscaler:e2e sh -c "./run.sh"
+e2e-test: install
+	@echo "[INFO] When you run e2e-test for the first time, run 'make tools' first."
+	(cd e2e; go test $(TESTARGS) -v -tags=e2e -timeout 240m ./...)
 
 .PHONY: lint
 lint:

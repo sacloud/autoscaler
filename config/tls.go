@@ -21,18 +21,17 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/goccy/go-yaml"
 	"google.golang.org/grpc/credentials"
 )
 
 type TLSStruct struct {
-	TLSCertPath string `yaml:"cert_file"`
-	TLSKeyPath  string `yaml:"key_file"`
-	ClientAuth  string `yaml:"client_auth_type"`
-	ClientCAs   string `yaml:"client_ca_file"` // NoClientCert | RequestClientCert | RequireAnyClientCert | VerifyClientCertIfGiven | RequireAndVerifyClientCert
-	RootCAs     string `yaml:"root_ca_file"`
+	TLSCert    StringOrFilePath `yaml:"cert_file"`
+	TLSKey     StringOrFilePath `yaml:"key_file"`
+	ClientAuth string           `yaml:"client_auth_type"` // NoClientCert | RequestClientCert | RequireAnyClientCert | VerifyClientCertIfGiven | RequireAndVerifyClientCert
+	ClientCAs  StringOrFilePath `yaml:"client_ca_file"`
+	RootCAs    StringOrFilePath `yaml:"root_ca_file"`
 }
 
 var ErrNoTLSConfig = errors.New("TLS config is not present")
@@ -58,40 +57,27 @@ func LoadTLSConfigFromReader(configPath string, reader io.Reader) (*tls.Config, 
 	if err := yaml.UnmarshalWithOptions(data, conf, yaml.Strict()); err != nil {
 		return nil, err
 	}
-	conf.SetDirectory(filepath.Dir(configPath))
-
 	return conf.TLSConfig()
 }
 
-func (t *TLSStruct) SetDirectory(dir string) {
-	t.TLSCertPath = joinDir(dir, t.TLSCertPath)
-	t.TLSKeyPath = joinDir(dir, t.TLSKeyPath)
-	t.ClientCAs = joinDir(dir, t.ClientCAs)
-	t.RootCAs = joinDir(dir, t.RootCAs)
-}
-
 func (t *TLSStruct) TLSConfig() (*tls.Config, error) {
-	if t.TLSCertPath == "" && t.TLSKeyPath == "" && t.ClientAuth == "" && t.ClientCAs == "" && t.RootCAs == "" {
+	if t.TLSCert.Empty() && t.TLSKey.Empty() && t.ClientAuth == "" && t.ClientCAs.Empty() && t.RootCAs.Empty() {
 		return nil, ErrNoTLSConfig
 	}
 
 	cfg := &tls.Config{}
 
-	if t.TLSCertPath != "" && t.TLSKeyPath != "" {
-		cert, err := tls.LoadX509KeyPair(t.TLSCertPath, t.TLSKeyPath)
+	if !t.TLSCert.Empty() && !t.TLSKey.Empty() {
+		cert, err := tls.X509KeyPair(t.TLSCert.Bytes(), t.TLSKey.Bytes())
 		if err != nil {
 			return nil, fmt.Errorf("failed to load X509KeyPair: %s", err)
 		}
 		cfg.Certificates = []tls.Certificate{cert}
 	}
 
-	if t.ClientCAs != "" {
+	if !t.ClientCAs.Empty() {
 		clientCAPool := x509.NewCertPool()
-		clientCAFile, err := os.ReadFile(t.ClientCAs)
-		if err != nil {
-			return nil, err
-		}
-		clientCAPool.AppendCertsFromPEM(clientCAFile)
+		clientCAPool.AppendCertsFromPEM(t.ClientCAs.Bytes())
 		cfg.ClientCAs = clientCAPool
 	}
 
@@ -110,17 +96,13 @@ func (t *TLSStruct) TLSConfig() (*tls.Config, error) {
 		return nil, errors.New("Invalid ClientAuth: " + t.ClientAuth)
 	}
 
-	if t.ClientCAs != "" && cfg.ClientAuth == tls.NoClientCert {
+	if !t.ClientCAs.Empty() && cfg.ClientAuth == tls.NoClientCert {
 		return nil, errors.New("Client CA's have been configured without a Client Auth Policy")
 	}
 
-	if t.RootCAs != "" {
+	if !t.RootCAs.Empty() {
 		rootCAPool := x509.NewCertPool()
-		rootCAFile, err := os.ReadFile(t.RootCAs)
-		if err != nil {
-			return nil, err
-		}
-		rootCAPool.AppendCertsFromPEM(rootCAFile)
+		rootCAPool.AppendCertsFromPEM(t.RootCAs.Bytes())
 		cfg.RootCAs = rootCAPool
 	}
 
@@ -133,11 +115,4 @@ func (t *TLSStruct) TransportCredentials() (credentials.TransportCredentials, er
 		return nil, err
 	}
 	return credentials.NewTLS(tlsConfig), nil
-}
-
-func joinDir(dir, path string) string {
-	if path == "" || filepath.IsAbs(path) {
-		return path
-	}
-	return filepath.Join(dir, path)
 }

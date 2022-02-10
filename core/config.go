@@ -19,19 +19,18 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
-
-	"github.com/sacloud/autoscaler/grpcutil"
-	health "google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handlers/builtins"
+	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/libsacloud/v2/sacloud"
+	health "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 // Config Coreの起動時に与えられるコンフィギュレーションを保持する
@@ -40,42 +39,42 @@ type Config struct {
 	CustomHandlers Handlers            `yaml:"handlers"`                      // カスタムハンドラーの定義
 	Resources      ResourceDefinitions `yaml:"resources" validate:"required"` // リソースの定義
 	AutoScaler     AutoScalerConfig    `yaml:"autoscaler"`                    // オートスケーラー自体の動作設定
+
+	strictMode bool
+	logger     *log.Logger
 }
 
 // NewConfigFromPath 指定のファイルパスからコンフィギュレーションを読み取ってConfigを作成する
-func NewConfigFromPath(filePath string) (*Config, error) {
+func NewConfigFromPath(ctx context.Context, filePath string, strictMode bool, logger *log.Logger) (*Config, error) {
 	reader, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("opening configuration file failed: %s error: %s", filePath, err)
 	}
 	defer reader.Close()
 
-	c := &Config{}
-	if err := c.load(reader); err != nil {
+	c := &Config{strictMode: strictMode, logger: logger}
+	if err := c.load(ctx, reader); err != nil {
 		return nil, err
 	}
 
-	if c.AutoScaler.ServerTLSConfig != nil {
-		c.AutoScaler.ServerTLSConfig.SetDirectory(filepath.Dir(filePath))
-	}
-	if c.AutoScaler.HandlerTLSConfig != nil {
-		c.AutoScaler.HandlerTLSConfig.SetDirectory(filepath.Dir(filePath))
-	}
 	return c, nil
 }
 
-func (c *Config) load(reader io.Reader) error {
+func (c *Config) load(ctx context.Context, reader io.Reader) error {
+	ctx = config.NewLoadConfigContext(ctx, c.strictMode, c.logger)
+
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("loading configuration failed: %s", err)
 	}
-	if err := yaml.UnmarshalWithOptions(data, c, yaml.Strict()); err != nil {
+	if err := yaml.UnmarshalWithContext(ctx, data, c, yaml.Strict()); err != nil {
 		return fmt.Errorf(yaml.FormatError(err, false, true))
 	}
 
 	if c.SakuraCloud == nil {
 		c.SakuraCloud = &SakuraCloud{}
 	}
+	c.SakuraCloud.strictMode = c.strictMode
 	return nil
 }
 
@@ -122,6 +121,8 @@ func (c *Config) handlerDisabled(h *Handler) bool {
 
 // Validate 現在のConfig値のバリデーション
 func (c *Config) Validate(ctx context.Context) error {
+	ctx = config.NewLoadConfigContext(ctx, c.strictMode, c.logger)
+
 	if err := validate.Struct(c); err != nil {
 		return err
 	}
@@ -137,6 +138,7 @@ func (c *Config) Validate(ctx context.Context) error {
 
 	errors := &multierror.Error{}
 
+	// CustomHandlers
 	if errs := c.ValidateCustomHandlers(ctx); len(errs) > 0 {
 		errors = multierror.Append(errors, errs...)
 	}
@@ -151,8 +153,24 @@ func (c *Config) Validate(ctx context.Context) error {
 		errors = multierror.Append(errors, errs...)
 	}
 
+	// All Handlers (Builtin + Custom)
 	if len(c.Handlers()) == 0 {
 		errors = multierror.Append(errors, fmt.Errorf("one or more handlers are required"))
+	}
+
+	if c.strictMode {
+		// プロファイル指定を制限
+		if c.SakuraCloud.Profile != "" {
+			errors = multierror.Append(errors, fmt.Errorf("sakuracloud.profile cannot be specified when in strict mode"))
+		}
+		// exporterを有効にすることを制限
+		if c.AutoScaler.ExporterEnabled() {
+			errors = multierror.Append(errors, fmt.Errorf("autoscaler.exporter_config cannot be specified when in strict mode"))
+		}
+		// カスタムハンドラを定義することを制限
+		if len(c.CustomHandlers) > 0 {
+			errors = multierror.Append(errors, fmt.Errorf("handlers cannot be specified when in strict mode"))
+		}
 	}
 
 	return errors.ErrorOrNil()

@@ -15,12 +15,13 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/goccy/go-yaml"
 )
 
-func (rds *ResourceDefinitions) UnmarshalYAML(data []byte) error {
+func (rds *ResourceDefinitions) UnmarshalYAML(ctx context.Context, data []byte) error {
 	var rawResources []interface{}
 	if err := yaml.UnmarshalWithOptions(data, &rawResources, yaml.Strict()); err != nil {
 		return err

@@ -19,6 +19,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sacloud/autoscaler/config"
+
 	"github.com/sacloud/libsacloud/v2/pkg/size"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
@@ -99,4 +101,31 @@ func AddTestSwitch(t *testing.T, name string) (*sacloud.Switch, func()) {
 			t.Logf("[WARN] deleting switch failed: %s", err)
 		}
 	}
+}
+
+func AddTestELB(t *testing.T, name string) func() {
+	ctx := context.Background()
+	client := sacloud.NewProxyLBOp(APIClient)
+	elb, err := client.Create(ctx, &sacloud.ProxyLBCreateRequest{
+		Plan: types.ProxyLBPlans.CPS100,
+		Name: name,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return func() {
+		if err := client.Delete(ctx, elb.ID); err != nil {
+			t.Logf("[WARN] deleting ELB failed: %s", err)
+		}
+	}
+}
+
+func StringOrFilePath(t *testing.T, s string) config.StringOrFilePath {
+	v, err := config.NewStringOrFilePath(context.Background(), s)
+	if err != nil {
+		t.Logf("[WARN] invaild StringOrFilePath value: %s", s)
+		return config.StringOrFilePath{}
+	}
+	return *v
 }

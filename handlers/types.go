@@ -16,7 +16,6 @@ package handlers
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/config"
@@ -95,11 +94,5 @@ func LoadConfigFromPath(configPath string) (*Config, error) {
 		return nil, err
 	}
 
-	if conf.HandlerTLSConfig != nil {
-		conf.HandlerTLSConfig.SetDirectory(filepath.Dir(configPath))
-	}
-	if conf.ExporterConfig != nil && conf.ExporterConfig.TLSConfig != nil {
-		conf.ExporterConfig.TLSConfig.SetDirectory(filepath.Dir(configPath))
-	}
 	return conf, nil
 }

@@ -28,9 +28,12 @@ import (
 var Command = &cobra.Command{
 	Use:   "validate [flags]...",
 	Short: "validate autoscaler's core configuration",
-	PreRunE: func(*cobra.Command, []string) error {
-		return validate.Struct(param)
-	},
+	PreRunE: flags.ValidateMultiFunc(true,
+		func(*cobra.Command, []string) error {
+			return validate.Struct(param)
+		},
+		flags.ValidateStrictModeFlags,
+	),
 	RunE: run,
 }
 
@@ -44,10 +47,11 @@ var param = &parameter{
 
 func init() {
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
+	flags.SetStrictModeFlag(Command)
 }
 
 func run(*cobra.Command, []string) error {
-	_, err := core.LoadAndValidate(context.Background(), param.ConfigPath, flags.NewLogger())
+	_, err := core.LoadAndValidate(context.Background(), param.ConfigPath, flags.StrictMode(), flags.NewLogger())
 	if err == nil {
 		fmt.Println("OK")
 	}

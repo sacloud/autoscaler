@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build tools
-// +build tools
-
-package main
+package e2e
 
 import (
-	_ "github.com/google/go-licenses"
-	_ "github.com/grpc-ecosystem/grpc-health-probe"
-	_ "github.com/sacloud/addlicense"
-	_ "golang.org/x/tools/cmd/goimports"
-	_ "golang.org/x/tools/cmd/stringer"
-	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
-	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+	"os"
 )
+
+func CleanupAutoScalerSocketFile() error {
+	socketFile := "autoscaler.sock"
+	if _, err := os.Stat(socketFile); err == nil {
+		if err := os.Remove(socketFile); err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -28,9 +28,12 @@ import (
 var Command = &cobra.Command{
 	Use:   "resources [flags]...",
 	Short: "list target resources",
-	PreRunE: func(*cobra.Command, []string) error {
-		return validate.Struct(param)
-	},
+	PreRunE: flags.ValidateMultiFunc(true,
+		func(*cobra.Command, []string) error {
+			return validate.Struct(param)
+		},
+		flags.ValidateStrictModeFlags,
+	),
 	RunE: run,
 }
 
@@ -44,9 +47,10 @@ var param = &parameter{
 
 func init() {
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
+	flags.SetStrictModeFlag(Command)
 }
 func run(*cobra.Command, []string) error {
-	tree, err := core.ResourcesTree(context.Background(), "", param.ConfigPath, flags.NewLogger())
+	tree, err := core.ResourcesTree(context.Background(), "", param.ConfigPath, flags.StrictMode(), flags.NewLogger())
 	if err != nil {
 		return err
 	}

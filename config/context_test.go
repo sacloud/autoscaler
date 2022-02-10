@@ -12,17 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build tools
-// +build tools
-
-package main
+package config
 
 import (
-	_ "github.com/google/go-licenses"
-	_ "github.com/grpc-ecosystem/grpc-health-probe"
-	_ "github.com/sacloud/addlicense"
-	_ "golang.org/x/tools/cmd/goimports"
-	_ "golang.org/x/tools/cmd/stringer"
-	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
-	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
+
+func Test_NewLoadConfigContext(t *testing.T) {
+	parent := context.Background()
+	strict := true
+
+	ctx := NewLoadConfigContext(parent, strict, nil)
+	require.Implements(t, (*LoadConfigHolder)(nil), ctx)
+	require.Equal(t, strict, ctx.(LoadConfigHolder).StrictMode())
+}
