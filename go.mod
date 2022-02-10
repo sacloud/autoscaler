@@ -8,6 +8,9 @@ require (
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/goccy/go-yaml v1.8.9
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/hashicorp/go-version v1.4.0
+	github.com/hashicorp/hc-install v0.3.1
+	github.com/hashicorp/terraform-exec v0.16.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.29.0
@@ -33,8 +36,9 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/golang/protobuf v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
+	github.com/hashicorp/terraform-json v0.13.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
@@ -46,6 +50,7 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/sacloud/go-http v0.0.4 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/zclconf/go-cty v1.10.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.27.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.27.0 // indirect
 	go.opentelemetry.io/otel v1.2.0 // indirect
