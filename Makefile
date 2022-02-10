@@ -24,6 +24,10 @@ export GOPROXY=https://proxy.golang.org
 .PHONY: default
 default: set-license fmt goimports lint test build
 
+.PHONY: install
+install:
+	go install
+
 .PHONY: run
 run:
 	go run $(CURDIR)/main.go $(ARGS)
@@ -73,14 +77,9 @@ test:
 	go test $(TESTARGS) -v ./...
 
 .PHONY: e2e-test
-e2e-test:
-	docker run -it --rm \
-	    -v $$(PWD):/work \
-	    -w /work/e2e \
-	    -e SAKURACLOUD_ACCESS_TOKEN \
-	    -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
-	    -e SKIP_CLEANUP \
-	    ghcr.io/sacloud/autoscaler:e2e go test -v -tags=e2e -timeout 240m ./...
+e2e-test: install
+	@echo "[INFO] When you run e2e-test for the first time, run 'make tools' first."
+	(cd e2e; go test -v -tags=e2e -timeout 240m ./...)
 
 .PHONY: e2e-image
 e2e-image:
