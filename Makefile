@@ -79,7 +79,7 @@ e2e-test:
 	    -e SAKURACLOUD_ACCESS_TOKEN \
 	    -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
 	    -e SKIP_CLEANUP \
-	    ghcr.io/sacloud/autoscaler:e2e sh -c "./run.sh"
+	    ghcr.io/sacloud/autoscaler:e2e go test -v -tags=e2e -timeout 240m ./...
 
 .PHONY: e2e-image
 e2e-image:
