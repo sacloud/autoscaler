@@ -15,7 +15,7 @@
 //go:build e2e
 // +build e2e
 
-package e2e
+package vertical_scaling
 
 import (
 	"bufio"
@@ -35,6 +35,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sacloud/autoscaler/e2e"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/libsacloud/v2"
 	"github.com/sacloud/libsacloud/v2/helper/api"
@@ -52,11 +53,10 @@ const (
 )
 
 var (
-	coreCmd    = exec.Command("autoscaler", "server", "start")
-	inputCmd   = exec.Command("autoscaler", "inputs", "grafana", "--addr", "127.0.0.1:8080")
-	refreshCmd = exec.Command("terraform", "apply", "-refresh-only", "-auto-approve")
-	outputs    []string
-	mu         sync.Mutex
+	coreCmd  = exec.Command("autoscaler", "server", "start")
+	inputCmd = exec.Command("autoscaler", "inputs", "grafana", "--addr", "127.0.0.1:8080")
+	outputs  []string
+	mu       sync.Mutex
 
 	proxyLBReadyTimeout = 5 * time.Minute
 	e2eTestTimeout      = 20 * time.Minute
@@ -193,7 +193,7 @@ func TestE2E(t *testing.T) {
 	time.Sleep(30 * time.Second)
 
 	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
-	refreshCmd.Run() // nolint
+	e2e.TerraformRefresh() // nolint
 
 	/**************************************************************************
 	 * Step 2-1: スケールダウン
@@ -232,13 +232,18 @@ func TestE2E(t *testing.T) {
 		)
 	}
 	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
-	refreshCmd.Run() // nolint
+	e2e.TerraformRefresh() // nolint
 
 	outputLogs()
 }
 
 func setup() {
-	log.SetPrefix("[E2E] ")
+	if err := e2e.TerraformInit(); err != nil {
+		log.Fatal(err)
+	}
+	if err := e2e.TerraformApply(); err != nil {
+		log.Fatal(err)
+	}
 
 	coreOutputs, err := coreCmd.StderrPipe()
 	if err != nil {
@@ -282,6 +287,10 @@ func teardown() {
 		log.Println(err)
 	}
 	if err := coreCmd.Wait(); err != nil {
+		log.Println(err)
+	}
+
+	if err := e2e.TerraformDestroy(); err != nil {
 		log.Println(err)
 	}
 }
