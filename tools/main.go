@@ -19,6 +19,7 @@ package main
 
 import (
 	_ "github.com/google/go-licenses"
+	_ "github.com/grpc-ecosystem/grpc-health-probe"
 	_ "github.com/sacloud/addlicense"
 	_ "golang.org/x/tools/cmd/goimports"
 	_ "golang.org/x/tools/cmd/stringer"
