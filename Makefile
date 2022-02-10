@@ -79,11 +79,7 @@ test:
 .PHONY: e2e-test
 e2e-test: install
 	@echo "[INFO] When you run e2e-test for the first time, run 'make tools' first."
-	(cd e2e; go test -v -tags=e2e -timeout 240m ./...)
-
-.PHONY: e2e-image
-e2e-image:
-	docker build -t ghcr.io/sacloud/autoscaler:e2e -f e2e/Dockerfile .
+	(cd e2e; go test $(TESTARGS) -v -tags=e2e -timeout 240m ./...)
 
 .PHONY: lint
 lint:
