@@ -10,6 +10,6 @@ vendor/
 
 autoscaler.yaml
 **/.terraform*
-**/terraform*
+**/terraform.tfstate*
 
 work/
