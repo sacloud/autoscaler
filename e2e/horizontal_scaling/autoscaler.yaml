@@ -1,0 +1,43 @@
+resources:
+  - type: ELB
+    name: "elb"
+    selector:
+      names: ["autoscaler-e2e-horizontal-scaling"]
+
+    resources:
+    - type: ServerGroup
+      name: "autoscaler-e2e-horizontal-scaling"
+      zone: "is1a"
+      min_size: 0
+      max_size: 5
+
+      plans:
+        - {name: "smallest", size: 0}
+        - {name: "medium", size: 3}
+        - {name: "largest", size: 5}
+      template:
+        plan:
+          core: 1
+          memory: 2
+        network_interfaces:
+          - upstream: "shared"
+            expose:
+              ports: [ 80 ]
+        disks:
+          - os_type: "ubuntu2004"
+            plan: "ssd"
+            connection: "virtio"
+            size: 20
+        edit_parameter:
+          disable_pw_auth: true
+          change_partition_uuid: true
+          startup_scripts:
+            - |
+              #!/bin/bash
+              # @sacloud-once
+              # @sacloud-desc sacloud/autoscalerのe2eテスト用サーバのセットアップ
+              # @sacloud-require-archive distro-ubuntu
+              apt update; apt install -y curl nginx
+
+autoscaler:
+  cooldown: 5
