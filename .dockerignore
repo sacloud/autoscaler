@@ -1,5 +1,6 @@
 .env
 .mailmap
-e2e/
 .git
 bin/
+**/.terraform*
+**/terraform.tfstate*
