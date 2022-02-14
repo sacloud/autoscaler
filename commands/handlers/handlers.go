@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"github.com/sacloud/autoscaler/commands/handlers/builtins"
 	"github.com/sacloud/autoscaler/commands/handlers/localexec"
 	"github.com/spf13/cobra"
 )
@@ -26,6 +27,7 @@ var Command = &cobra.Command{
 }
 
 var subCommands = []*cobra.Command{
+	builtins.Command,
 	localexec.Command,
 }
 

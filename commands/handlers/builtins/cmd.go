@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package handlers
+package builtins
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 )
 
 var Command = &cobra.Command{
-	Use:   "handlers [flags]...",
+	Use:   "list-builtins [flags]...",
 	Short: "list builtin handlers",
 	RunE:  run,
 }
