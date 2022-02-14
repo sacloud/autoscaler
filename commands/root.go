@@ -48,6 +48,8 @@ func init() {
 	flags.SetLogFlags(rootCmd)
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 	rootCmd.AddCommand(subCommands...)
+	// coreコマンドをrootCmd直下にも追加
+	core.AddSubCommandsTo(rootCmd)
 }
 
 func Execute() {
