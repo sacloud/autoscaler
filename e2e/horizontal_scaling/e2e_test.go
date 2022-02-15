@@ -19,7 +19,6 @@ package horizontal_scaling
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"log"
 	"os/exec"
@@ -41,7 +40,7 @@ const (
 )
 
 var (
-	coreCmd       = exec.Command("autoscaler", "server", "start")
+	coreCmd       = exec.Command("autoscaler", "start")
 	upCmd         = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "up")
 	upToMediumCmd = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "--desired-state-name", "medium", "up")
 	downCmd       = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "down")
