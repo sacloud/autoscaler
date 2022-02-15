@@ -46,7 +46,7 @@ const (
 )
 
 var (
-	coreCmd  = exec.Command("autoscaler", "server", "start")
+	coreCmd  = exec.Command("autoscaler", "start")
 	inputCmd = exec.Command("autoscaler", "inputs", "grafana", "--addr", "127.0.0.1:8080")
 
 	proxyLBReadyTimeout = 5 * time.Minute
