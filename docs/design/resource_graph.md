@@ -36,7 +36,7 @@ resources:                 # スケールさせたいリソースをresources直
     # name: "server-group" # スケールさせたいリソースが1つだけならnameを省略できる
     zone: "is1a"
     
-    wrapper:               # 親リソースの定義
+    parent:                # 親リソースの定義
       type: ELB               
       selector:
         names: ["example"]
@@ -103,3 +103,4 @@ Up/Downリクエスト時に指定されたResourceNameを元に、どのリソ�
 ### 更新内容
 
 - 2022/2/16: 初版
+- 2022/2/17: フィールド名変更: `wrapper`から`parent`へ
