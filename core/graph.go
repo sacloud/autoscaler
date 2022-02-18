@@ -32,12 +32,12 @@ func NewGraph(resources ResourceDefinitions) *Graph {
 	}
 }
 
-func (n *Graph) Data() interface{} {
+func (g *Graph) Data() interface{} {
 	return "Sacloud AutoScaler"
 }
 
-func (n *Graph) Children() []tree.Node {
-	return n.children
+func (g *Graph) Children() []tree.Node {
+	return g.children
 }
 
 func (g *Graph) Tree(ctx *RequestContext, apiClient sacloud.APICaller) (string, error) {
@@ -53,36 +53,36 @@ func (g *Graph) Tree(ctx *RequestContext, apiClient sacloud.APICaller) (string, 
 }
 
 func (g *Graph) nodes(ctx *RequestContext, apiClient sacloud.APICaller, def ResourceDefinition) ([]tree.Node, error) {
+	var parentNode *GraphNode
+	if parentDef, ok := def.(ChildResourceDefinition); ok {
+		parent := parentDef.Parent()
+		if parent != nil {
+			resources, err := parent.Compute(ctx, apiClient)
+			if err != nil {
+				return nil, err
+			}
+			if len(resources) != 1 {
+				return nil, fmt.Errorf("got invalid configuration: invalid parent: %s", parentDef)
+			}
+			parentNode = &GraphNode{resource: resources[0]}
+		}
+	}
+
 	resources, err := def.Compute(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
+
 	var nodes []tree.Node
 	for _, r := range resources {
-		node := &GraphNode{resource: r}
-		for _, child := range def.Children() {
-			children, err := g.nodes(ctx, apiClient, child)
-			if err != nil {
-				return nil, err
-			}
-			node.children = append(node.children, children...)
-		}
-		nodes = append(nodes, node)
+		nodes = append(nodes, &GraphNode{resource: r})
+	}
+
+	if parentNode != nil {
+		parentNode.children = nodes
+		return []tree.Node{parentNode}, nil
 	}
 	return nodes, nil
-}
-
-type GroupNode struct {
-	name     string
-	children []tree.Node
-}
-
-func (n *GroupNode) Data() interface{} {
-	return fmt.Sprintf("Group: %s", n.name)
-}
-
-func (n *GroupNode) Children() []tree.Node {
-	return n.children
 }
 
 type GraphNode struct {

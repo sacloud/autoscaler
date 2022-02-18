@@ -22,7 +22,6 @@ import (
 type computedGSLB struct {
 	instruction handler.ResourceInstructions
 	gslb        *sacloud.GSLB
-	resource    *ResourceGSLB // 算出元のResourceへの参照
 }
 
 func (c *computedGSLB) ID() string {

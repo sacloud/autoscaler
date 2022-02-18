@@ -23,7 +23,6 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/stub"
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,61 +52,32 @@ func TestResourceDefinitions_UnmarshalYAML(t *testing.T) {
 		},
 		{
 			name: "resource group",
-			r: func() ResourceDefinitions {
-				dns := &ResourceDefDNS{
-					ResourceDefBase: &ResourceDefBase{
-						TypeName: "DNS",
-					},
-					Selector: &ResourceSelector{
-						Names: []string{"test-name"},
-					},
-				}
-				childServer := &ResourceDefServer{
+			r: ResourceDefinitions{
+				&ResourceDefServer{
 					ResourceDefBase: &ResourceDefBase{
 						TypeName: "Server",
 					},
 					Selector: &MultiZoneSelector{
 						ResourceSelector: &ResourceSelector{
-							Names: []string{"test-child"},
+							Names: []string{"test-name"},
 						},
 						Zones: []string{"is1a"},
 					},
-				}
-				childServer.SetParent(dns)
-				dns.children = ResourceDefinitions{childServer}
-
-				return ResourceDefinitions{
-					&ResourceDefServer{
-						ResourceDefBase: &ResourceDefBase{
-							TypeName: "Server",
-						},
-						Selector: &MultiZoneSelector{
-							ResourceSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-							},
-							Zones: []string{"is1a"},
-						},
-						DedicatedCPU: true,
+					DedicatedCPU: true,
+					ParentDef: &ParentResourceDef{
+						TypeName: "EnhancedLoadBalancer",
+						Selector: &NameOrSelector{ResourceSelector{Names: []string{"test-name"}}},
 					},
-					dns,
-					&ResourceDefGSLB{
-						ResourceDefBase: &ResourceDefBase{
-							TypeName: "GSLB",
-						},
-						Selector: &ResourceSelector{
-							Names: []string{"test-name"},
-						},
+				},
+				&ResourceDefELB{
+					ResourceDefBase: &ResourceDefBase{
+						TypeName: "EnhancedLoadBalancer",
 					},
-					&ResourceDefELB{
-						ResourceDefBase: &ResourceDefBase{
-							TypeName: "EnhancedLoadBalancer",
-						},
-						Selector: &ResourceSelector{
-							Names: []string{"test-name"},
-						},
+					Selector: &ResourceSelector{
+						Names: []string{"test-name"},
 					},
-				}
-			}(),
+				},
+			},
 			args: args{
 				data: []byte(`
 - type: Server
@@ -115,17 +85,9 @@ func TestResourceDefinitions_UnmarshalYAML(t *testing.T) {
     names: ["test-name"]
     zones: ["is1a"]
   dedicated_cpu: true
-- type: DNS
-  selector:
-    names: ["test-name"]
-  resources:
-    - type: Server
-      selector:
-        names: ["test-child"]
-        zones: ["is1a"]
-- type: GSLB 
-  selector:
-    names: ["test-name"]
+  parent:
+    type: ELB
+    selector: "test-name"
 - type: ELB
   selector:
     names: ["test-name"]
@@ -145,38 +107,6 @@ func TestResourceDefinitions_UnmarshalYAML(t *testing.T) {
 	}
 }
 
-func TestResourceDefinitions_HandleAll_havingChildrenDefinitionReturnsMultipleResource(t *testing.T) {
-	ctx := testContext()
-	defs := ResourceDefinitions{
-		&stubResourceDef{
-			ResourceDefBase: &ResourceDefBase{
-				TypeName: "stub",
-				children: ResourceDefinitions{
-					&stubResourceDef{},
-				},
-			},
-			computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
-				return Resources{
-					&stubResource{
-						ResourceBase: &ResourceBase{resourceType: ResourceTypeUnknown},
-						computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
-							return &stubComputed{}, nil
-						},
-					},
-					&stubResource{
-						ResourceBase: &ResourceBase{resourceType: ResourceTypeUnknown},
-						computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
-							return &stubComputed{}, nil
-						},
-					},
-				}, nil
-			},
-		},
-	}
-	err := defs.handleAll(ctx, test.APIClient, noopHandlers, nil, defs)
-	require.True(t, err != nil)
-}
-
 func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
 	ctx := testContext()
 	_, cleanup := test.AddTestServer(t, "test-server")
@@ -194,19 +124,17 @@ func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
 			},
 			Zones: []string{test.Zone},
 		},
-	}
-	dns := &ResourceDefDNS{
-		ResourceDefBase: &ResourceDefBase{
+		ParentDef: &ParentResourceDef{
 			TypeName: "DNS",
-			children: ResourceDefinitions{server},
-		},
-		Selector: &ResourceSelector{
-			Names: []string{"test-dns.com"},
+			Selector: &NameOrSelector{
+				ResourceSelector: ResourceSelector{
+					Names: []string{"test-dns.com"},
+				},
+			},
 		},
 	}
-	defs := ResourceDefinitions{dns}
+	defs := ResourceDefinitions{server}
 
-	var called []string
 	stubHandler := &Handler{
 		Name: "stub",
 		BuiltinHandler: &stub.Handler{
@@ -214,33 +142,16 @@ func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
 			HandleFunc: func(request *handler.HandleRequest, sender handlers.ResponseSender) error {
 				if server := request.Desired.GetServer(); server != nil {
 					// HandleAllの中でParentが設定されているか
-					require.NotNil(t, server.Parent.GetDns())
 
-					called = append(called, "server")
-				} else if dns := request.Desired.GetDns(); dns != nil {
-					called = append(called, "dns")
+					require.NotNil(t, server.Parent.GetDns())
 				}
 				return nil
 			},
 		},
 	}
 
-	err := defs.handleAll(ctx, test.APIClient, Handlers{stubHandler}, nil, defs)
+	err := defs.handleAll(ctx, test.APIClient, Handlers{stubHandler}, defs)
 	require.NoError(t, err)
-	// 子から先にHandleされているか?
-	require.Equal(t, []string{"server", "dns"}, called)
-}
-
-var noopHandlers = Handlers{
-	&Handler{
-		Name: "stub",
-		BuiltinHandler: &stub.Handler{
-			Logger: test.Logger,
-			HandleFunc: func(_ *handler.HandleRequest, _ handlers.ResponseSender) error {
-				return nil
-			},
-		},
-	},
 }
 
 func TestResourceDefinitions_FilterByResourceName(t *testing.T) {
@@ -257,7 +168,6 @@ func TestResourceDefinitions_FilterByResourceName(t *testing.T) {
 					ResourceDefBase: &ResourceDefBase{
 						TypeName: "stub",
 						DefName:  "test",
-						children: nil,
 					},
 				},
 				&stubResourceDef{
@@ -273,7 +183,6 @@ func TestResourceDefinitions_FilterByResourceName(t *testing.T) {
 					ResourceDefBase: &ResourceDefBase{
 						TypeName: "stub",
 						DefName:  "test",
-						children: nil,
 					},
 				},
 			},
@@ -285,7 +194,6 @@ func TestResourceDefinitions_FilterByResourceName(t *testing.T) {
 					ResourceDefBase: &ResourceDefBase{
 						TypeName: "stub",
 						DefName:  "test",
-						children: nil,
 					},
 				},
 				&stubResourceDef{
@@ -297,48 +205,6 @@ func TestResourceDefinitions_FilterByResourceName(t *testing.T) {
 			},
 			resourceName: "not exist",
 			want:         nil,
-		},
-		{
-			name: "returns parent if child is hit",
-			rds: ResourceDefinitions{
-				&stubResourceDef{
-					ResourceDefBase: &ResourceDefBase{
-						TypeName: "stub",
-						DefName:  "test",
-						children: ResourceDefinitions{
-							&stubResourceDef{
-								ResourceDefBase: &ResourceDefBase{
-									TypeName: "stub",
-									DefName:  "child",
-								},
-							},
-						},
-					},
-				},
-				&stubResourceDef{
-					ResourceDefBase: &ResourceDefBase{
-						TypeName: "stub",
-						DefName:  "test2",
-					},
-				},
-			},
-			resourceName: "test",
-			want: ResourceDefinitions{
-				&stubResourceDef{
-					ResourceDefBase: &ResourceDefBase{
-						TypeName: "stub",
-						DefName:  "test",
-						children: ResourceDefinitions{
-							&stubResourceDef{
-								ResourceDefBase: &ResourceDefBase{
-									TypeName: "stub",
-									DefName:  "child",
-								},
-							},
-						},
-					},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {
@@ -358,67 +224,15 @@ func TestResourceDefinitions_Validate(t *testing.T) {
 		{
 			name: "no error",
 			rds: ResourceDefinitions{
-				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "DNS", DefName: "stub1"}},
+				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "ELB", DefName: "stub1"}},
 			},
 			want: nil,
 		},
 		{
 			name: "duplicated",
 			rds: ResourceDefinitions{
-				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "DNS", DefName: "duplicated"}},
-				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "DNS", DefName: "duplicated"}},
-			},
-			want: []error{
-				fmt.Errorf("resource name duplicated is duplicated"),
-			},
-		},
-		{
-			name: "duplicated with nested defs",
-			rds: ResourceDefinitions{
-				&stubResourceDef{
-					ResourceDefBase: &ResourceDefBase{
-						TypeName: "DNS",
-						DefName:  "duplicated",
-						children: ResourceDefinitions{
-							&stubResourceDef{
-								ResourceDefBase: &ResourceDefBase{
-									TypeName: "DNS",
-									DefName:  "stub1-1",
-									children: ResourceDefinitions{
-										&stubResourceDef{
-											ResourceDefBase: &ResourceDefBase{
-												TypeName: "DNS",
-												DefName:  "stub1-1-1",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				&stubResourceDef{
-					ResourceDefBase: &ResourceDefBase{
-						TypeName: "DNS",
-						DefName:  "stub2",
-						children: ResourceDefinitions{
-							&stubResourceDef{
-								ResourceDefBase: &ResourceDefBase{
-									TypeName: "DNS",
-									DefName:  "stub2-1",
-									children: ResourceDefinitions{
-										&stubResourceDef{
-											ResourceDefBase: &ResourceDefBase{
-												TypeName: "DNS",
-												DefName:  "duplicated",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "ELB", DefName: "duplicated"}},
+				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "ELB", DefName: "duplicated"}},
 			},
 			want: []error{
 				fmt.Errorf("resource name duplicated is duplicated"),

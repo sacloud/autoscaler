@@ -23,7 +23,6 @@ type computedLoadBalancer struct {
 	instruction handler.ResourceInstructions
 	lb          *sacloud.LoadBalancer
 	zone        string
-	resource    *ResourceLoadBalancer // 算出元のResourceへの参照
 }
 
 func (c *computedLoadBalancer) ID() string {

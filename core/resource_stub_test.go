@@ -23,6 +23,11 @@ import (
 type stubResourceDef struct {
 	*ResourceDefBase
 	computeFunc func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error)
+	parent      ResourceDefinition
+}
+
+func (d *stubResourceDef) Parent() ResourceDefinition {
+	return d.parent
 }
 
 func (d *stubResourceDef) String() string {
@@ -42,16 +47,17 @@ func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICall
 
 type stubResource struct {
 	*ResourceBase
-	computeFunc func(ctx *RequestContext, refresh bool) (Computed, error)
+	computeFunc func(ctx *RequestContext, parent Computed, refresh bool) (Computed, error)
+	name        string
 }
 
 func (r *stubResource) String() string {
-	return "stub"
+	return r.name
 }
 
-func (r *stubResource) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *stubResource) Compute(ctx *RequestContext, parent Computed, refresh bool) (Computed, error) {
 	if r.computeFunc != nil {
-		return r.computeFunc(ctx, refresh)
+		return r.computeFunc(ctx, parent, refresh)
 	}
 	return nil, nil
 }
