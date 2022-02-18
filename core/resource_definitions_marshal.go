@@ -22,6 +22,7 @@ import (
 )
 
 func (rds *ResourceDefinitions) UnmarshalYAML(ctx context.Context, data []byte) error {
+	// TODO []interface{}ではなくmap[string]interface{}も扱えるようにしたい
 	var rawResources []interface{}
 	if err := yaml.UnmarshalWithOptions(data, &rawResources, yaml.Strict()); err != nil {
 		return err
@@ -38,7 +39,7 @@ func (rds *ResourceDefinitions) UnmarshalYAML(ctx context.Context, data []byte) 
 			return err
 		}
 
-		rds.setParentResource(nil, resource)
+		rds.setParentResourceRec(nil, resource)
 		resourceDefs = append(resourceDefs, resource)
 	}
 
@@ -46,14 +47,15 @@ func (rds *ResourceDefinitions) UnmarshalYAML(ctx context.Context, data []byte) 
 	return nil
 }
 
-func (rds *ResourceDefinitions) setParentResource(parent, r ResourceDefinition) {
+// setParentResourceRec ResourceがChildResourceDefinitionの場合にparentをセットする処理を再帰的に行う
+func (rds *ResourceDefinitions) setParentResourceRec(parent, r ResourceDefinition) {
 	if parent != nil {
 		if v, ok := r.(ChildResourceDefinition); ok {
 			v.SetParent(parent)
 		}
 	}
 	for _, child := range r.Children() {
-		rds.setParentResource(r, child)
+		rds.setParentResourceRec(r, child)
 	}
 }
 
