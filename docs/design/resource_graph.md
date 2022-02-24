@@ -7,7 +7,7 @@
 
 コンフィギュレーションでのリソースの親子関係の定義方法を見直し、よりシンプルに記載可能にする。
 
-従来は論理的なリソースの親子関係をそのままの形でコンフィギュレーション上に定義していた。
+v0.5以前は論理的なリソースの親子関係をそのままの形でコンフィギュレーション上に定義していた。
 
 As-Is:
 ```yaml
@@ -27,7 +27,7 @@ resources:
 親リソースはスケールさせたくない場合でも通常のスケール対象リソースと同様に定義する必要があるといったデメリットも存在する。  
 また、親リソースもスケール対象リソースであることで`name`が省略できないといった副次的なデメリットも存在する。
 
-このため親子関係の定義方法を見直し、スケールさせたいリソースのフィールドとして親リソースを定義する方法にすることでよりシンプルな形を目指す。
+このためv0.5では親子関係の定義方法を見直し、スケールさせたいリソースのフィールドとして親リソースを定義する方法を取る。
 
 To-Be:
 ```yaml
@@ -43,9 +43,9 @@ resources:                 # スケールさせたいリソースをresources直
                            # 親リソース側にはnameを指定する必要なし
 ```
 
-## 現在の実装/大まかな流れ
+## v0.4での実装/大まかな流れ
 
-現在はコンフィギュレーションからリソースグラフを構築し、各要素を辿りながら逐次処理している。
+コンフィギュレーションからリソースグラフを構築し、各要素を辿りながら逐次処理している。
 処理の流れは以下の通り。
 
 - Coreの起動時
@@ -53,7 +53,8 @@ resources:                 # スケールさせたいリソースをresources直
 - Up/Downリクエスト受信時
     - step2-1: リクエストされたリソース名から対象のResourceDefinitionsを抽出
     - step2-2: ResourceDefinitionからResourceを算出
-    - step2-3: Resourceごとにハンドラ呼び出し(PreHandle/Handle/PostHandle)
+    - step2-3: ResourceごとにComputedを算出
+    - step2-4: ハンドラ呼び出し(PreHandle/Handle/PostHandle)
 
 ### データの流れのイメージ(As-Is)
 
@@ -67,40 +68,63 @@ resources:                 # スケールさせたいリソースをresources直
 
 #### Step2-1: リクエストされたリソース名から対象のResourceDefinitionsを抽出
 
-Up/Downリクエスト時に指定されたResourceNameを元に、どのリソース定義が対象か特定しResourceDefinitions内の該当ツリーだけにフィルタする
+Up/Downリクエスト時に指定されたリソース名を元に、どのリソース定義が対象か特定しResourceDefinitions内の該当ツリーだけにフィルタする
 
 ![FilteredResourceDefinitions](../images/resource_graph/step2-1.png)
-
+  
 #### Step2-2: フィルタされたResourceDefinitionsのそれぞれの要素からResourceを算出
 
 ![ComputedResource](../images/resource_graph/step2-2.png)
 
-#### Step2-3: Resourceごとにハンドラ呼び出し(PreHandle/Handle/PostHandle)
+#### Step2-3: ResourceごとにComputedを算出
 
-各ResourceごとにハンドラのPreHandle/Handle/PostHandleを呼び出す。
-順番はツリーの末端からとなる。
+各ResourceごとにComputedを算出する。Computedにはハンドラへの指示内容や対象リソースのToBe情報を保持する。  
+算出処理の順番はツリーの末端からとなる。
+
 ![Order](../images/resource_graph/step2-3_order.png)
 
-## 実装(To-Be)
+#### Step2-4: ハンドラ呼び出し(PreHandle/Handle/PostHandle)
+
+ハンドラのPreHandle/Handle/PostHandleを呼び出す。
+
+![Compute](../images/resource_graph/step2-4.png)
+
+## v0.5以降での実装(To-Be)
 
 以下を修正する。
 
-- Step1: 
-  - ResourceDefinitionsの直下にはスケールさせたいリソースを直接保持する
-  - 親リソースがある場合は各ResourceDefinitionのフィールドとして表現する
-- Step2-1:
-  - リクエストされたリソース名で特定したResourceDefinitionからResourceDefinitionGraphを算出(新設)
-  - Step2-2以降にはResourceDefinitionGraphを渡す
+- 親リソースを表す`ParentResourceDef`を新設
+- `ParentResourceDef`はリソースタイプごとに適切な`Computed`を返すように実装
+  - 従来の`ResourceDefxxx`のうち、スケール対象ではないものを除去(DNS/GSLB/LBなど)、`ParentResourceDef`が代わりとなる
 
-#### Step1の修正後のイメージ
+処理の流れと関連する修正点は以下の通り。
+
+- Step1: 
+  - ResourceDefinitionsの直下にはスケールさせたいリソースだけを直接保持する
+    (スケール対象出ない親リソースは直下には保持しない)
+  - 親リソースがある場合は各ResourceDefinitionの`parent`フィールドとして表現する
+- Step2-1:
+  - 指定されたリソース名に対応するResourceDefinitionのみ返す
+    (従来は該当定義が所属するツリーを返していた)
+- Step2-2〜:
+  - 大きな変更はなし、ただしStep1の変更により処理対象のResourceが階層構造ではなくなった
+
+### 修正後のイメージ
+
+#### ResourceDefinitionsやResourcesはツリーではなくフラットに
 
 ![FlatResourceDef](../images/resource_graph/tobe_step1_reasource_fefinitions.png)
 
-#### Step2-1の修正後のイメージ
+![Resources](../images/resource_graph/tobe_step2-3.png)
 
-![ResourceDefGraph](../images/resource_graph/tobe_step2-1.png)
+#### 親が定義されている場合、Computedには親の情報を保持する
+![Computed](../images/resource_graph/tobe_step2-4.png)
+
 
 ### 更新内容
 
 - 2022/2/16: 初版
 - 2022/2/17: フィールド名変更: `wrapper`から`parent`へ
+- 2022/2/24: 
+    - ResourceDefinitionGraphを除去 - 最終的な実装では採用しなかったため
+    - Computed周りの図を追加
