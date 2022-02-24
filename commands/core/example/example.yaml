@@ -144,29 +144,25 @@ resources:
 
   # エンハンスドロードバランサ + サーバ(垂直スケール)
   # サーバの垂直スケール時にELBからのデタッチ/アタッチを行う
-  - type: ELB
-    name: "elb-auto-attach-detach-servers"
+  - type: Server
+    name: "elb-server"
     selector:
       names: ["example"]
-    resources:
-      - type: Server
-        name: "elb-server"
-        selector:
-          names: ["example"]
-          zones: ["is1a"]
+      zones: ["is1a"]
+    parent:
+      type: ELB
+      selector: "example" #selectorの省略記法、names: ["..."]と同等
 
   # GSLB + サーバ(垂直スケール)
   # サーバの垂直スケール時にGSLBからのデタッチ/アタッチを行う
-  - type: GSLB
-    name: "gslb-auto-atatth-detach-servers"
+  - type: Server
+    name: "gslb-server"
     selector:
       names: ["example"]
-    resources:
-      - type: Server
-        name: "gslb-server"
-        selector:
-          names: ["example"]
-          zones: ["is1a"]
+      zones: ["is1a"]
+    parent:
+      type: GSLB
+      selector: "example"
 
   # ルータ(垂直スケール)
   - type: Router
