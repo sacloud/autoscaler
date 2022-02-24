@@ -27,14 +27,16 @@ type ParentResource struct {
 	apiClient sacloud.APICaller
 	resource  SakuraCloudResource
 	def       *ParentResourceDef
+	zone      string
 }
 
-func NewParentResource(ctx *RequestContext, apiClient sacloud.APICaller, def *ParentResourceDef, resource SakuraCloudResource) (*ParentResource, error) {
+func NewParentResource(ctx *RequestContext, apiClient sacloud.APICaller, def *ParentResourceDef, resource SakuraCloudResource, zone string) (*ParentResource, error) {
 	return &ParentResource{
 		ResourceBase: &ResourceBase{resourceType: def.Type()},
 		apiClient:    apiClient,
 		resource:     resource,
 		def:          def,
+		zone:         zone,
 	}, nil
 }
 
@@ -45,7 +47,7 @@ func (r *ParentResource) String() string {
 	return fmt.Sprintf("{Type: %s, ID: %s, Name: %s}", r.Type(), r.resource.GetID(), r.resource.GetName())
 }
 
-func (r *ParentResource) Compute(ctx *RequestContext, parent Computed, refresh bool) (Computed, error) {
+func (r *ParentResource) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
@@ -63,7 +65,6 @@ func (r *ParentResource) Compute(ctx *RequestContext, parent Computed, refresh b
 		computed = &computedELB{
 			instruction: handler.ResourceInstructions_NOOP,
 			elb:         v,
-			parent:      parent,
 		}
 	case ResourceTypeGSLB:
 		v := &sacloud.GSLB{}
@@ -91,7 +92,7 @@ func (r *ParentResource) Compute(ctx *RequestContext, parent Computed, refresh b
 		computed = &computedRouter{
 			instruction: handler.ResourceInstructions_NOOP,
 			router:      v,
-			zone:        r.def.zone,
+			zone:        r.zone,
 		}
 	case ResourceTypeLoadBalancer:
 		v := &sacloud.LoadBalancer{}
@@ -101,7 +102,7 @@ func (r *ParentResource) Compute(ctx *RequestContext, parent Computed, refresh b
 		computed = &computedLoadBalancer{
 			instruction: handler.ResourceInstructions_NOOP,
 			lb:          v,
-			zone:        r.def.zone,
+			zone:        r.zone,
 		}
 	default:
 		panic("got unexpected type")
@@ -135,13 +136,13 @@ func (r *ParentResource) refresh(ctx *RequestContext) error {
 		}
 	case ResourceTypeRouter:
 		op := sacloud.NewInternetOp(r.apiClient)
-		found, err = op.Read(ctx, r.def.zone, r.resource.GetID())
+		found, err = op.Read(ctx, r.zone, r.resource.GetID())
 		if err != nil {
 			return fmt.Errorf("computing status failed: %s", err)
 		}
 	case ResourceTypeLoadBalancer:
 		op := sacloud.NewLoadBalancerOp(r.apiClient)
-		found, err = op.Read(ctx, r.def.zone, r.resource.GetID())
+		found, err = op.Read(ctx, r.zone, r.resource.GetID())
 		if err != nil {
 			return fmt.Errorf("computing status failed: %s", err)
 		}

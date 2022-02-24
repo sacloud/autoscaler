@@ -83,14 +83,6 @@ func (rds *ResourceDefinitions) walk(targets ResourceDefinitions, fn resourceDef
 	}
 
 	for _, target := range targets {
-		if hasParent, ok := target.(ChildResourceDefinition); ok {
-			parent := hasParent.Parent()
-			if parent != nil {
-				if err := fn(parent); err != nil {
-					return err
-				}
-			}
-		}
 		if err := fn(target); err != nil {
 			return err
 		}
@@ -128,24 +120,8 @@ func (rds *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud
 		if err != nil {
 			return err
 		}
-
-		var parentResource Resource
-		if hasParentDef, ok := def.(ChildResourceDefinition); ok {
-			parentDef := hasParentDef.Parent()
-			if parentDef != nil {
-				parentResources, err := parentDef.Compute(ctx, apiClient)
-				if err != nil {
-					return err
-				}
-				if len(parentResources) != 1 {
-					panic("invalid parent definition")
-				}
-				parentResource = parentResources[0]
-			}
-		}
-
 		for _, resource := range resources {
-			if err := rds.handleResource(ctx, handlers, resource, parentResource); err != nil {
+			if err := rds.handleResource(ctx, handlers, resource); err != nil {
 				return err
 			}
 		}
@@ -153,17 +129,8 @@ func (rds *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud
 	return nil
 }
 
-func (rds *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers Handlers, resource Resource, parentResource Resource) error {
-	var parent Computed
-	if parentResource != nil {
-		pc, err := parentResource.Compute(parentCtx, nil, false)
-		if err != nil {
-			return err
-		}
-		parent = pc
-	}
-
-	computed, err := resource.Compute(parentCtx, parent, false)
+func (rds *ResourceDefinitions) handleResource(parentCtx *RequestContext, handlers Handlers, resource Resource) error {
+	computed, err := resource.Compute(parentCtx, false)
 	if err != nil {
 		return err
 	}
@@ -201,14 +168,15 @@ func (rds *ResourceDefinitions) handleResource(parentCtx *RequestContext, handle
 	}
 
 	// refresh
-	if parentResource != nil {
-		pc, err := parentResource.Compute(parentCtx, nil, false)
-		if err != nil {
-			return err
-		}
-		parent = pc
-	}
-	refreshed, err := resource.Compute(handlingCtx.RequestContext, parent, true)
+	// TODO Parentの設定
+	//if parentResource != nil {
+	//	pc, err := parentResource.Compute(parentCtx, nil, false)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	parent = pc
+	//}
+	refreshed, err := resource.Compute(handlingCtx.RequestContext, true)
 	if err != nil {
 		return err
 	}

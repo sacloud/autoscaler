@@ -22,7 +22,7 @@ type Resource interface {
 	//
 	// refreshがtrueの場合、さくらのクラウドAPIを用いて最新の状態を取得した上で処理を行う
 	// falseの場合はキャッシュされている結果を元に処理を行う
-	Compute(ctx *RequestContext, computedParent Computed, refresh bool) (Computed, error)
+	Compute(ctx *RequestContext, refresh bool) (Computed, error)
 
 	// Type リソースの型
 	Type() ResourceTypes
@@ -52,4 +52,9 @@ type ResourceBase struct {
 
 func (r *ResourceBase) Type() ResourceTypes {
 	return r.resourceType
+}
+
+// ChildResource 親Resourceを持つResourceを示すインターフェース
+type ChildResource interface {
+	Parent() Resource
 }
