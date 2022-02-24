@@ -24,7 +24,6 @@ type computedRouter struct {
 	router       *sacloud.Internet
 	zone         string
 	newBandWidth int
-	resource     *ResourceRouter // 算出元のResourceへの参照
 }
 
 func (c *computedRouter) ID() string {

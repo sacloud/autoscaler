@@ -39,19 +39,15 @@ type ResourceDefServerGroup struct {
 	Template      *ServerGroupInstanceTemplate `yaml:"template" validate:"required"`
 	ShutdownForce bool                         `yaml:"shutdown_force"`
 
-	parent ResourceDefinition
+	ParentDef *ParentResourceDef `yaml:"parent"`
+}
+
+func (d *ResourceDefServerGroup) Parent() ResourceDefinition {
+	return d.ParentDef
 }
 
 func (d *ResourceDefServerGroup) String() string {
 	return fmt.Sprintf("Zone: %s, Name: %s", d.Zone, d.Name())
-}
-
-func (d *ResourceDefServerGroup) Parent() ResourceDefinition {
-	return d.parent
-}
-
-func (d *ResourceDefServerGroup) SetParent(parent ResourceDefinition) {
-	d.parent = parent
 }
 
 func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {

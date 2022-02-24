@@ -46,25 +46,16 @@ func (r *ResourceELB) String() string {
 	return fmt.Sprintf("{Type: %s, ID: %s, Name: %s}", r.Type(), r.elb.ID, r.elb.Name)
 }
 
-func (r *ResourceELB) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *ResourceELB) Compute(ctx *RequestContext, parent Computed, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
 		}
 	}
-	var parent Computed
-	if r.parent != nil {
-		pc, err := r.parent.Compute(ctx, false)
-		if err != nil {
-			return nil, err
-		}
-		parent = pc
-	}
 
 	computed := &computedELB{
 		instruction: handler.ResourceInstructions_NOOP,
 		elb:         &sacloud.ProxyLB{},
-		resource:    r,
 		parent:      parent,
 	}
 	if err := mapconvDecoder.ConvertTo(r.elb, computed.elb); err != nil {

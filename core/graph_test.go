@@ -40,46 +40,46 @@ func TestGraph_Tree(t *testing.T) {
 				resources: ResourceDefinitions{
 					&stubResourceDef{
 						ResourceDefBase: &ResourceDefBase{
-							TypeName: "Stub",
-							children: ResourceDefinitions{
-								&stubResourceDef{
-									ResourceDefBase: &ResourceDefBase{
-										TypeName: "Stub",
-									},
-									computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
-										return Resources{
-											&stubResource{
-												ResourceBase: &ResourceBase{
-													resourceType: ResourceTypeServer,
-												},
-												computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
-													return nil, nil
-												},
-											},
-										}, nil
-									},
-								},
-							},
+							TypeName: "Child",
 						},
 						computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
 							return Resources{
 								&stubResource{
 									ResourceBase: &ResourceBase{
-										resourceType: ResourceTypeDNS,
+										resourceType: ResourceTypeServer,
 									},
-									computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
+									computeFunc: func(ctx *RequestContext, parent Computed, refresh bool) (Computed, error) {
 										return nil, nil
 									},
+									name: "child",
 								},
 							}, nil
+						},
+						parent: &stubResourceDef{
+							ResourceDefBase: &ResourceDefBase{
+								TypeName: "Parent",
+							},
+							computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+								return Resources{
+									&stubResource{
+										ResourceBase: &ResourceBase{
+											resourceType: ResourceTypeDNS,
+										},
+										computeFunc: func(ctx *RequestContext, parent Computed, refresh bool) (Computed, error) {
+											return nil, nil
+										},
+										name: "parent",
+									},
+								}, nil
+							},
 						},
 					},
 				},
 			},
 			want: `
 Sacloud AutoScaler
-└─ stub
-   └─ stub
+└─ parent
+   └─ child
 `,
 			wantErr: false,
 		},

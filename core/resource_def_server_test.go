@@ -155,7 +155,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		require.Len(t, resources, 1)
 		resource := resources[0]
 
-		computed, err := resource.Compute(ctx, false)
+		computed, err := resource.Compute(ctx, nil, false)
 		require.NoError(t, err)
 		require.NotNil(t, computed)
 
@@ -189,7 +189,7 @@ func TestServer_ComputedWithResource(t *testing.T) {
 		}
 		resources, err := server.Compute(ctx, test.APIClient)
 		require.NoError(t, err)
-		computed, err := resources[0].Compute(ctx, false)
+		computed, err := resources[0].Compute(ctx, nil, false)
 		require.NoError(t, err)
 
 		handlerReq := computed.Desired()

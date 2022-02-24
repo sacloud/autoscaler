@@ -61,27 +61,19 @@ func (r *ResourceServer) String() string {
 	return fmt.Sprintf("{Type: %s, Zone: %s, ID: %s, Name: %s}", r.Type(), r.zone, r.server.ID, r.server.Name)
 }
 
-func (r *ResourceServer) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *ResourceServer) Compute(ctx *RequestContext, parent Computed, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
 		}
 	}
-	var parent Computed
-	if r.parent != nil {
-		pc, err := r.parent.Compute(ctx, false)
-		if err != nil {
-			return nil, err
-		}
-		parent = pc
-	}
 
 	computed := &computedServer{
-		instruction: handler.ResourceInstructions_NOOP,
-		server:      &sacloud.Server{},
-		zone:        r.zone,
-		resource:    r,
-		parent:      parent,
+		instruction:   handler.ResourceInstructions_NOOP,
+		server:        &sacloud.Server{},
+		zone:          r.zone,
+		shutdownForce: r.def.ShutdownForce,
+		parent:        parent,
 	}
 	if err := mapconvDecoder.ConvertTo(r.server, computed.server); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)

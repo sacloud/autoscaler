@@ -446,7 +446,7 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 
 func TestServerGroupNICMetadata_Validate(t *testing.T) {
 	type args struct {
-		parent   ResourceDefinition
+		parent   *ParentResourceDef
 		nicIndex int
 	}
 	tests := []struct {
@@ -498,8 +498,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 			name:   "minimum with ELB",
 			expose: &ServerGroupNICMetadata{},
 			args: args{
-				parent: &ResourceDefELB{
-					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeELB.String()},
+				parent: &ParentResourceDef{
+					TypeName: ResourceTypeELB.String(),
 				},
 				nicIndex: 0,
 			},
@@ -523,8 +523,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				RecordTTL:  10,
 			},
 			args: args{
-				parent: &ResourceDefELB{
-					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeELB.String()},
+				parent: &ParentResourceDef{
+					TypeName: ResourceTypeELB.String(),
 				},
 				nicIndex: 0,
 			},
@@ -540,8 +540,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 			name:   "minimum with GSLB",
 			expose: &ServerGroupNICMetadata{},
 			args: args{
-				parent: &ResourceDefGSLB{
-					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeGSLB.String()},
+				parent: &ParentResourceDef{
+					TypeName: ResourceTypeGSLB.String(),
 				},
 				nicIndex: 0,
 			},
@@ -563,8 +563,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				RecordTTL:  10,
 			},
 			args: args{
-				parent: &ResourceDefGSLB{
-					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeGSLB.String()},
+				parent: &ParentResourceDef{
+					TypeName: ResourceTypeGSLB.String(),
 				},
 				nicIndex: 0,
 			},
@@ -580,8 +580,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 			name:   "minimum with LB",
 			expose: &ServerGroupNICMetadata{},
 			args: args{
-				parent: &ResourceDefLoadBalancer{
-					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeLoadBalancer.String()},
+				parent: &ParentResourceDef{
+					TypeName: ResourceTypeLoadBalancer.String(),
 				},
 				nicIndex: 0,
 			},
@@ -606,8 +606,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				RecordTTL:  10,
 			},
 			args: args{
-				parent: &ResourceDefLoadBalancer{
-					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeLoadBalancer.String()},
+				parent: &ParentResourceDef{
+					TypeName: ResourceTypeLoadBalancer.String(),
 				},
 				nicIndex: 0,
 			},
@@ -622,8 +622,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 			name:   "minimum with DNS",
 			expose: &ServerGroupNICMetadata{},
 			args: args{
-				parent: &ResourceDefDNS{
-					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeDNS.String()},
+				parent: &ParentResourceDef{
+					TypeName: ResourceTypeDNS.String(),
 				},
 				nicIndex: 0,
 			},
@@ -645,8 +645,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				RecordTTL:  10,
 			},
 			args: args{
-				parent: &ResourceDefDNS{
-					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeDNS.String()},
+				parent: &ParentResourceDef{
+					TypeName: ResourceTypeDNS.String(),
 				},
 				nicIndex: 0,
 			},
@@ -669,8 +669,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				},
 			},
 			args: args{
-				parent: &ResourceDefLoadBalancer{
-					ResourceDefBase: &ResourceDefBase{TypeName: ResourceTypeLoadBalancer.String()},
+				parent: &ParentResourceDef{
+					TypeName: ResourceTypeLoadBalancer.String(),
 				},
 				nicIndex: 0,
 			},

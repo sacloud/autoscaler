@@ -17,7 +17,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -32,7 +31,11 @@ type ResourceDefServer struct {
 	Plans         []*ServerPlan `yaml:"plans"`
 	ShutdownForce bool          `yaml:"shutdown_force"`
 
-	parent ResourceDefinition
+	ParentDef *ParentResourceDef `yaml:"parent"`
+}
+
+func (d *ResourceDefServer) Parent() ResourceDefinition {
+	return d.ParentDef
 }
 
 func (d *ResourceDefServer) String() string {
@@ -50,14 +53,6 @@ func (d *ResourceDefServer) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (d *ResourceDefServer) Parent() ResourceDefinition {
-	return d.parent
-}
-
-func (d *ResourceDefServer) SetParent(parent ResourceDefinition) {
-	d.parent = parent
-}
-
 func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 
@@ -65,19 +60,9 @@ func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APIC
 		errors = multierror.Append(errors, errs...)
 	}
 
-	resources, err := d.findCloudResources(ctx, apiClient)
+	_, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
 		errors = multierror.Append(errors, err)
-	}
-	if len(d.children) > 0 && len(resources) > 1 {
-		var names []string
-		for _, r := range resources {
-			names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", r.zone, r.ID, r.Name))
-		}
-		errors = multierror.Append(errors,
-			fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-				d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
-			))
 	}
 
 	// set prefix

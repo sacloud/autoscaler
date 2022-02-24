@@ -39,24 +39,11 @@ func (rds *ResourceDefinitions) UnmarshalYAML(ctx context.Context, data []byte) 
 			return err
 		}
 
-		rds.setParentResourceRec(nil, resource)
 		resourceDefs = append(resourceDefs, resource)
 	}
 
 	*rds = resourceDefs
 	return nil
-}
-
-// setParentResourceRec ResourceがChildResourceDefinitionの場合にparentをセットする処理を再帰的に行う
-func (rds *ResourceDefinitions) setParentResourceRec(parent, r ResourceDefinition) {
-	if parent != nil {
-		if v, ok := r.(ChildResourceDefinition); ok {
-			v.SetParent(parent)
-		}
-	}
-	for _, child := range r.Children() {
-		rds.setParentResourceRec(r, child)
-	}
 }
 
 func (rds *ResourceDefinitions) unmarshalResourceDefFromMap(data map[string]interface{}) (ResourceDefinition, error) {
@@ -67,22 +54,6 @@ func (rds *ResourceDefinitions) unmarshalResourceDefFromMap(data map[string]inte
 	typeName, ok := rawTypeName.(string)
 	if !ok {
 		return nil, fmt.Errorf("'type' is not string: %v", data)
-	}
-
-	var defs ResourceDefinitions
-	if rawChildren, ok := data["resources"]; ok {
-		if children, ok := rawChildren.([]interface{}); ok {
-			for _, child := range children {
-				if c, ok := child.(map[string]interface{}); ok {
-					r, err := rds.unmarshalResourceDefFromMap(c)
-					if err != nil {
-						return nil, err
-					}
-					defs = append(defs, r)
-				}
-			}
-		}
-		delete(data, "resources")
 	}
 
 	remarshelded, err := yaml.Marshal(data)
@@ -97,14 +68,12 @@ func (rds *ResourceDefinitions) unmarshalResourceDefFromMap(data map[string]inte
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, err
 		}
-		v.children = defs
 		def = v
 	case "ServerGroup":
 		v := &ResourceDefServerGroup{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, err
 		}
-		v.children = defs
 		def = v
 	case "EnhancedLoadBalancer", "ELB":
 		v := &ResourceDefELB{}
@@ -113,37 +82,12 @@ func (rds *ResourceDefinitions) unmarshalResourceDefFromMap(data map[string]inte
 		}
 		// TypeNameのエイリアスを正規化
 		v.TypeName = "EnhancedLoadBalancer"
-		v.children = defs
-		def = v
-	case "GSLB":
-		v := &ResourceDefGSLB{}
-		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, err
-		}
-		v.children = defs
-		def = v
-	case "DNS":
-		v := &ResourceDefDNS{}
-		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, err
-		}
-		v.children = defs
 		def = v
 	case "Router":
 		v := &ResourceDefRouter{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
 			return nil, err
 		}
-		v.children = defs
-		def = v
-	case "LoadBalancer", "LB":
-		v := &ResourceDefLoadBalancer{}
-		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
-			return nil, err
-		}
-		// TypeNameのエイリアスを正規化
-		v.TypeName = "LoadBalancer"
-		v.children = defs
 		def = v
 	default:
 		return nil, fmt.Errorf("unexpected type: %s", typeName)

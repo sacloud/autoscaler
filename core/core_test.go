@@ -89,17 +89,15 @@ func TestCore_ResourceName(t *testing.T) {
 					ResourceDefBase: &ResourceDefBase{
 						TypeName: "stub",
 						DefName:  "name1",
-						children: ResourceDefinitions{
-							&stubResourceDef{
-								ResourceDefBase: &ResourceDefBase{TypeName: "stub", DefName: "name2"},
-							},
-						},
+					},
+					parent: &stubResourceDef{
+						ResourceDefBase: &ResourceDefBase{TypeName: "stub"},
 					},
 				},
 			},
 			args:    defaults.ResourceName,
-			want:    "",
-			wantErr: true,
+			want:    "name1",
+			wantErr: false,
 		},
 		{
 			name: "not exist name with definitions",

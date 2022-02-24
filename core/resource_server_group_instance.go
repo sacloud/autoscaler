@@ -40,20 +40,12 @@ func (r *ResourceServerGroupInstance) String() string {
 	return fmt.Sprintf("{Type: %s, Zone: %s, ID: %s, Name: %s}", r.Type(), r.zone, r.server.ID, r.server.Name)
 }
 
-func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, parent Computed, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
 		}
 		r.instruction = handler.ResourceInstructions_NOOP
-	}
-	var parent Computed
-	if r.parent != nil {
-		pc, err := r.parent.Compute(ctx, false)
-		if err != nil {
-			return nil, err
-		}
-		parent = pc
 	}
 
 	disks, err := r.computeDisks(ctx)
@@ -79,7 +71,7 @@ func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, refresh bool)
 		cloudConfig:       r.def.Template.CloudConfig.String(),
 		networkInterfaces: nics,
 		parent:            parent,
-		resource:          r,
+		shutdownForce:     r.def.ShutdownForce,
 	}, nil
 }
 

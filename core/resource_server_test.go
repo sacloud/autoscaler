@@ -52,7 +52,6 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 	def := &ResourceDefServer{
 		ResourceDefBase: &ResourceDefBase{
 			TypeName: "",
-			children: nil,
 		},
 		Selector: &MultiZoneSelector{
 			ResourceSelector: &ResourceSelector{},
@@ -77,7 +76,7 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 	require.NoError(t, err)
 
 	// refresh実施
-	_, err = resource.Compute(ctx, true)
+	_, err = resource.Compute(ctx, nil, true)
 	require.NoError(t, err)
 
 	require.EqualValues(t, plans.AppendPreviousIDTagIfAbsent(types.Tags{}, server.ID), resource.server.Tags)
@@ -99,7 +98,6 @@ func TestResourceServer2_Compute(t *testing.T) {
 		ResourceDefBase: &ResourceDefBase{
 			TypeName: "",
 			DefName:  "default",
-			children: nil,
 		},
 		Selector: &MultiZoneSelector{
 			ResourceSelector: &ResourceSelector{},
@@ -151,7 +149,6 @@ func TestResourceServer2_Compute(t *testing.T) {
 				newCPU:      4,
 				newMemory:   8,
 				parent:      nil,
-				resource:    resource,
 			},
 			wantErr: false,
 		},
@@ -173,14 +170,13 @@ func TestResourceServer2_Compute(t *testing.T) {
 				newCPU:      1,
 				newMemory:   1,
 				parent:      nil,
-				resource:    resource,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := resource.Compute(tt.args.ctx, tt.args.refresh)
+			got, err := resource.Compute(tt.args.ctx, nil, tt.args.refresh)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Compute() error = %v, wantErr %v", err, tt.wantErr)
 				return

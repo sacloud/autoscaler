@@ -66,7 +66,7 @@ func (r *ResourceRouter) String() string {
 	return fmt.Sprintf("{Type: %s, Zone: %s, ID: %s, Name: %s}", r.Type(), r.zone, r.router.ID, r.router.Name)
 }
 
-func (r *ResourceRouter) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
+func (r *ResourceRouter) Compute(ctx *RequestContext, _ Computed, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
@@ -77,7 +77,6 @@ func (r *ResourceRouter) Compute(ctx *RequestContext, refresh bool) (Computed, e
 		instruction: handler.ResourceInstructions_NOOP,
 		router:      &sacloud.Internet{},
 		zone:        r.zone,
-		resource:    r,
 	}
 	if err := mapconvDecoder.ConvertTo(r.router, computed.router); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
