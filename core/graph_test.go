@@ -48,30 +48,21 @@ func TestGraph_Tree(t *testing.T) {
 									ResourceBase: &ResourceBase{
 										resourceType: ResourceTypeServer,
 									},
-									computeFunc: func(ctx *RequestContext, parent Computed, refresh bool) (Computed, error) {
+									computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
 										return nil, nil
 									},
 									name: "child",
-								},
-							}, nil
-						},
-						parent: &stubResourceDef{
-							ResourceDefBase: &ResourceDefBase{
-								TypeName: "Parent",
-							},
-							computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
-								return Resources{
-									&stubResource{
+									parent: &stubResource{
 										ResourceBase: &ResourceBase{
 											resourceType: ResourceTypeDNS,
 										},
-										computeFunc: func(ctx *RequestContext, parent Computed, refresh bool) (Computed, error) {
+										computeFunc: func(ctx *RequestContext, refresh bool) (Computed, error) {
 											return nil, nil
 										},
 										name: "parent",
 									},
-								}, nil
-							},
+								},
+							}, nil
 						},
 					},
 				},

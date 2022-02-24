@@ -29,6 +29,7 @@ type RequestContext struct {
 	job       *JobStatus
 	logger    *log.Logger
 	tlsConfig *config.TLSStruct
+	zone      string
 }
 
 // NewRequestContext 新しいリクエストコンテキストを生成する
@@ -57,6 +58,20 @@ func (c *RequestContext) WithJobStatus(job *JobStatus) *RequestContext {
 		logger:    c.logger,
 		job:       job,
 		tlsConfig: c.tlsConfig,
+	}
+}
+
+// WithZone Zoneを保持するContextを現在のContextを元に作成して返す
+//
+// 現在のContextが親Contextとなる
+func (c *RequestContext) WithZone(zone string) *RequestContext {
+	return &RequestContext{
+		ctx:       c,
+		request:   c.request,
+		logger:    c.logger,
+		job:       c.job,
+		tlsConfig: c.tlsConfig,
+		zone:      zone,
 	}
 }
 

@@ -34,10 +34,6 @@ type ResourceDefServer struct {
 	ParentDef *ParentResourceDef `yaml:"parent"`
 }
 
-func (d *ResourceDefServer) Parent() ResourceDefinition {
-	return d.ParentDef
-}
-
 func (d *ResourceDefServer) String() string {
 	return d.Selector.String()
 }
@@ -60,9 +56,14 @@ func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APIC
 		errors = multierror.Append(errors, errs...)
 	}
 
-	_, err := d.findCloudResources(ctx, apiClient)
+	resources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
 		errors = multierror.Append(errors, err)
+	}
+	if d.ParentDef != nil {
+		for _, r := range resources {
+			errors = multierror.Append(errors, d.ParentDef.Validate(ctx, apiClient, r.zone)...)
+		}
 	}
 
 	// set prefix
@@ -122,10 +123,25 @@ func (d *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICa
 
 	var resources Resources
 	for _, server := range cloudResources {
-		r, err := NewResourceServer(ctx, apiClient, d, server.zone, server.Server)
+		ctx = ctx.WithZone(server.zone)
+
+		var parent Resource
+		if d.ParentDef != nil {
+			parents, err := d.ParentDef.Compute(ctx, apiClient)
+			if err != nil {
+				return nil, err
+			}
+			if len(parents) != 1 {
+				return nil, fmt.Errorf("got invalid parent resources: %#+v", parents)
+			}
+			parent = parents[0]
+		}
+
+		r, err := NewResourceServer(ctx, apiClient, d, parent, server.zone, server.Server)
 		if err != nil {
 			return nil, err
 		}
+
 		resources = append(resources, r)
 	}
 	return resources, nil

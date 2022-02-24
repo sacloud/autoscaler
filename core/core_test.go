@@ -90,9 +90,6 @@ func TestCore_ResourceName(t *testing.T) {
 						TypeName: "stub",
 						DefName:  "name1",
 					},
-					parent: &stubResourceDef{
-						ResourceDefBase: &ResourceDefBase{TypeName: "stub"},
-					},
 				},
 			},
 			args:    defaults.ResourceName,

@@ -15,8 +15,6 @@
 package core
 
 import (
-	"fmt"
-
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/shivamMg/ppds/tree"
 )
@@ -53,28 +51,22 @@ func (g *Graph) Tree(ctx *RequestContext, apiClient sacloud.APICaller) (string, 
 }
 
 func (g *Graph) nodes(ctx *RequestContext, apiClient sacloud.APICaller, def ResourceDefinition) ([]tree.Node, error) {
-	var parentNode *GraphNode
-	if parentDef, ok := def.(ChildResourceDefinition); ok {
-		parent := parentDef.Parent()
-		if parent != nil {
-			resources, err := parent.Compute(ctx, apiClient)
-			if err != nil {
-				return nil, err
-			}
-			if len(resources) != 1 {
-				return nil, fmt.Errorf("got invalid configuration: invalid parent: %s", parentDef)
-			}
-			parentNode = &GraphNode{resource: resources[0]}
-		}
-	}
-
 	resources, err := def.Compute(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
 
+	var parentNode *GraphNode
 	var nodes []tree.Node
-	for _, r := range resources {
+	for i, r := range resources {
+		if i == 0 {
+			if v, ok := r.(ChildResource); ok {
+				parent := v.Parent()
+				if parent != nil {
+					parentNode = &GraphNode{resource: parent}
+				}
+			}
+		}
 		nodes = append(nodes, &GraphNode{resource: r})
 	}
 

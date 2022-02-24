@@ -35,11 +35,6 @@ type ResourceDefinition interface {
 	Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error)
 }
 
-// ChildResourceDefinition 親リソースを持つリソース定義を表すインターフェース
-type ChildResourceDefinition interface {
-	Parent() ResourceDefinition
-}
-
 // ResourceDefBase 全てのリソース定義が実装すべき基本プロパティ
 //
 // Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること

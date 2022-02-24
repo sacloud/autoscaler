@@ -529,11 +529,11 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("weight: can only be specified if parent resource type is EnhancedLoadBalancer"),
-				fmt.Errorf("vips: can only be specified if parent resource type is EnhancedLoadBalancer"),
-				fmt.Errorf("health_check: can only be specified if parent resource type is EnhancedLoadBalancer"),
-				fmt.Errorf("record_name: can only be specified if parent resource type is EnhancedLoadBalancer"),
-				fmt.Errorf("record_ttl: can only be specified if parent resource type is EnhancedLoadBalancer"),
+				fmt.Errorf("weight: can't specify if parent resource type is EnhancedLoadBalancer"),
+				fmt.Errorf("vips: can't specify if parent resource type is EnhancedLoadBalancer"),
+				fmt.Errorf("health_check: can't specify if parent resource type is EnhancedLoadBalancer"),
+				fmt.Errorf("record_name: can't specify if parent resource type is EnhancedLoadBalancer"),
+				fmt.Errorf("record_ttl: can't specify if parent resource type is EnhancedLoadBalancer"),
 			},
 		},
 		{
@@ -569,11 +569,11 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("server_group_name: can only be specified if parent resource type is GSLB"),
-				fmt.Errorf("vips: can only be specified if parent resource type is GSLB"),
-				fmt.Errorf("health_check: can only be specified if parent resource type is GSLB"),
-				fmt.Errorf("record_name: can only be specified if parent resource type is GSLB"),
-				fmt.Errorf("record_ttl: can only be specified if parent resource type is GSLB"),
+				fmt.Errorf("server_group_name: can't specify if parent resource type is GSLB"),
+				fmt.Errorf("vips: can't specify if parent resource type is GSLB"),
+				fmt.Errorf("health_check: can't specify if parent resource type is GSLB"),
+				fmt.Errorf("record_name: can't specify if parent resource type is GSLB"),
+				fmt.Errorf("record_ttl: can't specify if parent resource type is GSLB"),
 			},
 		},
 		{
@@ -612,10 +612,10 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("server_group_name: can only be specified if parent resource type is LoadBalancer"),
-				fmt.Errorf("weight: can only be specified if parent resource type is LoadBalancer"),
-				fmt.Errorf("record_name: can only be specified if parent resource type is LoadBalancer"),
-				fmt.Errorf("record_ttl: can only be specified if parent resource type is LoadBalancer"),
+				fmt.Errorf("server_group_name: can't specify if parent resource type is LoadBalancer"),
+				fmt.Errorf("weight: can't specify if parent resource type is LoadBalancer"),
+				fmt.Errorf("record_name: can't specify if parent resource type is LoadBalancer"),
+				fmt.Errorf("record_ttl: can't specify if parent resource type is LoadBalancer"),
 			},
 		},
 		{
@@ -651,10 +651,10 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("server_group_name: can only be specified if parent resource type is DNS"),
-				fmt.Errorf("weight: can only be specified if parent resource type is DNS"),
-				fmt.Errorf("vips: can only be specified if parent resource type is DNS"),
-				fmt.Errorf("health_check: can only be specified if parent resource type is DNS"),
+				fmt.Errorf("server_group_name: can't specify if parent resource type is DNS"),
+				fmt.Errorf("weight: can't specify if parent resource type is DNS"),
+				fmt.Errorf("vips: can't specify if parent resource type is DNS"),
+				fmt.Errorf("health_check: can't specify if parent resource type is DNS"),
 			},
 		},
 		{

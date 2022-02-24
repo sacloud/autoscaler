@@ -31,13 +31,6 @@ import (
 type ParentResourceDef struct {
 	TypeName string          `yaml:"type" validate:"required,oneof=DNS EnhancedLoadBalancer ELB GSLB LoadBalancer Router"`
 	Selector *NameOrSelector `yaml:"selector" validate:"required"`
-
-	// zone Compute前に親リソース側で設定される
-	zone string `yaml:"-" validate:"omitempty,zone"`
-}
-
-func (d *ParentResourceDef) Name() string {
-	return "" // Note: 常に空文字列なためこのリソースが直接処理対象になることがない
 }
 
 func (d *ParentResourceDef) Type() ResourceTypes {
@@ -73,10 +66,10 @@ func (d *ParentResourceDef) String() string {
 	return fmt.Sprintf("Type: %s, %s", d.Type().String(), d.Selector.String())
 }
 
-func (d *ParentResourceDef) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *ParentResourceDef) Validate(ctx context.Context, apiClient sacloud.APICaller, zone string) []error {
 	errors := &multierror.Error{}
 
-	if _, err := d.findCloudResources(ctx, apiClient); err != nil {
+	if _, err := d.findCloudResources(ctx, apiClient, zone); err != nil {
 		errors = multierror.Append(errors, err)
 	}
 
@@ -86,14 +79,14 @@ func (d *ParentResourceDef) Validate(ctx context.Context, apiClient sacloud.APIC
 }
 
 func (d *ParentResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
-	cloudResources, err := d.findCloudResources(ctx, apiClient)
+	cloudResources, err := d.findCloudResources(ctx, apiClient, ctx.zone)
 	if err != nil {
 		return nil, err
 	}
 
 	var resources Resources
 	for _, resource := range cloudResources {
-		r, err := NewParentResource(ctx, apiClient, d, resource)
+		r, err := NewParentResource(ctx, apiClient, d, resource, ctx.zone)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +100,7 @@ type SakuraCloudResource interface {
 	GetName() string
 }
 
-func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]SakuraCloudResource, error) {
+func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient sacloud.APICaller, zone string) ([]SakuraCloudResource, error) {
 	selector := d.Selector
 	var results []SakuraCloudResource
 
@@ -141,7 +134,7 @@ func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient sa
 		}
 	case ResourceTypeRouter:
 		op := sacloud.NewInternetOp(apiClient)
-		found, err := op.Find(ctx, d.zone, selector.findCondition())
+		found, err := op.Find(ctx, zone, selector.findCondition())
 		if err != nil {
 			return nil, fmt.Errorf("computing status failed: %s", err)
 		}
@@ -150,7 +143,7 @@ func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient sa
 		}
 	case ResourceTypeLoadBalancer:
 		op := sacloud.NewLoadBalancerOp(apiClient)
-		found, err := op.Find(ctx, d.zone, selector.findCondition())
+		found, err := op.Find(ctx, zone, selector.findCondition())
 		if err != nil {
 			return nil, fmt.Errorf("computing status failed: %s", err)
 		}
