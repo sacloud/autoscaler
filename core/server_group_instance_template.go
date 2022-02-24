@@ -412,7 +412,7 @@ func (m *ServerGroupNICMetadata) Validate(parent *ParentResourceDef, nicIndex in
 	}
 
 	if parent != nil {
-		format := "%s: can only be specified if parent resource type is %s"
+		format := "%s: can't specify if parent resource type is %s"
 		requiredFormat := "%s: required when parent is %s"
 
 		switch parent.Type() {

@@ -56,9 +56,14 @@ func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APIC
 		errors = multierror.Append(errors, errs...)
 	}
 
-	_, err := d.findCloudResources(ctx, apiClient)
+	resources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
 		errors = multierror.Append(errors, err)
+	}
+	if d.ParentDef != nil {
+		for _, r := range resources {
+			errors = multierror.Append(errors, d.ParentDef.Validate(ctx, apiClient, r.zone)...)
+		}
 	}
 
 	// set prefix

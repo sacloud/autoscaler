@@ -54,6 +54,9 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud
 		}
 	}
 	errors = multierror.Append(errors, d.Template.Validate(ctx, apiClient, d)...)
+	if d.ParentDef != nil {
+		errors = multierror.Append(errors, d.ParentDef.Validate(ctx, apiClient, d.Zone)...)
+	}
 
 	// set prefix
 	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s", d.Type().String())).(*multierror.Error)
