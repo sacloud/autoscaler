@@ -56,7 +56,6 @@ func (r *ResourceELB) Compute(ctx *RequestContext, refresh bool) (Computed, erro
 	computed := &computedELB{
 		instruction: handler.ResourceInstructions_NOOP,
 		elb:         &sacloud.ProxyLB{},
-		// TODO Parentの設定
 	}
 	if err := mapconvDecoder.ConvertTo(r.elb, computed.elb); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)
