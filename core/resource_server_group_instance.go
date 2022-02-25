@@ -107,7 +107,7 @@ func (r *ResourceServerGroupInstance) refresh(ctx *RequestContext) error {
 	}
 
 	// 存在しなかった(新規作成)の場合はセレクタから検索
-	selector := &ResourceSelector{Names: []string{r.server.Name}} // TODO タグも欲しい
+	selector := &ResourceSelector{Names: []string{r.server.Name}}
 	found, err := serverOp.Find(ctx, r.zone, selector.findCondition())
 	if err != nil {
 		return err

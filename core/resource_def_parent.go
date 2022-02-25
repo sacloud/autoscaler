@@ -29,7 +29,7 @@ import (
 
 // ParentResourceDef サーバやサーバグループの親リソースを示すResourceDefinition実装
 type ParentResourceDef struct {
-	TypeName string          `yaml:"type" validate:"required,oneof=DNS EnhancedLoadBalancer ELB GSLB LoadBalancer Router"`
+	TypeName string          `yaml:"type" validate:"required,oneof=DNS EnhancedLoadBalancer ELB GSLB LoadBalancer"`
 	Selector *NameOrSelector `yaml:"selector" validate:"required"`
 }
 
@@ -41,8 +41,6 @@ func (d *ParentResourceDef) Type() ResourceTypes {
 		return ResourceTypeGSLB
 	case ResourceTypeDNS.String():
 		return ResourceTypeDNS
-	case ResourceTypeRouter.String():
-		return ResourceTypeRouter
 	case ResourceTypeLoadBalancer.String():
 		return ResourceTypeLoadBalancer
 	}

@@ -104,54 +104,6 @@ func TestResourceDefinitions_UnmarshalYAML(t *testing.T) {
 	}
 }
 
-// TODO Parentの設定
-//func TestResourceDefinitions_HandleAll_withActualResource(t *testing.T) {
-//	ctx := testContext()
-//	_, cleanup := test.AddTestServer(t, "test-server")
-//	defer cleanup()
-//	_, cleanup2 := test.AddTestDNS(t, "test-dns.com")
-//	defer cleanup2()
-//
-//	server := &ResourceDefServer{
-//		ResourceDefBase: &ResourceDefBase{
-//			TypeName: "Server",
-//		},
-//		Selector: &MultiZoneSelector{
-//			ResourceSelector: &ResourceSelector{
-//				Names: []string{"test-server"},
-//			},
-//			Zones: []string{test.Zone},
-//		},
-//		ParentDef: &ParentResourceDef{
-//			TypeName: "DNS",
-//			Selector: &NameOrSelector{
-//				ResourceSelector: ResourceSelector{
-//					Names: []string{"test-dns.com"},
-//				},
-//			},
-//		},
-//	}
-//	defs := ResourceDefinitions{server}
-//
-//	stubHandler := &Handler{
-//		Name: "stub",
-//		BuiltinHandler: &stub.Handler{
-//			Logger: test.Logger,
-//			HandleFunc: func(request *handler.HandleRequest, sender handlers.ResponseSender) error {
-//				if server := request.Desired.GetServer(); server != nil {
-//					// HandleAllの中でParentが設定されているか
-//
-//					require.NotNil(t, server.Parent.GetDns())
-//				}
-//				return nil
-//			},
-//		},
-//	}
-//
-//	err := defs.handleAll(ctx, test.APIClient, Handlers{stubHandler}, defs)
-//	require.NoError(t, err)
-//}
-
 func TestResourceDefinitions_FilterByResourceName(t *testing.T) {
 	tests := []struct {
 		name         string

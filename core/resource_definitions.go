@@ -168,14 +168,6 @@ func (rds *ResourceDefinitions) handleResource(parentCtx *RequestContext, handle
 	}
 
 	// refresh
-	// TODO Parentの設定
-	//if parentResource != nil {
-	//	pc, err := parentResource.Compute(parentCtx, nil, false)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	parent = pc
-	//}
 	refreshed, err := resource.Compute(handlingCtx.RequestContext, true)
 	if err != nil {
 		return err
