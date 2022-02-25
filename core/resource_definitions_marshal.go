@@ -22,7 +22,6 @@ import (
 )
 
 func (rds *ResourceDefinitions) UnmarshalYAML(ctx context.Context, data []byte) error {
-	// TODO []interface{}ではなくmap[string]interface{}も扱えるようにしたい
 	var rawResources []interface{}
 	if err := yaml.UnmarshalWithOptions(data, &rawResources, yaml.Strict()); err != nil {
 		return err
@@ -54,6 +53,12 @@ func (rds *ResourceDefinitions) unmarshalResourceDefFromMap(data map[string]inte
 	typeName, ok := rawTypeName.(string)
 	if !ok {
 		return nil, fmt.Errorf("'type' is not string: %v", data)
+	}
+
+	// TODO v1リリース時に除去する
+	// v0.5以前のコンフィギュレーションに対するエラー表示
+	if _, ok := data["resources"]; ok {
+		return nil, fmt.Errorf("invalid configuration - Your configuration is using the pre-v0.5 format. Please update your configuration")
 	}
 
 	remarshelded, err := yaml.Marshal(data)
