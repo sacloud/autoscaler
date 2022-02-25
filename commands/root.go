@@ -39,7 +39,7 @@ var rootCmd = &cobra.Command{
 var subCommands = []*cobra.Command{
 	completion.Command,
 	inputs.Command,
-	core.Command,
+	core.Command, // Memo: 互換性維持用(since: v0.5) v1.0リリース時に除去する
 	cmdVersion.Command,
 	handlers.Command,
 }
@@ -48,6 +48,8 @@ func init() {
 	flags.SetLogFlags(rootCmd)
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 	rootCmd.AddCommand(subCommands...)
+	// coreコマンドをrootCmd直下に追加
+	core.AddSubCommandsTo(rootCmd)
 }
 
 func Execute() {

@@ -52,7 +52,6 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 	def := &ResourceDefServer{
 		ResourceDefBase: &ResourceDefBase{
 			TypeName: "",
-			children: nil,
 		},
 		Selector: &MultiZoneSelector{
 			ResourceSelector: &ResourceSelector{},
@@ -62,7 +61,7 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 		ShutdownForce: false,
 	}
 
-	resource, err := NewResourceServer(ctx, test.APIClient, def, test.Zone, server)
+	resource, err := NewResourceServer(ctx, test.APIClient, def, nil, test.Zone, server)
 	require.NoError(t, err)
 	require.NotNil(t, resource)
 
@@ -99,7 +98,6 @@ func TestResourceServer2_Compute(t *testing.T) {
 		ResourceDefBase: &ResourceDefBase{
 			TypeName: "",
 			DefName:  "default",
-			children: nil,
 		},
 		Selector: &MultiZoneSelector{
 			ResourceSelector: &ResourceSelector{},
@@ -151,7 +149,6 @@ func TestResourceServer2_Compute(t *testing.T) {
 				newCPU:      4,
 				newMemory:   8,
 				parent:      nil,
-				resource:    resource,
 			},
 			wantErr: false,
 		},
@@ -173,7 +170,6 @@ func TestResourceServer2_Compute(t *testing.T) {
 				newCPU:      1,
 				newMemory:   1,
 				parent:      nil,
-				resource:    resource,
 			},
 			wantErr: false,
 		},

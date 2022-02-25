@@ -31,6 +31,8 @@ type ResourceServerGroupInstance struct {
 	def          *ResourceDefServerGroup
 	instruction  handler.ResourceInstructions
 	indexInGroup int // グループ内でのインデックス、値の算出に用いる
+
+	parent Resource
 }
 
 func (r *ResourceServerGroupInstance) String() string {
@@ -40,6 +42,10 @@ func (r *ResourceServerGroupInstance) String() string {
 	return fmt.Sprintf("{Type: %s, Zone: %s, ID: %s, Name: %s}", r.Type(), r.zone, r.server.ID, r.server.Name)
 }
 
+func (r *ResourceServerGroupInstance) Parent() Resource {
+	return r.parent
+}
+
 func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
@@ -47,13 +53,14 @@ func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, refresh bool)
 		}
 		r.instruction = handler.ResourceInstructions_NOOP
 	}
-	var parent Computed
+
+	var parentComputed Computed
 	if r.parent != nil {
-		pc, err := r.parent.Compute(ctx, false)
+		c, err := r.parent.Compute(ctx, refresh)
 		if err != nil {
 			return nil, err
 		}
-		parent = pc
+		parentComputed = c
 	}
 
 	disks, err := r.computeDisks(ctx)
@@ -78,8 +85,8 @@ func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, refresh bool)
 		diskEditParameter: editParameter,
 		cloudConfig:       r.def.Template.CloudConfig.String(),
 		networkInterfaces: nics,
-		parent:            parent,
-		resource:          r,
+		shutdownForce:     r.def.ShutdownForce,
+		parent:            parentComputed,
 	}, nil
 }
 

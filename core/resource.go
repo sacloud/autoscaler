@@ -26,14 +26,6 @@ type Resource interface {
 
 	// Type リソースの型
 	Type() ResourceTypes
-	// Children 子リソース
-	Children() Resources
-	// AppendChildren 子リソースを設定
-	AppendChildren(Resources)
-	// Parent 親Resourceへの参照
-	Parent() Resource
-	// SetParent 親Resourceを設定
-	SetParent(parent Resource)
 
 	// String Resourceの文字列表現
 	String() string
@@ -56,26 +48,13 @@ func (rs *Resources) String() string {
 // ResourceBase 全てのリソースが所有すべきResourceの基本構造
 type ResourceBase struct {
 	resourceType ResourceTypes
-	parent       Resource
-	children     Resources
 }
 
 func (r *ResourceBase) Type() ResourceTypes {
 	return r.resourceType
 }
 
-func (r *ResourceBase) Children() Resources {
-	return r.children
-}
-
-func (r *ResourceBase) AppendChildren(children Resources) {
-	r.children = append(r.children, children...)
-}
-
-func (r *ResourceBase) Parent() Resource {
-	return r.parent
-}
-
-func (r *ResourceBase) SetParent(parent Resource) {
-	r.parent = parent
+// ChildResource 親Resourceを持つResourceを示すインターフェース
+type ChildResource interface {
+	Parent() Resource
 }

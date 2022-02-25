@@ -17,7 +17,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -32,7 +31,7 @@ type ResourceDefServer struct {
 	Plans         []*ServerPlan `yaml:"plans"`
 	ShutdownForce bool          `yaml:"shutdown_force"`
 
-	parent ResourceDefinition
+	ParentDef *ParentResourceDef `yaml:"parent"`
 }
 
 func (d *ResourceDefServer) String() string {
@@ -50,14 +49,6 @@ func (d *ResourceDefServer) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (d *ResourceDefServer) Parent() ResourceDefinition {
-	return d.parent
-}
-
-func (d *ResourceDefServer) SetParent(parent ResourceDefinition) {
-	d.parent = parent
-}
-
 func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
 	errors := &multierror.Error{}
 
@@ -69,15 +60,10 @@ func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APIC
 	if err != nil {
 		errors = multierror.Append(errors, err)
 	}
-	if len(d.children) > 0 && len(resources) > 1 {
-		var names []string
+	if d.ParentDef != nil {
 		for _, r := range resources {
-			names = append(names, fmt.Sprintf("{Zone:%s, ID:%s, Name:%s}", r.zone, r.ID, r.Name))
+			errors = multierror.Append(errors, d.ParentDef.Validate(ctx, apiClient, r.zone)...)
 		}
-		errors = multierror.Append(errors,
-			fmt.Errorf("A resource definition with children must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
-				d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
-			))
 	}
 
 	// set prefix
@@ -137,10 +123,25 @@ func (d *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICa
 
 	var resources Resources
 	for _, server := range cloudResources {
-		r, err := NewResourceServer(ctx, apiClient, d, server.zone, server.Server)
+		ctx = ctx.WithZone(server.zone)
+
+		var parent Resource
+		if d.ParentDef != nil {
+			parents, err := d.ParentDef.Compute(ctx, apiClient)
+			if err != nil {
+				return nil, err
+			}
+			if len(parents) != 1 {
+				return nil, fmt.Errorf("got invalid parent resources: %#+v", parents)
+			}
+			parent = parents[0]
+		}
+
+		r, err := NewResourceServer(ctx, apiClient, d, parent, server.zone, server.Server)
 		if err != nil {
 			return nil, err
 		}
+
 		resources = append(resources, r)
 	}
 	return resources, nil

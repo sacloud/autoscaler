@@ -15,8 +15,6 @@
 package core
 
 import (
-	"fmt"
-
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/shivamMg/ppds/tree"
 )
@@ -32,12 +30,12 @@ func NewGraph(resources ResourceDefinitions) *Graph {
 	}
 }
 
-func (n *Graph) Data() interface{} {
+func (g *Graph) Data() interface{} {
 	return "Sacloud AutoScaler"
 }
 
-func (n *Graph) Children() []tree.Node {
-	return n.children
+func (g *Graph) Children() []tree.Node {
+	return g.children
 }
 
 func (g *Graph) Tree(ctx *RequestContext, apiClient sacloud.APICaller) (string, error) {
@@ -57,32 +55,26 @@ func (g *Graph) nodes(ctx *RequestContext, apiClient sacloud.APICaller, def Reso
 	if err != nil {
 		return nil, err
 	}
+
+	var parentNode *GraphNode
 	var nodes []tree.Node
-	for _, r := range resources {
-		node := &GraphNode{resource: r}
-		for _, child := range def.Children() {
-			children, err := g.nodes(ctx, apiClient, child)
-			if err != nil {
-				return nil, err
+	for i, r := range resources {
+		if i == 0 {
+			if v, ok := r.(ChildResource); ok {
+				parent := v.Parent()
+				if parent != nil {
+					parentNode = &GraphNode{resource: parent}
+				}
 			}
-			node.children = append(node.children, children...)
 		}
-		nodes = append(nodes, node)
+		nodes = append(nodes, &GraphNode{resource: r})
+	}
+
+	if parentNode != nil {
+		parentNode.children = nodes
+		return []tree.Node{parentNode}, nil
 	}
 	return nodes, nil
-}
-
-type GroupNode struct {
-	name     string
-	children []tree.Node
-}
-
-func (n *GroupNode) Data() interface{} {
-	return fmt.Sprintf("Group: %s", n.name)
-}
-
-func (n *GroupNode) Children() []tree.Node {
-	return n.children
 }
 
 type GraphNode struct {

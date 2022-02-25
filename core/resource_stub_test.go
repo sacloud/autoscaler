@@ -43,10 +43,12 @@ func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICall
 type stubResource struct {
 	*ResourceBase
 	computeFunc func(ctx *RequestContext, refresh bool) (Computed, error)
+	name        string
+	parent      Resource
 }
 
 func (r *stubResource) String() string {
-	return "stub"
+	return r.name
 }
 
 func (r *stubResource) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
@@ -54,4 +56,8 @@ func (r *stubResource) Compute(ctx *RequestContext, refresh bool) (Computed, err
 		return r.computeFunc(ctx, refresh)
 	}
 	return nil, nil
+}
+
+func (r *stubResource) Parent() Resource {
+	return r.parent
 }

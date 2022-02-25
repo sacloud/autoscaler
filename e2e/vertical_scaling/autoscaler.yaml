@@ -1,21 +1,21 @@
 resources:
-  - type: ELB
-    name: "elb"
+  - type: Server
+    name: "server"
     selector:
-      names: ["autoscaler-e2e-vertical-scaling"]
-    resources:
-      - type: Server
-        name: "server"
-        selector:
-          tags: ["autoscaler-e2e-vertical-scaling"]
-          zones: ["is1a"]
-        shutdown_force: true
-        plans:
-          - core: 1
-            memory: 1
-          - core: 2
-            memory: 2
-          - core: 4
-            memory: 4
+      tags: ["autoscaler-e2e-vertical-scaling"]
+      zones: ["is1a"]
+    shutdown_force: true
+    plans:
+      - core: 1
+        memory: 1
+      - core: 2
+        memory: 2
+      - core: 4
+        memory: 4
+    parent:
+      type: ELB
+      name: "elb"
+      selector: "autoscaler-e2e-vertical-scaling"
+
 autoscaler:
   cooldown: 30

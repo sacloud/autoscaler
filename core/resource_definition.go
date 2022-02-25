@@ -33,23 +33,14 @@ type ResourceDefinition interface {
 	//
 	// TypeとSelectorを元にさくらのクラウドAPIを用いて実リソースを検索、Resourceを作成して返す
 	Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error)
-
-	// Children このリソースに対する子リソースを返す
-	Children() ResourceDefinitions
-}
-
-type ChildResourceDefinition interface {
-	Parent() ResourceDefinition
-	SetParent(parent ResourceDefinition)
 }
 
 // ResourceDefBase 全てのリソース定義が実装すべき基本プロパティ
 //
 // Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceDefBase struct {
-	TypeName string              `yaml:"type" validate:"required,oneof=DNS EnhancedLoadBalancer ELB GSLB LoadBalancer Router Server ServerGroup"`
-	DefName  string              `yaml:"name" validate:"required"`
-	children ResourceDefinitions `yaml:"-"`
+	TypeName string `yaml:"type" validate:"required,oneof=EnhancedLoadBalancer ELB Router Server ServerGroup"`
+	DefName  string `yaml:"name" validate:"required"`
 }
 
 func (r *ResourceDefBase) Type() ResourceTypes {
@@ -62,24 +53,13 @@ func (r *ResourceDefBase) Type() ResourceTypes {
 		return ResourceTypeServerGroupInstance
 	case ResourceTypeELB.String(), "ELB":
 		return ResourceTypeELB
-	case ResourceTypeGSLB.String():
-		return ResourceTypeGSLB
-	case ResourceTypeDNS.String():
-		return ResourceTypeDNS
-	case ResourceTypeRouter.String():
-		return ResourceTypeRouter
 	case ResourceTypeLoadBalancer.String():
 		return ResourceTypeLoadBalancer
+	default:
+		panic("invalid typename: " + r.TypeName)
 	}
-
-	return ResourceTypeUnknown
 }
 
 func (r *ResourceDefBase) Name() string {
 	return r.DefName
-}
-
-// Children 子リソースを返す(自身は含まない)
-func (r *ResourceDefBase) Children() ResourceDefinitions {
-	return r.children
 }

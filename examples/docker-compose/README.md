@@ -21,7 +21,7 @@ $ export GF_SECURITY_ADMIN_PASSWORD="your-password"
 次にAutoScalerのコンフィギュレーションを作成/編集します。
 
 ```bash
-$ autoscaler core example > autoscaler/autoscaler.yaml
+$ autoscaler example > autoscaler/autoscaler.yaml
 $ vi autoscaler/autoscaler.yaml
 ```
 

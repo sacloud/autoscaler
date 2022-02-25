@@ -77,7 +77,6 @@ func (r *ResourceRouter) Compute(ctx *RequestContext, refresh bool) (Computed, e
 		instruction: handler.ResourceInstructions_NOOP,
 		router:      &sacloud.Internet{},
 		zone:        r.zone,
-		resource:    r,
 	}
 	if err := mapconvDecoder.ConvertTo(r.router, computed.router); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)

@@ -52,20 +52,11 @@ func (r *ResourceELB) Compute(ctx *RequestContext, refresh bool) (Computed, erro
 			return nil, err
 		}
 	}
-	var parent Computed
-	if r.parent != nil {
-		pc, err := r.parent.Compute(ctx, false)
-		if err != nil {
-			return nil, err
-		}
-		parent = pc
-	}
 
 	computed := &computedELB{
 		instruction: handler.ResourceInstructions_NOOP,
 		elb:         &sacloud.ProxyLB{},
-		resource:    r,
-		parent:      parent,
+		// TODO Parentの設定
 	}
 	if err := mapconvDecoder.ConvertTo(r.elb, computed.elb); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)

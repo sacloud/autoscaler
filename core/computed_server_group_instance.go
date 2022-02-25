@@ -31,8 +31,8 @@ type computedServerGroupInstance struct {
 
 	networkInterfaces []*handler.ServerGroupInstance_NIC
 
-	parent   Computed                     // 親Resourceのcomputed
-	resource *ResourceServerGroupInstance // 算出元のResourceへの参照
+	parent        Computed // 親Resourceのcomputed
+	shutdownForce bool
 }
 
 func (c *computedServerGroupInstance) ID() string {
@@ -97,7 +97,7 @@ func (c *computedServerGroupInstance) computeResource() *handler.Resource {
 					Tags:              c.server.Tags,
 					Description:       c.server.Description,
 					IconId:            c.server.IconID.String(),
-					ShutdownForce:     c.resource.def.ShutdownForce,
+					ShutdownForce:     c.shutdownForce,
 				},
 			},
 		}

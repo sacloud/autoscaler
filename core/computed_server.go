@@ -20,13 +20,13 @@ import (
 )
 
 type computedServer struct {
-	instruction handler.ResourceInstructions
-	server      *sacloud.Server
-	zone        string
-	newCPU      int
-	newMemory   int
-	parent      Computed        // 親Resourceのcomputed
-	resource    *ResourceServer // 算出元のResourceへの参照
+	instruction   handler.ResourceInstructions
+	server        *sacloud.Server
+	zone          string
+	newCPU        int
+	newMemory     int
+	parent        Computed // 親Resourceのcomputed
+	shutdownForce bool
 }
 
 func (c *computedServer) ID() string {
@@ -72,7 +72,7 @@ func (c *computedServer) Current() *handler.Resource {
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
 					AssignedNetwork: c.assignedNetwork(),
 					Parent:          c.parents(),
-					ShutdownForce:   c.resource.def.ShutdownForce,
+					ShutdownForce:   c.shutdownForce,
 				},
 			},
 		}
@@ -93,7 +93,7 @@ func (c *computedServer) Desired() *handler.Resource {
 					DedicatedCpu:    c.server.ServerPlanCommitment.IsDedicatedCPU(),
 					AssignedNetwork: c.assignedNetwork(),
 					Parent:          c.parents(),
-					ShutdownForce:   c.resource.def.ShutdownForce,
+					ShutdownForce:   c.shutdownForce,
 				},
 			},
 		}

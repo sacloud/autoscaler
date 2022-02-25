@@ -39,19 +39,11 @@ type ResourceDefServerGroup struct {
 	Template      *ServerGroupInstanceTemplate `yaml:"template" validate:"required"`
 	ShutdownForce bool                         `yaml:"shutdown_force"`
 
-	parent ResourceDefinition
+	ParentDef *ParentResourceDef `yaml:"parent"`
 }
 
 func (d *ResourceDefServerGroup) String() string {
 	return fmt.Sprintf("Zone: %s, Name: %s", d.Zone, d.Name())
-}
-
-func (d *ResourceDefServerGroup) Parent() ResourceDefinition {
-	return d.parent
-}
-
-func (d *ResourceDefServerGroup) SetParent(parent ResourceDefinition) {
-	d.parent = parent
 }
 
 func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
@@ -62,6 +54,9 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud
 		}
 	}
 	errors = multierror.Append(errors, d.Template.Validate(ctx, apiClient, d)...)
+	if d.ParentDef != nil {
+		errors = multierror.Append(errors, d.ParentDef.Validate(ctx, apiClient, d.Zone)...)
+	}
 
 	// set prefix
 	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s", d.Type().String())).(*multierror.Error)
@@ -84,6 +79,8 @@ func (d *ResourceDefServerGroup) resourcePlans() ResourcePlans {
 }
 
 func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+	ctx = ctx.WithZone(d.Zone)
+
 	// 現在のリソースを取得
 	cloudResources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
@@ -94,6 +91,18 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 	plan, err := d.desiredPlan(ctx, len(cloudResources))
 	if err != nil {
 		return nil, err
+	}
+
+	var parent Resource
+	if d.ParentDef != nil {
+		parents, err := d.ParentDef.Compute(ctx, apiClient)
+		if err != nil {
+			return nil, err
+		}
+		if len(parents) != 1 {
+			return nil, fmt.Errorf("got invalid parent resources: %#+v", parents)
+		}
+		parent = parents[0]
 	}
 
 	var resources Resources
@@ -107,6 +116,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 			zone:        d.Zone,
 			def:         d,
 			instruction: handler.ResourceInstructions_NOOP,
+			parent:      parent,
 		}
 		instance.indexInGroup = d.resourceIndex(instance)
 		if i >= plan.Size {
@@ -142,6 +152,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 			def:          d,
 			instruction:  handler.ResourceInstructions_CREATE,
 			indexInGroup: index,
+			parent:       parent,
 		})
 	}
 	return resources, nil

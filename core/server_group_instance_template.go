@@ -74,7 +74,7 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient sa
 	}
 
 	for i, nic := range s.NetworkInterfaces {
-		errors = multierror.Append(errors, nic.Validate(def.parent, def.MaxSize, i)...)
+		errors = multierror.Append(errors, nic.Validate(def.ParentDef, def.MaxSize, i)...)
 	}
 
 	return errors.Errors
@@ -265,7 +265,7 @@ type ServerGroupNICTemplate struct {
 	ExposeInfo       *ServerGroupNICMetadata `yaml:"expose"`
 }
 
-func (t *ServerGroupNICTemplate) Validate(parent ResourceDefinition, maxServerNum, nicIndex int) []error {
+func (t *ServerGroupNICTemplate) Validate(parent *ParentResourceDef, maxServerNum, nicIndex int) []error {
 	if errs := validate.StructWithMultiError(t); len(errs) > 0 {
 		return errs
 	}
@@ -389,7 +389,7 @@ type ServerGroupNICMetadata struct {
 	RecordTTL int `yaml:"record_ttl" validate:"omitempty,min=10,max=3600000"`
 }
 
-func (m *ServerGroupNICMetadata) Validate(parent ResourceDefinition, nicIndex int) []error {
+func (m *ServerGroupNICMetadata) Validate(parent *ParentResourceDef, nicIndex int) []error {
 	if errs := validate.StructWithMultiError(m); len(errs) > 0 {
 		return errs
 	}
@@ -412,7 +412,7 @@ func (m *ServerGroupNICMetadata) Validate(parent ResourceDefinition, nicIndex in
 	}
 
 	if parent != nil {
-		format := "%s: can only be specified if parent resource type is %s"
+		format := "%s: can't specify if parent resource type is %s"
 		requiredFormat := "%s: required when parent is %s"
 
 		switch parent.Type() {

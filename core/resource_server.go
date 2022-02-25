@@ -40,9 +40,10 @@ type ResourceServer struct {
 	server    *sacloud.Server
 	def       *ResourceDefServer
 	zone      string
+	parent    Resource
 }
 
-func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefServer, zone string, server *sacloud.Server) (*ResourceServer, error) {
+func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefServer, parent Resource, zone string, server *sacloud.Server) (*ResourceServer, error) {
 	return &ResourceServer{
 		ResourceBase: &ResourceBase{
 			resourceType: ResourceTypeServer,
@@ -51,6 +52,7 @@ func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *Re
 		zone:      zone,
 		server:    server,
 		def:       def,
+		parent:    parent,
 	}, nil
 }
 
@@ -61,27 +63,32 @@ func (r *ResourceServer) String() string {
 	return fmt.Sprintf("{Type: %s, Zone: %s, ID: %s, Name: %s}", r.Type(), r.zone, r.server.ID, r.server.Name)
 }
 
+func (r *ResourceServer) Parent() Resource {
+	return r.parent
+}
+
 func (r *ResourceServer) Compute(ctx *RequestContext, refresh bool) (Computed, error) {
 	if refresh {
 		if err := r.refresh(ctx); err != nil {
 			return nil, err
 		}
 	}
-	var parent Computed
+
+	var parentComputed Computed
 	if r.parent != nil {
-		pc, err := r.parent.Compute(ctx, false)
+		c, err := r.parent.Compute(ctx, refresh)
 		if err != nil {
 			return nil, err
 		}
-		parent = pc
+		parentComputed = c
 	}
 
 	computed := &computedServer{
-		instruction: handler.ResourceInstructions_NOOP,
-		server:      &sacloud.Server{},
-		zone:        r.zone,
-		resource:    r,
-		parent:      parent,
+		instruction:   handler.ResourceInstructions_NOOP,
+		server:        &sacloud.Server{},
+		zone:          r.zone,
+		shutdownForce: r.def.ShutdownForce,
+		parent:        parentComputed,
 	}
 	if err := mapconvDecoder.ConvertTo(r.server, computed.server); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)

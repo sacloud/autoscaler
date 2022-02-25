@@ -16,7 +16,6 @@ package core
 
 import (
 	"github.com/sacloud/autoscaler/commands/core/example"
-	"github.com/sacloud/autoscaler/commands/core/handlers"
 	"github.com/sacloud/autoscaler/commands/core/resources"
 	"github.com/sacloud/autoscaler/commands/core/start"
 	"github.com/sacloud/autoscaler/commands/core/validate"
@@ -28,16 +27,25 @@ var Command = &cobra.Command{
 	Aliases:       []string{"server"},
 	Short:         "A set of sub commands to manage autoscaler's core server",
 	SilenceErrors: true,
+
+	// Memo: 互換性維持用(since v0.5) v1.0リリース時に除去する
+	// coreのサブコマンド群はroot直下に配置するが、互換性維持のためcoreサブコマンド配下にも配置する。
+	// このときにcoreサブコマンド自体を非表示にするようにHiddenを設定しておく
+	Hidden: true,
 }
 
 var subCommands = []*cobra.Command{
 	example.Command,
 	start.Command,
-	handlers.Command,
 	validate.Command,
 	resources.Command,
 }
 
 func init() {
-	Command.AddCommand(subCommands...)
+	AddSubCommandsTo(Command)
+}
+
+// AddSubCommandsTo 指定のコマンドに対しサブコマンドを登録する
+func AddSubCommandsTo(cmd *cobra.Command) {
+	cmd.AddCommand(subCommands...)
 }
