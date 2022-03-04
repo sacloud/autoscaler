@@ -16,6 +16,6 @@ jobs:
         run: git fetch --prune --unshallow
 
       - name: lint a document with textlint
-        uses: ./.github/actions/textlint
+        uses: sacloud/textlint-action@v0.0.1
         with:
           working-directory: ${{ matrix.working-directory }}

@@ -97,14 +97,9 @@ fmt:
 fmt-proto:
 	find $(CURDIR)/protos/ -name "*.proto" | xargs clang-format -i
 
-.PHONY: build-textlint
-build-textlint:
-	@echo "building sacloud/textlint:local"
-	@docker build -t sacloud/textlint:local .github/actions/textlint
-
 .PHONY: textlint
 textlint:
-	@docker run -it --rm -v $$PWD:/work -w /work sacloud/textlint:local .
+	@docker run -it --rm -v $$PWD:/work -w /work ghcr.io/sacloud/textlint-action:v0.0.1 .
 
 .PHONY: go-licenses-check
 go-licenses-check:
