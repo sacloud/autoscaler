@@ -368,8 +368,8 @@ github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb
 github.com/sacloud/ftps v1.1.0/go.mod h1:h4awhOi3PEyhKLj1FpXjoVV5yVkmRUU+d5L95EwX2JU=
 github.com/sacloud/go-http v0.0.4 h1:+vgx/uCctcGiHMe8jE+qirMKd3+d73MNZXK7nrUo0po=
 github.com/sacloud/go-http v0.0.4/go.mod h1:aYTXNuAnPmD6Ar3ktDaR1gPxJCPv2CqpppcYciy1hmo=
-github.com/sacloud/libsacloud/v2 v2.32.2 h1:KfBp6kyIZ9dm9kPK61QWukstkQK4Bs0ATFPcnJlxQJA=
-github.com/sacloud/libsacloud/v2 v2.32.2/go.mod h1:QDsX+iHidP+o/AfOHvl44oeQew3cdfgoswqP2dQy2tk=
+github.com/sacloud/libsacloud/v2 v2.32.3 h1:MwgQcmpsWLc+Zx5DQ3iKdW9GOPfs/V4SnhaR7MlaFQE=
+github.com/sacloud/libsacloud/v2 v2.32.3/go.mod h1:QDsX+iHidP+o/AfOHvl44oeQew3cdfgoswqP2dQy2tk=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
 github.com/sebdah/goldie v1.0.0/go.mod h1:jXP4hmWywNEwZzhMuv2ccnqTSFpuq8iyQhtQdkkZBH4=
 github.com/sergi/go-diff v1.1.0/go.mod h1:STckp+ISIX8hZLjrqAeVduY0gWCT9IjLuqbuNXdaHfM=
