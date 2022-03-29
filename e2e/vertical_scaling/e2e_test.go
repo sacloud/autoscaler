@@ -32,8 +32,8 @@ import (
 	"time"
 
 	"github.com/sacloud/autoscaler/e2e"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/search"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/search"
 )
 
 const (
@@ -276,10 +276,10 @@ func teardown() {
 	}
 }
 
-func fetchSakuraCloudServer() (*sacloud.Server, error) {
-	serverOp := sacloud.NewServerOp(e2e.SacloudAPICaller)
+func fetchSakuraCloudServer() (*iaas.Server, error) {
+	serverOp := iaas.NewServerOp(e2e.SacloudAPICaller)
 
-	found, err := serverOp.Find(context.Background(), "is1a", &sacloud.FindCondition{
+	found, err := serverOp.Find(context.Background(), "is1a", &iaas.FindCondition{
 		Filter: search.Filter{
 			search.Key("Name"): search.PartialMatch("autoscaler-e2e-vertical-scaling"),
 		},
@@ -295,8 +295,8 @@ func fetchSakuraCloudServer() (*sacloud.Server, error) {
 }
 
 func waitProxyLBAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error {
-	elbOp := sacloud.NewProxyLBOp(e2e.SacloudAPICaller)
-	found, err := elbOp.Find(context.Background(), &sacloud.FindCondition{
+	elbOp := iaas.NewProxyLBOp(e2e.SacloudAPICaller)
+	found, err := elbOp.Find(context.Background(), &iaas.FindCondition{
 		Filter: search.Filter{
 			search.Key("Name"): search.PartialMatch("autoscaler-e2e-vertical-scaling"),
 		},

@@ -16,12 +16,12 @@ package core
 
 import (
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type computedServer struct {
 	instruction   handler.ResourceInstructions
-	server        *sacloud.Server
+	server        *iaas.Server
 	zone          string
 	newCPU        int
 	newMemory     int

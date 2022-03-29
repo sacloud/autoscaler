@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type ResourceDefServer struct {
@@ -49,7 +49,7 @@ func (d *ResourceDefServer) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *ResourceDefServer) Validate(ctx context.Context, apiClient iaas.APICaller) []error {
 	errors := &multierror.Error{}
 
 	if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
@@ -71,7 +71,7 @@ func (d *ResourceDefServer) Validate(ctx context.Context, apiClient sacloud.APIC
 	return errors.Errors
 }
 
-func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient iaas.APICaller) []error {
 	if len(d.Plans) > 0 {
 		if len(d.Plans) == 1 {
 			return []error{fmt.Errorf("at least two plans must be specified")}
@@ -79,7 +79,7 @@ func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient sacloud
 
 		errors := &multierror.Error{}
 		for _, zone := range d.Selector.Zones {
-			availablePlans, err := sacloud.NewServerPlanOp(apiClient).Find(ctx, zone, nil)
+			availablePlans, err := iaas.NewServerPlanOp(apiClient).Find(ctx, zone, nil)
 			if err != nil {
 				return []error{fmt.Errorf("validating server plan failed: %s", err)}
 			}
@@ -115,7 +115,7 @@ func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient sacloud
 	return nil
 }
 
-func (d *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+func (d *ResourceDefServer) Compute(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error) {
 	cloudResources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -147,8 +147,8 @@ func (d *ResourceDefServer) Compute(ctx *RequestContext, apiClient sacloud.APICa
 	return resources, nil
 }
 
-func (d *ResourceDefServer) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sakuraCloudServer, error) {
-	serverOp := sacloud.NewServerOp(apiClient)
+func (d *ResourceDefServer) findCloudResources(ctx context.Context, apiClient iaas.APICaller) ([]*sakuraCloudServer, error) {
+	serverOp := iaas.NewServerOp(apiClient)
 	selector := d.Selector
 	var results []*sakuraCloudServer
 
@@ -169,6 +169,6 @@ func (d *ResourceDefServer) findCloudResources(ctx context.Context, apiClient sa
 }
 
 type sakuraCloudServer struct {
-	*sacloud.Server
+	*iaas.Server
 	zone string
 }

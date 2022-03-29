@@ -14,7 +14,7 @@
 
 package core
 
-import "github.com/sacloud/libsacloud/v2/sacloud"
+import "github.com/sacloud/iaas-api-go"
 
 type RouterPlan struct {
 	Name      string `yaml:"name"`
@@ -25,14 +25,14 @@ func (p *RouterPlan) PlanName() string {
 	return p.Name
 }
 func (p *RouterPlan) Equals(resource interface{}) bool {
-	v, ok := resource.(*sacloud.Internet)
+	v, ok := resource.(*iaas.Internet)
 	if !ok {
 		return false
 	}
 	return v.BandWidthMbps == p.BandWidth
 }
 func (p *RouterPlan) LessThan(resource interface{}) bool {
-	v, ok := resource.(*sacloud.Internet)
+	v, ok := resource.(*iaas.Internet)
 	if !ok {
 		return false
 	}

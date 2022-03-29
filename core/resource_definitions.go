@@ -18,18 +18,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sacloud/autoscaler/request"
-
 	"github.com/hashicorp/go-multierror"
-
+	"github.com/sacloud/autoscaler/request"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 // ResourceDefinitions リソースのリスト
 type ResourceDefinitions []ResourceDefinition
 
-func (rds *ResourceDefinitions) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (rds *ResourceDefinitions) Validate(ctx context.Context, apiClient iaas.APICaller) []error {
 	var errors []error
 	names := make(map[string]struct{})
 
@@ -99,7 +97,7 @@ func (rds *ResourceDefinitions) FilterByResourceName(name string) ResourceDefini
 	return nil
 }
 
-func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers) {
+func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient iaas.APICaller, handlers Handlers) {
 	job := ctx.Job()
 	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) // nolint
@@ -114,7 +112,7 @@ func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient sacloud
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_DONE) // nolint
 }
 
-func (rds *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient sacloud.APICaller, handlers Handlers, defs ResourceDefinitions) error {
+func (rds *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient iaas.APICaller, handlers Handlers, defs ResourceDefinitions) error {
 	for _, def := range defs {
 		resources, err := def.Compute(ctx, apiClient)
 		if err != nil {

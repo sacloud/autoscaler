@@ -19,8 +19,8 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 // ServersHandler ELB配下のサーバのアタッチ/デタッチを行うためのハンドラ
@@ -127,7 +127,7 @@ func (h *ServersHandler) attachOrDetach(ctx *handlers.HandlerContext, server *ha
 		return err
 	}
 
-	elbOp := sacloud.NewProxyLBOp(h.APICaller())
+	elbOp := iaas.NewProxyLBOp(h.APICaller())
 	current, err := elbOp.Read(ctx, types.StringID(elb.Id))
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func (h *ServersHandler) attachOrDetach(ctx *handlers.HandlerContext, server *ha
 		return err
 	}
 
-	if _, err := elbOp.UpdateSettings(ctx, types.StringID(elb.Id), &sacloud.ProxyLBUpdateSettingsRequest{
+	if _, err := elbOp.UpdateSettings(ctx, types.StringID(elb.Id), &iaas.ProxyLBUpdateSettingsRequest{
 		HealthCheck:   current.HealthCheck,
 		SorryServer:   current.SorryServer,
 		BindPorts:     current.BindPorts,
@@ -185,7 +185,7 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 		return err
 	}
 
-	elbOp := sacloud.NewProxyLBOp(h.APICaller())
+	elbOp := iaas.NewProxyLBOp(h.APICaller())
 	current, err := elbOp.Read(ctx, types.StringID(elb.Id))
 	if err != nil {
 		return err
@@ -214,7 +214,7 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 			}
 		}
 		if !exist {
-			current.Servers = append(current.Servers, &sacloud.ProxyLBServer{
+			current.Servers = append(current.Servers, &iaas.ProxyLBServer{
 				IPAddress:   ip,
 				Port:        port,
 				ServerGroup: nic.ExposeInfo.ServerGroupName,
@@ -236,7 +236,7 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
 			return err
 		}
-		_, err := elbOp.UpdateSettings(ctx, current.ID, &sacloud.ProxyLBUpdateSettingsRequest{
+		_, err := elbOp.UpdateSettings(ctx, current.ID, &iaas.ProxyLBUpdateSettingsRequest{
 			HealthCheck:   current.HealthCheck,
 			SorryServer:   current.SorryServer,
 			BindPorts:     current.BindPorts,
@@ -264,7 +264,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 		return err
 	}
 
-	elbOp := sacloud.NewProxyLBOp(h.APICaller())
+	elbOp := iaas.NewProxyLBOp(h.APICaller())
 	current, err := elbOp.Read(ctx, types.StringID(elb.Id))
 	if err != nil {
 		return err
@@ -279,7 +279,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 	}
 
 	shouldUpdate := false
-	var servers []*sacloud.ProxyLBServer
+	var servers []*iaas.ProxyLBServer
 	fn := func(ip string, port int) error {
 		for _, s := range current.Servers {
 			if s.IPAddress == ip && s.Port == port {
@@ -302,7 +302,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
 			return err
 		}
-		_, err := elbOp.UpdateSettings(ctx, current.ID, &sacloud.ProxyLBUpdateSettingsRequest{
+		_, err := elbOp.UpdateSettings(ctx, current.ID, &iaas.ProxyLBUpdateSettingsRequest{
 			HealthCheck:   current.HealthCheck,
 			SorryServer:   current.SorryServer,
 			BindPorts:     current.BindPorts,

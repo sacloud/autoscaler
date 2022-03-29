@@ -16,12 +16,12 @@ package core
 
 import (
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type computedELB struct {
 	instruction handler.ResourceInstructions
-	elb         *sacloud.ProxyLB
+	elb         *iaas.ProxyLB
 	newCPS      int
 	parent      Computed // 親リソースのComputed
 }

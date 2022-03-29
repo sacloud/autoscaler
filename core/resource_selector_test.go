@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	"github.com/goccy/go-yaml"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/search"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/search"
+	"github.com/sacloud/iaas-api-go/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -112,14 +112,14 @@ func TestResourceSelector_findCondition(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   *sacloud.FindCondition
+		want   *iaas.FindCondition
 	}{
 		{
 			name: "ID",
 			fields: fields{
 				ID: types.ID(1),
 			},
-			want: &sacloud.FindCondition{
+			want: &iaas.FindCondition{
 				Filter: search.Filter{
 					search.Key("ID"): search.ExactMatch(types.ID(1).String()),
 				},
@@ -130,7 +130,7 @@ func TestResourceSelector_findCondition(t *testing.T) {
 			fields: fields{
 				Names: []string{"names"},
 			},
-			want: &sacloud.FindCondition{
+			want: &iaas.FindCondition{
 				Filter: search.Filter{
 					search.Key("Name"): search.PartialMatch("names"),
 				},
@@ -141,7 +141,7 @@ func TestResourceSelector_findCondition(t *testing.T) {
 			fields: fields{
 				Tags: []string{"tags"},
 			},
-			want: &sacloud.FindCondition{
+			want: &iaas.FindCondition{
 				Filter: search.Filter{
 					search.Key("Tags.Name"): search.PartialMatch("tags"),
 				},

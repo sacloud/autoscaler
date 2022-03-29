@@ -18,15 +18,15 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type ResourceServerGroupInstance struct {
 	*ResourceBase
 
-	apiClient    sacloud.APICaller
-	server       *sacloud.Server
+	apiClient    iaas.APICaller
+	server       *iaas.Server
 	zone         string
 	def          *ResourceDefServerGroup
 	instruction  handler.ResourceInstructions
@@ -95,7 +95,7 @@ func (r *ResourceServerGroupInstance) refresh(ctx *RequestContext) error {
 		return nil
 	}
 
-	serverOp := sacloud.NewServerOp(r.apiClient)
+	serverOp := iaas.NewServerOp(r.apiClient)
 	// サーバが存在したらIDで検索する
 	if !r.server.ID.IsEmpty() {
 		server, err := serverOp.Read(ctx, r.zone, r.server.ID)
@@ -170,7 +170,7 @@ func (r *ResourceServerGroupInstance) computeDisks(ctx *RequestContext) ([]*hand
 	if r.instruction != handler.ResourceInstructions_CREATE {
 		// 既存ディスクの情報を反映する
 		for _, disk := range r.server.Disks {
-			// *sacloud.Server#Disksから参照できない項目は空のままとしておく(必要に応じてハンドラ側でAPIを叩く)
+			// *iaas.Server#Disksから参照できない項目は空のままとしておく(必要に応じてハンドラ側でAPIを叩く)
 			disks = append(disks, &handler.ServerGroupInstance_Disk{
 				Id:              disk.ID.String(),
 				Zone:            r.zone,
@@ -286,7 +286,7 @@ func (r *ResourceServerGroupInstance) findNetworkUpstream(ctx *RequestContext, u
 		return "", fmt.Errorf("network interface: upstream has invalid value: %#+v", upstream)
 	}
 
-	found, err := sacloud.NewSwitchOp(r.apiClient).Find(ctx, r.zone, selector.findCondition())
+	found, err := iaas.NewSwitchOp(r.apiClient).Find(ctx, r.zone, selector.findCondition())
 	if err != nil {
 		return "", err
 	}

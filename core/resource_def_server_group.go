@@ -21,9 +21,9 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/size"
 )
 
 type ResourceDefServerGroup struct {
@@ -46,7 +46,7 @@ func (d *ResourceDefServerGroup) String() string {
 	return fmt.Sprintf("Zone: %s, Name: %s", d.Zone, d.Name())
 }
 
-func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.APICaller) []error {
 	errors := &multierror.Error{}
 	for _, p := range d.Plans {
 		if !(d.MinSize <= p.Size && p.Size <= d.MaxSize) {
@@ -78,7 +78,7 @@ func (d *ResourceDefServerGroup) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error) {
 	ctx = ctx.WithZone(d.Zone)
 
 	// 現在のリソースを取得
@@ -136,7 +136,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient sacloud.
 				resourceType: ResourceTypeServerGroupInstance,
 			},
 			apiClient: apiClient,
-			server: &sacloud.Server{
+			server: &iaas.Server{
 				Name:                 serverName,
 				Tags:                 d.Template.Tags,
 				Description:          d.Template.Description,
@@ -208,8 +208,8 @@ func (d *ResourceDefServerGroup) determineServerName(resources Resources) (strin
 	return d.serverNameByIndex(len(resources)), len(resources)
 }
 
-func (d *ResourceDefServerGroup) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.Server, error) {
-	serverOp := sacloud.NewServerOp(apiClient)
+func (d *ResourceDefServerGroup) findCloudResources(ctx context.Context, apiClient iaas.APICaller) ([]*iaas.Server, error) {
+	serverOp := iaas.NewServerOp(apiClient)
 	selector := &ResourceSelector{Names: []string{d.Name()}}
 	found, err := serverOp.Find(ctx, d.Zone, selector.findCondition())
 	if err != nil {

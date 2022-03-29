@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/helper/query"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/query"
 )
 
 // DefaultRouterPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
@@ -43,13 +43,13 @@ var DefaultRouterPlans = ResourcePlans{
 type ResourceRouter struct {
 	*ResourceBase
 
-	apiClient sacloud.APICaller
-	router    *sacloud.Internet
+	apiClient iaas.APICaller
+	router    *iaas.Internet
 	def       *ResourceDefRouter
 	zone      string
 }
 
-func NewResourceRouter(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefRouter, zone string, router *sacloud.Internet) (*ResourceRouter, error) {
+func NewResourceRouter(ctx *RequestContext, apiClient iaas.APICaller, def *ResourceDefRouter, zone string, router *iaas.Internet) (*ResourceRouter, error) {
 	return &ResourceRouter{
 		ResourceBase: &ResourceBase{resourceType: ResourceTypeRouter},
 		apiClient:    apiClient,
@@ -75,7 +75,7 @@ func (r *ResourceRouter) Compute(ctx *RequestContext, refresh bool) (Computed, e
 
 	computed := &computedRouter{
 		instruction: handler.ResourceInstructions_NOOP,
-		router:      &sacloud.Internet{},
+		router:      &iaas.Internet{},
 		zone:        r.zone,
 	}
 	if err := mapconvDecoder.ConvertTo(r.router, computed.router); err != nil {

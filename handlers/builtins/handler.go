@@ -18,7 +18,7 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/log"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 // Handler builtinハンドラーをラップし、リクエスト受付時のログ出力を担当するハンドラー
@@ -44,14 +44,14 @@ func (h *Handler) SetLogger(logger *log.Logger) {
 	h.Builtin.SetLogger(logger)
 }
 
-func (h *Handler) APICaller() sacloud.APICaller {
+func (h *Handler) APICaller() iaas.APICaller {
 	if h, ok := h.Builtin.(SakuraCloudAPICaller); ok {
 		return h.APICaller()
 	}
 	return nil
 }
 
-func (h *Handler) SetAPICaller(caller sacloud.APICaller) {
+func (h *Handler) SetAPICaller(caller iaas.APICaller) {
 	if h, ok := h.Builtin.(SakuraCloudAPICaller); ok {
 		h.SetAPICaller(caller)
 	}

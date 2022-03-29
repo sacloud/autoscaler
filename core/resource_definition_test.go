@@ -17,7 +17,7 @@ package core
 import (
 	"testing"
 
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 func TestMultiZoneSelector_Validate(t *testing.T) {

@@ -19,8 +19,8 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2/helper/plans"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go/helper/plans"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type VerticalScaleHandler struct {

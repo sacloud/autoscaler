@@ -19,8 +19,8 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 // ServersHandler サーバのIPアドレスをAレコード登録/削除するためのハンドラ
@@ -97,7 +97,7 @@ func (h *ServersHandler) addRecord(ctx *handlers.HandlerContext, instance *handl
 		return err
 	}
 
-	dnsOp := sacloud.NewDNSOp(h.APICaller())
+	dnsOp := iaas.NewDNSOp(h.APICaller())
 	current, err := dnsOp.Read(ctx, types.StringID(dns.Id))
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func (h *ServersHandler) addRecord(ctx *handlers.HandlerContext, instance *handl
 		}
 	}
 	if !exist {
-		current.Records = append(current.Records, &sacloud.DNSRecord{
+		current.Records = append(current.Records, &iaas.DNSRecord{
 			Name:  exposeInfo.RecordName,
 			Type:  types.DNSRecordTypes.A,
 			RData: nic.AssignedNetwork.IpAddress,
@@ -143,7 +143,7 @@ func (h *ServersHandler) addRecord(ctx *handlers.HandlerContext, instance *handl
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
 			return err
 		}
-		_, err := dnsOp.UpdateSettings(ctx, current.ID, &sacloud.DNSUpdateSettingsRequest{
+		_, err := dnsOp.UpdateSettings(ctx, current.ID, &iaas.DNSUpdateSettingsRequest{
 			Records:      current.Records,
 			SettingsHash: current.SettingsHash,
 		})
@@ -163,7 +163,7 @@ func (h *ServersHandler) deleteRecord(ctx *handlers.HandlerContext, instance *ha
 		return err
 	}
 
-	dnsOp := sacloud.NewDNSOp(h.APICaller())
+	dnsOp := iaas.NewDNSOp(h.APICaller())
 	current, err := dnsOp.Read(ctx, types.StringID(dns.Id))
 	if err != nil {
 		return err
@@ -179,7 +179,7 @@ func (h *ServersHandler) deleteRecord(ctx *handlers.HandlerContext, instance *ha
 	exposeInfo := nic.ExposeInfo
 
 	shouldUpdate := false
-	var records []*sacloud.DNSRecord
+	var records []*iaas.DNSRecord
 	for _, r := range current.Records {
 		if r.Type == types.DNSRecordTypes.A && r.Name == exposeInfo.RecordName && r.RData == nic.AssignedNetwork.IpAddress {
 			shouldUpdate = true
@@ -196,7 +196,7 @@ func (h *ServersHandler) deleteRecord(ctx *handlers.HandlerContext, instance *ha
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
 			return err
 		}
-		_, err := dnsOp.UpdateSettings(ctx, current.ID, &sacloud.DNSUpdateSettingsRequest{
+		_, err := dnsOp.UpdateSettings(ctx, current.ID, &iaas.DNSUpdateSettingsRequest{
 			Records:      records,
 			SettingsHash: current.SettingsHash,
 		})

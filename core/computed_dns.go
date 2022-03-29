@@ -16,12 +16,12 @@ package core
 
 import (
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type computedDNS struct {
 	instruction handler.ResourceInstructions
-	dns         *sacloud.DNS
+	dns         *iaas.DNS
 }
 
 func (c *computedDNS) ID() string {

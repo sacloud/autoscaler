@@ -20,9 +20,9 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/search"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/search"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type MultiZoneSelector struct {
@@ -47,7 +47,7 @@ func (rs *MultiZoneSelector) Validate() error {
 
 	for _, zone := range rs.Zones {
 		exist := false
-		for _, z := range sacloud.SakuraCloudZones {
+		for _, z := range iaas.SakuraCloudZones {
 			if z == zone {
 				exist = true
 				break
@@ -74,8 +74,8 @@ func (rs *ResourceSelector) String() string {
 	return ""
 }
 
-func (rs *ResourceSelector) findCondition() *sacloud.FindCondition {
-	fc := &sacloud.FindCondition{
+func (rs *ResourceSelector) findCondition() *iaas.FindCondition {
+	fc := &iaas.FindCondition{
 		Filter: search.Filter{},
 	}
 	if !rs.ID.IsEmpty() {

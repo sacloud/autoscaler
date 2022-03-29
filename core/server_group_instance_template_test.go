@@ -21,7 +21,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go/types"
 	"github.com/stretchr/testify/require"
 )
 

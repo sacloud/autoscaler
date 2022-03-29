@@ -17,23 +17,23 @@ package core
 import (
 	"context"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type stubResourceDef struct {
 	*ResourceDefBase
-	computeFunc func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error)
+	computeFunc func(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error)
 }
 
 func (d *stubResourceDef) String() string {
 	return "stub"
 }
 
-func (d *stubResourceDef) Validate(_ context.Context, _ sacloud.APICaller) []error {
+func (d *stubResourceDef) Validate(_ context.Context, _ iaas.APICaller) []error {
 	return nil
 }
 
-func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error) {
 	if d.computeFunc != nil {
 		return d.computeFunc(ctx, apiClient)
 	}

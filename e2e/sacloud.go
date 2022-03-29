@@ -19,24 +19,27 @@ import (
 	"os"
 	"runtime"
 
+	client "github.com/sacloud/api-client-go"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2"
-	"github.com/sacloud/libsacloud/v2/helper/api"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/api"
 )
 
-var SacloudAPICaller = api.NewCaller(&api.CallerOptions{
-	AccessToken:       os.Getenv("SAKURACLOUD_ACCESS_TOKEN"),
-	AccessTokenSecret: os.Getenv("SAKURACLOUD_ACCESS_TOKEN_SECRET"),
-	UserAgent: fmt.Sprintf(
-		"sacloud/autoscaler/v%s/e2e-test (%s/%s; +https://github.com/sacloud/autoscaler) libsacloud/%s",
-		version.Version,
-		runtime.GOOS,
-		runtime.GOARCH,
-		libsacloud.Version,
-	),
-	HTTPRequestTimeout:   300,
-	HTTPRequestRateLimit: 10,
-	RetryMax:             10,
-	TraceAPI:             os.Getenv("SAKURACLOUD_TRACE") != "",
-	TraceHTTP:            os.Getenv("SAKURACLOUD_TRACE") != "",
+var SacloudAPICaller = api.NewCallerWithOptions(&api.CallerOptions{
+	Options: &client.Options{
+		AccessToken:       os.Getenv("SAKURACLOUD_ACCESS_TOKEN"),
+		AccessTokenSecret: os.Getenv("SAKURACLOUD_ACCESS_TOKEN_SECRET"),
+		UserAgent: fmt.Sprintf(
+			"sacloud/autoscaler/v%s/e2e-test (%s/%s; +https://github.com/sacloud/autoscaler) %s",
+			version.Version,
+			runtime.GOOS,
+			runtime.GOARCH,
+			iaas.DefaultUserAgent,
+		),
+		HttpRequestTimeout:   300,
+		HttpRequestRateLimit: 10,
+		RetryMax:             10,
+		Trace:                os.Getenv("SAKURACLOUD_TRACE") != "",
+	},
+	TraceAPI: os.Getenv("SAKURACLOUD_TRACE") != "",
 })

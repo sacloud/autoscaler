@@ -25,10 +25,10 @@ import (
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/libsacloud/v2/helper/query"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/query"
+	"github.com/sacloud/iaas-api-go/ostype"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type ServerGroupInstanceTemplate struct {
@@ -48,7 +48,7 @@ type ServerGroupInstanceTemplate struct {
 }
 
 // Validate .
-func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient sacloud.APICaller, def *ResourceDefServerGroup) []error {
+func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient iaas.APICaller, def *ResourceDefServerGroup) []error {
 	if errs := validate.StructWithMultiError(s); len(errs) > 0 {
 		return errs
 	}
@@ -86,8 +86,8 @@ type ServerGroupInstancePlan struct {
 	DedicatedCPU bool `yaml:"dedicated_cpu"`
 }
 
-func (p *ServerGroupInstancePlan) Validate(ctx context.Context, apiClient sacloud.APICaller, zone string) error {
-	_, err := query.FindServerPlan(ctx, sacloud.NewServerPlanOp(apiClient), zone, &query.FindServerPlanRequest{
+func (p *ServerGroupInstancePlan) Validate(ctx context.Context, apiClient iaas.APICaller, zone string) error {
+	_, err := query.FindServerPlan(ctx, iaas.NewServerPlanOp(apiClient), zone, &query.FindServerPlanRequest{
 		CPU:        p.Core,
 		MemoryGB:   p.Memory,
 		Commitment: boolToCommitment(p.DedicatedCPU),
@@ -136,7 +136,7 @@ func (t *ServerGroupDiskEditTemplate) HostName(serverName string, index int) str
 	return fmt.Sprintf("%s-%03d", t.HostNamePrefix, index+1)
 }
 
-func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient sacloud.APICaller, zone string) []error {
+func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient iaas.APICaller, zone string) []error {
 	if errs := validate.StructWithMultiError(t); len(errs) > 0 {
 		return errs
 	}
@@ -162,10 +162,10 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient saclou
 	return errors.Errors
 }
 
-func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient sacloud.APICaller, zone string) (sourceArchiveID, sourceDiskID string, retErr error) {
+func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient iaas.APICaller, zone string) (sourceArchiveID, sourceDiskID string, retErr error) {
 	switch {
 	case t.OSType != "":
-		archive, err := query.FindArchiveByOSType(ctx, sacloud.NewArchiveOp(apiClient), zone, ostype.StrToOSType(t.OSType))
+		archive, err := query.FindArchiveByOSType(ctx, iaas.NewArchiveOp(apiClient), zone, ostype.StrToOSType(t.OSType))
 		if err != nil {
 			retErr = err
 			return
@@ -173,7 +173,7 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 		sourceArchiveID = archive.ID.String()
 		return
 	case t.SourceArchiveSelector != nil:
-		found, err := sacloud.NewArchiveOp(apiClient).Find(ctx, zone, t.SourceArchiveSelector.findCondition())
+		found, err := iaas.NewArchiveOp(apiClient).Find(ctx, zone, t.SourceArchiveSelector.findCondition())
 		if err != nil {
 			retErr = err
 			return
@@ -189,7 +189,7 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 		sourceArchiveID = found.Archives[0].ID.String()
 		return
 	case t.SourceDiskSelector != nil:
-		found, err := sacloud.NewDiskOp(apiClient).Find(ctx, zone, t.SourceDiskSelector.findCondition())
+		found, err := iaas.NewDiskOp(apiClient).Find(ctx, zone, t.SourceDiskSelector.findCondition())
 		if err != nil {
 			retErr = err
 			return

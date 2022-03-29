@@ -16,11 +16,11 @@ package core
 
 import (
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
-func assignedNetwork(nic *sacloud.InterfaceView, index int) *handler.NetworkInfo {
+func assignedNetwork(nic *iaas.InterfaceView, index int) *handler.NetworkInfo {
 	var ipAddress string
 	if nic.UpstreamType == types.UpstreamNetworkTypes.Shared {
 		ipAddress = nic.IPAddress

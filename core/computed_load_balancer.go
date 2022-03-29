@@ -16,12 +16,12 @@ package core
 
 import (
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type computedLoadBalancer struct {
 	instruction handler.ResourceInstructions
-	lb          *sacloud.LoadBalancer
+	lb          *iaas.LoadBalancer
 	zone        string
 }
 

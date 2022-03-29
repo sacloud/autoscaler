@@ -17,7 +17,7 @@ package core
 import (
 	"context"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 // ResourceDefinition Coreが扱うさくらのクラウド上のリソースを表す
@@ -27,12 +27,12 @@ type ResourceDefinition interface {
 	Type() ResourceTypes // リソースの型
 	Name() string
 	String() string
-	Validate(ctx context.Context, apiClient sacloud.APICaller) []error
+	Validate(ctx context.Context, apiClient iaas.APICaller) []error
 
 	// Compute 現在/あるべき姿を算出する
 	//
 	// TypeとSelectorを元にさくらのクラウドAPIを用いて実リソースを検索、Resourceを作成して返す
-	Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error)
+	Compute(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error)
 }
 
 // ResourceDefBase 全てのリソース定義が実装すべき基本プロパティ

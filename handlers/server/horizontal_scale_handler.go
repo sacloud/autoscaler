@@ -22,11 +22,11 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	diskBuilder "github.com/sacloud/libsacloud/v2/helper/builder/disk"
-	serverBuilder "github.com/sacloud/libsacloud/v2/helper/builder/server"
-	"github.com/sacloud/libsacloud/v2/helper/power"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/power"
+	"github.com/sacloud/iaas-api-go/types"
+	diskBuilder "github.com/sacloud/iaas-service-go/disk/builder"
+	serverBuilder "github.com/sacloud/iaas-service-go/server/builder"
 )
 
 type HorizontalScaleHandler struct {
@@ -106,7 +106,7 @@ func (h *HorizontalScaleHandler) createServer(ctx *handlers.HandlerContext, req 
 		return err
 	}
 
-	serverOp := sacloud.NewServerOp(h.APICaller())
+	serverOp := iaas.NewServerOp(h.APICaller())
 	createdServer, err := serverOp.Read(ctx, server.Zone, created.ServerID)
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (h *HorizontalScaleHandler) createServer(ctx *handlers.HandlerContext, req 
 		return err
 	}
 
-	diskOp := sacloud.NewDiskOp(h.APICaller())
+	diskOp := iaas.NewDiskOp(h.APICaller())
 	for i, d := range server.Disks {
 		editParameter, err := h.diskEditParameter(server, i)
 		if err != nil {
@@ -258,7 +258,7 @@ func (h *HorizontalScaleHandler) deleteServer(ctx *handlers.HandlerContext, req 
 		return err
 	}
 
-	serverOp := sacloud.NewServerOp(h.APICaller())
+	serverOp := iaas.NewServerOp(h.APICaller())
 	current, err := serverOp.Read(ctx, server.Zone, types.StringID(server.Id))
 	if err != nil {
 		return err
@@ -287,7 +287,7 @@ func (h *HorizontalScaleHandler) deleteServer(ctx *handlers.HandlerContext, req 
 		return err
 	}
 
-	if err := serverOp.DeleteWithDisks(ctx, server.Zone, current.ID, &sacloud.ServerDeleteWithDisksRequest{IDs: diskIDs}); err != nil {
+	if err := serverOp.DeleteWithDisks(ctx, server.Zone, current.ID, &iaas.ServerDeleteWithDisksRequest{IDs: diskIDs}); err != nil {
 		return err
 	}
 

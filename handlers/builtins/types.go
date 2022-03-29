@@ -14,23 +14,23 @@
 
 package builtins
 
-import "github.com/sacloud/libsacloud/v2/sacloud"
+import "github.com/sacloud/iaas-api-go"
 
 // SakuraCloudAPICaller さくらのクラウドAPIを利用するビルトインハンドラ向けのインターフェース
 type SakuraCloudAPICaller interface {
-	APICaller() sacloud.APICaller
-	SetAPICaller(caller sacloud.APICaller)
+	APICaller() iaas.APICaller
+	SetAPICaller(caller iaas.APICaller)
 }
 
 // SakuraCloudAPIClient SakuraCloudAPICallerの実装、各ハンドラーに埋め込んで利用する
 type SakuraCloudAPIClient struct {
-	caller sacloud.APICaller
+	caller iaas.APICaller
 }
 
-func (c *SakuraCloudAPIClient) APICaller() sacloud.APICaller {
+func (c *SakuraCloudAPIClient) APICaller() iaas.APICaller {
 	return c.caller
 }
 
-func (c *SakuraCloudAPIClient) SetAPICaller(caller sacloud.APICaller) {
+func (c *SakuraCloudAPIClient) SetAPICaller(caller iaas.APICaller) {
 	c.caller = caller
 }

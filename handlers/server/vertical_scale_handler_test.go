@@ -23,9 +23,9 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/size"
 )
 
 type fakeSender struct {
@@ -89,9 +89,9 @@ func TestHandler_Handle(t *testing.T) {
 	}
 }
 
-func initTestServer(t *testing.T) (*sacloud.Server, func()) {
-	serverOp := sacloud.NewServerOp(test.APIClient)
-	server, err := serverOp.Create(context.Background(), test.Zone, &sacloud.ServerCreateRequest{
+func initTestServer(t *testing.T) (*iaas.Server, func()) {
+	serverOp := iaas.NewServerOp(test.APIClient)
+	server, err := serverOp.Create(context.Background(), test.Zone, &iaas.ServerCreateRequest{
 		CPU:                  2,
 		MemoryMB:             4 * size.GiB,
 		ServerPlanCommitment: types.Commitments.Standard,

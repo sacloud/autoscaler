@@ -19,10 +19,10 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2/helper/plans"
-	"github.com/sacloud/libsacloud/v2/helper/power"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/plans"
+	"github.com/sacloud/iaas-api-go/helper/power"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type VerticalScaleHandler struct {
@@ -65,7 +65,7 @@ func (h *VerticalScaleHandler) handleServer(ctx *handlers.HandlerContext, req *h
 		return err
 	}
 
-	serverOp := sacloud.NewServerOp(h.APICaller())
+	serverOp := iaas.NewServerOp(h.APICaller())
 
 	current, err := serverOp.Read(ctx, server.Zone, types.StringID(server.Id))
 	if err != nil {

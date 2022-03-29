@@ -18,19 +18,19 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type ParentResource struct {
 	*ResourceBase
 
-	apiClient sacloud.APICaller
+	apiClient iaas.APICaller
 	resource  SakuraCloudResource
 	def       *ParentResourceDef
 	zone      string
 }
 
-func NewParentResource(ctx *RequestContext, apiClient sacloud.APICaller, def *ParentResourceDef, resource SakuraCloudResource, zone string) (*ParentResource, error) {
+func NewParentResource(ctx *RequestContext, apiClient iaas.APICaller, def *ParentResourceDef, resource SakuraCloudResource, zone string) (*ParentResource, error) {
 	return &ParentResource{
 		ResourceBase: &ResourceBase{resourceType: def.Type()},
 		apiClient:    apiClient,
@@ -58,7 +58,7 @@ func (r *ParentResource) Compute(ctx *RequestContext, refresh bool) (Computed, e
 
 	switch r.def.Type() {
 	case ResourceTypeELB:
-		v := &sacloud.ProxyLB{}
+		v := &iaas.ProxyLB{}
 		if err := mapconvDecoder.ConvertTo(r.resource, v); err != nil {
 			return nil, fmt.Errorf("computing desired state failed: %s", err)
 		}
@@ -67,7 +67,7 @@ func (r *ParentResource) Compute(ctx *RequestContext, refresh bool) (Computed, e
 			elb:         v,
 		}
 	case ResourceTypeGSLB:
-		v := &sacloud.GSLB{}
+		v := &iaas.GSLB{}
 		if err := mapconvDecoder.ConvertTo(r.resource, v); err != nil {
 			return nil, fmt.Errorf("computing desired state failed: %s", err)
 		}
@@ -76,7 +76,7 @@ func (r *ParentResource) Compute(ctx *RequestContext, refresh bool) (Computed, e
 			gslb:        v,
 		}
 	case ResourceTypeDNS:
-		v := &sacloud.DNS{}
+		v := &iaas.DNS{}
 		if err := mapconvDecoder.ConvertTo(r.resource, v); err != nil {
 			return nil, fmt.Errorf("computing desired state failed: %s", err)
 		}
@@ -85,7 +85,7 @@ func (r *ParentResource) Compute(ctx *RequestContext, refresh bool) (Computed, e
 			dns:         v,
 		}
 	case ResourceTypeRouter:
-		v := &sacloud.Internet{}
+		v := &iaas.Internet{}
 		if err := mapconvDecoder.ConvertTo(r.resource, v); err != nil {
 			return nil, fmt.Errorf("computing desired state failed: %s", err)
 		}
@@ -95,7 +95,7 @@ func (r *ParentResource) Compute(ctx *RequestContext, refresh bool) (Computed, e
 			zone:        r.zone,
 		}
 	case ResourceTypeLoadBalancer:
-		v := &sacloud.LoadBalancer{}
+		v := &iaas.LoadBalancer{}
 		if err := mapconvDecoder.ConvertTo(r.resource, v); err != nil {
 			return nil, fmt.Errorf("computing desired state failed: %s", err)
 		}
@@ -117,31 +117,31 @@ func (r *ParentResource) refresh(ctx *RequestContext) error {
 
 	switch r.def.Type() {
 	case ResourceTypeELB:
-		op := sacloud.NewProxyLBOp(r.apiClient)
+		op := iaas.NewProxyLBOp(r.apiClient)
 		found, err = op.Read(ctx, r.resource.GetID())
 		if err != nil {
 			return fmt.Errorf("computing status failed: %s", err)
 		}
 	case ResourceTypeGSLB:
-		op := sacloud.NewGSLBOp(r.apiClient)
+		op := iaas.NewGSLBOp(r.apiClient)
 		found, err = op.Read(ctx, r.resource.GetID())
 		if err != nil {
 			return fmt.Errorf("computing status failed: %s", err)
 		}
 	case ResourceTypeDNS:
-		op := sacloud.NewDNSOp(r.apiClient)
+		op := iaas.NewDNSOp(r.apiClient)
 		found, err = op.Read(ctx, r.resource.GetID())
 		if err != nil {
 			return fmt.Errorf("computing status failed: %s", err)
 		}
 	case ResourceTypeRouter:
-		op := sacloud.NewInternetOp(r.apiClient)
+		op := iaas.NewInternetOp(r.apiClient)
 		found, err = op.Read(ctx, r.zone, r.resource.GetID())
 		if err != nil {
 			return fmt.Errorf("computing status failed: %s", err)
 		}
 	case ResourceTypeLoadBalancer:
-		op := sacloud.NewLoadBalancerOp(r.apiClient)
+		op := iaas.NewLoadBalancerOp(r.apiClient)
 		found, err = op.Read(ctx, r.zone, r.resource.GetID())
 		if err != nil {
 			return fmt.Errorf("computing status failed: %s", err)

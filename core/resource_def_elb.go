@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 // DefaultELBPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
@@ -56,7 +56,7 @@ func (d *ResourceDefELB) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (d *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *ResourceDefELB) Validate(ctx context.Context, apiClient iaas.APICaller) []error {
 	errors := &multierror.Error{}
 	if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
 		errors = multierror.Append(errors, errs...)
@@ -72,7 +72,7 @@ func (d *ResourceDefELB) Validate(ctx context.Context, apiClient sacloud.APICall
 	return errors.Errors
 }
 
-func (d *ResourceDefELB) validatePlans(_ context.Context, _ sacloud.APICaller) []error {
+func (d *ResourceDefELB) validatePlans(_ context.Context, _ iaas.APICaller) []error {
 	var errors []error
 	names := map[string]struct{}{}
 
@@ -103,7 +103,7 @@ func (d *ResourceDefELB) validatePlans(_ context.Context, _ sacloud.APICaller) [
 	return errors
 }
 
-func (d *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+func (d *ResourceDefELB) Compute(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error) {
 	cloudResources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -120,8 +120,8 @@ func (d *ResourceDefELB) Compute(ctx *RequestContext, apiClient sacloud.APICalle
 	return resources, nil
 }
 
-func (d *ResourceDefELB) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sacloud.ProxyLB, error) {
-	elbOp := sacloud.NewProxyLBOp(apiClient)
+func (d *ResourceDefELB) findCloudResources(ctx context.Context, apiClient iaas.APICaller) ([]*iaas.ProxyLB, error) {
+	elbOp := iaas.NewProxyLBOp(apiClient)
 	selector := d.Selector
 
 	found, err := elbOp.Find(ctx, selector.findCondition())
