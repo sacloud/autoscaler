@@ -13,3 +13,4 @@ autoscaler.yaml
 **/terraform.tfstate*
 
 work/
+fake-store.json
