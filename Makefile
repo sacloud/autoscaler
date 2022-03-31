@@ -39,14 +39,14 @@ clean:
 .PHONY: tools
 tools:
 	@echo "[INFO] please install clang-format manually if you would like to edit .proto"
-	(cd tools; go install golang.org/x/tools/cmd/goimports)
-	(cd tools; go install golang.org/x/tools/cmd/stringer)
-	(cd tools; go install github.com/sacloud/addlicense)
-	(cd tools; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc)
-	(cd tools; go install google.golang.org/protobuf/cmd/protoc-gen-go)
-	(cd tools; go install github.com/google/go-licenses)
-	(cd tools; go install github.com/grpc-ecosystem/grpc-health-probe)
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.43.0/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.43.0
+	go install github.com/rinchsan/gosimports/cmd/gosimports@latest
+	go install golang.org/x/tools/cmd/stringer@latest
+	go install github.com/sacloud/addlicense@latest
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+	go install github.com/google/go-licenses@v1.0.0
+	go install github.com/grpc-ecosystem/grpc-health-probe@v0.4.2
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.45.2/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.45.2
 
 .PHONY: gen
 gen: gen-request gen-handler
