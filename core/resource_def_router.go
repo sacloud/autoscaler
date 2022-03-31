@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type ResourceDefRouter struct {
@@ -44,7 +44,7 @@ func (d *ResourceDefRouter) resourcePlans() ResourcePlans {
 	return plans
 }
 
-func (d *ResourceDefRouter) Validate(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *ResourceDefRouter) Validate(ctx context.Context, apiClient iaas.APICaller) []error {
 	errors := &multierror.Error{}
 
 	if errs := d.validatePlans(ctx, apiClient); len(errs) > 0 {
@@ -61,14 +61,14 @@ func (d *ResourceDefRouter) Validate(ctx context.Context, apiClient sacloud.APIC
 	return errors.Errors
 }
 
-func (d *ResourceDefRouter) validatePlans(ctx context.Context, apiClient sacloud.APICaller) []error {
+func (d *ResourceDefRouter) validatePlans(ctx context.Context, apiClient iaas.APICaller) []error {
 	if len(d.Plans) > 0 {
 		if len(d.Plans) == 1 {
 			return []error{fmt.Errorf("at least two plans must be specified")}
 		}
 		errors := &multierror.Error{}
 		for _, zone := range d.Selector.Zones {
-			availablePlans, err := sacloud.NewInternetPlanOp(apiClient).Find(ctx, zone, nil)
+			availablePlans, err := iaas.NewInternetPlanOp(apiClient).Find(ctx, zone, nil)
 			if err != nil {
 				return []error{fmt.Errorf("validating router plan failed: %s", err)}
 			}
@@ -101,7 +101,7 @@ func (d *ResourceDefRouter) validatePlans(ctx context.Context, apiClient sacloud
 	return nil
 }
 
-func (d *ResourceDefRouter) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+func (d *ResourceDefRouter) Compute(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error) {
 	cloudResources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
 		return nil, err
@@ -118,8 +118,8 @@ func (d *ResourceDefRouter) Compute(ctx *RequestContext, apiClient sacloud.APICa
 	return resources, nil
 }
 
-func (d *ResourceDefRouter) findCloudResources(ctx context.Context, apiClient sacloud.APICaller) ([]*sakuraCloudRouter, error) {
-	routerOp := sacloud.NewInternetOp(apiClient)
+func (d *ResourceDefRouter) findCloudResources(ctx context.Context, apiClient iaas.APICaller) ([]*sakuraCloudRouter, error) {
+	routerOp := iaas.NewInternetOp(apiClient)
 	selector := d.Selector
 	var results []*sakuraCloudRouter
 
@@ -140,6 +140,6 @@ func (d *ResourceDefRouter) findCloudResources(ctx context.Context, apiClient sa
 }
 
 type sakuraCloudRouter struct {
-	*sacloud.Internet
+	*iaas.Internet
 	zone string
 }

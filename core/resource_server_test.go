@@ -21,16 +21,16 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/libsacloud/v2/helper/plans"
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/plans"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/size"
 	"github.com/stretchr/testify/require"
 )
 
-func initTestResourceServer(t *testing.T) *sacloud.Server {
-	serverOp := sacloud.NewServerOp(test.APIClient)
-	server, err := serverOp.Create(context.Background(), test.Zone, &sacloud.ServerCreateRequest{
+func initTestResourceServer(t *testing.T) *iaas.Server {
+	serverOp := iaas.NewServerOp(test.APIClient)
+	server, err := serverOp.Create(context.Background(), test.Zone, &iaas.ServerCreateRequest{
 		CPU:                  2,
 		MemoryMB:             4 * size.GiB,
 		ServerPlanCommitment: types.Commitments.Standard,
@@ -65,7 +65,7 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resource)
 
-	serverOp := sacloud.NewServerOp(test.APIClient)
+	serverOp := iaas.NewServerOp(test.APIClient)
 
 	server, err = serverOp.Read(ctx, test.Zone, server.ID)
 	require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 func TestResourceServer2_Compute(t *testing.T) {
 	server := initTestResourceServer(t)
 	defer func() {
-		if err := sacloud.NewServerOp(test.APIClient).Delete(context.Background(), test.Zone, server.ID); err != nil {
+		if err := iaas.NewServerOp(test.APIClient).Delete(context.Background(), test.Zone, server.ID); err != nil {
 			t.Fatal(err)
 		}
 	}()

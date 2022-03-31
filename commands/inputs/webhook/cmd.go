@@ -20,12 +20,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/sacloud/autoscaler/validate"
-
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/inputs"
 	"github.com/sacloud/autoscaler/inputs/webhook"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
 )
 

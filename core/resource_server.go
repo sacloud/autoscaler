@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/helper/query"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/query"
 )
 
 // DefaultServerPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧
@@ -36,14 +36,14 @@ var DefaultServerPlans = ResourcePlans{
 type ResourceServer struct {
 	*ResourceBase
 
-	apiClient sacloud.APICaller
-	server    *sacloud.Server
+	apiClient iaas.APICaller
+	server    *iaas.Server
 	def       *ResourceDefServer
 	zone      string
 	parent    Resource
 }
 
-func NewResourceServer(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefServer, parent Resource, zone string, server *sacloud.Server) (*ResourceServer, error) {
+func NewResourceServer(ctx *RequestContext, apiClient iaas.APICaller, def *ResourceDefServer, parent Resource, zone string, server *iaas.Server) (*ResourceServer, error) {
 	return &ResourceServer{
 		ResourceBase: &ResourceBase{
 			resourceType: ResourceTypeServer,
@@ -85,7 +85,7 @@ func (r *ResourceServer) Compute(ctx *RequestContext, refresh bool) (Computed, e
 
 	computed := &computedServer{
 		instruction:   handler.ResourceInstructions_NOOP,
-		server:        &sacloud.Server{},
+		server:        &iaas.Server{},
 		zone:          r.zone,
 		shutdownForce: r.def.ShutdownForce,
 		parent:        parentComputed,

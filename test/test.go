@@ -19,26 +19,26 @@ import (
 	"os"
 	"testing"
 
+	client "github.com/sacloud/api-client-go"
 	"github.com/sacloud/autoscaler/config"
-
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-
 	"github.com/sacloud/autoscaler/log"
-
-	"github.com/sacloud/libsacloud/v2/helper/api"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/api"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/size"
 )
 
 var (
 	Zone      = "is1a"
-	APIClient = api.NewCaller(&api.CallerOptions{
-		AccessToken:       "fake",
-		AccessTokenSecret: "fake",
-		UserAgent:         "sacloud/autoscaler/fake/test",
-		TraceAPI:          os.Getenv("SAKURACLOUD_TRACE") != "",
-		TraceHTTP:         os.Getenv("SAKURACLOUD_TRACE") != "",
-		FakeMode:          true,
+	APIClient = api.NewCallerWithOptions(&api.CallerOptions{
+		Options: &client.Options{
+			AccessToken:       "fake",
+			AccessTokenSecret: "fake",
+			UserAgent:         "sacloud/autoscaler/fake/test",
+			Trace:             os.Getenv("SAKURACLOUD_TRACE") != "",
+		},
+		TraceAPI: os.Getenv("SAKURACLOUD_TRACE") != "",
+		FakeMode: true,
 	})
 	Logger = log.NewLogger(&log.LoggerOption{
 		Writer:    os.Stderr,
@@ -49,9 +49,9 @@ var (
 	})
 )
 
-func AddTestServer(t *testing.T, name string) (*sacloud.Server, func()) {
-	serverOp := sacloud.NewServerOp(APIClient)
-	server, err := serverOp.Create(context.Background(), Zone, &sacloud.ServerCreateRequest{
+func AddTestServer(t *testing.T, name string) (*iaas.Server, func()) {
+	serverOp := iaas.NewServerOp(APIClient)
+	server, err := serverOp.Create(context.Background(), Zone, &iaas.ServerCreateRequest{
 		CPU:                  2,
 		MemoryMB:             4 * size.GiB,
 		ServerPlanCommitment: types.Commitments.Standard,
@@ -71,9 +71,9 @@ func AddTestServer(t *testing.T, name string) (*sacloud.Server, func()) {
 	}
 }
 
-func AddTestDNS(t *testing.T, name string) (*sacloud.DNS, func()) {
-	dnsOp := sacloud.NewDNSOp(APIClient)
-	dns, err := dnsOp.Create(context.Background(), &sacloud.DNSCreateRequest{
+func AddTestDNS(t *testing.T, name string) (*iaas.DNS, func()) {
+	dnsOp := iaas.NewDNSOp(APIClient)
+	dns, err := dnsOp.Create(context.Background(), &iaas.DNSCreateRequest{
 		Name: name,
 	})
 	if err != nil {
@@ -87,9 +87,9 @@ func AddTestDNS(t *testing.T, name string) (*sacloud.DNS, func()) {
 	}
 }
 
-func AddTestSwitch(t *testing.T, name string) (*sacloud.Switch, func()) {
-	swOp := sacloud.NewSwitchOp(APIClient)
-	sw, err := swOp.Create(context.Background(), Zone, &sacloud.SwitchCreateRequest{
+func AddTestSwitch(t *testing.T, name string) (*iaas.Switch, func()) {
+	swOp := iaas.NewSwitchOp(APIClient)
+	sw, err := swOp.Create(context.Background(), Zone, &iaas.SwitchCreateRequest{
 		Name: name,
 	})
 	if err != nil {
@@ -105,8 +105,8 @@ func AddTestSwitch(t *testing.T, name string) (*sacloud.Switch, func()) {
 
 func AddTestELB(t *testing.T, name string) func() {
 	ctx := context.Background()
-	client := sacloud.NewProxyLBOp(APIClient)
-	elb, err := client.Create(ctx, &sacloud.ProxyLBCreateRequest{
+	client := iaas.NewProxyLBOp(APIClient)
+	elb, err := client.Create(ctx, &iaas.ProxyLBCreateRequest{
 		Plan: types.ProxyLBPlans.CPS100,
 		Name: name,
 	})

@@ -16,12 +16,12 @@ package core
 
 import (
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type computedGSLB struct {
 	instruction handler.ResourceInstructions
-	gslb        *sacloud.GSLB
+	gslb        *iaas.GSLB
 }
 
 func (c *computedGSLB) ID() string {

@@ -20,11 +20,9 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
-
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-
 	"github.com/hashicorp/go-multierror"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 // ParentResourceDef サーバやサーバグループの親リソースを示すResourceDefinition実装
@@ -64,7 +62,7 @@ func (d *ParentResourceDef) String() string {
 	return fmt.Sprintf("Type: %s, %s", d.Type().String(), d.Selector.String())
 }
 
-func (d *ParentResourceDef) Validate(ctx context.Context, apiClient sacloud.APICaller, zone string) []error {
+func (d *ParentResourceDef) Validate(ctx context.Context, apiClient iaas.APICaller, zone string) []error {
 	errors := &multierror.Error{}
 
 	if _, err := d.findCloudResources(ctx, apiClient, zone); err != nil {
@@ -76,7 +74,7 @@ func (d *ParentResourceDef) Validate(ctx context.Context, apiClient sacloud.APIC
 	return errors.Errors
 }
 
-func (d *ParentResourceDef) Compute(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+func (d *ParentResourceDef) Compute(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error) {
 	cloudResources, err := d.findCloudResources(ctx, apiClient, ctx.zone)
 	if err != nil {
 		return nil, err
@@ -98,13 +96,13 @@ type SakuraCloudResource interface {
 	GetName() string
 }
 
-func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient sacloud.APICaller, zone string) ([]SakuraCloudResource, error) {
+func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient iaas.APICaller, zone string) ([]SakuraCloudResource, error) {
 	selector := d.Selector
 	var results []SakuraCloudResource
 
 	switch d.Type() {
 	case ResourceTypeELB:
-		op := sacloud.NewProxyLBOp(apiClient)
+		op := iaas.NewProxyLBOp(apiClient)
 		found, err := op.Find(ctx, selector.findCondition())
 		if err != nil {
 			return nil, fmt.Errorf("computing status failed: %s", err)
@@ -113,7 +111,7 @@ func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient sa
 			results = append(results, v)
 		}
 	case ResourceTypeGSLB:
-		op := sacloud.NewGSLBOp(apiClient)
+		op := iaas.NewGSLBOp(apiClient)
 		found, err := op.Find(ctx, selector.findCondition())
 		if err != nil {
 			return nil, fmt.Errorf("computing status failed: %s", err)
@@ -122,7 +120,7 @@ func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient sa
 			results = append(results, v)
 		}
 	case ResourceTypeDNS:
-		op := sacloud.NewDNSOp(apiClient)
+		op := iaas.NewDNSOp(apiClient)
 		found, err := op.Find(ctx, selector.findCondition())
 		if err != nil {
 			return nil, fmt.Errorf("computing status failed: %s", err)
@@ -131,7 +129,7 @@ func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient sa
 			results = append(results, v)
 		}
 	case ResourceTypeRouter:
-		op := sacloud.NewInternetOp(apiClient)
+		op := iaas.NewInternetOp(apiClient)
 		found, err := op.Find(ctx, zone, selector.findCondition())
 		if err != nil {
 			return nil, fmt.Errorf("computing status failed: %s", err)
@@ -140,7 +138,7 @@ func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient sa
 			results = append(results, v)
 		}
 	case ResourceTypeLoadBalancer:
-		op := sacloud.NewLoadBalancerOp(apiClient)
+		op := iaas.NewLoadBalancerOp(apiClient)
 		found, err := op.Find(ctx, zone, selector.findCondition())
 		if err != nil {
 			return nil, fmt.Errorf("computing status failed: %s", err)

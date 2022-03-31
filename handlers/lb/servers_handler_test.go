@@ -18,24 +18,24 @@ import (
 	"testing"
 
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServersHandler_filteredVIPs(t *testing.T) {
 	type args struct {
-		vips       sacloud.LoadBalancerVirtualIPAddresses
+		vips       iaas.LoadBalancerVirtualIPAddresses
 		exposeInfo *handler.ServerGroupInstance_ExposeInfo
 	}
 	tests := []struct {
 		name string
 		args args
-		want sacloud.LoadBalancerVirtualIPAddresses
+		want iaas.LoadBalancerVirtualIPAddresses
 	}{
 		{
 			name: "without vips",
 			args: args{
-				vips: sacloud.LoadBalancerVirtualIPAddresses{
+				vips: iaas.LoadBalancerVirtualIPAddresses{
 					{
 						VirtualIPAddress: "192.168.0.1",
 						Port:             80,
@@ -51,7 +51,7 @@ func TestServersHandler_filteredVIPs(t *testing.T) {
 				},
 				exposeInfo: &handler.ServerGroupInstance_ExposeInfo{},
 			},
-			want: sacloud.LoadBalancerVirtualIPAddresses{
+			want: iaas.LoadBalancerVirtualIPAddresses{
 				{
 					VirtualIPAddress: "192.168.0.1",
 					Port:             80,
@@ -69,7 +69,7 @@ func TestServersHandler_filteredVIPs(t *testing.T) {
 		{
 			name: "with vips",
 			args: args{
-				vips: sacloud.LoadBalancerVirtualIPAddresses{
+				vips: iaas.LoadBalancerVirtualIPAddresses{
 					{
 						VirtualIPAddress: "192.168.0.1",
 						Port:             80,
@@ -87,7 +87,7 @@ func TestServersHandler_filteredVIPs(t *testing.T) {
 					Vips: []string{"192.168.0.1"},
 				},
 			},
-			want: sacloud.LoadBalancerVirtualIPAddresses{
+			want: iaas.LoadBalancerVirtualIPAddresses{
 				{
 					VirtualIPAddress: "192.168.0.1",
 					Port:             80,

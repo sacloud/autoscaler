@@ -21,11 +21,11 @@ import (
 	"runtime"
 	"sync"
 
+	client "github.com/sacloud/api-client-go"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2"
-	"github.com/sacloud/libsacloud/v2/helper/api"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/api"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type SakuraCloud struct {
@@ -33,13 +33,13 @@ type SakuraCloud struct {
 	Profile    string `yaml:"profile"`
 
 	strictMode bool
-	apiClient  sacloud.APICaller
+	apiClient  iaas.APICaller
 	initOnce   sync.Once
 	initError  error
 }
 
 // APIClient シングルトンなAPIクライアントを返す
-func (sc *SakuraCloud) APIClient() sacloud.APICaller {
+func (sc *SakuraCloud) APIClient() iaas.APICaller {
 	sc.initOnce.Do(func() {
 		options := []*api.CallerOptions{
 			api.OptionsFromEnv(),
@@ -54,18 +54,20 @@ func (sc *SakuraCloud) APIClient() sacloud.APICaller {
 		}
 
 		options = append(options, &api.CallerOptions{
-			AccessToken:       sc.Token,
-			AccessTokenSecret: sc.Secret,
-			HTTPClient:        &http.Client{},
-			UserAgent: fmt.Sprintf(
-				"sacloud/autoscaler/v%s (%s/%s; +https://github.com/sacloud/autoscaler) libsacloud/%s",
-				version.Version,
-				runtime.GOOS,
-				runtime.GOARCH,
-				libsacloud.Version,
-			),
+			Options: &client.Options{
+				AccessToken:       sc.Token,
+				AccessTokenSecret: sc.Secret,
+				HttpClient:        &http.Client{},
+				UserAgent: fmt.Sprintf(
+					"sacloud/autoscaler/%s (%s/%s; +https://github.com/sacloud/autoscaler) %s",
+					version.Version,
+					runtime.GOOS,
+					runtime.GOARCH,
+					api.UserAgent,
+				),
+			},
 		})
-		sc.apiClient = api.NewCaller(options...)
+		sc.apiClient = api.NewCallerWithOptions(api.MergeOptions(options...))
 	})
 	return sc.apiClient
 }
@@ -77,9 +79,9 @@ func (sc *SakuraCloud) Validate(ctx context.Context) error {
 		return fmt.Errorf("initializing API Client failed: %s", sc.initError)
 	}
 
-	authStatus, err := sacloud.NewAuthStatusOp(apiClient).Read(ctx)
+	authStatus, err := iaas.NewAuthStatusOp(apiClient).Read(ctx)
 	if err != nil {
-		if err, ok := err.(sacloud.APIError); ok {
+		if err, ok := err.(iaas.APIError); ok {
 			return fmt.Errorf("reading SAKURA cloud account info failed: %s", err.Message())
 		}
 		return fmt.Errorf("reading SAKURA cloud account info failed: unknown error: %s", err)

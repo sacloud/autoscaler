@@ -22,8 +22,8 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 // ServersHandler ロードバランサ配下のサーバのアタッチ/デタッチを行うためのハンドラ
@@ -126,7 +126,7 @@ func (h *ServersHandler) attachOrDetach(ctx *handlers.HandlerContext, server *ha
 		return err
 	}
 
-	lbOp := sacloud.NewLoadBalancerOp(h.APICaller())
+	lbOp := iaas.NewLoadBalancerOp(h.APICaller())
 	current, err := lbOp.Read(ctx, lb.Zone, types.StringID(lb.Id))
 	if err != nil {
 		return err
@@ -162,7 +162,7 @@ func (h *ServersHandler) attachOrDetach(ctx *handlers.HandlerContext, server *ha
 		return err
 	}
 
-	if _, err := lbOp.UpdateSettings(ctx, lb.Zone, types.StringID(lb.Id), &sacloud.LoadBalancerUpdateSettingsRequest{
+	if _, err := lbOp.UpdateSettings(ctx, lb.Zone, types.StringID(lb.Id), &iaas.LoadBalancerUpdateSettingsRequest{
 		VirtualIPAddresses: current.VirtualIPAddresses,
 		SettingsHash:       current.SettingsHash,
 	}); err != nil {
@@ -185,7 +185,7 @@ func (h *ServersHandler) sameNetwork(ip1 string, mask1 int, ip2 string) (bool, e
 	return net1.Contains(net.ParseIP(ip2)), nil
 }
 
-func (h *ServersHandler) addServerUnderVIP(ctx *handlers.HandlerContext, vip *sacloud.LoadBalancerVirtualIPAddress, ip string, port int, healthCheck *handler.ServerGroupInstance_HealthCheck) (bool, error) {
+func (h *ServersHandler) addServerUnderVIP(ctx *handlers.HandlerContext, vip *iaas.LoadBalancerVirtualIPAddress, ip string, port int, healthCheck *handler.ServerGroupInstance_HealthCheck) (bool, error) {
 	// すでに同じIPアドレスが登録されていないか??
 	exist := false
 	for _, s := range vip.Servers {
@@ -200,11 +200,11 @@ func (h *ServersHandler) addServerUnderVIP(ctx *handlers.HandlerContext, vip *sa
 	}
 
 	if !exist {
-		vip.Servers = append(vip.Servers, &sacloud.LoadBalancerServer{
+		vip.Servers = append(vip.Servers, &iaas.LoadBalancerServer{
 			IPAddress: ip,
 			Port:      types.StringNumber(port),
 			Enabled:   true,
-			HealthCheck: &sacloud.LoadBalancerServerHealthCheck{
+			HealthCheck: &iaas.LoadBalancerServerHealthCheck{
 				Protocol:     types.ELoadBalancerHealthCheckProtocol(healthCheck.Protocol),
 				Path:         healthCheck.Path,
 				ResponseCode: types.StringNumber(healthCheck.StatusCode),
@@ -219,7 +219,7 @@ func (h *ServersHandler) addServerUnderVIP(ctx *handlers.HandlerContext, vip *sa
 	return false, nil
 }
 
-func (h *ServersHandler) addServersUnderVIPs(ctx *handlers.HandlerContext, current *sacloud.LoadBalancer, instance *handler.ServerGroupInstance) (bool, error) {
+func (h *ServersHandler) addServersUnderVIPs(ctx *handlers.HandlerContext, current *iaas.LoadBalancer, instance *handler.ServerGroupInstance) (bool, error) {
 	shouldUpdate := false
 	for _, nic := range instance.NetworkInterfaces {
 		if nic.ExposeInfo == nil || len(nic.ExposeInfo.Ports) == 0 || nic.AssignedNetwork == nil {
@@ -262,7 +262,7 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 		return err
 	}
 
-	lbOp := sacloud.NewLoadBalancerOp(h.APICaller())
+	lbOp := iaas.NewLoadBalancerOp(h.APICaller())
 	current, err := lbOp.Read(ctx, lb.Zone, types.StringID(lb.Id))
 	if err != nil {
 		return err
@@ -282,7 +282,7 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
 			return err
 		}
-		_, err := lbOp.UpdateSettings(ctx, lb.Zone, current.ID, &sacloud.LoadBalancerUpdateSettingsRequest{
+		_, err := lbOp.UpdateSettings(ctx, lb.Zone, current.ID, &iaas.LoadBalancerUpdateSettingsRequest{
 			VirtualIPAddresses: current.VirtualIPAddresses,
 			SettingsHash:       current.SettingsHash,
 		})
@@ -300,11 +300,11 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 	return ctx.Report(handler.HandleResponse_DONE)
 }
 
-func (h *ServersHandler) filteredVIPs(vips sacloud.LoadBalancerVirtualIPAddresses, exposeInfo *handler.ServerGroupInstance_ExposeInfo) sacloud.LoadBalancerVirtualIPAddresses {
+func (h *ServersHandler) filteredVIPs(vips iaas.LoadBalancerVirtualIPAddresses, exposeInfo *handler.ServerGroupInstance_ExposeInfo) iaas.LoadBalancerVirtualIPAddresses {
 	if exposeInfo == nil || len(exposeInfo.Vips) == 0 {
 		return vips
 	}
-	var results sacloud.LoadBalancerVirtualIPAddresses
+	var results iaas.LoadBalancerVirtualIPAddresses
 	for _, vip := range vips {
 		exist := false
 		for _, filter := range exposeInfo.Vips {
@@ -325,7 +325,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 		return err
 	}
 
-	lbOp := sacloud.NewLoadBalancerOp(h.APICaller())
+	lbOp := iaas.NewLoadBalancerOp(h.APICaller())
 	current, err := lbOp.Read(ctx, lb.Zone, types.StringID(lb.Id))
 	if err != nil {
 		return err
@@ -339,7 +339,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 	for _, nic := range instance.NetworkInterfaces {
 		fn := func(ip string, port int) error {
 			for _, vip := range h.filteredVIPs(current.VirtualIPAddresses, nic.ExposeInfo) {
-				var servers []*sacloud.LoadBalancerServer
+				var servers []*iaas.LoadBalancerServer
 				for _, server := range vip.Servers {
 					if server.IPAddress == ip && server.Port.Int() == port {
 						shouldUpdate = true
@@ -365,7 +365,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
 			return err
 		}
-		_, err := lbOp.UpdateSettings(ctx, lb.Zone, current.ID, &sacloud.LoadBalancerUpdateSettingsRequest{
+		_, err := lbOp.UpdateSettings(ctx, lb.Zone, current.ID, &iaas.LoadBalancerUpdateSettingsRequest{
 			VirtualIPAddresses: current.VirtualIPAddresses,
 			SettingsHash:       current.SettingsHash,
 		})

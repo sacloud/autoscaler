@@ -15,7 +15,7 @@
 package core
 
 import (
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/shivamMg/ppds/tree"
 )
 
@@ -38,7 +38,7 @@ func (g *Graph) Children() []tree.Node {
 	return g.children
 }
 
-func (g *Graph) Tree(ctx *RequestContext, apiClient sacloud.APICaller) (string, error) {
+func (g *Graph) Tree(ctx *RequestContext, apiClient iaas.APICaller) (string, error) {
 	g.children = []tree.Node{}
 	for _, def := range g.resources {
 		nodes, err := g.nodes(ctx, apiClient, def)
@@ -50,7 +50,7 @@ func (g *Graph) Tree(ctx *RequestContext, apiClient sacloud.APICaller) (string, 
 	return tree.SprintHrn(g), nil
 }
 
-func (g *Graph) nodes(ctx *RequestContext, apiClient sacloud.APICaller, def ResourceDefinition) ([]tree.Node, error) {
+func (g *Graph) nodes(ctx *RequestContext, apiClient iaas.APICaller, def ResourceDefinition) ([]tree.Node, error) {
 	resources, err := def.Compute(ctx, apiClient)
 	if err != nil {
 		return nil, err

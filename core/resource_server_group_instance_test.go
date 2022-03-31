@@ -19,7 +19,7 @@ import (
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,7 +29,7 @@ func TestResourceServerGroupInstance_computeNetworkInterfaces(t *testing.T) {
 
 	type fields struct {
 		ResourceBase *ResourceBase
-		server       *sacloud.Server
+		server       *iaas.Server
 		def          *ResourceDefServerGroup
 		instruction  handler.ResourceInstructions
 		indexInGroup int
@@ -50,7 +50,7 @@ func TestResourceServerGroupInstance_computeNetworkInterfaces(t *testing.T) {
 				ResourceBase: &ResourceBase{
 					resourceType: ResourceTypeServerGroupInstance,
 				},
-				server: &sacloud.Server{
+				server: &iaas.Server{
 					Name: "autoscaler-001",
 				},
 				def: &ResourceDefServerGroup{

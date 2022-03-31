@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 func TestGraph_Tree(t *testing.T) {
@@ -42,7 +42,7 @@ func TestGraph_Tree(t *testing.T) {
 						ResourceDefBase: &ResourceDefBase{
 							TypeName: "Child",
 						},
-						computeFunc: func(ctx *RequestContext, apiClient sacloud.APICaller) (Resources, error) {
+						computeFunc: func(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error) {
 							return Resources{
 								&stubResource{
 									ResourceBase: &ResourceBase{

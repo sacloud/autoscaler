@@ -18,19 +18,19 @@ import (
 	"fmt"
 
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/helper/query"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/query"
 )
 
 type ResourceELB struct {
 	*ResourceBase
 
-	apiClient sacloud.APICaller
-	elb       *sacloud.ProxyLB
+	apiClient iaas.APICaller
+	elb       *iaas.ProxyLB
 	def       *ResourceDefELB
 }
 
-func NewResourceELB(ctx *RequestContext, apiClient sacloud.APICaller, def *ResourceDefELB, elb *sacloud.ProxyLB) (*ResourceELB, error) {
+func NewResourceELB(ctx *RequestContext, apiClient iaas.APICaller, def *ResourceDefELB, elb *iaas.ProxyLB) (*ResourceELB, error) {
 	return &ResourceELB{
 		ResourceBase: &ResourceBase{resourceType: ResourceTypeELB},
 		apiClient:    apiClient,
@@ -55,7 +55,7 @@ func (r *ResourceELB) Compute(ctx *RequestContext, refresh bool) (Computed, erro
 
 	computed := &computedELB{
 		instruction: handler.ResourceInstructions_NOOP,
-		elb:         &sacloud.ProxyLB{},
+		elb:         &iaas.ProxyLB{},
 	}
 	if err := mapconvDecoder.ConvertTo(r.elb, computed.elb); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)

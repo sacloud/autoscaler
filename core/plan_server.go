@@ -14,7 +14,7 @@
 
 package core
 
-import "github.com/sacloud/libsacloud/v2/sacloud"
+import "github.com/sacloud/iaas-api-go"
 
 type ServerPlan struct {
 	Name   string `yaml:"name"`
@@ -26,14 +26,14 @@ func (p *ServerPlan) PlanName() string {
 	return p.Name
 }
 func (p *ServerPlan) Equals(resource interface{}) bool {
-	server, ok := resource.(*sacloud.Server)
+	server, ok := resource.(*iaas.Server)
 	if !ok {
 		return false
 	}
 	return server.CPU == p.Core && server.GetMemoryGB() == p.Memory
 }
 func (p *ServerPlan) LessThan(resource interface{}) bool {
-	server, ok := resource.(*sacloud.Server)
+	server, ok := resource.(*iaas.Server)
 	if !ok {
 		return false
 	}

@@ -23,7 +23,7 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type fakeSender struct {
@@ -85,9 +85,9 @@ func TestHandler_Handle(t *testing.T) {
 	}
 }
 
-func initTestServer(t *testing.T) (*sacloud.Internet, func()) {
-	routerOp := sacloud.NewInternetOp(test.APIClient)
-	router, err := routerOp.Create(context.Background(), test.Zone, &sacloud.InternetCreateRequest{
+func initTestServer(t *testing.T) (*iaas.Internet, func()) {
+	routerOp := iaas.NewInternetOp(test.APIClient)
+	router, err := routerOp.Create(context.Background(), test.Zone, &iaas.InternetCreateRequest{
 		Name:          "test-server",
 		BandWidthMbps: 100,
 	})

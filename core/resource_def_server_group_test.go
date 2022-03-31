@@ -23,9 +23,9 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/size"
 	"github.com/stretchr/testify/require"
 )
 
@@ -75,7 +75,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				&ResourceServerGroupInstance{
 					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
 					apiClient:    test.APIClient,
-					server: &sacloud.Server{
+					server: &iaas.Server{
 						Name:                 "autoscaler-001",
 						CPU:                  1,
 						MemoryMB:             1 * size.GiB,
@@ -131,7 +131,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				&ResourceServerGroupInstance{
 					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
 					apiClient:    test.APIClient,
-					server: &sacloud.Server{
+					server: &iaas.Server{
 						Name:                 "resource-def-server-test-002",
 						CPU:                  1,
 						MemoryMB:             1 * size.GiB,
@@ -235,7 +235,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				&ResourceServerGroupInstance{
 					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
 					apiClient:    test.APIClient,
-					server: &sacloud.Server{
+					server: &iaas.Server{
 						Name:                 "resource-def-server-test-002",
 						CPU:                  1,
 						MemoryMB:             1 * size.GiB,
@@ -248,7 +248,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				&ResourceServerGroupInstance{
 					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
 					apiClient:    test.APIClient,
-					server: &sacloud.Server{
+					server: &iaas.Server{
 						Name:                 "resource-def-server-test-004",
 						CPU:                  1,
 						MemoryMB:             1 * size.GiB,
@@ -261,7 +261,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				&ResourceServerGroupInstance{
 					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
 					apiClient:    test.APIClient,
-					server: &sacloud.Server{
+					server: &iaas.Server{
 						Name:                 "resource-def-server-test-005",
 						CPU:                  1,
 						MemoryMB:             1 * size.GiB,
@@ -432,7 +432,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				&ResourceServerGroupInstance{
 					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
 					apiClient:    test.APIClient,
-					server: &sacloud.Server{
+					server: &iaas.Server{
 						Name:                 "resource-def-server-test-002",
 						CPU:                  1,
 						MemoryMB:             1 * size.GiB,
@@ -466,7 +466,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 }
 
 func TestResourceDefServerGroup_Validate(t *testing.T) {
-	validate.InitValidatorAlias(sacloud.SakuraCloudZones)
+	validate.InitValidatorAlias(iaas.SakuraCloudZones)
 	tests := []struct {
 		name string
 		def  *ResourceDefServerGroup
@@ -545,10 +545,10 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 			defName: "prefix",
 			resources: Resources{
 				&ResourceServerGroupInstance{
-					server: &sacloud.Server{Name: "prefix-001"},
+					server: &iaas.Server{Name: "prefix-001"},
 				},
 				&ResourceServerGroupInstance{
-					server: &sacloud.Server{Name: "prefix-002"},
+					server: &iaas.Server{Name: "prefix-002"},
 				},
 			},
 			want:      "prefix-003",
@@ -559,10 +559,10 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 			defName: "prefix",
 			resources: Resources{
 				&ResourceServerGroupInstance{
-					server: &sacloud.Server{Name: "prefix-001"},
+					server: &iaas.Server{Name: "prefix-001"},
 				},
 				&ResourceServerGroupInstance{
-					server: &sacloud.Server{Name: "prefix-003"},
+					server: &iaas.Server{Name: "prefix-003"},
 				},
 			},
 			want:      "prefix-002",
@@ -573,13 +573,13 @@ func TestResourceDefServerGroup_determineServerName(t *testing.T) {
 			defName: "prefix",
 			resources: Resources{
 				&ResourceServerGroupInstance{
-					server: &sacloud.Server{Name: "prefix-001"},
+					server: &iaas.Server{Name: "prefix-001"},
 				},
 				&ResourceServerGroupInstance{
-					server: &sacloud.Server{Name: "prefix-003"},
+					server: &iaas.Server{Name: "prefix-003"},
 				},
 				&ResourceServerGroupInstance{
-					server: &sacloud.Server{Name: "prefix-005"},
+					server: &iaas.Server{Name: "prefix-005"},
 				},
 			},
 			want:      "prefix-002",

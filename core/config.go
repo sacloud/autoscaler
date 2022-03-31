@@ -29,7 +29,7 @@ import (
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	health "google.golang.org/grpc/health/grpc_health_v1"
 )
 
@@ -78,10 +78,10 @@ func (c *Config) load(ctx context.Context, reader io.Reader) error {
 	return nil
 }
 
-// APIClient Configに保持しているCredentialからさくらのクラウドAPIクライアント(sacloud.APICaller)を返す
+// APIClient Configに保持しているCredentialからさくらのクラウドAPIクライアント(iaas.APICaller)を返す
 //
 // シングルトンなインスタンスを返す
-func (c *Config) APIClient() sacloud.APICaller {
+func (c *Config) APIClient() iaas.APICaller {
 	return c.SakuraCloud.APIClient()
 }
 
@@ -134,7 +134,7 @@ func (c *Config) Validate(ctx context.Context) error {
 
 	// 利用可能ゾーンリストはさくらのクラウドAPIクライアントの設定次第(プロファイルなど)で
 	// 変更される可能性があるためこのタイミングで初期化する
-	validate.InitValidatorAlias(sacloud.SakuraCloudZones)
+	validate.InitValidatorAlias(iaas.SakuraCloudZones)
 
 	errors := &multierror.Error{}
 

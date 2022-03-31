@@ -16,12 +16,12 @@ package core
 
 import (
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type computedRouter struct {
 	instruction  handler.ResourceInstructions
-	router       *sacloud.Internet
+	router       *iaas.Internet
 	zone         string
 	newBandWidth int
 }

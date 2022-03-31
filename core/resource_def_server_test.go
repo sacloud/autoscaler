@@ -21,12 +21,12 @@ import (
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/stretchr/testify/require"
 )
 
 func TestResourceDefServer_Validate(t *testing.T) {
-	validate.InitValidatorAlias(sacloud.SakuraCloudZones)
+	validate.InitValidatorAlias(iaas.SakuraCloudZones)
 	_, cleanup := test.AddTestServer(t, "test-server")
 	defer cleanup()
 
@@ -58,7 +58,7 @@ func TestResourceDefServer_Compute(t *testing.T) {
 	}
 	type args struct {
 		ctx       *RequestContext
-		apiClient sacloud.APICaller
+		apiClient iaas.APICaller
 	}
 	tests := []struct {
 		name    string

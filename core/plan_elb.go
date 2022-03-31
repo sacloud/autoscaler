@@ -14,7 +14,7 @@
 
 package core
 
-import "github.com/sacloud/libsacloud/v2/sacloud"
+import "github.com/sacloud/iaas-api-go"
 
 type ELBPlan struct {
 	Name string `yaml:"name"`
@@ -25,14 +25,14 @@ func (p *ELBPlan) PlanName() string {
 	return p.Name
 }
 func (p *ELBPlan) Equals(resource interface{}) bool {
-	v, ok := resource.(*sacloud.ProxyLB)
+	v, ok := resource.(*iaas.ProxyLB)
 	if !ok {
 		return false
 	}
 	return v.Plan.Int() == p.CPS
 }
 func (p *ELBPlan) LessThan(resource interface{}) bool {
-	v, ok := resource.(*sacloud.ProxyLB)
+	v, ok := resource.(*iaas.ProxyLB)
 	if !ok {
 		return false
 	}

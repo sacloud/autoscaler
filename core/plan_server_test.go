@@ -17,8 +17,8 @@ package core
 import (
 	"testing"
 
-	"github.com/sacloud/libsacloud/v2/pkg/size"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/packages-go/size"
 )
 
 func TestServerPlan_Equals(t *testing.T) {
@@ -44,7 +44,7 @@ func TestServerPlan_Equals(t *testing.T) {
 				Memory: 1,
 			},
 			args: args{
-				&sacloud.Server{
+				&iaas.Server{
 					CPU:      1,
 					MemoryMB: 1 * size.GiB,
 				},
@@ -59,7 +59,7 @@ func TestServerPlan_Equals(t *testing.T) {
 				Memory: 2,
 			},
 			args: args{
-				&sacloud.Server{
+				&iaas.Server{
 					CPU:      1,
 					MemoryMB: 1 * size.GiB,
 				},
@@ -103,7 +103,7 @@ func TestServerPlan_LessThan(t *testing.T) {
 				Memory: 2,
 			},
 			args: args{
-				resource: &sacloud.Server{
+				resource: &iaas.Server{
 					CPU:      2,
 					MemoryMB: 4 * size.GiB,
 				},
@@ -117,7 +117,7 @@ func TestServerPlan_LessThan(t *testing.T) {
 				Memory: 4,
 			},
 			args: args{
-				resource: &sacloud.Server{
+				resource: &iaas.Server{
 					CPU:      2,
 					MemoryMB: 2 * size.GiB,
 				},
@@ -131,7 +131,7 @@ func TestServerPlan_LessThan(t *testing.T) {
 				Memory: 4,
 			},
 			args: args{
-				resource: &sacloud.Server{
+				resource: &iaas.Server{
 					CPU:      2,
 					MemoryMB: 4 * size.GiB,
 				},

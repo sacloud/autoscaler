@@ -19,8 +19,8 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 // ServersHandler GSLB配下のサーバのアタッチ/デタッチを行うためのハンドラ
@@ -127,7 +127,7 @@ func (h *ServersHandler) attachAndDetach(ctx *handlers.HandlerContext, server *h
 		return err
 	}
 
-	gslbOp := sacloud.NewGSLBOp(h.APICaller())
+	gslbOp := iaas.NewGSLBOp(h.APICaller())
 	current, err := gslbOp.Read(ctx, types.StringID(gslb.Id))
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func (h *ServersHandler) attachAndDetach(ctx *handlers.HandlerContext, server *h
 		return err
 	}
 
-	if _, err := gslbOp.UpdateSettings(ctx, types.StringID(gslb.Id), &sacloud.GSLBUpdateSettingsRequest{
+	if _, err := gslbOp.UpdateSettings(ctx, types.StringID(gslb.Id), &iaas.GSLBUpdateSettingsRequest{
 		HealthCheck:        current.HealthCheck,
 		DelayLoop:          current.DelayLoop,
 		Weighted:           current.Weighted,
@@ -182,7 +182,7 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 		return err
 	}
 
-	gslbOp := sacloud.NewGSLBOp(h.APICaller())
+	gslbOp := iaas.NewGSLBOp(h.APICaller())
 	current, err := gslbOp.Read(ctx, types.StringID(gslb.Id))
 	if err != nil {
 		return err
@@ -211,7 +211,7 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 		}
 	}
 	if !exist {
-		current.DestinationServers = append(current.DestinationServers, &sacloud.GSLBServer{
+		current.DestinationServers = append(current.DestinationServers, &iaas.GSLBServer{
 			IPAddress: nic.AssignedNetwork.IpAddress,
 			Enabled:   true,
 			Weight:    types.StringNumber(exposeInfo.Weight),
@@ -227,7 +227,7 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
 			return err
 		}
-		_, err := gslbOp.UpdateSettings(ctx, current.ID, &sacloud.GSLBUpdateSettingsRequest{
+		_, err := gslbOp.UpdateSettings(ctx, current.ID, &iaas.GSLBUpdateSettingsRequest{
 			HealthCheck:        current.HealthCheck,
 			DelayLoop:          current.DelayLoop,
 			Weighted:           current.Weighted,
@@ -251,7 +251,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 		return err
 	}
 
-	gslbOp := sacloud.NewGSLBOp(h.APICaller())
+	gslbOp := iaas.NewGSLBOp(h.APICaller())
 	current, err := gslbOp.Read(ctx, types.StringID(gslb.Id))
 	if err != nil {
 		return err
@@ -263,7 +263,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 	nic := instance.NetworkInterfaces[0]
 
 	shouldUpdate := false
-	var servers []*sacloud.GSLBServer
+	var servers []*iaas.GSLBServer
 	for _, s := range current.DestinationServers {
 		if s.IPAddress == nic.AssignedNetwork.IpAddress {
 			shouldUpdate = true
@@ -280,7 +280,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "updating..."); err != nil {
 			return err
 		}
-		_, err := gslbOp.UpdateSettings(ctx, current.ID, &sacloud.GSLBUpdateSettingsRequest{
+		_, err := gslbOp.UpdateSettings(ctx, current.ID, &iaas.GSLBUpdateSettingsRequest{
 			HealthCheck:        current.HealthCheck,
 			DelayLoop:          current.DelayLoop,
 			Weighted:           current.Weighted,

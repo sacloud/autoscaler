@@ -16,7 +16,7 @@ package core
 
 import (
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 func computedToParents(parentComputed Computed) *handler.Parent {
