@@ -51,7 +51,7 @@ type ResourceRouter struct {
 
 func NewResourceRouter(ctx *RequestContext, apiClient iaas.APICaller, def *ResourceDefRouter, zone string, router *iaas.Internet) (*ResourceRouter, error) {
 	return &ResourceRouter{
-		ResourceBase: &ResourceBase{resourceType: ResourceTypeRouter},
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeRouter, setupGracePeriod: def.SetupGracePeriod()},
 		apiClient:    apiClient,
 		zone:         zone,
 		router:       router,
@@ -74,9 +74,10 @@ func (r *ResourceRouter) Compute(ctx *RequestContext, refresh bool) (Computed, e
 	}
 
 	computed := &computedRouter{
-		instruction: handler.ResourceInstructions_NOOP,
-		router:      &iaas.Internet{},
-		zone:        r.zone,
+		instruction:      handler.ResourceInstructions_NOOP,
+		setupGracePeriod: r.setupGracePeriod,
+		router:           &iaas.Internet{},
+		zone:             r.zone,
 	}
 	if err := mapconvDecoder.ConvertTo(r.router, computed.router); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)

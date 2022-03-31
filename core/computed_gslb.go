@@ -20,8 +20,10 @@ import (
 )
 
 type computedGSLB struct {
-	instruction handler.ResourceInstructions
-	gslb        *iaas.GSLB
+	instruction      handler.ResourceInstructions
+	setupGracePeriod int
+
+	gslb *iaas.GSLB
 }
 
 func (c *computedGSLB) ID() string {
@@ -48,6 +50,10 @@ func (c *computedGSLB) Zone() string {
 
 func (c *computedGSLB) Instruction() handler.ResourceInstructions {
 	return c.instruction
+}
+
+func (c *computedGSLB) SetupGracePeriod() int {
+	return c.setupGracePeriod
 }
 
 func (c *computedGSLB) Current() *handler.Resource {

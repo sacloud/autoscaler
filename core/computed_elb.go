@@ -20,10 +20,12 @@ import (
 )
 
 type computedELB struct {
-	instruction handler.ResourceInstructions
-	elb         *iaas.ProxyLB
-	newCPS      int
-	parent      Computed // 親リソースのComputed
+	instruction      handler.ResourceInstructions
+	setupGracePeriod int
+
+	elb    *iaas.ProxyLB
+	newCPS int
+	parent Computed // 親リソースのComputed
 }
 
 func (c *computedELB) ID() string {
@@ -50,6 +52,10 @@ func (c *computedELB) Zone() string {
 
 func (c *computedELB) Instruction() handler.ResourceInstructions {
 	return c.instruction
+}
+
+func (c *computedELB) SetupGracePeriod() int {
+	return c.setupGracePeriod
 }
 
 func (c *computedELB) parents() *handler.Parent {

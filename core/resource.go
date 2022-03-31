@@ -14,7 +14,9 @@
 
 package core
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Resource Definitionから作られるResource
 type Resource interface {
@@ -47,7 +49,8 @@ func (rs *Resources) String() string {
 
 // ResourceBase 全てのリソースが所有すべきResourceの基本構造
 type ResourceBase struct {
-	resourceType ResourceTypes
+	resourceType     ResourceTypes
+	setupGracePeriod int
 }
 
 func (r *ResourceBase) Type() ResourceTypes {

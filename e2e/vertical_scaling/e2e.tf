@@ -13,12 +13,12 @@ provider "sakuracloud" {
 
 # Server
 resource "sakuracloud_server" "server" {
-  count = 3
+  count = 2
 
   name   = "autoscaler-e2e-vertical-scaling-${count.index}"
   tags   = ["autoscaler-e2e-vertical-scaling"]
   core   = 1
-  memory = 1
+  memory = 2
 
   network_interface {
     upstream = "shared"
@@ -41,7 +41,7 @@ resource "sakuracloud_note" "startupscript" {
 }
 
 resource "sakuracloud_disk" "disk" {
-  count             = 3
+  count             = 2
   name              = "autoscaler-e2e-vertical-scaling-${count.index}"
   source_archive_id = data.sakuracloud_archive.ubuntu.id
 }

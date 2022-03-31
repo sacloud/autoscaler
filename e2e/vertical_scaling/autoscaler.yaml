@@ -7,11 +7,12 @@ resources:
     shutdown_force: true
     plans:
       - core: 1
-        memory: 1
-      - core: 2
         memory: 2
-      - core: 4
+      - core: 2
         memory: 4
+      - core: 4
+        memory: 8
+    setup_grace_period: 30
     parent:
       type: ELB
       name: "elb"

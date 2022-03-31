@@ -52,7 +52,8 @@ func TestResourceDefinitions_UnmarshalYAML(t *testing.T) {
 			r: ResourceDefinitions{
 				&ResourceDefServer{
 					ResourceDefBase: &ResourceDefBase{
-						TypeName: "Server",
+						TypeName:            "Server",
+						SetupGracePeriodSec: 30,
 					},
 					Selector: &MultiZoneSelector{
 						ResourceSelector: &ResourceSelector{
@@ -85,6 +86,7 @@ func TestResourceDefinitions_UnmarshalYAML(t *testing.T) {
   parent:
     type: ELB
     selector: "test-name"
+  setup_grace_period: 30
 - type: ELB
   selector:
     names: ["test-name"]

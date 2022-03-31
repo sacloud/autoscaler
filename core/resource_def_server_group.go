@@ -109,7 +109,8 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 	for i := range cloudResources {
 		instance := &ResourceServerGroupInstance{
 			ResourceBase: &ResourceBase{
-				resourceType: ResourceTypeServerGroupInstance,
+				resourceType:     ResourceTypeServerGroupInstance,
+				setupGracePeriod: d.SetupGracePeriod(),
 			},
 			apiClient:   apiClient,
 			server:      cloudResources[i],
@@ -133,7 +134,8 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		serverName, index := d.determineServerName(resources)
 		resources = append(resources, &ResourceServerGroupInstance{
 			ResourceBase: &ResourceBase{
-				resourceType: ResourceTypeServerGroupInstance,
+				resourceType:     ResourceTypeServerGroupInstance,
+				setupGracePeriod: d.SetupGracePeriod(),
 			},
 			apiClient: apiClient,
 			server: &iaas.Server{

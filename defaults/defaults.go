@@ -29,11 +29,18 @@ const (
 	CoolDownTime = 10 * time.Minute // 同一ジョブの実行制御のための冷却期間
 )
 
-// CoreSocketAddrCandidates CoreのgRPCエンドポイントの候補値のリスト
-//
-// InputsでCoreのエンドポイントアドレスが省略された場合にこれらを上から順に確認し、ファイルの存在が確認できたものから利用される
-var CoreSocketAddrCandidates = []string{
-	CoreSocketAddr,
-	"unix:/var/run/autoscaler.sock",
-	"unix:/var/run/autoscaler/autoscaler.sock",
-}
+var (
+	// CoreSocketAddrCandidates CoreのgRPCエンドポイントの候補値のリスト
+	//
+	// InputsでCoreのエンドポイントアドレスが省略された場合にこれらを上から順に確認し、ファイルの存在が確認できたものから利用される
+	CoreSocketAddrCandidates = []string{
+		CoreSocketAddr,
+		"unix:/var/run/autoscaler.sock",
+		"unix:/var/run/autoscaler/autoscaler.sock",
+	}
+
+	// SetupGracePeriods リソース定義種別ごとのセットアップのための猶予時間(秒数)
+	SetupGracePeriods = map[string]int{
+		"Server": 60,
+	}
+)

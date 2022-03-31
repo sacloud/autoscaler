@@ -32,7 +32,7 @@ type ResourceELB struct {
 
 func NewResourceELB(ctx *RequestContext, apiClient iaas.APICaller, def *ResourceDefELB, elb *iaas.ProxyLB) (*ResourceELB, error) {
 	return &ResourceELB{
-		ResourceBase: &ResourceBase{resourceType: ResourceTypeELB},
+		ResourceBase: &ResourceBase{resourceType: ResourceTypeELB, setupGracePeriod: def.SetupGracePeriod()},
 		apiClient:    apiClient,
 		elb:          elb,
 		def:          def,
@@ -54,8 +54,9 @@ func (r *ResourceELB) Compute(ctx *RequestContext, refresh bool) (Computed, erro
 	}
 
 	computed := &computedELB{
-		instruction: handler.ResourceInstructions_NOOP,
-		elb:         &iaas.ProxyLB{},
+		instruction:      handler.ResourceInstructions_NOOP,
+		setupGracePeriod: r.setupGracePeriod,
+		elb:              &iaas.ProxyLB{},
 	}
 	if err := mapconvDecoder.ConvertTo(r.elb, computed.elb); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)

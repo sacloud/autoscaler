@@ -20,9 +20,11 @@ import (
 )
 
 type computedLoadBalancer struct {
-	instruction handler.ResourceInstructions
-	lb          *iaas.LoadBalancer
-	zone        string
+	instruction      handler.ResourceInstructions
+	setupGracePeriod int
+
+	lb   *iaas.LoadBalancer
+	zone string
 }
 
 func (c *computedLoadBalancer) ID() string {
@@ -49,6 +51,10 @@ func (c *computedLoadBalancer) Zone() string {
 
 func (c *computedLoadBalancer) Instruction() handler.ResourceInstructions {
 	return c.instruction
+}
+
+func (c *computedLoadBalancer) SetupGracePeriod() int {
+	return c.setupGracePeriod
 }
 
 func (c *computedLoadBalancer) Current() *handler.Resource {

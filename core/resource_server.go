@@ -46,7 +46,8 @@ type ResourceServer struct {
 func NewResourceServer(ctx *RequestContext, apiClient iaas.APICaller, def *ResourceDefServer, parent Resource, zone string, server *iaas.Server) (*ResourceServer, error) {
 	return &ResourceServer{
 		ResourceBase: &ResourceBase{
-			resourceType: ResourceTypeServer,
+			resourceType:     ResourceTypeServer,
+			setupGracePeriod: def.SetupGracePeriod(),
 		},
 		apiClient: apiClient,
 		zone:      zone,
@@ -84,11 +85,12 @@ func (r *ResourceServer) Compute(ctx *RequestContext, refresh bool) (Computed, e
 	}
 
 	computed := &computedServer{
-		instruction:   handler.ResourceInstructions_NOOP,
-		server:        &iaas.Server{},
-		zone:          r.zone,
-		shutdownForce: r.def.ShutdownForce,
-		parent:        parentComputed,
+		instruction:      handler.ResourceInstructions_NOOP,
+		setupGracePeriod: r.setupGracePeriod,
+		server:           &iaas.Server{},
+		zone:             r.zone,
+		shutdownForce:    r.def.ShutdownForce,
+		parent:           parentComputed,
 	}
 	if err := mapconvDecoder.ConvertTo(r.server, computed.server); err != nil {
 		return nil, fmt.Errorf("computing desired state failed: %s", err)

@@ -20,9 +20,11 @@ import (
 )
 
 type computedServerGroupInstance struct {
-	instruction handler.ResourceInstructions
-	server      *iaas.Server
-	zone        string
+	instruction      handler.ResourceInstructions
+	setupGracePeriod int
+
+	server *iaas.Server
+	zone   string
 
 	disks             []*handler.ServerGroupInstance_Disk
 	diskEditParameter *handler.ServerGroupInstance_EditParameter
@@ -59,6 +61,10 @@ func (c *computedServerGroupInstance) Zone() string {
 
 func (c *computedServerGroupInstance) Instruction() handler.ResourceInstructions {
 	return c.instruction
+}
+
+func (c *computedServerGroupInstance) SetupGracePeriod() int {
+	return c.setupGracePeriod
 }
 
 func (c *computedServerGroupInstance) parents() *handler.Parent {

@@ -20,8 +20,9 @@ import (
 )
 
 type computedDNS struct {
-	instruction handler.ResourceInstructions
-	dns         *iaas.DNS
+	instruction      handler.ResourceInstructions
+	setupGracePeriod int
+	dns              *iaas.DNS
 }
 
 func (c *computedDNS) ID() string {
@@ -48,6 +49,10 @@ func (c *computedDNS) Zone() string {
 
 func (c *computedDNS) Instruction() handler.ResourceInstructions {
 	return c.instruction
+}
+
+func (c *computedDNS) SetupGracePeriod() int {
+	return c.setupGracePeriod
 }
 
 func (c *computedDNS) Current() *handler.Resource {

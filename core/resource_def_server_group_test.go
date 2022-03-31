@@ -52,7 +52,8 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			name: "minimum",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
-					DefName: "autoscaler",
+					DefName:  "autoscaler",
+					TypeName: "ServerGroup",
 				},
 				Zone:    test.Zone,
 				MinSize: 1,
@@ -92,7 +93,8 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			name: "scale up",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
-					DefName: "resource-def-server-test",
+					DefName:  "resource-def-server-test",
+					TypeName: "ServerGroup",
 				},
 				Zone:    test.Zone,
 				MinSize: 1,
@@ -148,7 +150,8 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			name: "scale down",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
-					DefName: "resource-def-server-test",
+					DefName:  "resource-def-server-test",
+					TypeName: "ServerGroup",
 				},
 				Zone:    test.Zone,
 				MinSize: 1,
@@ -191,7 +194,8 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			name: "scale up with named plans",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
-					DefName: "resource-def-server-test",
+					DefName:  "resource-def-server-test",
+					TypeName: "ServerGroup",
 				},
 				Zone:    test.Zone,
 				MinSize: 1,
@@ -278,7 +282,8 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			name: "scale down with named plans",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
-					DefName: "resource-def-server-test",
+					DefName:  "resource-def-server-test",
+					TypeName: "ServerGroup",
 				},
 				Zone:    test.Zone,
 				MinSize: 1,
@@ -326,7 +331,8 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			name: "scale up without valid named plan",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
-					DefName: "resource-def-server-test",
+					DefName:  "resource-def-server-test",
+					TypeName: "ServerGroup",
 				},
 				Zone:    test.Zone,
 				MinSize: 1,
@@ -357,7 +363,8 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			name: "scale down without valid named plan",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
-					DefName: "resource-def-server-test",
+					DefName:  "resource-def-server-test",
+					TypeName: "ServerGroup",
 				},
 				Zone:    test.Zone,
 				MinSize: 1,
@@ -388,7 +395,8 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			name: "scale up with named plans without desired state name",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
-					DefName: "resource-def-server-test",
+					DefName:  "resource-def-server-test",
+					TypeName: "ServerGroup",
 				},
 				Zone:    test.Zone,
 				MinSize: 1,

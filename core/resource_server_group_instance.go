@@ -79,6 +79,7 @@ func (r *ResourceServerGroupInstance) Compute(ctx *RequestContext, refresh bool)
 
 	return &computedServerGroupInstance{
 		instruction:       r.instruction,
+		setupGracePeriod:  r.setupGracePeriod,
 		server:            r.server,
 		zone:              r.zone,
 		disks:             disks,

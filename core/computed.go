@@ -30,8 +30,14 @@ type Computed interface {
 	Name() string
 	// Zone このComputedが表すさくらのクラウド上のリソースが属するゾーン名、グローバルリソースの場合は空文字を返す
 	Zone() string
+
 	// Instruction 現在のリソースの状態から算出されたハンドラーへの指示の種類
 	Instruction() handler.ResourceInstructions
+	// SetupGracePeriod セットアップのための猶予時間(秒数)
+	//
+	// Handleされた後、セットアップの完了を待つためにこの秒数分待つ
+	SetupGracePeriod() int
+
 	// Current ハンドラーに渡すパラメータ、現在の状態を示す 現在存在しないリソースの場合はnilを返す
 	Current() *handler.Resource
 	// Desired ハンドラーに渡すパラメータ、InstructionがNOOPやDELETEの場合はnilを返す

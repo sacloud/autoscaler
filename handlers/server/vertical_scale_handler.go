@@ -15,6 +15,8 @@
 package server
 
 import (
+	"time"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
@@ -124,6 +126,14 @@ func (h *VerticalScaleHandler) handleServer(ctx *handlers.HandlerContext, req *h
 		if err := ctx.Report(handler.HandleResponse_RUNNING, "started"); err != nil {
 			return err
 		}
+	}
+
+	if req.SetupGracePeriod > 0 {
+		if err := ctx.Report(handler.HandleResponse_RUNNING,
+			"waiting for setup to complete: setup_grace_period=%d", req.SetupGracePeriod); err != nil {
+			return err
+		}
+		time.Sleep(time.Duration(req.SetupGracePeriod) * time.Second)
 	}
 
 	return ctx.Report(handler.HandleResponse_DONE)

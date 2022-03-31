@@ -41,6 +41,11 @@ message HandleRequest {
 
   // リソースのあるべき姿
   Resource desired = 5;
+
+  // セットアップ完了までの猶予時間(秒数)
+  // 1以上が指定されていた場合、各ハンドラ側がリクエストを受け入れた時に猶予時間まで待つ
+  // 待ち処理は各ハンドラで適切に実装する必要がある
+  uint32 setup_grace_period = 6;
 }
 
 // PostHandle時のリクエストパラメータ
@@ -66,6 +71,11 @@ message PostHandleRequest {
 
   // Handleの結果を反映した、リソースの現在の状態
   Resource current = 5;
+
+  // セットアップ完了までの猶予時間(秒数)
+  // 1以上が指定されていた場合、各ハンドラ側がリクエストを受け入れた時に猶予時間まで待つ
+  // 待ち処理は各ハンドラで適切に実装する必要がある
+  uint32 setup_grace_period = 6;
 }
 
 // Handlersからのストリームレスポンス
