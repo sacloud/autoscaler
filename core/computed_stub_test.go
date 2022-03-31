@@ -14,16 +14,19 @@
 
 package core
 
-import "github.com/sacloud/autoscaler/handler"
+import (
+	"github.com/sacloud/autoscaler/handler"
+)
 
 type stubComputed struct {
-	id          string
-	name        string
-	zone        string
-	typ         ResourceTypes
-	instruction handler.ResourceInstructions
-	current     *handler.Resource
-	desired     *handler.Resource
+	id               string
+	name             string
+	zone             string
+	typ              ResourceTypes
+	instruction      handler.ResourceInstructions
+	setupGracePeriod int
+	current          *handler.Resource
+	desired          *handler.Resource
 }
 
 func (c *stubComputed) ID() string {
@@ -44,6 +47,10 @@ func (c *stubComputed) Zone() string {
 
 func (c *stubComputed) Instruction() handler.ResourceInstructions {
 	return c.instruction
+}
+
+func (c *stubComputed) SetupGracePeriod() int {
+	return c.setupGracePeriod
 }
 
 func (c *stubComputed) Current() *handler.Resource {

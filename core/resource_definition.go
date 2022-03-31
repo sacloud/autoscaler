@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 
+	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/iaas-api-go"
 )
 
@@ -41,6 +42,14 @@ type ResourceDefinition interface {
 type ResourceDefBase struct {
 	TypeName string `yaml:"type" validate:"required,oneof=EnhancedLoadBalancer ELB Router Server ServerGroup"`
 	DefName  string `yaml:"name" validate:"required"`
+
+	// セットアップのための猶予時間(秒数)
+	// Handleされた後、セットアップの完了を待つためにこの秒数分待つ
+	// 0の場合はTypeごとに定められたデフォルト値が用いられる。
+	// デフォルト値:
+	//    - Server: 60
+	//    - 上記以外: 0
+	SetupGracePeriodSec int `yaml:"setup_grace_period" validate:"omitempty,min=0,max=600"`
 }
 
 func (r *ResourceDefBase) Type() ResourceTypes {
@@ -62,4 +71,15 @@ func (r *ResourceDefBase) Type() ResourceTypes {
 
 func (r *ResourceDefBase) Name() string {
 	return r.DefName
+}
+
+func (r *ResourceDefBase) SetupGracePeriod() int {
+	sec := r.SetupGracePeriodSec
+	if sec == 0 {
+		v, ok := defaults.SetupGracePeriods[r.Type().String()]
+		if ok {
+			sec = v
+		}
+	}
+	return sec
 }

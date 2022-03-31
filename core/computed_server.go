@@ -20,7 +20,9 @@ import (
 )
 
 type computedServer struct {
-	instruction   handler.ResourceInstructions
+	instruction      handler.ResourceInstructions
+	setupGracePeriod int
+
 	server        *iaas.Server
 	zone          string
 	newCPU        int
@@ -53,6 +55,10 @@ func (c *computedServer) Zone() string {
 
 func (c *computedServer) Instruction() handler.ResourceInstructions {
 	return c.instruction
+}
+
+func (c *computedServer) SetupGracePeriod() int {
+	return c.setupGracePeriod
 }
 
 func (c *computedServer) parents() *handler.Parent {

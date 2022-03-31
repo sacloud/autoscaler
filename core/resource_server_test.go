@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/iaas-api-go"
@@ -51,7 +52,7 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 
 	def := &ResourceDefServer{
 		ResourceDefBase: &ResourceDefBase{
-			TypeName: "",
+			TypeName: "Server",
 		},
 		Selector: &MultiZoneSelector{
 			ResourceSelector: &ResourceSelector{},
@@ -87,7 +88,7 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 	}
 }
 
-func TestResourceServer2_Compute(t *testing.T) {
+func TestResourceServer_Compute(t *testing.T) {
 	server := initTestResourceServer(t)
 	defer func() {
 		if err := iaas.NewServerOp(test.APIClient).Delete(context.Background(), test.Zone, server.ID); err != nil {
@@ -96,7 +97,7 @@ func TestResourceServer2_Compute(t *testing.T) {
 	}()
 	def := &ResourceDefServer{
 		ResourceDefBase: &ResourceDefBase{
-			TypeName: "",
+			TypeName: "Server",
 			DefName:  "default",
 		},
 		Selector: &MultiZoneSelector{
@@ -113,7 +114,8 @@ func TestResourceServer2_Compute(t *testing.T) {
 	}
 	resource := &ResourceServer{
 		ResourceBase: &ResourceBase{
-			resourceType: ResourceTypeServer,
+			resourceType:     ResourceTypeServer,
+			setupGracePeriod: def.SetupGracePeriod(),
 		},
 		apiClient: test.APIClient,
 		server:    server,
@@ -143,12 +145,13 @@ func TestResourceServer2_Compute(t *testing.T) {
 				refresh: false,
 			},
 			want: &computedServer{
-				instruction: handler.ResourceInstructions_UPDATE,
-				server:      server,
-				zone:        test.Zone,
-				newCPU:      4,
-				newMemory:   8,
-				parent:      nil,
+				instruction:      handler.ResourceInstructions_UPDATE,
+				server:           server,
+				zone:             test.Zone,
+				newCPU:           4,
+				newMemory:        8,
+				setupGracePeriod: defaults.SetupGracePeriods[ResourceTypeServer.String()],
+				parent:           nil,
 			},
 			wantErr: false,
 		},
@@ -164,12 +167,13 @@ func TestResourceServer2_Compute(t *testing.T) {
 				refresh: false,
 			},
 			want: &computedServer{
-				instruction: handler.ResourceInstructions_UPDATE,
-				server:      server,
-				zone:        test.Zone,
-				newCPU:      1,
-				newMemory:   1,
-				parent:      nil,
+				instruction:      handler.ResourceInstructions_UPDATE,
+				server:           server,
+				zone:             test.Zone,
+				newCPU:           1,
+				newMemory:        1,
+				setupGracePeriod: defaults.SetupGracePeriods[ResourceTypeServer.String()],
+				parent:           nil,
 			},
 			wantErr: false,
 		},

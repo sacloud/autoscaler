@@ -46,11 +46,11 @@ const (
 )
 
 var (
-	coreCmd  = exec.Command("autoscaler", "start")
+	coreCmd  = exec.Command("autoscaler", "start", "--log-level", "debug")
 	inputCmd = exec.Command("autoscaler", "inputs", "grafana", "--addr", "127.0.0.1:8080")
 
 	proxyLBReadyTimeout = 5 * time.Minute
-	e2eTestTimeout      = 20 * time.Minute
+	e2eTestTimeout      = 30 * time.Minute
 
 	//go:embed webhook.json
 	grafanaWebhookBody []byte
@@ -75,7 +75,7 @@ func TestE2E_VerticalScaling(t *testing.T) {
 	 *************************************************************************/
 	log.Println("step0: setup")
 	// ProxyLBへのHTTPリクエストが通るようになるまで待ち & ポーリング開始
-	if err := waitProxyLBAndStartHTTPRequestLoop(ctx, t); err != nil {
+	if err := waitResourceReadyLAndStartHTTPRequestLoop(ctx, t); err != nil {
 		t.Fatal(err)
 	}
 
@@ -84,10 +84,10 @@ func TestE2E_VerticalScaling(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if server.CPU != 1 || server.GetMemoryGB() != 1 {
+	if server.CPU != 1 || server.GetMemoryGB() != 2 {
 		coreOutput.FatalWithStderrOutputs(t,
 			fmt.Sprintf(
-				"server has unexpected initial plan: expected: {CPU:1, Memory:1} actual: {CPU:%d, Memory:%d}",
+				"server has unexpected initial plan: expected: {CPU:1, Memory:2} actual: {CPU:%d, Memory:%d}",
 				server.CPU,
 				server.GetMemoryGB(),
 			),
@@ -131,10 +131,10 @@ func TestE2E_VerticalScaling(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if server.CPU != 2 || server.GetMemoryGB() != 2 {
+	if server.CPU != 2 || server.GetMemoryGB() != 4 {
 		coreOutput.FatalWithStderrOutputs(t,
 			fmt.Sprintf(
-				"server has unexpected plan: expected: {CPU:2, Memory:2} actual: {CPU:%d, Memory:%d}",
+				"server has unexpected plan: expected: {CPU:2, Memory:4} actual: {CPU:%d, Memory:%d}",
 				server.CPU,
 				server.GetMemoryGB(),
 			),
@@ -199,10 +199,10 @@ func TestE2E_VerticalScaling(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if server.CPU != 1 || server.GetMemoryGB() != 1 {
+	if server.CPU != 1 || server.GetMemoryGB() != 2 {
 		coreOutput.FatalWithStderrOutputs(t,
 			fmt.Sprintf(
-				"server has unexpected plan: expected: {CPU:1, Memory:1} actual: {CPU:%d, Memory:%d}",
+				"server has unexpected plan: expected: {CPU:1, Memory:2} actual: {CPU:%d, Memory:%d}",
 				server.CPU,
 				server.GetMemoryGB(),
 			),
@@ -294,9 +294,31 @@ func fetchSakuraCloudServer() (*iaas.Server, error) {
 	return found.Servers[0], nil
 }
 
-func waitProxyLBAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error {
+func waitResourceReadyLAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error {
+	// 対象サーバごとにHTTPリクエストが通るようになるまで待つ
+	serverOp := iaas.NewServerOp(e2e.SacloudAPICaller)
+	found, err := serverOp.Find(context.Background(), "is1a", &iaas.FindCondition{
+		Filter: search.Filter{
+			search.Key("Name"): search.PartialMatch("autoscaler-e2e-vertical-scaling"),
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if len(found.Servers) == 0 {
+		return fmt.Errorf("server 'autoscaler-e2e-vertical-scaling-*' not found")
+	}
+
+	for _, server := range found.Servers {
+		url := fmt.Sprintf("http://%s", server.Interfaces[0].IPAddress)
+		if err := e2e.HttpRequestUntilSuccess(url, proxyLBReadyTimeout); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// ELB
 	elbOp := iaas.NewProxyLBOp(e2e.SacloudAPICaller)
-	found, err := elbOp.Find(context.Background(), &iaas.FindCondition{
+	foundElb, err := elbOp.Find(context.Background(), &iaas.FindCondition{
 		Filter: search.Filter{
 			search.Key("Name"): search.PartialMatch("autoscaler-e2e-vertical-scaling"),
 		},
@@ -305,10 +327,10 @@ func waitProxyLBAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error
 		return err
 	}
 
-	if len(found.ProxyLBs) == 0 {
+	if len(foundElb.ProxyLBs) == 0 {
 		return fmt.Errorf("proxylb 'autoscaler-e2e-vertical-scaling' not found")
 	}
-	elb := found.ProxyLBs[0]
+	elb := foundElb.ProxyLBs[0]
 
 	// vip宛にリクエストが通るまで待機
 	url := fmt.Sprintf("http://%s", elb.VirtualIPAddress)

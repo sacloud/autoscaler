@@ -20,7 +20,9 @@ import (
 )
 
 type computedRouter struct {
-	instruction  handler.ResourceInstructions
+	instruction      handler.ResourceInstructions
+	setupGracePeriod int
+
 	router       *iaas.Internet
 	zone         string
 	newBandWidth int
@@ -50,6 +52,10 @@ func (c *computedRouter) Zone() string {
 
 func (c *computedRouter) Instruction() handler.ResourceInstructions {
 	return c.instruction
+}
+
+func (c *computedRouter) SetupGracePeriod() int {
+	return c.setupGracePeriod
 }
 
 func (c *computedRouter) Current() *handler.Resource {

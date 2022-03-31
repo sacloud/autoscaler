@@ -17,6 +17,7 @@ package core
 import (
 	"testing"
 
+	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/iaas-api-go/types"
 )
 
@@ -72,6 +73,57 @@ func TestMultiZoneSelector_Validate(t *testing.T) {
 			}
 			if err := rs.Validate(); (err != nil) != tt.wantErr {
 				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestResourceDefBase_SetupGracePeriod(t *testing.T) {
+	type fields struct {
+		TypeName            string
+		DefName             string
+		SetupGracePeriodSec int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   int
+	}{
+		{
+			name: "server with default",
+			fields: fields{
+				TypeName: "Server",
+				DefName:  "test1",
+			},
+			want: defaults.SetupGracePeriods[ResourceTypeServer.String()],
+		},
+		{
+			name: "other types",
+			fields: fields{
+				TypeName:            "ELB",
+				DefName:             "test1",
+				SetupGracePeriodSec: 30,
+			},
+			want: 30,
+		},
+		{
+			name: "other types with default",
+			fields: fields{
+				TypeName: "ELB",
+				DefName:  "test1",
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &ResourceDefBase{
+				TypeName:            tt.fields.TypeName,
+				DefName:             tt.fields.DefName,
+				SetupGracePeriodSec: tt.fields.SetupGracePeriodSec,
+			}
+			if got := r.SetupGracePeriod(); got != tt.want {
+				t.Errorf("SetupGracePeriod() = %v, want %v", got, tt.want)
 			}
 		})
 	}
