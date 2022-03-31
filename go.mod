@@ -14,9 +14,9 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.29.0
-	github.com/sacloud/api-client-go v0.0.3
-	github.com/sacloud/iaas-api-go v0.0.2
-	github.com/sacloud/iaas-service-go v0.0.3
+	github.com/sacloud/api-client-go v0.1.0
+	github.com/sacloud/iaas-api-go v1.0.0
+	github.com/sacloud/iaas-service-go v1.0.0
 	github.com/sacloud/packages-go v0.0.2
 	github.com/shivamMg/ppds v0.0.1
 	github.com/spf13/cobra v1.1.3
@@ -50,7 +50,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
-	github.com/sacloud/go-http v0.0.4 // indirect
+	github.com/sacloud/go-http v0.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/zclconf/go-cty v1.10.0 // indirect
 	go.uber.org/ratelimit v0.2.0 // indirect
