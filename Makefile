@@ -42,10 +42,10 @@ tools:
 	go install github.com/rinchsan/gosimports/cmd/gosimports@latest
 	go install golang.org/x/tools/cmd/stringer@latest
 	go install github.com/sacloud/addlicense@latest
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
 	go install github.com/google/go-licenses@v1.0.0
-	go install github.com/grpc-ecosystem/grpc-health-probe@v0.4.2
+	go install github.com/grpc-ecosystem/grpc-health-probe@v0.4.8
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.45.2/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.45.2
 
 .PHONY: gen
