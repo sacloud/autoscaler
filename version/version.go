@@ -21,12 +21,12 @@ import (
 
 var (
 	// Version app version
-	Version = "v0.5.1"
+	Version = "0.5.1"
 	// Revision git commit short commithash
 	Revision = "xxxxxx" // set on build time
 )
 
 // FullVersion return full version text
 func FullVersion() string {
-	return fmt.Sprintf("%s %s/%s, build %s", Version, runtime.GOOS, runtime.GOARCH, Revision)
+	return fmt.Sprintf("v%s %s/%s, build %s", Version, runtime.GOOS, runtime.GOARCH, Revision)
 }

@@ -33,7 +33,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: flags.ValidateLogFlags,
 	SilenceUsage:      true,
 	SilenceErrors:     false,
-	Version:           version.Version,
+	Version:           "v" + version.Version,
 }
 
 var subCommands = []*cobra.Command{

@@ -31,7 +31,7 @@ var Command = &cobra.Command{
 	Use:   "version",
 	Short: "show version",
 	RunE: func(*cobra.Command, []string) error {
-		v := version.Version
+		v := "v" + version.Version
 		if all {
 			v = version.FullVersion()
 		}

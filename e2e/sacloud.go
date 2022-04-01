@@ -31,7 +31,7 @@ var SacloudAPICaller = api.NewCallerWithOptions(&api.CallerOptions{
 		AccessToken:       os.Getenv("SAKURACLOUD_ACCESS_TOKEN"),
 		AccessTokenSecret: os.Getenv("SAKURACLOUD_ACCESS_TOKEN_SECRET"),
 		UserAgent: fmt.Sprintf(
-			"sacloud/autoscaler/v%s/e2e-test (%s/%s; +https://github.com/sacloud/autoscaler) %s",
+			"sacloud/autoscaler@v%s:e2e-test (%s/%s; +https://github.com/sacloud/autoscaler) %s",
 			version.Version,
 			runtime.GOOS,
 			runtime.GOARCH,
