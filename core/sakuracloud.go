@@ -59,7 +59,7 @@ func (sc *SakuraCloud) APIClient() iaas.APICaller {
 				AccessTokenSecret: sc.Secret,
 				HttpClient:        &http.Client{},
 				UserAgent: fmt.Sprintf(
-					"sacloud/autoscaler/%s (%s/%s; +https://github.com/sacloud/autoscaler) %s",
+					"sacloud/autoscaler/v%s (%s/%s; +https://github.com/sacloud/autoscaler) %s",
 					version.Version,
 					runtime.GOOS,
 					runtime.GOARCH,
