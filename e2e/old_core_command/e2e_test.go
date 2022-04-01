@@ -56,6 +56,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestE2E_OldCoreCommand(t *testing.T) {
+	defer output.OutputLogs()
+
 	/**************************************************************************
 	 * Step 1: 古いコマンド(autoscaler core start)でのCoreの起動確認
 	 *************************************************************************/
@@ -69,7 +71,7 @@ func TestE2E_OldCoreCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	go output.CollectOutputs("[Core]", coreOutputs)
-	if err := output.WaitOutput(coreReadyMarker, 10*time.Second); err != nil {
+	if err := output.WaitOutput(coreReadyMarker, time.Minute); err != nil {
 		t.Fatal(err)
 	}
 
@@ -82,7 +84,6 @@ func TestE2E_OldCoreCommand(t *testing.T) {
 		t.Fatalf("grpc-health-prove: unexpected response: %s", string(out))
 	}
 
-	defer output.OutputLogs()
 }
 
 func setup() {
