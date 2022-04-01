@@ -1,0 +1,7 @@
+resources:
+  - type: ELB
+    name: "elb"
+    selector:
+      names: ["autoscaler-e2e-old-core-command"]
+autoscaler:
+  cooldown: 5
