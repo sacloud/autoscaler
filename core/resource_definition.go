@@ -41,7 +41,7 @@ type ResourceDefinition interface {
 // Resourceの実装に埋め込む場合、Compute()でComputedCacheを設定すること
 type ResourceDefBase struct {
 	TypeName string `yaml:"type" validate:"required,oneof=EnhancedLoadBalancer ELB Router Server ServerGroup"`
-	DefName  string `yaml:"name" validate:"required"`
+	DefName  string `yaml:"name"`
 
 	// セットアップのための猶予時間(秒数)
 	// Handleされた後、セットアップの完了を待つためにこの秒数分待つ

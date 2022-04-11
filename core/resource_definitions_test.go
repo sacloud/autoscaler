@@ -181,6 +181,23 @@ func TestResourceDefinitions_Validate(t *testing.T) {
 			want: nil,
 		},
 		{
+			name: "omit resource name",
+			rds: ResourceDefinitions{
+				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "ELB"}},
+			},
+			want: nil,
+		},
+		{
+			name: "omit resource name with multiple resources",
+			rds: ResourceDefinitions{
+				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "ELB"}},
+				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "ELB", DefName: "stub1"}},
+			},
+			want: []error{
+				fmt.Errorf("name is required if the configuration has more than one resource"),
+			},
+		},
+		{
 			name: "duplicated",
 			rds: ResourceDefinitions{
 				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "ELB", DefName: "duplicated"}},
