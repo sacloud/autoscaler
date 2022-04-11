@@ -38,10 +38,17 @@ func (rds *ResourceDefinitions) Validate(ctx context.Context, apiClient iaas.API
 		if errs := r.Validate(ctx, apiClient); len(errs) > 0 {
 			errors = append(errors, errs...)
 		}
-		if _, exist := names[r.Name()]; exist {
-			errors = append(errors, fmt.Errorf("resource name %s is duplicated", r.Name()))
+
+		if len(*rds) > 1 {
+			if r.Name() == "" {
+				errors = append(errors, fmt.Errorf("name is required if the configuration has more than one resource"))
+			}
+			if _, exist := names[r.Name()]; exist {
+				errors = append(errors, fmt.Errorf("resource name %s is duplicated", r.Name()))
+			}
+			names[r.Name()] = struct{}{}
 		}
-		names[r.Name()] = struct{}{}
+
 		return nil
 	}
 

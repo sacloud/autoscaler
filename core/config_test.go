@@ -62,7 +62,6 @@ func TestConfig_Load(t *testing.T) {
 				Resources: ResourceDefinitions{
 					&ResourceDefServer{
 						ResourceDefBase: &ResourceDefBase{
-							DefName:  "test-name",
 							TypeName: "Server",
 						},
 						Selector: &MultiZoneSelector{
@@ -110,7 +109,6 @@ handlers:
     endpoint: "unix:autoscaler-handlers-fake.sock"
 resources:
   - type: Server
-    name: "test-name"
     selector:
       names: ["test-name"]
       tags: ["test-tag"]
