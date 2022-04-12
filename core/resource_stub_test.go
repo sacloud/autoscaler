@@ -23,13 +23,19 @@ import (
 type stubResourceDef struct {
 	*ResourceDefBase
 	computeFunc func(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error)
+
+	Dummy        string `validate:"omitempty,oneof=value1 value2"`
+	validateFunc func(ctx context.Context, apiClient iaas.APICaller) []error
 }
 
 func (d *stubResourceDef) String() string {
 	return "stub"
 }
 
-func (d *stubResourceDef) Validate(_ context.Context, _ iaas.APICaller) []error {
+func (d *stubResourceDef) Validate(ctx context.Context, apiClient iaas.APICaller) []error {
+	if d.validateFunc != nil {
+		return d.validateFunc(ctx, apiClient)
+	}
 	return nil
 }
 
