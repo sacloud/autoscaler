@@ -29,8 +29,6 @@ func Test_handleHandlerResponseStatus_eachStatus(t *testing.T) {
 		handler.HandleResponse_RUNNING:  true,
 		handler.HandleResponse_DONE:     true,
 		handler.HandleResponse_IGNORED:  false,
-		handler.HandleResponse_CANCELED: false,
-		handler.HandleResponse_FAILED:   false,
 	}
 	for status, want := range tests {
 		ctx := &HandlingContext{

@@ -89,8 +89,6 @@ message HandleResponse {
     RUNNING  = 13;
     DONE     = 14;
     IGNORED  = 15;
-    CANCELED = 16;
-    FAILED   = 17;
   }
 
   string scaling_job_id = 1;
