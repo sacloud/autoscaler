@@ -322,6 +322,8 @@ func (h *Handler) handleHandlerResponse(ctx *HandlingContext, receiver handlerRe
 			kvs = append(kvs, "log", stat.Log)
 		}
 
+		handleHandlerResponseStatus(ctx, stat.Status)
+
 		if stat.Status == handler.HandleResponse_IGNORED && stat.Log == "" {
 			if err := ctx.Logger().Debug(kvs...); err != nil {
 				return err
@@ -334,6 +336,13 @@ func (h *Handler) handleHandlerResponse(ctx *HandlingContext, receiver handlerRe
 	return nil
 }
 
+func handleHandlerResponseStatus(ctx *HandlingContext, status handler.HandleResponse_Status) {
+	// いずれかのハンドラが一度でもRUNNING/DONEを返したらハンドラ処理済みとみなす
+	if status == handler.HandleResponse_RUNNING || status == handler.HandleResponse_DONE {
+		ctx.RequestContext.handled = true
+	}
+}
+
 type builtinResponseSender struct {
 	ctx *HandlingContext
 }
@@ -343,6 +352,8 @@ func (s *builtinResponseSender) Send(res *handler.HandleResponse) error {
 	if res.Log != "" {
 		kvs = append(kvs, "log", res.Log)
 	}
+
+	handleHandlerResponseStatus(s.ctx, res.Status)
 
 	if res.Status == handler.HandleResponse_IGNORED && res.Log == "" {
 		return s.ctx.Logger().Debug(kvs...)

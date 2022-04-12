@@ -14,7 +14,10 @@
 
 package core
 
-import "github.com/sacloud/autoscaler/handler"
+import (
+	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/autoscaler/log"
+)
 
 // HandlingContext 1リクエスト中の1リソースに対するハンドリングのスコープに対応するコンテキスト
 //
@@ -22,23 +25,19 @@ import "github.com/sacloud/autoscaler/handler"
 type HandlingContext struct {
 	*RequestContext
 	cachedComputed Computed
+	logger         *log.Logger
 }
 
 func NewHandlingContext(parent *RequestContext, computed Computed) *HandlingContext {
 	return &HandlingContext{
 		RequestContext: parent,
 		cachedComputed: computed,
+		logger:         parent.logger,
 	}
 }
 
 func (c *HandlingContext) WithLogger(keyvals ...interface{}) *HandlingContext {
-	ctx := NewHandlingContext(&RequestContext{
-		ctx:       c.RequestContext.ctx,
-		request:   c.RequestContext.request,
-		job:       c.RequestContext.job,
-		logger:    c.RequestContext.logger,
-		tlsConfig: c.RequestContext.tlsConfig,
-	}, c.cachedComputed)
+	ctx := NewHandlingContext(c.RequestContext, c.cachedComputed)
 	ctx.logger = ctx.logger.With(keyvals...)
 	return ctx
 }
