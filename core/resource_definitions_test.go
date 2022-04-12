@@ -15,11 +15,15 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/goccy/go-yaml"
+	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/test"
+	"github.com/sacloud/autoscaler/validate"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/stretchr/testify/require"
 )
 
@@ -205,6 +209,21 @@ func TestResourceDefinitions_Validate(t *testing.T) {
 			},
 			want: []error{
 				fmt.Errorf("resource name duplicated is duplicated"),
+			},
+		},
+		{
+			name: "call definition's Validate() only when it passes structure validation",
+			rds: ResourceDefinitions{
+				&stubResourceDef{
+					ResourceDefBase: &ResourceDefBase{TypeName: "ELB"},
+					Dummy:           "dummy",
+					validateFunc: func(ctx context.Context, apiClient iaas.APICaller) []error {
+						return []error{fmt.Errorf("xxx")}
+					},
+				},
+			},
+			want: []error{
+				multierror.Prefix(validate.Struct(&stubResourceDef{Dummy: "dummy"}), "resource=EnhancedLoadBalancer"),
 			},
 		},
 	}

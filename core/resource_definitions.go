@@ -34,9 +34,11 @@ func (rds *ResourceDefinitions) Validate(ctx context.Context, apiClient iaas.API
 	fn := func(r ResourceDefinition) error {
 		if err := validate.Struct(r); err != nil {
 			errors = append(errors, multierror.Prefix(err, fmt.Sprintf("resource=%s", r.Type())))
-		}
-		if errs := r.Validate(ctx, apiClient); len(errs) > 0 {
-			errors = append(errors, errs...)
+		} else {
+			// structレベルでバリデーションが通った場合のみResourceDefのバリデーションを呼ぶ
+			if errs := r.Validate(ctx, apiClient); len(errs) > 0 {
+				errors = append(errors, errs...)
+			}
 		}
 
 		if len(*rds) > 1 {
