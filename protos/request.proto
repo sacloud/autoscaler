@@ -49,11 +49,12 @@ message ScalingResponse {
 
 // ジョブのステータス
 enum ScalingJobStatus {
-  JOB_UNKNOWN  = 0;
-  JOB_ACCEPTED = 1;
-  JOB_RUNNING  = 2;
-  JOB_DONE     = 3;
-  JOB_CANCELED = 4;
-  JOB_IGNORED  = 5;
-  JOB_FAILED   = 6;
+  JOB_UNKNOWN   = 0; // 不明
+  JOB_ACCEPTED  = 1; // 受付済み
+  JOB_RUNNING   = 2; // 実行中
+  JOB_DONE      = 3; // 完了(ハンドラが処理を行った)
+  JOB_CANCELED  = 4; // 開始前に中断
+  JOB_IGNORED   = 5; // 無視(受け入れなかった)
+  JOB_FAILED    = 6; // 失敗/エラー
+  JOB_DONE_NOOP = 7; // 完了(ハンドラが何も処理しなかった)
 }

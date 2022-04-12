@@ -78,6 +78,15 @@ func TestJobStatus_Acceptable(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "returns true if status is DONE_NOOP",
+			fields: fields{
+				status:        request.ScalingJobStatus_JOB_DONE_NOOP,
+				statusChanged: time.Now().Add(-2 * time.Second),
+				coolDownTime:  time.Second,
+			},
+			want: true,
+		},
+		{
 			name: "returns false if status is ACCEPTED",
 			fields: fields{
 				status:        request.ScalingJobStatus_JOB_ACCEPTED,

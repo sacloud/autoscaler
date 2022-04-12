@@ -30,6 +30,8 @@ type RequestContext struct {
 	logger    *log.Logger
 	tlsConfig *config.TLSStruct
 	zone      string
+
+	handled bool
 }
 
 // NewRequestContext 新しいリクエストコンテキストを生成する

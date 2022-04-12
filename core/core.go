@@ -203,10 +203,10 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 		return job, "", err
 	}
 
-	go rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
-
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) // nolint
+
+	go rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
 	return job, "", nil
 }
 

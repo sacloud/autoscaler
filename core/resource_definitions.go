@@ -115,8 +115,13 @@ func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient iaas.AP
 		return
 	}
 
-	job.SetStatus(request.ScalingJobStatus_JOB_DONE)
-	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_DONE) // nolint
+	status := request.ScalingJobStatus_JOB_DONE_NOOP
+	if ctx.handled {
+		status = request.ScalingJobStatus_JOB_DONE
+	}
+
+	job.SetStatus(status)
+	ctx.Logger().Info("status", status) // nolint
 }
 
 func (rds *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient iaas.APICaller, handlers Handlers, defs ResourceDefinitions) error {
