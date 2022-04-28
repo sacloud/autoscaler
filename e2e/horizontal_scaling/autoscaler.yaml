@@ -5,6 +5,8 @@ resources:
     min_size: 0
     max_size: 5
 
+    setup_grace_period: 30
+
     plans:
       - {name: "smallest", size: 0}
       - {name: "medium", size: 3}
