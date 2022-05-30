@@ -481,7 +481,26 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 		want []error
 	}{
 		{
-			name: "min/max size",
+			name: "returns error when name and server_name_prefix is empty",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+				},
+				Zone:    "is1a",
+				MaxSize: 1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			want: []error{
+				fmt.Errorf("resource=ServerGroup name or server_name_prefix: required"),
+			},
+		},
+		{
+			name: "returns error with invalid min/max size",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: "ServerGroup",
@@ -503,7 +522,7 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 			},
 		},
 		{
-			name: "minimum valid definition",
+			name: "returns no error without server_name_prefix",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: "ServerGroup",
@@ -521,6 +540,25 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 			},
 			want: nil,
 		},
+		{
+			name: "returns no error without DefName",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+				},
+				ServerNamePrefix: "test",
+				Zone:             "is1a",
+				MinSize:          1,
+				MaxSize:          1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			want: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -528,7 +566,10 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 			if len(got) == 0 {
 				got = tt.def.Validate(testContext(), test.APIClient)
 			}
-			require.EqualValues(t, tt.want, got)
+			require.Equal(t, len(tt.want), len(got))
+			for i := range got {
+				require.Equal(t, tt.want[i].Error(), got[i].Error())
+			}
 		})
 	}
 }
@@ -848,6 +889,54 @@ func TestResourceDefServerGroup_desiredPlan(t *testing.T) {
 				return
 			}
 			require.EqualValues(t, tt.want, got)
+		})
+	}
+}
+
+func TestResourceDefServerGroup_filterCloudServers(t *testing.T) {
+	tests := []struct {
+		name    string
+		prefix  string
+		servers []*iaas.Server
+		want    []*iaas.Server
+	}{
+		{
+			name:   "minimum",
+			prefix: "foo",
+			servers: []*iaas.Server{
+				{Name: "foo-001"},
+				{Name: "foo-002"},
+				{Name: "bar-001"},
+			},
+			want: []*iaas.Server{
+				{Name: "foo-001"},
+				{Name: "foo-002"},
+			},
+		},
+		{
+			name:   "filtered by prefix",
+			prefix: "bar",
+			servers: []*iaas.Server{
+				{Name: "bar-001"},
+				{Name: "bar-002"},
+				{Name: "foobar-001"},
+			},
+			want: []*iaas.Server{
+				{Name: "bar-001"},
+				{Name: "bar-002"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+					DefName:  tt.prefix,
+				},
+				ServerNamePrefix: tt.prefix,
+			}
+			require.Equal(t, tt.want, d.filterCloudServers(tt.servers))
 		})
 	}
 }

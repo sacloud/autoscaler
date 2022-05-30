@@ -23,8 +23,10 @@ resources:
 
   # サーバ(水平スケール)
   - type: ServerGroup
-    # サーバグループ名、グループ内の各サーバの名前のプレフィックスして利用される(例: server-group-001)
     name: "server-group"
+
+    # グループ内の各サーバの名前のプレフィックス
+    server_name_prefix: "server-group"
     zone: "is1a"
 
     min_size: 5   # 最小インスタンス数
