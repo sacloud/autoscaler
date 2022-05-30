@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/handler"
@@ -29,7 +30,8 @@ import (
 type ResourceDefServerGroup struct {
 	*ResourceDefBase `yaml:",inline" validate:"required"`
 
-	Zone string `yaml:"zone" validate:"required,zone"`
+	ServerNamePrefix string `yaml:"server_name_prefix"` // NameまたはServerNamePrefixが必須
+	Zone             string `yaml:"zone" validate:"required,zone"`
 
 	MinSize int `yaml:"min_size" validate:"min=0,ltefield=MaxSize"`
 	MaxSize int `yaml:"max_size" validate:"min=0,gtecsfield=MinSize"`
@@ -46,8 +48,18 @@ func (d *ResourceDefServerGroup) String() string {
 	return fmt.Sprintf("Zone: %s, Name: %s", d.Zone, d.Name())
 }
 
+func (d *ResourceDefServerGroup) namePrefix() string {
+	if d.ServerNamePrefix != "" {
+		return d.ServerNamePrefix
+	}
+	return d.Name()
+}
+
 func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.APICaller) []error {
 	errors := &multierror.Error{}
+	if d.namePrefix() == "" {
+		errors = multierror.Append(errors, fmt.Errorf("name or server_name_prefix: required"))
+	}
 	for _, p := range d.Plans {
 		if !(d.MinSize <= p.Size && p.Size <= d.MaxSize) {
 			errors = multierror.Append(errors, fmt.Errorf("plan: plan.size must be between min_size and max_size: size:%d", p.Size))
@@ -190,7 +202,7 @@ func (d *ResourceDefServerGroup) resourceIndex(resource Resource) int {
 
 func (d *ResourceDefServerGroup) serverNameByIndex(index int) string {
 	nameFormat := "%s-%03d" // TODO フォーマット指定可能にする
-	return fmt.Sprintf(nameFormat, d.Name(), index+1)
+	return fmt.Sprintf(nameFormat, d.namePrefix(), index+1)
 }
 
 func (d *ResourceDefServerGroup) determineServerName(resources Resources) (string, int) {
@@ -212,15 +224,28 @@ func (d *ResourceDefServerGroup) determineServerName(resources Resources) (strin
 
 func (d *ResourceDefServerGroup) findCloudResources(ctx context.Context, apiClient iaas.APICaller) ([]*iaas.Server, error) {
 	serverOp := iaas.NewServerOp(apiClient)
-	selector := &ResourceSelector{Names: []string{d.Name()}}
+	selector := &ResourceSelector{Names: []string{d.namePrefix()}}
 	found, err := serverOp.Find(ctx, d.Zone, selector.findCondition())
 	if err != nil {
 		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
 
+	// Nameとd.namePrefix()が前方一致するリソースだけに絞る
+	servers := d.filterCloudServers(found.Servers)
+
 	// 名前の昇順にソート
-	sort.Slice(found.Servers, func(i, j int) bool {
-		return found.Servers[i].Name < found.Servers[j].Name
+	sort.Slice(servers, func(i, j int) bool {
+		return servers[i].Name < servers[j].Name
 	})
-	return found.Servers, nil
+	return servers, nil
+}
+
+func (d *ResourceDefServerGroup) filterCloudServers(servers []*iaas.Server) []*iaas.Server {
+	var filtered []*iaas.Server
+	for _, server := range servers {
+		if strings.HasPrefix(server.Name, d.namePrefix()) {
+			filtered = append(filtered, server)
+		}
+	}
+	return filtered
 }
