@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
@@ -60,6 +61,11 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.AP
 	if d.namePrefix() == "" {
 		errors = multierror.Append(errors, fmt.Errorf("name or server_name_prefix: required"))
 	}
+
+	if err := d.printWarningForServerNamePrefix(ctx); err != nil {
+		errors = multierror.Append(errors, err)
+	}
+
 	for _, p := range d.Plans {
 		if !(d.MinSize <= p.Size && p.Size <= d.MaxSize) {
 			errors = multierror.Append(errors, fmt.Errorf("plan: plan.size must be between min_size and max_size: size:%d", p.Size))
@@ -73,6 +79,20 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.AP
 	// set prefix
 	errors = multierror.Prefix(errors, fmt.Sprintf("resource=%s", d.Type().String())).(*multierror.Error)
 	return errors.Errors
+}
+
+// printWarningForServerNamePrefix ServerNamePrefixをNameで代用することへの経過措置、将来のバージョンでは除去される予定
+//
+// see:https://github.com/sacloud/autoscaler/issues/338
+func (d *ResourceDefServerGroup) printWarningForServerNamePrefix(ctx context.Context) error {
+	if d.Name() != "" && d.ServerNamePrefix == "" {
+		if loggerHolder, ok := ctx.(config.LoggerHolder); ok {
+			if err := loggerHolder.Logger().Warn("message", "required: server_name_prefix"); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (d *ResourceDefServerGroup) resourcePlans() ResourcePlans {

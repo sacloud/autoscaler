@@ -15,12 +15,15 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/iaas-api-go"
@@ -937,6 +940,59 @@ func TestResourceDefServerGroup_filterCloudServers(t *testing.T) {
 				ServerNamePrefix: tt.prefix,
 			}
 			require.Equal(t, tt.want, d.filterCloudServers(tt.servers))
+		})
+	}
+}
+
+func TestResourceDefServerGroup_printWarningForServerNamePrefix(t *testing.T) {
+	writer := new(bytes.Buffer)
+	ctx := config.NewLoadConfigContext(
+		context.Background(), false, log.NewLogger(&log.LoggerOption{Writer: writer}),
+	)
+	type fields struct {
+		Name             string
+		ServerNamePrefix string
+	}
+	tests := []struct {
+		name     string
+		fields   fields
+		wantWarn bool
+	}{
+		{
+			name: "warn with only name",
+			fields: fields{
+				Name:             "foo",
+				ServerNamePrefix: "",
+			},
+			wantWarn: true,
+		},
+		{
+			name: "no warn with server_name_prefix",
+			fields: fields{
+				Name:             "",
+				ServerNamePrefix: "foo",
+			},
+			wantWarn: false,
+		},
+		{
+			name: "no warn with both of name and server_name_prefix",
+			fields: fields{
+				Name:             "foo",
+				ServerNamePrefix: "foo",
+			},
+			wantWarn: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			writer.Reset()
+
+			d := &ResourceDefServerGroup{
+				ResourceDefBase:  &ResourceDefBase{DefName: tt.fields.Name},
+				ServerNamePrefix: tt.fields.ServerNamePrefix,
+			}
+			d.printWarningForServerNamePrefix(ctx) // nolint
+			require.Equal(t, tt.wantWarn, len(writer.Bytes()) > 0)
 		})
 	}
 }
