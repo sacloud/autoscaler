@@ -74,7 +74,7 @@ shasum:
 
 .PHONY: test
 test: 
-	go test $(TESTARGS) -v ./...
+	GODEBUG=x509sha1=1 go test $(TESTARGS) -v ./...
 
 .PHONY: e2e-test
 e2e-test: install
