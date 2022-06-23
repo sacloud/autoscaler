@@ -1,6 +1,6 @@
 module github.com/sacloud/autoscaler
 
-go 1.17
+go 1.18
 
 require (
 	github.com/c-robinson/iplib v0.3.1
