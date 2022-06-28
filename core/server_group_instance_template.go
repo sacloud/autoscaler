@@ -282,7 +282,7 @@ func (t *ServerGroupNICTemplate) Validate(parent *ParentResourceDef, maxServerNu
 			return []error{fmt.Errorf("invalid cidr block")}
 		}
 		maskLen, _ := ipNet.Mask.Size()
-		if iplib.NewNet(ip, maskLen).Count4() < uint32(maxServerNum) {
+		if iplib.NewNet4(ip, maskLen).Count() < uint32(maxServerNum) {
 			errors = multierror.Append(errors, fmt.Errorf("assign_cidr_block is too small"))
 		}
 		if t.AssignNetMaskLen != 0 {
