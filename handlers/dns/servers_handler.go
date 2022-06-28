@@ -47,8 +47,7 @@ func (h *ServersHandler) PreHandle(req *handler.HandleRequest, sender handlers.R
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Desired) {
-		switch req.Instruction {
-		case handler.ResourceInstructions_DELETE:
+		if req.Instruction == handler.ResourceInstructions_DELETE {
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}
@@ -66,8 +65,7 @@ func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handl
 	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Current) {
-		switch req.Result {
-		case handler.PostHandleRequest_CREATED:
+		if req.Result == handler.PostHandleRequest_CREATED {
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}

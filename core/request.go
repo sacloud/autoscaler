@@ -19,9 +19,9 @@ import "fmt"
 type RequestTypes int
 
 const (
-	requestTypeUnknown RequestTypes = iota // nolint
-	requestTypeUp                          // スケールアップ or スケールアウト
-	requestTypeDown                        // スケールダウン or スケールイン
+	requestTypeUnknown RequestTypes = iota
+	requestTypeUp                   // スケールアップ or スケールアウト
+	requestTypeDown                 // スケールダウン or スケールイン
 )
 
 func (r RequestTypes) String() string {

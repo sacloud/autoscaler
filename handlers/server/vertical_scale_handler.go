@@ -51,8 +51,7 @@ func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handler
 	server := req.Desired.GetServer()
 
 	if server != nil {
-		switch req.Instruction {
-		case handler.ResourceInstructions_UPDATE:
+		if req.Instruction == handler.ResourceInstructions_UPDATE {
 			if err := ctx.Report(handler.HandleResponse_ACCEPTED); err != nil {
 				return err
 			}

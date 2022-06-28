@@ -146,7 +146,7 @@ func (c *Core) run(ctx context.Context) error {
 			if err := server.Shutdown(ctx); err != nil {
 				c.logger.Error("error", err) // nolint
 			}
-			exporterListener.Close() // nolint
+			exporterListener.Close()
 		}()
 	}
 
@@ -195,7 +195,7 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	// 現在のコンテキスト(リクエストスコープ)にjobを保持しておく
 	ctx = ctx.WithJobStatus(job)
 
-	//対象リソースグループを取得
+	// 対象リソースグループを取得
 	rds, err := c.targetResourceDef(ctx)
 	if err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す

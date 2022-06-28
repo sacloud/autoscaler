@@ -150,13 +150,13 @@ func (h *handleService) PostHandle(req *handler.PostHandleRequest, server handle
 }
 
 // Check gRPCヘルスチェックの実装
-func (s *handleService) Check(context.Context, *health.HealthCheckRequest) (*health.HealthCheckResponse, error) {
+func (h *handleService) Check(context.Context, *health.HealthCheckRequest) (*health.HealthCheckResponse, error) {
 	return &health.HealthCheckResponse{
 		Status: health.HealthCheckResponse_SERVING,
 	}, nil
 }
 
 // Watch gRPCヘルスチェックの実装
-func (s *handleService) Watch(*health.HealthCheckRequest, health.Health_WatchServer) error {
+func (h *handleService) Watch(*health.HealthCheckRequest, health.Health_WatchServer) error {
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
