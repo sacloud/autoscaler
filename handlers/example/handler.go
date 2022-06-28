@@ -83,14 +83,14 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 }
 
 //// PreHandle Coreからのメッセージのハンドリング
-//func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
+// func (h *Handler) PreHandle(req *handler.PreHandleRequest, sender handlers.ResponseSender) error {
 //	// 必要に応じて実装
 //	return nil
 //}
 //
 
 //// PostHandle Coreからのメッセージのハンドリング
-//func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
+// func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 //	// 必要に応じて実装
 //	return nil
 //}

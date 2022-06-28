@@ -46,7 +46,7 @@ tools:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
 	go install github.com/google/go-licenses@v1.0.0
 	go install github.com/grpc-ecosystem/grpc-health-probe@v0.4.8
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.45.2/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.45.2
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.46.2/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.46.2
 
 .PHONY: gen
 gen: gen-request gen-handler
@@ -83,7 +83,7 @@ e2e-test: install
 
 .PHONY: lint
 lint:
-	golangci-lint run ./... --modules-download-mode=readonly
+	golangci-lint run ./...
 
 .PHONY: goimports
 goimports:

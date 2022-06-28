@@ -105,7 +105,7 @@ func (in *Input) allowedMethod(req *http.Request) bool {
 }
 
 func (in *Input) execCommand(body []byte) (bool, error) {
-	cmd := exec.Command(in.executablePath, string(body))
+	cmd := exec.Command(in.executablePath, string(body)) // nolint: gosec
 	bodyReader := bytes.NewReader(body)
 	cmd.Stdin = bodyReader
 

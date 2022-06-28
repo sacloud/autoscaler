@@ -227,12 +227,12 @@ func Test_server_exporter(t *testing.T) {
 	// /up * 2、 /down * 1
 	requests := []string{upURL, upURL, downURL}
 	for _, url := range requests {
-		if _, err := http.Get(url); err != nil {
+		if _, err := http.Get(url); err != nil { // nolint: gosec
 			t.Fatal(err)
 		}
 	}
 
-	req, err := http.Get(metricsURL)
+	req, err := http.Get(metricsURL) // nolint: gosec
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,7 +289,7 @@ func Test_server_exporter(t *testing.T) {
 }
 func testHTTPClient(t *testing.T, clientKeyPath, clientCertPath, caCertPath string, forceHTTP2 bool) *http.Client {
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: true, // nolint: gosec
 	}
 	if clientKeyPath != "" && clientCertPath != "" {
 		cert, err := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)

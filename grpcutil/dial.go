@@ -70,6 +70,6 @@ func DialContext(ctx context.Context, opt *DialOption) (*grpc.ClientConn, func()
 		return nil, nil, err
 	}
 	return conn, func() {
-		conn.Close() // nolint
+		conn.Close()
 	}, nil
 }

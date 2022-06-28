@@ -80,7 +80,7 @@ func startExporter(ctx context.Context, handler CustomHandler, conf *Config) err
 		server := metrics.NewServer(conf.ExporterConfig.Address, conf.ExporterConfig.TLSConfig, handler.GetLogger())
 		defer func() {
 			server.Shutdown(ctx) // nolint
-			listener.Close()     // nolint
+			listener.Close()
 		}()
 
 		return server.Serve(listener)
@@ -94,7 +94,7 @@ func handlerFullName(server HandlerMeta) string {
 
 func validateHandlerInterfaces(server HandlerMeta) {
 	if _, ok := server.(Listener); !ok {
-		server.GetLogger().Fatal("fatal", "Handler must be implemented Listener interface") // nolint
+		server.GetLogger().Fatal("fatal", "Handler must be implemented Listener interface")
 	}
 
 	if _, ok := server.(PreHandler); ok {
@@ -106,5 +106,5 @@ func validateHandlerInterfaces(server HandlerMeta) {
 	if _, ok := server.(PostHandler); ok {
 		return
 	}
-	server.GetLogger().Fatal("fatal", "At least one of the following must be implemented: PreHandler or Handler or PostHandler") // nolint
+	server.GetLogger().Fatal("fatal", "At least one of the following must be implemented: PreHandler or Handler or PostHandler")
 }

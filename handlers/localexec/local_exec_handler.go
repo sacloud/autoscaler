@@ -101,7 +101,7 @@ func (h *Handler) handle(ctx *handlers.HandlerContext, req []byte) error {
 }
 
 func (h *Handler) execute(ctx *handlers.HandlerContext, args []byte) error {
-	cmd := exec.Command(h.executablePath, string(args))
+	cmd := exec.Command(h.executablePath, string(args)) // nolint: gosec
 	argsReader := bytes.NewReader(args)
 	cmd.Stdin = argsReader
 

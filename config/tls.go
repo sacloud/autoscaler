@@ -65,7 +65,9 @@ func (t *TLSStruct) TLSConfig() (*tls.Config, error) {
 		return nil, ErrNoTLSConfig
 	}
 
-	cfg := &tls.Config{}
+	cfg := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
 
 	if !t.TLSCert.Empty() && !t.TLSKey.Empty() {
 		cert, err := tls.X509KeyPair(t.TLSCert.Bytes(), t.TLSKey.Bytes())
