@@ -21,7 +21,7 @@ require (
 	github.com/shivamMg/ppds v0.0.1
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.7.1
-	google.golang.org/grpc v1.42.0
+	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.27.1
 )
 
