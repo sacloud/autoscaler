@@ -8,7 +8,7 @@ require (
 	github.com/go-playground/validator/v10 v10.10.1
 	github.com/goccy/go-yaml v1.8.9
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-version v1.5.0
+	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hc-install v0.4.0
 	github.com/hashicorp/terraform-exec v0.17.1
 	github.com/mitchellh/go-homedir v1.1.0
