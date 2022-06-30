@@ -48,7 +48,7 @@ func (d *ParentResourceDef) Type() ResourceTypes {
 func (d *ParentResourceDef) UnmarshalYAML(ctx context.Context, data []byte) error {
 	type alias ParentResourceDef
 	var v alias
-	if err := yaml.UnmarshalWithContext(ctx, data, &v); err != nil {
+	if err := yaml.UnmarshalContext(ctx, data, &v); err != nil {
 		return err
 	}
 	*d = ParentResourceDef(v)
