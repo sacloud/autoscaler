@@ -73,7 +73,7 @@ func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 				Writer: logBuf,
 			}))
 			var v StringOrFilePath
-			if err := yaml.UnmarshalWithContext(ctx, tt.data, &v, yaml.Strict()); err != nil {
+			if err := yaml.UnmarshalContext(ctx, tt.data, &v, yaml.Strict()); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
 			require.EqualValues(t, tt.want, v)

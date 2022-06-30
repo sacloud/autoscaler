@@ -51,10 +51,6 @@ build-handlers-fake: bin/autoscaler-handlers-fake
 bin/autoscaler-handlers-fake: $(GO_FILES)
 	GOOS=$${OS:-"`go env GOOS`"} GOARCH=$${ARCH:-"`go env GOARCH`"} CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -o bin/autoscaler-handlers-fake cmd/autoscaler-handlers-fake/main.go
 
-.PHONY: test
-test: 
-	GODEBUG=x509sha1=1 go test $(TESTARGS) -v ./...
-
 .PHONY: e2e-test
 e2e-test: install
 	@echo "[INFO] When you run e2e-test for the first time, run 'make tools' first."

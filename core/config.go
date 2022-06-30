@@ -67,7 +67,7 @@ func (c *Config) load(ctx context.Context, reader io.Reader) error {
 	if err != nil {
 		return fmt.Errorf("loading configuration failed: %s", err)
 	}
-	if err := yaml.UnmarshalWithContext(ctx, data, c, yaml.Strict()); err != nil {
+	if err := yaml.UnmarshalContext(ctx, data, c, yaml.Strict()); err != nil {
 		return fmt.Errorf(yaml.FormatError(err, false, true))
 	}
 
