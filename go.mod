@@ -20,7 +20,7 @@ require (
 	github.com/sacloud/packages-go v0.0.3
 	github.com/shivamMg/ppds v0.0.1
 	github.com/spf13/cobra v1.5.0
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.8.0
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
 )
@@ -60,5 +60,5 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20200904004341-0bd0a958aa1d // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
