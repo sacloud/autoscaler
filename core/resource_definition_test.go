@@ -19,6 +19,7 @@ import (
 
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMultiZoneSelector_Validate(t *testing.T) {
@@ -125,6 +126,72 @@ func TestResourceDefBase_SetupGracePeriod(t *testing.T) {
 			if got := r.SetupGracePeriod(); got != tt.want {
 				t.Errorf("SetupGracePeriod() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestResourceDefBase_Type(t *testing.T) {
+	tests := []struct {
+		typeName string
+		want     ResourceTypes
+		panic    bool
+	}{
+		{
+			typeName: ResourceTypeUnknown.String(),
+			panic:    true,
+		},
+		{
+			typeName: ResourceTypeServer.String(),
+			want:     ResourceTypeServer,
+		},
+		{
+			typeName: ResourceTypeServerGroup.String(),
+			want:     ResourceTypeServerGroup,
+		},
+		{
+			typeName: ResourceTypeServerGroupInstance.String(),
+			want:     ResourceTypeServerGroupInstance,
+		},
+		{
+			typeName: ResourceTypeELB.String(),
+			want:     ResourceTypeELB,
+		},
+		{
+			typeName: "ELB",
+			want:     ResourceTypeELB,
+		},
+		{
+			typeName: ResourceTypeGSLB.String(),
+			want:     ResourceTypeGSLB,
+		},
+		{
+			typeName: ResourceTypeDNS.String(),
+			want:     ResourceTypeDNS,
+		},
+		{
+			typeName: ResourceTypeRouter.String(),
+			want:     ResourceTypeRouter,
+		},
+		{
+			typeName: ResourceTypeLoadBalancer.String(),
+			want:     ResourceTypeLoadBalancer,
+		},
+		{
+			typeName: "unknown-type",
+			panic:    true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.typeName, func(t *testing.T) {
+			defer func() {
+				err := recover()
+				require.Equal(t, tt.panic, err != nil)
+			}()
+			r := &ResourceDefBase{
+				TypeName: tt.typeName,
+				DefName:  "test-def",
+			}
+			require.Equal(t, r.Type(), tt.want)
 		})
 	}
 }

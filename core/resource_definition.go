@@ -62,6 +62,12 @@ func (r *ResourceDefBase) Type() ResourceTypes {
 		return ResourceTypeServerGroupInstance
 	case ResourceTypeELB.String(), "ELB":
 		return ResourceTypeELB
+	case ResourceTypeGSLB.String():
+		return ResourceTypeGSLB
+	case ResourceTypeDNS.String():
+		return ResourceTypeDNS
+	case ResourceTypeRouter.String():
+		return ResourceTypeRouter
 	case ResourceTypeLoadBalancer.String():
 		return ResourceTypeLoadBalancer
 	default:
