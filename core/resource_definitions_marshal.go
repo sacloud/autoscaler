@@ -68,6 +68,8 @@ func (rds *ResourceDefinitions) unmarshalResourceDefFromMap(data map[string]inte
 
 	var def ResourceDefinition
 	switch typeName {
+	// Note: ここではトップレベルに設定可能なリソースタイプのみ受け付ける
+	//       Parent配下でのみ指定可能なリソースタイプはParentResourceDefで検証される
 	case "Server":
 		v := &ResourceDefServer{}
 		if err := yaml.UnmarshalWithOptions(remarshelded, v, yaml.Strict()); err != nil {
