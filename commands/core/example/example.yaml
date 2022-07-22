@@ -186,6 +186,7 @@ resources:
 ## オートスケーラーの動作設定
 autoscaler:
   cooldown: 600 # ジョブの連続実行を抑止するためのクールダウン期間を秒数で指定。デフォルト: 600(10分)
+  shutdown_grace_period: 600 # SIGINTまたはSIGTERMをを受け取った際の処理完了待ち猶予時間を秒で指定。デフォルト: 600(10分)
 
 #  # CoreのgRPCエンドポイントのTLS設定(省略可)
 #  server_tls_config:

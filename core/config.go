@@ -219,11 +219,12 @@ func (c *Config) ValidateCustomHandler(ctx context.Context, handler *Handler) er
 
 // AutoScalerConfig オートスケーラー自体の動作設定
 type AutoScalerConfig struct {
-	CoolDownSec      int                    `yaml:"cooldown"`           // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
-	ServerTLSConfig  *config.TLSStruct      `yaml:"server_tls_config"`  // CoreへのgRPC接続のTLS設定
-	HandlerTLSConfig *config.TLSStruct      `yaml:"handler_tls_config"` // HandlersへのgRPC接続のTLS設定
-	ExporterConfig   *config.ExporterConfig `yaml:"exporter_config"`    // Exporter設定
-	HandlersConfig   *HandlersConfig        `yaml:"handlers_config"`    // ビルトインハンドラーの設定
+	CoolDownSec            int                    `yaml:"cooldown"`              // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
+	ShutdownGracePeriodSec int                    `yaml:"shutdown_grace_period"` // SIGINTまたはSIGTERMをを受け取った際の処理完了待ち猶予時間(単位:秒)
+	ServerTLSConfig        *config.TLSStruct      `yaml:"server_tls_config"`     // CoreへのgRPC接続のTLS設定
+	HandlerTLSConfig       *config.TLSStruct      `yaml:"handler_tls_config"`    // HandlersへのgRPC接続のTLS設定
+	ExporterConfig         *config.ExporterConfig `yaml:"exporter_config"`       // Exporter設定
+	HandlersConfig         *HandlersConfig        `yaml:"handlers_config"`       // ビルトインハンドラーの設定
 }
 
 func (c *AutoScalerConfig) Validate(ctx context.Context) []error {
@@ -234,6 +235,14 @@ func (c *AutoScalerConfig) JobCoolDownTime() time.Duration {
 	sec := c.CoolDownSec
 	if sec <= 0 {
 		return defaults.CoolDownTime
+	}
+	return time.Duration(sec) * time.Second
+}
+
+func (c *AutoScalerConfig) ShutdownGracePeriod() time.Duration {
+	sec := c.ShutdownGracePeriodSec
+	if sec <= 0 {
+		return defaults.ShutdownGracePeriod
 	}
 	return time.Duration(sec) * time.Second
 }
