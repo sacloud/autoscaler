@@ -1,0 +1,52 @@
+resources:
+  - type: Server
+    name: "autoscaler-e2e-all-resource-types-vertical-server"
+    selector:
+      names: ["autoscaler-e2e-all-resource-types-vertical-server"]
+      zones: ["is1a"]
+
+  - type: ServerGroup
+    name: "autoscaler-e2e-all-resource-types-horizontal-server"
+    server_name_prefix: "autoscaler-e2e-all-resource-types-horizontal-server"
+    zone: "is1a"
+
+    min_size: 1
+    max_size: 3
+
+    shutdown_force: false # サーバでACPIが利用できない場合にtrueにする(強制シャットダウンとなる)
+
+    template: # 各サーバのテンプレート
+      plan:
+        core: 2
+        memory: 4
+
+      # NICs
+      network_interfaces:
+        - upstream: "shared"
+
+      # ディスク
+      disks:
+        - name_prefix: "..."
+          os_type: "ubuntu2204"       # OSTypeで指定
+          plan: "ssd"
+          connection: "virtio"
+          size: 40
+
+      # 1番目のディスクの対するパラメータ(対応しているアーカイブの場合のみ指定可能)
+      edit_parameter:
+        disabled: false # ディスクの修正を行わない場合はtrue
+        password: "your-password"
+        disable_pw_auth: true
+        change_partition_uuid: true
+
+  - type: ELB
+    name: "autoscaler-e2e-all-resource-types-elb"
+    selector:
+      names: ["autoscaler-e2e-all-resource-types-elb"]
+
+  - type: Router
+    name: "autoscaler-e2e-all-resource-types-router"
+    selector:
+      names: ["autoscaler-e2e-all-resource-types-router"]
+      zones: ["is1a"]
+
