@@ -18,7 +18,6 @@ import (
 	"context"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/core"
@@ -71,8 +70,10 @@ func run(*cobra.Command, []string) error {
 
 	go func() {
 		<-signalCtx.Done()
-		logger.Info("message", "signal received. waiting for shutdown...") // nolint: errcheck
-		if err := coreInstance.Stop(30 * time.Minute); err != nil {        // TODO 後続PRでコンフィグでのタイムアウト秒数指定を可能とする
+		if ctx.Err() != nil {
+			logger.Info("message", "signal received. waiting for shutdown...") // nolint: errcheck
+		}
+		if err := coreInstance.Stop(); err != nil {
 			logger.Error("error", err) // nolint: errcheck
 		}
 		shutdown()

@@ -233,7 +233,11 @@ func (c *Core) ResourceName(name string) (string, error) {
 }
 
 // Stop リクエストの新規受付を停止しつつ現在処理中のUp/Downがあれば終わるまでブロックする
-func (c *Core) Stop(timeout time.Duration) error {
+func (c *Core) Stop() error {
+	return c.stop(c.config.AutoScaler.ShutdownGracePeriod())
+}
+
+func (c *Core) stop(timeout time.Duration) error {
 	c.stopping = true
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)

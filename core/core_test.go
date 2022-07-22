@@ -237,7 +237,7 @@ func TestCore_Stop(t *testing.T) {
 			}),
 		}
 
-		err := c.Stop(5 * time.Second)
+		err := c.stop(5 * time.Second)
 		require.NoError(t, err)
 		require.True(t, c.stopping)
 	})
@@ -256,7 +256,7 @@ func TestCore_Stop(t *testing.T) {
 			time.Sleep(1 * time.Second)
 			c.setRunningStatus(false)
 		}()
-		err := c.Stop(10 * time.Second)
+		err := c.stop(10 * time.Second)
 		require.NoError(t, err)
 	})
 
@@ -269,7 +269,7 @@ func TestCore_Stop(t *testing.T) {
 			running: true,
 		}
 
-		err := c.Stop(time.Millisecond)
+		err := c.stop(time.Millisecond)
 		require.Error(t, err) // timeout
 	})
 }
