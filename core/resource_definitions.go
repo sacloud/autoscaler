@@ -106,7 +106,10 @@ func (rds *ResourceDefinitions) FilterByResourceName(name string) ResourceDefini
 	return nil
 }
 
-func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient iaas.APICaller, handlers Handlers) {
+func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient iaas.APICaller, handlers Handlers, cleanup func()) {
+	if cleanup != nil {
+		defer cleanup()
+	}
 	job := ctx.Job()
 	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) // nolint

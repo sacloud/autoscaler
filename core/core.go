@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
+	"time"
 
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
@@ -34,6 +36,10 @@ type Core struct {
 	config        *Config
 	jobs          map[string]*JobStatus
 	logger        *log.Logger
+
+	mu       sync.RWMutex
+	running  bool
+	stopping bool
 }
 
 func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) {
@@ -70,16 +76,12 @@ func LoadAndValidate(ctx context.Context, configPath string, strictMode bool, lo
 	return config, nil
 }
 
-// Start 指定のファイルパスからコンフィグを読み込み、gRPCサーバとしてリッスンを開始する
-func Start(ctx context.Context, addr, configPath string, strictMode bool, logger *log.Logger) error {
+// New 指定のファイルパスからコンフィグを読み込み、Coreのインスタンスを生成して返すgRPCサーバとしてリッスンを開始する
+func New(ctx context.Context, addr, configPath string, strictMode bool, logger *log.Logger) (*Core, error) {
 	if err := logger.Info("message", "starting..."); err != nil {
-		return err
+		return nil, err
 	}
-	instance, err := newInstanceFromConfig(ctx, addr, configPath, strictMode, logger)
-	if err != nil {
-		return err
-	}
-	return instance.run(ctx)
+	return newInstanceFromConfig(ctx, addr, configPath, strictMode, logger)
 }
 
 func newInstanceFromConfig(ctx context.Context, addr, configPath string, strictMode bool, logger *log.Logger) (*Core, error) {
@@ -104,6 +106,10 @@ func ResourcesTree(parentCtx context.Context, addr, configPath string, strictMod
 	ctx := NewRequestContext(parentCtx, ri, instance.config.AutoScaler.HandlerTLSConfig, logger)
 	graph := NewGraph(instance.config.Resources)
 	return graph.Tree(ctx, instance.config.APIClient())
+}
+
+func (c *Core) Run(ctx context.Context) error {
+	return c.run(ctx)
 }
 
 func (c *Core) run(ctx context.Context) error {
@@ -192,6 +198,11 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 		return job, "job is in an unacceptable state", nil
 	}
 
+	if c.stopping {
+		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "core is shutting down") // nolint
+		return job, "core is shutting down", nil
+	}
+
 	// 現在のコンテキスト(リクエストスコープ)にjobを保持しておく
 	ctx = ctx.WithJobStatus(job)
 
@@ -206,7 +217,8 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) // nolint
 
-	go rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers())
+	c.setRunningStatus(true)
+	go rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers(), func() { c.setRunningStatus(false) })
 	return job, "", nil
 }
 
@@ -218,6 +230,39 @@ func (c *Core) ResourceName(name string) (string, error) {
 		name = c.config.Resources[0].Name()
 	}
 	return name, nil
+}
+
+// Stop リクエストの新規受付を停止しつつ現在処理中のUp/Downがあれば終わるまでブロックする
+func (c *Core) Stop(timeout time.Duration) error {
+	c.stopping = true
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	ticker := time.NewTicker(time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			if !c.isRunning() {
+				return nil
+			}
+		}
+	}
+}
+
+func (c *Core) setRunningStatus(status bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.running = status
+}
+
+func (c *Core) isRunning() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return c.running
 }
 
 func (c *Core) targetResourceDef(ctx *RequestContext) (ResourceDefinitions, error) {
