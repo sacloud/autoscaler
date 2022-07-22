@@ -18,8 +18,10 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/sacloud/autoscaler/defaults"
+	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
 )
@@ -224,4 +226,50 @@ func TestLoadAndValidate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCore_Stop(t *testing.T) {
+	t.Run("with not running state", func(t *testing.T) {
+		c := &Core{
+			logger: log.NewLogger(&log.LoggerOption{
+				Writer: os.Stderr,
+				Level:  log.LevelInfo,
+			}),
+		}
+
+		err := c.Stop(5 * time.Second)
+		require.NoError(t, err)
+		require.True(t, c.stopping)
+	})
+
+	t.Run("with running state", func(t *testing.T) {
+		c := &Core{
+			logger: log.NewLogger(&log.LoggerOption{
+				Writer: os.Stderr,
+				Level:  log.LevelInfo,
+			}),
+			running: true,
+		}
+
+		// 一定時間後にrunningをfalseへ
+		go func() {
+			time.Sleep(1 * time.Second)
+			c.setRunningStatus(false)
+		}()
+		err := c.Stop(10 * time.Second)
+		require.NoError(t, err)
+	})
+
+	t.Run("with running state and expect timeout", func(t *testing.T) {
+		c := &Core{
+			logger: log.NewLogger(&log.LoggerOption{
+				Writer: os.Stderr,
+				Level:  log.LevelInfo,
+			}),
+			running: true,
+		}
+
+		err := c.Stop(time.Millisecond)
+		require.Error(t, err) // timeout
+	})
 }

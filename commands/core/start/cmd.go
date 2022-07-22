@@ -18,6 +18,7 @@ import (
 	"context"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/core"
@@ -55,7 +56,33 @@ func init() {
 }
 
 func run(*cobra.Command, []string) error {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-	return core.Start(ctx, param.ListenAddress, param.ConfigPath, flags.StrictMode(), flags.NewLogger())
+	ctx, shutdown := context.WithCancel(context.Background())
+	defer shutdown()
+
+	logger := flags.NewLogger()
+	coreInstance, err := core.New(ctx, param.ListenAddress, param.ConfigPath, flags.StrictMode(), logger)
+	if err != nil {
+		return err
+	}
+
+	// シグナルを受け取った際のgraceful shutdown
+	signalCtx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	go func() {
+		<-signalCtx.Done()
+		logger.Info("message", "signal received. waiting for shutdown...") // nolint: errcheck
+		if err := coreInstance.Stop(30 * time.Minute); err != nil {        // TODO 後続PRでコンフィグでのタイムアウト秒数指定を可能とする
+			logger.Error("error", err) // nolint: errcheck
+		}
+		shutdown()
+	}()
+
+	// 本体(core)の起動
+	errChan := make(chan error)
+	go func() {
+		errChan <- coreInstance.Run(ctx)
+	}()
+
+	return <-errChan
 }
