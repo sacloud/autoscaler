@@ -6,7 +6,7 @@
 ![Test Status](https://github.com/sacloud/terraform-provider-sakuracloud/workflows/Tests/badge.svg)
 [![documents](https://img.shields.io/badge/documents-docs.usacloud.jp-green)](https://docs.usacloud.jp/autoscaler/)
 [![license](https://badgen.net/github/license/sacloud/autoscaler)](LICENSE.txt)
-[![Slack](https://img.shields.io/badge/Slack-Sacloud%20Workspace-brightgreen)](https://join.slack.com/t/sacloud/shared_invite/zt-ohsdpv2t-_Bi1_F0jDAAmWjoMQCmAxg)
+[![Discord](https://img.shields.io/badge/Discord-SAKURA%20Users-blue)](https://discord.gg/yUEDN8hbMf)
 
 [sacloud/autoscaler](https://github.com/sacloud/autoscaler) はさくらのクラウド上のリソースのオートスケーリングを行うためのツールです。
 
