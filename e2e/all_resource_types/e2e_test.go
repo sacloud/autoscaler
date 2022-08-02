@@ -22,7 +22,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/sacloud/autoscaler/e2e"
+	"github.com/sacloud/packages-go/e2e"
 	"github.com/stretchr/testify/require"
 )
 
