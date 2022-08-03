@@ -29,10 +29,10 @@ import (
 	"time"
 
 	client "github.com/sacloud/api-client-go"
-	"github.com/sacloud/autoscaler/e2e"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/helper/api"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/e2e"
 )
 
 const (
@@ -55,7 +55,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestE2E_OldCoreCommand(t *testing.T) {
-	defer output.OutputLogs()
+	defer output.Output()
 
 	/**************************************************************************
 	 * Step 1: 古いコマンド(autoscaler core start)でのCoreの起動確認

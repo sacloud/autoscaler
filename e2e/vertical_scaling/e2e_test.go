@@ -31,9 +31,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sacloud/autoscaler/e2e"
+	autoscalerE2E "github.com/sacloud/autoscaler/e2e"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/search"
+	"github.com/sacloud/packages-go/e2e"
 )
 
 const (
@@ -85,12 +86,10 @@ func TestE2E_VerticalScaling(t *testing.T) {
 		t.Fatal(err)
 	}
 	if server.CPU != 1 || server.GetMemoryGB() != 2 {
-		coreOutput.FatalWithStderrOutputs(t,
-			fmt.Sprintf(
-				"server has unexpected initial plan: expected: {CPU:1, Memory:2} actual: {CPU:%d, Memory:%d}",
-				server.CPU,
-				server.GetMemoryGB(),
-			),
+		coreOutput.Fatalf(t,
+			"server has unexpected initial plan: expected: {CPU:1, Memory:2} actual: {CPU:%d, Memory:%d}",
+			server.CPU,
+			server.GetMemoryGB(),
 		)
 	}
 
@@ -111,16 +110,18 @@ func TestE2E_VerticalScaling(t *testing.T) {
 	// Grafana InputsにWebhookでUpリクエストを送信
 	resp, err := http.Post("http://127.0.0.1:8080/up?resource-name=server", "text/plain", bytes.NewReader(grafanaWebhookBody))
 	if err != nil {
-		coreOutput.FatalWithStderrOutputs(t, err)
+		coreOutput.Fatal(t, err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		coreOutput.FatalWithStderrOutputs(t,
-			fmt.Sprintf("Grafana Inputs returns unexpected status code: expected: 200 actual: %d", resp.StatusCode))
+		coreOutput.Fatalf(t,
+			"Grafana Inputs returns unexpected status code: expected: 200 actual: %d",
+			resp.StatusCode,
+		)
 	}
 
 	// Coreのジョブ完了まで待機
 	if err := coreOutput.WaitOutput(upJobDoneMarker, 10*time.Minute); err != nil {
-		coreOutput.FatalWithStderrOutputs(t, err)
+		coreOutput.Fatal(t, err)
 	}
 
 	/**************************************************************************
@@ -132,12 +133,10 @@ func TestE2E_VerticalScaling(t *testing.T) {
 		t.Fatal(err)
 	}
 	if server.CPU != 2 || server.GetMemoryGB() != 4 {
-		coreOutput.FatalWithStderrOutputs(t,
-			fmt.Sprintf(
-				"server has unexpected plan: expected: {CPU:2, Memory:4} actual: {CPU:%d, Memory:%d}",
-				server.CPU,
-				server.GetMemoryGB(),
-			),
+		coreOutput.Fatalf(t,
+			"server has unexpected plan: expected: {CPU:2, Memory:4} actual: {CPU:%d, Memory:%d}",
+			server.CPU,
+			server.GetMemoryGB(),
 		)
 	}
 
@@ -147,23 +146,28 @@ func TestE2E_VerticalScaling(t *testing.T) {
 	log.Println("step1-3: cooling down")
 	resp, err = http.Post("http://127.0.0.1:8080/up?resource-name=server", "text/plain", bytes.NewReader(grafanaWebhookBody))
 	if err != nil {
-		coreOutput.FatalWithStderrOutputs(t, err)
+		coreOutput.Fatal(t, err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		coreOutput.FatalWithStderrOutputs(t,
-			fmt.Sprintf("Grafana Inputs returns unexpected status code: expected: 200 actual: %d", resp.StatusCode))
+		coreOutput.Fatalf(t,
+			"Grafana Inputs returns unexpected status code: expected: 200 actual: %d",
+			resp.StatusCode,
+		)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		coreOutput.FatalWithStderrOutputs(t, err)
+		coreOutput.Fatal(t, err)
 	}
 	if !strings.Contains(string(body), inCoolDownTimeResponse) {
-		coreOutput.FatalWithStderrOutputs(t,
-			fmt.Sprintf("Grafana Inputs returns unexpected response: expected: %s actual: %s", inCoolDownTimeResponse, string(body)))
+		coreOutput.Fatalf(t,
+			"Grafana Inputs returns unexpected response: expected: %s actual: %s",
+			inCoolDownTimeResponse,
+			string(body),
+		)
 	}
 	// 冷却期間中である事のメッセージを受け取っているはず
 	if err := inputsOutput.WaitOutput(inCoolDownTimeMarker, 10*time.Second); err != nil {
-		coreOutput.FatalWithStderrOutputs(t, err)
+		coreOutput.Fatal(t, err)
 	}
 
 	// 冷却期間待機
@@ -179,16 +183,18 @@ func TestE2E_VerticalScaling(t *testing.T) {
 	// Grafana InputsにWebhookでDownリクエストを送信
 	resp, err = http.Post("http://127.0.0.1:8080/down?resource-name=server", "text/plain", bytes.NewReader(grafanaWebhookBody))
 	if err != nil {
-		coreOutput.FatalWithStderrOutputs(t, err)
+		coreOutput.Fatal(t, err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		coreOutput.FatalWithStderrOutputs(t,
-			fmt.Sprintf("Grafana Inputs returns unexpected status code: expected: 200 actual: %d", resp.StatusCode))
+		coreOutput.Fatalf(t,
+			"Grafana Inputs returns unexpected status code: expected: 200 actual: %d",
+			resp.StatusCode,
+		)
 	}
 
 	// Coreのジョブ完了まで待機
 	if err := coreOutput.WaitOutput(downJobDoneMarker, 10*time.Minute); err != nil {
-		coreOutput.FatalWithStderrOutputs(t, err)
+		coreOutput.Fatal(t, err)
 	}
 
 	/**************************************************************************
@@ -200,18 +206,16 @@ func TestE2E_VerticalScaling(t *testing.T) {
 		t.Fatal(err)
 	}
 	if server.CPU != 1 || server.GetMemoryGB() != 2 {
-		coreOutput.FatalWithStderrOutputs(t,
-			fmt.Sprintf(
-				"server has unexpected plan: expected: {CPU:1, Memory:2} actual: {CPU:%d, Memory:%d}",
-				server.CPU,
-				server.GetMemoryGB(),
-			),
+		coreOutput.Fatalf(t,
+			"server has unexpected plan: expected: {CPU:1, Memory:2} actual: {CPU:%d, Memory:%d}",
+			server.CPU,
+			server.GetMemoryGB(),
 		)
 	}
 	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
 	e2e.TerraformRefresh() // nolint
-	coreOutput.OutputLogs()
-	inputsOutput.OutputLogs()
+	coreOutput.Output()
+	inputsOutput.Output()
 }
 
 func setup() {
@@ -242,11 +246,11 @@ func setup() {
 	go inputsOutput.CollectOutputs("[Grafana Inputs]", inputCmdOut)
 
 	if err := coreOutput.WaitOutput(coreReadyMarker, 3*time.Second); err != nil {
-		coreOutput.OutputLogs()
+		coreOutput.Output()
 		log.Fatal(err)
 	}
 	if err := inputsOutput.WaitOutput(inputsReadyMarker, 3*time.Second); err != nil {
-		inputsOutput.OutputLogs()
+		inputsOutput.Output()
 		log.Fatal(err)
 	}
 }
@@ -277,7 +281,7 @@ func teardown() {
 }
 
 func fetchSakuraCloudServer() (*iaas.Server, error) {
-	serverOp := iaas.NewServerOp(e2e.SacloudAPICaller)
+	serverOp := iaas.NewServerOp(autoscalerE2E.SacloudAPICaller)
 
 	found, err := serverOp.Find(context.Background(), "is1a", &iaas.FindCondition{
 		Filter: search.Filter{
@@ -296,7 +300,7 @@ func fetchSakuraCloudServer() (*iaas.Server, error) {
 
 func waitResourceReadyLAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error {
 	// 対象サーバごとにHTTPリクエストが通るようになるまで待つ
-	serverOp := iaas.NewServerOp(e2e.SacloudAPICaller)
+	serverOp := iaas.NewServerOp(autoscalerE2E.SacloudAPICaller)
 	found, err := serverOp.Find(context.Background(), "is1a", &iaas.FindCondition{
 		Filter: search.Filter{
 			search.Key("Name"): search.PartialMatch("autoscaler-e2e-vertical-scaling"),
@@ -317,7 +321,7 @@ func waitResourceReadyLAndStartHTTPRequestLoop(ctx context.Context, t *testing.T
 	}
 
 	// ELB
-	elbOp := iaas.NewProxyLBOp(e2e.SacloudAPICaller)
+	elbOp := iaas.NewProxyLBOp(autoscalerE2E.SacloudAPICaller)
 	foundElb, err := elbOp.Find(context.Background(), &iaas.FindCondition{
 		Filter: search.Filter{
 			search.Key("Name"): search.PartialMatch("autoscaler-e2e-vertical-scaling"),

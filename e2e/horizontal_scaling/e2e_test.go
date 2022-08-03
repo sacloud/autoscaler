@@ -27,10 +27,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sacloud/autoscaler/e2e"
+	autoscalerE2E "github.com/sacloud/autoscaler/e2e"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/search"
 	serverService "github.com/sacloud/iaas-service-go/server"
+	"github.com/sacloud/packages-go/e2e"
 )
 
 const (
@@ -88,7 +89,7 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 
 	// Coreのジョブ完了まで待機
 	if err := output.WaitOutput(upJobDoneMarker, 10*time.Minute); err != nil {
-		output.FatalWithStderrOutputs(t, err)
+		output.Fatal(t, err)
 	}
 
 	// 以降はProxyLB->ServerへのHTTPリクエストが通るはずなのでポーリングを続ける
@@ -105,11 +106,9 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(servers) != 1 {
-		output.FatalWithStderrOutputs(t,
-			fmt.Sprintf(
-				"got unexpected server count: expected:1 actual:%d",
-				len(servers),
-			),
+		output.Fatalf(t,
+			"got unexpected server count: expected:1 actual:%d",
+			len(servers),
 		)
 	}
 
@@ -129,7 +128,7 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 
 	// Coreのジョブ完了まで待機
 	if err := output.WaitOutput(upJobDoneMarker, 10*time.Minute); err != nil {
-		output.FatalWithStderrOutputs(t, err)
+		output.Fatal(t, err)
 	}
 
 	/**************************************************************************
@@ -141,11 +140,9 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(servers) != 3 {
-		output.FatalWithStderrOutputs(t,
-			fmt.Sprintf(
-				"got unexpected server count: expected:3 actual:%d",
-				len(servers),
-			),
+		output.Fatalf(t,
+			"got unexpected server count: expected:3 actual:%d",
+			len(servers),
 		)
 	}
 
@@ -165,7 +162,7 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 
 	// Coreのジョブ完了まで待機
 	if err := output.WaitOutput(downJobDoneMarker, 10*time.Minute); err != nil {
-		output.FatalWithStderrOutputs(t, err)
+		output.Fatal(t, err)
 	}
 	/**************************************************************************
 	 * Step 2-2: スケールイン結果の確認
@@ -176,17 +173,15 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(servers) != 2 {
-		output.FatalWithStderrOutputs(t,
-			fmt.Sprintf(
-				"got unexpected server count: expected:2 actual:%d",
-				len(servers),
-			),
+		output.Fatalf(t,
+			"got unexpected server count: expected:2 actual:%d",
+			len(servers),
 		)
 	}
 	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
 	e2e.TerraformRefresh() // nolint
 
-	output.OutputLogs()
+	output.Output()
 }
 
 func setup() {
@@ -209,7 +204,7 @@ func setup() {
 	go output.CollectOutputs("[Core]", coreOutputs)
 
 	if err := output.WaitOutput(coreReadyMarker, 3*time.Second); err != nil {
-		output.OutputLogs()
+		output.Output()
 		log.Fatal(err)
 	}
 }
@@ -233,7 +228,7 @@ func teardown() {
 	if err != nil {
 		log.Println(err)
 	} else {
-		svc := serverService.New(e2e.SacloudAPICaller)
+		svc := serverService.New(autoscalerE2E.SacloudAPICaller)
 		for _, server := range servers {
 			err := svc.Delete(&serverService.DeleteRequest{
 				Zone:           "is1a",
@@ -251,7 +246,7 @@ func teardown() {
 }
 
 func fetchSakuraCloudServers() ([]*iaas.Server, error) {
-	serverOp := iaas.NewServerOp(e2e.SacloudAPICaller)
+	serverOp := iaas.NewServerOp(autoscalerE2E.SacloudAPICaller)
 
 	found, err := serverOp.Find(context.Background(), "is1a", &iaas.FindCondition{
 		Filter: search.Filter{
@@ -266,7 +261,7 @@ func fetchSakuraCloudServers() ([]*iaas.Server, error) {
 }
 
 func waitProxyLBAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error {
-	elbOp := iaas.NewProxyLBOp(e2e.SacloudAPICaller)
+	elbOp := iaas.NewProxyLBOp(autoscalerE2E.SacloudAPICaller)
 	found, err := elbOp.Find(context.Background(), &iaas.FindCondition{
 		Count: 1,
 		Filter: search.Filter{
