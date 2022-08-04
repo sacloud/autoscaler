@@ -20,13 +20,11 @@ import (
 	"net"
 	"os"
 
-	"github.com/sacloud/autoscaler/config"
 	"google.golang.org/grpc"
 )
 
 type ListenerOption struct {
 	Address    string
-	TLSConfig  *config.TLSStruct
 	ServerOpts []grpc.ServerOption
 }
 
@@ -53,15 +51,5 @@ func Server(opt *ListenerOption) (*grpc.Server, net.Listener, func(), error) {
 		}
 	}
 
-	var serverOpts []grpc.ServerOption
-	if opt.TLSConfig != nil && schema != "unix" {
-		cred, err := opt.TLSConfig.TransportCredentials()
-		if err != nil && err != config.ErrNoTLSConfig {
-			return nil, nil, nil, err
-		}
-		serverOpts = append(serverOpts, grpc.Creds(cred))
-	}
-	serverOpts = append(serverOpts, opt.ServerOpts...)
-
-	return grpc.NewServer(serverOpts...), listener, cleanup, nil
+	return grpc.NewServer(opt.ServerOpts...), listener, cleanup, nil
 }

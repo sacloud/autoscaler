@@ -43,9 +43,6 @@ func (h *handleService) listenAndServe(ctx context.Context) error {
 		Address:    h.Handler.ListenAddress(),
 		ServerOpts: grpcutil.ServerErrorCountInterceptor("handlers"),
 	}
-	if h.conf != nil && h.conf.HandlerTLSConfig != nil {
-		opts.TLSConfig = h.conf.HandlerTLSConfig
-	}
 
 	grpcServer, listener, cleanup, err := grpcutil.Server(opts)
 	if err != nil {

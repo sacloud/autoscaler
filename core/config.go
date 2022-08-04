@@ -192,13 +192,6 @@ func (c *Config) ValidateCustomHandler(ctx context.Context, handler *Handler) er
 		Destination: handler.Endpoint,
 		DialOpts:    grpcutil.ClientErrorCountInterceptor("core_to_handlers"),
 	}
-	if c.AutoScaler.HandlerTLSConfig != nil {
-		cred, err := c.AutoScaler.HandlerTLSConfig.TransportCredentials()
-		if err != nil {
-			return err
-		}
-		opt.TransportCredentials = cred
-	}
 
 	conn, cleanup, err := grpcutil.DialContext(ctx, opt)
 	if err != nil {
@@ -221,8 +214,6 @@ func (c *Config) ValidateCustomHandler(ctx context.Context, handler *Handler) er
 type AutoScalerConfig struct {
 	CoolDownSec            int                    `yaml:"cooldown"`              // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
 	ShutdownGracePeriodSec int                    `yaml:"shutdown_grace_period"` // SIGINTまたはSIGTERMをを受け取った際の処理完了待ち猶予時間(単位:秒)
-	ServerTLSConfig        *config.TLSStruct      `yaml:"server_tls_config"`     // CoreへのgRPC接続のTLS設定
-	HandlerTLSConfig       *config.TLSStruct      `yaml:"handler_tls_config"`    // HandlersへのgRPC接続のTLS設定
 	ExporterConfig         *config.ExporterConfig `yaml:"exporter_config"`       // Exporter設定
 	HandlersConfig         *HandlersConfig        `yaml:"handlers_config"`       // ビルトインハンドラーの設定
 }

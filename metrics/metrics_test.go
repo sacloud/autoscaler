@@ -33,7 +33,7 @@ func TestServe(t *testing.T) {
 	}
 	defer listener.Close()
 
-	server := NewServer(listener.Addr().String(), nil, test.Logger)
+	server := NewServer(listener.Addr().String(), test.Logger)
 	closed := make(chan struct{})
 	go func() {
 		if err := server.Serve(listener); err != http.ErrServerClosed {

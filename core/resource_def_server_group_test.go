@@ -73,7 +73,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					requestType:  requestTypeUp,
 					source:       "default",
 					resourceName: "autoscaler",
-				}, nil, test.Logger),
+				}, test.Logger),
 			},
 			want: Resources{
 				&ResourceServerGroupInstance{
@@ -114,7 +114,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					requestType:  requestTypeUp,
 					source:       "default",
 					resourceName: "resource-def-server-test",
-				}, nil, test.Logger),
+				}, test.Logger),
 			},
 			want: Resources{
 				&ResourceServerGroupInstance{
@@ -171,7 +171,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					requestType:  requestTypeDown,
 					source:       "default",
 					resourceName: "resource-def-server-test",
-				}, nil, test.Logger),
+				}, test.Logger),
 			},
 			want: Resources{
 				&ResourceServerGroupInstance{
@@ -220,7 +220,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					source:           "default",
 					resourceName:     "resource-def-server-test",
 					desiredStateName: "largest",
-				}, nil, test.Logger),
+				}, test.Logger),
 			},
 			want: Resources{
 				&ResourceServerGroupInstance{
@@ -308,7 +308,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					source:           "default",
 					resourceName:     "resource-def-server-test",
 					desiredStateName: "smallest",
-				}, nil, test.Logger),
+				}, test.Logger),
 			},
 			want: Resources{
 				&ResourceServerGroupInstance{
@@ -357,7 +357,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					source:           "default",
 					resourceName:     "resource-def-server-test",
 					desiredStateName: "smallest",
-				}, nil, test.Logger),
+				}, test.Logger),
 			},
 			want:    nil,
 			wantErr: true,
@@ -389,7 +389,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					source:           "default",
 					resourceName:     "resource-def-server-test",
 					desiredStateName: "medium",
-				}, nil, test.Logger),
+				}, test.Logger),
 			},
 			want:    nil,
 			wantErr: true,
@@ -421,7 +421,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					source:           "default",
 					resourceName:     "resource-def-server-test",
 					desiredStateName: "default",
-				}, nil, test.Logger),
+				}, test.Logger),
 			},
 			want: Resources{
 				&ResourceServerGroupInstance{

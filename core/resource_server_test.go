@@ -141,7 +141,7 @@ func TestResourceServer_Compute(t *testing.T) {
 					source:           "default",
 					resourceName:     "default",
 					desiredStateName: "",
-				}, nil, test.Logger),
+				}, test.Logger),
 				refresh: false,
 			},
 			want: &computedServer{
@@ -163,7 +163,7 @@ func TestResourceServer_Compute(t *testing.T) {
 					source:           "default",
 					resourceName:     "default",
 					desiredStateName: "",
-				}, nil, test.Logger),
+				}, test.Logger),
 				refresh: false,
 			},
 			want: &computedServer{

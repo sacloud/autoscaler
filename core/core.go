@@ -103,7 +103,7 @@ func ResourcesTree(parentCtx context.Context, addr, configPath string, strictMod
 		return "", err
 	}
 	ri := &requestInfo{requestType: requestTypeUnknown}
-	ctx := NewRequestContext(parentCtx, ri, instance.config.AutoScaler.HandlerTLSConfig, logger)
+	ctx := NewRequestContext(parentCtx, ri, logger)
 	graph := NewGraph(instance.config.Resources)
 	return graph.Tree(ctx, instance.config.APIClient())
 }
@@ -118,7 +118,6 @@ func (c *Core) run(ctx context.Context) error {
 	// gRPC server
 	server, listener, cleanup, err := grpcutil.Server(&grpcutil.ListenerOption{
 		Address:    c.listenAddress,
-		TLSConfig:  c.config.AutoScaler.ServerTLSConfig,
 		ServerOpts: grpcutil.ServerErrorCountInterceptor("core"),
 	})
 	if err != nil {
@@ -137,7 +136,7 @@ func (c *Core) run(ctx context.Context) error {
 	// metrics server
 	if c.config.AutoScaler.ExporterEnabled() {
 		exporterConfig := c.config.AutoScaler.ExporterConfig
-		server := metrics.NewServer(exporterConfig.ListenAddress(), exporterConfig.TLSConfig, c.logger)
+		server := metrics.NewServer(exporterConfig.ListenAddress(), c.logger)
 		exporterListener, err := net.Listen("tcp", exporterConfig.ListenAddress())
 		if err != nil {
 			return err

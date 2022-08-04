@@ -106,7 +106,7 @@ func startExporter(_ context.Context, input Input, conf *config.ExporterConfig) 
 }
 
 func startExporterWithListener(listener net.Listener, input Input, conf *config.ExporterConfig) error {
-	server := metrics.NewServer(listener.Addr().String(), conf.TLSConfig, input.GetLogger())
+	server := metrics.NewServer(listener.Addr().String(), input.GetLogger())
 	return server.Serve(listener)
 }
 
@@ -179,16 +179,6 @@ func (s *server) serve(l net.Listener) error {
 		return err
 	}
 
-	if s.config != nil && s.config.ServerTLSConfig != nil {
-		tlsConfig, err := s.config.ServerTLSConfig.TLSConfig()
-		if err != nil {
-			if err == config.ErrNoTLSConfig {
-				return s.Serve(l)
-			}
-		}
-		s.TLSConfig = tlsConfig
-		return s.ServeTLS(l, "", "")
-	}
 	return s.Serve(l)
 }
 
@@ -317,13 +307,6 @@ func (s *server) send(scalingReq *ScalingRequest) (*request.ScalingResponse, err
 	dialOption := &grpcutil.DialOption{
 		Destination: s.coreAddress,
 		DialOpts:    grpcutil.ClientErrorCountInterceptor("inputs_to_core"),
-	}
-	if s.config != nil && s.config.CoreTLSConfig != nil {
-		cred, err := s.config.CoreTLSConfig.TransportCredentials()
-		if err != nil && err != config.ErrNoTLSConfig {
-			return nil, err
-		}
-		dialOption.TransportCredentials = cred
 	}
 
 	conn, cleanup, err := grpcutil.DialContext(ctx, dialOption)

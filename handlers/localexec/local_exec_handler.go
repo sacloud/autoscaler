@@ -28,17 +28,17 @@ import (
 type Handler struct {
 	handlers.HandlerLogger
 	listenAddress  string
-	tlsConfigPath  string
+	configPath     string
 	executablePath string
 	handlerType    string
 }
 
 // NewHandler .
-func NewHandler(listenAddr, tlsConfigPath, executable, handlerType string, logger *log.Logger) *Handler {
+func NewHandler(listenAddr, configPath, executable, handlerType string, logger *log.Logger) *Handler {
 	return &Handler{
 		HandlerLogger:  handlers.HandlerLogger{Logger: logger},
 		listenAddress:  listenAddr,
-		tlsConfigPath:  tlsConfigPath,
+		configPath:     configPath,
 		executablePath: executable,
 		handlerType:    handlerType,
 	}
@@ -61,7 +61,7 @@ func (h *Handler) ListenAddress() string {
 
 // ConfigPath CustomHandlerインターフェースの実装
 func (h *Handler) ConfigPath() string {
-	return h.tlsConfigPath
+	return h.configPath
 }
 
 func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
