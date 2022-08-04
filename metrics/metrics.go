@@ -22,7 +22,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/log"
 )
 
@@ -49,16 +48,14 @@ func InitErrorCount(component string) {
 // Server メトリクス収集用の*http.Serverラッパー
 type Server struct {
 	ListenAddress string
-	TLSConfig     *config.TLSStruct
 
 	logger *log.Logger
 	server *http.Server
 }
 
-func NewServer(addr string, tlsConfig *config.TLSStruct, logger *log.Logger) *Server {
+func NewServer(addr string, logger *log.Logger) *Server {
 	return &Server{
 		ListenAddress: addr,
-		TLSConfig:     tlsConfig,
 		logger:        logger,
 		server:        &http.Server{Addr: addr, Handler: handler()},
 	}
@@ -67,18 +64,6 @@ func NewServer(addr string, tlsConfig *config.TLSStruct, logger *log.Logger) *Se
 func (s *Server) Serve(listener net.Listener) error {
 	if err := s.logger.Info("message", "exporter started", "address", listener.Addr().String()); err != nil {
 		return err
-	}
-
-	if s.TLSConfig != nil {
-		conf, err := s.TLSConfig.TLSConfig()
-		if err != nil {
-			return err
-		}
-		s.server.TLSConfig = conf
-		if err := s.logger.Info("message", "exporter has enabled TLS"); err != nil {
-			return err
-		}
-		return s.server.ServeTLS(listener, "", "")
 	}
 
 	return s.server.Serve(listener)

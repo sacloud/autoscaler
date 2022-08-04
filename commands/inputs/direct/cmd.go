@@ -21,7 +21,6 @@ import (
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
-	"github.com/sacloud/autoscaler/inputs"
 	"github.com/sacloud/autoscaler/request"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/spf13/cobra"
@@ -70,19 +69,6 @@ func run(_ *cobra.Command, args []string) error {
 
 	opts := &grpcutil.DialOption{
 		Destination: flags.Destination(),
-	}
-	if flags.InputsConfig() != "" {
-		conf, err := inputs.LoadConfigFromPath(flags.InputsConfig())
-		if err != nil {
-			return err
-		}
-		if conf != nil && conf.CoreTLSConfig != nil {
-			cred, err := conf.CoreTLSConfig.TransportCredentials()
-			if err != nil {
-				return err
-			}
-			opts.TransportCredentials = cred
-		}
 	}
 
 	conn, cleanup, err := grpcutil.DialContext(ctx, opts)

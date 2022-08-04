@@ -18,30 +18,27 @@ import (
 	"context"
 	"time"
 
-	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/log"
 )
 
 // RequestContext 1リクエストのスコープに対応するコンテキスト、context.Contextを実装し、リクエスト情報や現在のジョブの情報を保持する
 type RequestContext struct {
-	ctx       context.Context
-	request   *requestInfo
-	job       *JobStatus
-	logger    *log.Logger
-	tlsConfig *config.TLSStruct
-	zone      string
+	ctx     context.Context
+	request *requestInfo
+	job     *JobStatus
+	logger  *log.Logger
+	zone    string
 
 	handled bool
 }
 
 // NewRequestContext 新しいリクエストコンテキストを生成する
-func NewRequestContext(parent context.Context, request *requestInfo, tlsConfig *config.TLSStruct, logger *log.Logger) *RequestContext {
+func NewRequestContext(parent context.Context, request *requestInfo, logger *log.Logger) *RequestContext {
 	logger = logger.With("request", request.requestType, "source", request.source, "resource", request.resourceName)
 	return &RequestContext{
-		ctx:       parent,
-		request:   request,
-		logger:    logger,
-		tlsConfig: tlsConfig,
+		ctx:     parent,
+		request: request,
+		logger:  logger,
 	}
 }
 
@@ -57,9 +54,8 @@ func (c *RequestContext) WithJobStatus(job *JobStatus) *RequestContext {
 			resourceName:     c.request.resourceName,
 			desiredStateName: c.request.desiredStateName,
 		},
-		logger:    c.logger,
-		job:       job,
-		tlsConfig: c.tlsConfig,
+		logger: c.logger,
+		job:    job,
 	}
 }
 
@@ -68,12 +64,11 @@ func (c *RequestContext) WithJobStatus(job *JobStatus) *RequestContext {
 // 現在のContextが親Contextとなる
 func (c *RequestContext) WithZone(zone string) *RequestContext {
 	return &RequestContext{
-		ctx:       c,
-		request:   c.request,
-		logger:    c.logger,
-		job:       c.job,
-		tlsConfig: c.tlsConfig,
-		zone:      zone,
+		ctx:     c,
+		request: c.request,
+		logger:  c.logger,
+		job:     c.job,
+		zone:    zone,
 	}
 }
 

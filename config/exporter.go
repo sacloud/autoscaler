@@ -18,9 +18,8 @@ import "github.com/sacloud/autoscaler/defaults"
 
 // ExporterConfig Exporterの設定
 type ExporterConfig struct {
-	Enabled   bool       `yaml:"enabled"`
-	Address   string     `yaml:"address"`
-	TLSConfig *TLSStruct `yaml:"tls_config"`
+	Enabled bool   `yaml:"enabled"`
+	Address string `yaml:"address"`
 }
 
 // ListenAddress Addressが空の場合はデフォルト値(defaults.CoreExporterAddr)を、そうでなければAddressを返す

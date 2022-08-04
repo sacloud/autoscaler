@@ -75,11 +75,10 @@ type ResponseSender interface {
 
 // Config .
 type Config struct {
-	HandlerTLSConfig *config.TLSStruct      `yaml:"tls_config"`
-	ExporterConfig   *config.ExporterConfig `yaml:"exporter_config"`
+	ExporterConfig *config.ExporterConfig `yaml:"exporter_config"`
 }
 
-// LoadConfigFromPath ファイルパスからTLSConfigを読み込む
+// LoadConfigFromPath ファイルパスからConfigを読み込む
 func LoadConfigFromPath(configPath string) (*Config, error) {
 	if configPath == "" {
 		return nil, nil

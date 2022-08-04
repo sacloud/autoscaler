@@ -16,13 +16,10 @@ package inputs
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/prometheus/common/expfmt"
@@ -85,44 +82,6 @@ func Test_server_serve(t *testing.T) {
 			schema:  "https",
 			wantErr: true,
 		},
-		{
-			name:       "https with minimal Config",
-			schema:     "https",
-			configPath: "./test/inputs.minimal.yaml",
-			statusCode: http.StatusOK,
-		},
-		{
-			name:       "http with minimal Config",
-			schema:     "http",
-			configPath: "./test/inputs.minimal.yaml",
-			statusCode: http.StatusBadRequest,
-		},
-		{
-			name:           "with mtls Config",
-			schema:         "https",
-			configPath:     "./test/inputs.mtls.yaml",
-			clientCertPath: "./test/client-cert.pem",
-			clientKeyPath:  "./test/client-key.pem",
-			caCertPath:     "./test/ca-cert.pem",
-			statusCode:     http.StatusOK,
-		},
-		{
-			name:       "with mtls Config without client cert",
-			schema:     "http",
-			configPath: "./test/inputs.mtls.yaml",
-			caCertPath: "./test/ca-cert.pem",
-			statusCode: http.StatusBadRequest,
-		},
-		{
-			name:           "with mtls and HTTP/2",
-			schema:         "https",
-			configPath:     "./test/inputs.mtls.yaml",
-			clientCertPath: "./test/client-cert.pem",
-			clientKeyPath:  "./test/client-key.pem",
-			caCertPath:     "./test/ca-cert.pem",
-			statusCode:     http.StatusOK,
-			forceHTTP2:     true,
-		},
 	}
 
 	for _, tt := range tests {
@@ -152,7 +111,7 @@ func Test_server_serve(t *testing.T) {
 				close(closed)
 			}()
 
-			client := testHTTPClient(t, tt.clientKeyPath, tt.clientCertPath, tt.caCertPath, tt.forceHTTP2)
+			client := http.DefaultClient
 			url := fmt.Sprintf("%s://%s/healthz", tt.schema, listener.Addr().String())
 			res, err := client.Get(url)
 
@@ -209,7 +168,7 @@ func Test_server_exporter(t *testing.T) {
 
 	// exporter
 	exporterListener, err := net.Listen("tcp", "localhost:0")
-	exporterServer := metrics.NewServer(exporterListener.Addr().String(), nil, input.GetLogger())
+	exporterServer := metrics.NewServer(exporterListener.Addr().String(), input.GetLogger())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,31 +245,4 @@ func Test_server_exporter(t *testing.T) {
 	}
 	<-closed1
 	<-closed2
-}
-func testHTTPClient(t *testing.T, clientKeyPath, clientCertPath, caCertPath string, forceHTTP2 bool) *http.Client {
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true, // nolint: gosec
-	}
-	if clientKeyPath != "" && clientCertPath != "" {
-		cert, err := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		tlsConfig.Certificates = []tls.Certificate{cert}
-	}
-	if caCertPath != "" {
-		caCert, err := os.ReadFile(caCertPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
-		tlsConfig.RootCAs = caCertPool
-	}
-
-	var transport http.RoundTripper = &http.Transport{
-		TLSClientConfig:   tlsConfig,
-		ForceAttemptHTTP2: forceHTTP2,
-	}
-	return &http.Client{Transport: transport}
 }
