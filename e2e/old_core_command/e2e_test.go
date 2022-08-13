@@ -41,7 +41,6 @@ const (
 
 var (
 	coreCmd = exec.Command("autoscaler", "core", "start")
-	output  = &e2e.Output{}
 )
 
 func TestMain(m *testing.M) {
@@ -55,7 +54,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestE2E_OldCoreCommand(t *testing.T) {
-	defer output.Output()
 
 	/**************************************************************************
 	 * Step 1: 古いコマンド(autoscaler core start)でのCoreの起動確認
@@ -69,7 +67,10 @@ func TestE2E_OldCoreCommand(t *testing.T) {
 	if err := coreCmd.Start(); err != nil {
 		t.Fatal(err)
 	}
-	go output.CollectOutputs("[Core]", coreOutputs)
+
+	output := e2e.NewOutput(coreOutputs, "[Core]")
+	defer output.Output()
+
 	if err := output.WaitOutput(coreReadyMarker, time.Minute); err != nil {
 		t.Fatal(err)
 	}

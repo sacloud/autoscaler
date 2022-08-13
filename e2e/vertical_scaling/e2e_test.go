@@ -56,8 +56,8 @@ var (
 	//go:embed webhook.json
 	grafanaWebhookBody []byte
 
-	coreOutput   = &e2e.Output{}
-	inputsOutput = &e2e.Output{}
+	coreOutput   *e2e.Output
+	inputsOutput *e2e.Output
 )
 
 func TestMain(m *testing.M) {
@@ -242,8 +242,8 @@ func setup() {
 		log.Fatal(err)
 	}
 
-	go coreOutput.CollectOutputs("[Core]", coreCmdOut)
-	go inputsOutput.CollectOutputs("[Grafana Inputs]", inputCmdOut)
+	coreOutput = e2e.NewOutput(coreCmdOut, "[Core]")
+	inputsOutput = e2e.NewOutput(inputCmdOut, "[Grafana Inputs]")
 
 	if err := coreOutput.WaitOutput(coreReadyMarker, 3*time.Second); err != nil {
 		coreOutput.Output()

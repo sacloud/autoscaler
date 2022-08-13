@@ -49,7 +49,7 @@ var (
 	proxyLBReadyTimeout = 5 * time.Minute
 	e2eTestTimeout      = 20 * time.Minute
 
-	output = &e2e.Output{}
+	output *e2e.Output
 )
 
 func TestMain(m *testing.M) {
@@ -201,7 +201,7 @@ func setup() {
 		log.Fatal(err)
 	}
 
-	go output.CollectOutputs("[Core]", coreOutputs)
+	output = e2e.NewOutput(coreOutputs, "[Core]")
 
 	if err := output.WaitOutput(coreReadyMarker, 3*time.Second); err != nil {
 		output.Output()
