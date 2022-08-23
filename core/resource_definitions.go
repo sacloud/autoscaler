@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/request"
@@ -129,7 +130,26 @@ func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient iaas.AP
 	ctx.Logger().Info("status", status) // nolint
 }
 
+func (rds *ResourceDefinitions) startProgressLogger(ctx *RequestContext) func() {
+	d := 30
+	ticker := time.NewTicker(time.Duration(d) * time.Second)
+	counter := 0
+	go func() {
+		for {
+			<-ticker.C
+			counter++
+			ctx.Logger().Info("message", fmt.Sprintf("%ds elapsed", counter*d)) // nolint
+		}
+	}()
+
+	return func() {
+		ticker.Stop()
+	}
+}
+
 func (rds *ResourceDefinitions) handleAll(ctx *RequestContext, apiClient iaas.APICaller, handlers Handlers, defs ResourceDefinitions) error {
+	defer rds.startProgressLogger(ctx)()
+
 	for _, def := range defs {
 		resources, err := def.Compute(ctx, apiClient)
 		if err != nil {
