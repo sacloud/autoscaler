@@ -19,10 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,11 +42,9 @@ func (s *fakeHandleService) PostHandle(*handler.PostHandleRequest, handler.Handl
 
 func TestTransport(t *testing.T) {
 	tests := []struct {
-		name             string
-		listenAddr       string
-		handlerTLSConfig *config.TLSStruct
-		clientTLSConfig  *config.TLSStruct
-		wantError        bool
+		name       string
+		listenAddr string
+		wantError  bool
 	}{
 		{
 			name:       "unix domain socket",
@@ -60,82 +56,12 @@ func TestTransport(t *testing.T) {
 			listenAddr: "localhost:0",
 			wantError:  false,
 		},
-		{
-			name:       "h2",
-			listenAddr: "localhost:0",
-			handlerTLSConfig: &config.TLSStruct{
-				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
-				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
-				ClientAuth: "NoClientCert",
-			},
-			clientTLSConfig: &config.TLSStruct{
-				RootCAs: test.StringOrFilePath(t, "./test/ca-cert.pem"),
-			},
-			wantError: false,
-		},
-		{
-			name:       "h2 without client's RootCAs config",
-			listenAddr: "localhost:0",
-			handlerTLSConfig: &config.TLSStruct{
-				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
-				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
-				ClientAuth: "NoClientCert",
-			},
-			wantError: true,
-		},
-		{
-			name:       "h2 without client cert",
-			listenAddr: "localhost:0",
-			handlerTLSConfig: &config.TLSStruct{
-				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
-				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
-				ClientCAs:  test.StringOrFilePath(t, "../test/ca-cert.pem"),
-				ClientAuth: "RequireAndVerifyClientCert",
-			},
-			clientTLSConfig: &config.TLSStruct{
-				RootCAs: test.StringOrFilePath(t, "../test/ca-cert.pem"),
-			},
-			wantError: true,
-		},
-		{
-			name:       "h2 with invalid client cert",
-			listenAddr: "localhost:0",
-			handlerTLSConfig: &config.TLSStruct{
-				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
-				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
-				ClientCAs:  test.StringOrFilePath(t, "./test/ca-cert.pem"),
-				ClientAuth: "RequireAndVerifyClientCert",
-			},
-			clientTLSConfig: &config.TLSStruct{
-				RootCAs: test.StringOrFilePath(t, "./test/ca-cert.pem"),
-				TLSCert: test.StringOrFilePath(t, "./test/invalid-client-cert.pem"),
-				TLSKey:  test.StringOrFilePath(t, "./test/invalid-client-key.pem"),
-			},
-			wantError: true,
-		},
-		{
-			name:       "h2 with valid client cert",
-			listenAddr: "localhost:0",
-			handlerTLSConfig: &config.TLSStruct{
-				TLSCert:    test.StringOrFilePath(t, "./test/server-cert.pem"),
-				TLSKey:     test.StringOrFilePath(t, "./test/server-key.pem"),
-				ClientCAs:  test.StringOrFilePath(t, "./test/ca-cert.pem"),
-				ClientAuth: "RequireAndVerifyClientCert",
-			},
-			clientTLSConfig: &config.TLSStruct{
-				RootCAs: test.StringOrFilePath(t, "./test/ca-cert.pem"),
-				TLSCert: test.StringOrFilePath(t, "./test/client-cert.pem"),
-				TLSKey:  test.StringOrFilePath(t, "./test/client-key.pem"),
-			},
-			wantError: false,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			server, listener, cleanup, err := grpcutil.Server(&grpcutil.ListenerOption{
-				Address:   tt.listenAddr,
-				TLSConfig: tt.handlerTLSConfig,
+				Address: tt.listenAddr,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -160,13 +86,6 @@ func TestTransport(t *testing.T) {
 				addr = listener.Addr().String()
 			}
 			opts := &grpcutil.DialOption{Destination: addr}
-			if tt.clientTLSConfig != nil {
-				cred, err := tt.clientTLSConfig.TransportCredentials()
-				if err != nil {
-					t.Fatal(err)
-				}
-				opts.TransportCredentials = cred
-			}
 			conn, cleanup2, err := grpcutil.DialContext(context.Background(), opts)
 			if err != nil {
 				t.Fatal(err)

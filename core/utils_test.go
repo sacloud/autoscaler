@@ -25,7 +25,7 @@ func testContext() *RequestContext {
 		requestType:  requestTypeUp,
 		source:       "default",
 		resourceName: "default",
-	}, nil, test.Logger)
+	}, test.Logger)
 }
 
 func testContextDown() *RequestContext {
@@ -33,5 +33,5 @@ func testContextDown() *RequestContext {
 		requestType:  requestTypeDown,
 		source:       "default",
 		resourceName: "default",
-	}, nil, test.Logger)
+	}, test.Logger)
 }

@@ -21,14 +21,8 @@ import (
 	"github.com/sacloud/autoscaler/config"
 )
 
-// Config InputsのTLS関連動作設定
+// Config Inputsのエクスポーター関連動作設定
 type Config struct {
-	// ServerTLSConfig WebhookサーバのTLS関連設定
-	ServerTLSConfig *config.TLSStruct `yaml:"server_tls_config"`
-
-	// CoreTLSConfig coreのgRPCクライアントのTLS関連設定
-	CoreTLSConfig *config.TLSStruct `yaml:"core_tls_config"`
-
 	// ExporterConfig Exporterの設定
 	ExporterConfig *config.ExporterConfig `yaml:"exporter_config"`
 }

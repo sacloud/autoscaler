@@ -15,9 +15,7 @@
 package core
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"os"
 	"testing"
 
@@ -27,135 +25,6 @@ import (
 	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
 )
-
-func TestConfig_Load(t *testing.T) {
-	type fields struct {
-		SakuraCloud *SakuraCloud
-		Handlers    Handlers
-		Resources   ResourceDefinitions
-		AutoScaler  AutoScalerConfig
-	}
-	type args struct {
-		reader io.Reader
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "minimal",
-			fields: fields{
-				SakuraCloud: &SakuraCloud{
-					Credential: Credential{
-						Token:  "token",
-						Secret: "secret",
-					},
-				},
-				Handlers: Handlers{
-					{
-						Name:     "fake",
-						Endpoint: "unix:autoscaler-handlers-fake.sock",
-					},
-				},
-				Resources: ResourceDefinitions{
-					&ResourceDefServer{
-						ResourceDefBase: &ResourceDefBase{
-							TypeName: "Server",
-						},
-						Selector: &MultiZoneSelector{
-							ResourceSelector: &ResourceSelector{
-								Names: []string{"test-name"},
-								Tags:  []string{"test-tag"},
-							},
-							Zones: []string{"is1a"},
-						},
-						DedicatedCPU: true,
-					},
-				},
-				AutoScaler: AutoScalerConfig{
-					CoolDownSec: 30,
-					ServerTLSConfig: &config.TLSStruct{
-						TLSCert:    test.StringOrFilePath(t, "server.crt"),
-						TLSKey:     test.StringOrFilePath(t, "server.key"),
-						ClientAuth: "RequireAndVerifyClientCert",
-						ClientCAs:  test.StringOrFilePath(t, "ca.crt"),
-					},
-					HandlerTLSConfig: &config.TLSStruct{
-						TLSCert: test.StringOrFilePath(t, "server.crt"),
-						TLSKey:  test.StringOrFilePath(t, "server.key"),
-						RootCAs: test.StringOrFilePath(t, "ca.crt"),
-					},
-					ExporterConfig: &config.ExporterConfig{
-						Enabled: true,
-						Address: "localhost:8080",
-						TLSConfig: &config.TLSStruct{
-							TLSCert:    test.StringOrFilePath(t, "server.crt"),
-							TLSKey:     test.StringOrFilePath(t, "server.key"),
-							ClientCAs:  test.StringOrFilePath(t, "ca.crt"),
-							ClientAuth: "RequireAndVerifyClientCert",
-						},
-					},
-				},
-			},
-			args: args{
-				reader: bytes.NewReader([]byte(`
-sakuracloud:
-  token: token
-  secret: secret
-handlers:
-  - name: "fake"
-    endpoint: "unix:autoscaler-handlers-fake.sock"
-resources:
-  - type: Server
-    selector:
-      names: ["test-name"]
-      tags: ["test-tag"]
-      zones: ["is1a"]
-    dedicated_cpu: true
-autoscaler:
-  cooldown: 30
-  server_tls_config:
-    cert_file: server.crt
-    key_file: server.key
-    client_auth_type: RequireAndVerifyClientCert
-    client_ca_file: ca.crt
-  handler_tls_config:
-    cert_file: server.crt
-    key_file: server.key
-    root_ca_file: ca.crt
-  exporter_config:
-    enabled: true
-    address: "localhost:8080"
-    tls_config:
-      cert_file: server.crt
-      key_file: server.key
-      client_auth_type: RequireAndVerifyClientCert
-      client_ca_file: ca.crt
-
-`)),
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			expected := &Config{
-				SakuraCloud:    tt.fields.SakuraCloud,
-				CustomHandlers: tt.fields.Handlers,
-				Resources:      tt.fields.Resources,
-				AutoScaler:     tt.fields.AutoScaler,
-			}
-			c := &Config{}
-			if err := c.load(context.Background(), tt.args.reader); (err != nil) != tt.wantErr {
-				t.Errorf("Load() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			require.EqualValues(t, expected, c)
-		})
-	}
-}
 
 func TestHandlersConfig_UnmarshalYAML(t *testing.T) {
 	data := []byte(`
