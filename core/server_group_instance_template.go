@@ -35,9 +35,9 @@ type ServerGroupInstanceTemplate struct {
 	Tags        []string `yaml:"tags" validate:"unique,max=10,dive,max=32"`
 	Description string   `yaml:"description" validate:"max=512"`
 
-	IconID          string                 `yaml:"icon_id"`
-	CDROMID         string                 `yaml:"cdrom_id"`
-	PrivateHostID   string                 `yaml:"private_host_id"`
+	IconID          *IdOrNameOrSelector    `yaml:"icon_id"`
+	CDROMID         *IdOrNameOrSelector    `yaml:"cdrom_id"`
+	PrivateHostID   *IdOrNameOrSelector    `yaml:"private_host_id"`
 	InterfaceDriver types.EInterfaceDriver `yaml:"interface_driver" validate:"omitempty,oneof=virtio e1000"`
 
 	Plan              *ServerGroupInstancePlan     `yaml:"plan" validate:"required"`
@@ -80,6 +80,48 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	return errors.Errors
 }
 
+func (s *ServerGroupInstanceTemplate) FindIconId(ctx context.Context, apiClient iaas.APICaller) (string, error) {
+	if s.IconID != nil {
+		found, err := iaas.NewIconOp(apiClient).Find(ctx, s.IconID.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.Icons) == 0 {
+			return "", nil
+		}
+		return found.Icons[0].ID.String(), nil
+	}
+	return "", nil
+}
+
+func (s *ServerGroupInstanceTemplate) FindCDROMId(ctx context.Context, apiClient iaas.APICaller, zone string) (string, error) {
+	if s.CDROMID != nil {
+		found, err := iaas.NewCDROMOp(apiClient).Find(ctx, zone, s.CDROMID.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.CDROMs) == 0 {
+			return "", nil
+		}
+		return found.CDROMs[0].ID.String(), nil
+	}
+	return "", nil
+}
+
+func (s *ServerGroupInstanceTemplate) FindPrivateHostId(ctx context.Context, apiClient iaas.APICaller, zone string) (string, error) {
+	if s.PrivateHostID != nil {
+		found, err := iaas.NewPrivateHostOp(apiClient).Find(ctx, zone, s.PrivateHostID.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.PrivateHosts) == 0 {
+			return "", nil
+		}
+		return found.PrivateHosts[0].ID.String(), nil
+	}
+	return "", nil
+}
+
 type ServerGroupInstancePlan struct {
 	Core         int  `yaml:"core"`
 	Memory       int  `yaml:"memory"`
@@ -104,10 +146,10 @@ func (p *ServerGroupInstancePlan) String() string {
 }
 
 type ServerGroupDiskTemplate struct {
-	NamePrefix  string   `yaml:"name_prefix"` // {{.ServerName}}{{.Name}}{{.Number}}
-	Tags        []string `yaml:"tags" validate:"unique,max=10,dive,max=32"`
-	Description string   `yaml:"description" validate:"max=512"`
-	IconID      string   `yaml:"icon_id"`
+	NamePrefix  string              `yaml:"name_prefix"` // {{.ServerName}}{{.Name}}{{.Number}}
+	Tags        []string            `yaml:"tags" validate:"unique,max=10,dive,max=32"`
+	Description string              `yaml:"description" validate:"max=512"`
+	IconID      *IdOrNameOrSelector `yaml:"icon_id"`
 
 	// ブランクディスクの場合は以下3つをゼロ値にする
 	SourceArchiveSelector *NameOrSelector `yaml:"source_archive"`
@@ -160,6 +202,20 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient iaas.A
 	// TODO プラン/サイズがクラウド上で有効な値になっているか検証
 
 	return errors.Errors
+}
+
+func (t *ServerGroupDiskTemplate) FindIconID(ctx context.Context, apiClient iaas.APICaller) (string, error) {
+	if t.IconID != nil {
+		found, err := iaas.NewIconOp(apiClient).Find(ctx, t.IconID.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.Icons) == 0 {
+			return "", nil
+		}
+		return found.Icons[0].ID.String(), nil
+	}
+	return "", nil
 }
 
 func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient iaas.APICaller, zone string) (sourceArchiveID, sourceDiskID string, retErr error) {
@@ -261,7 +317,7 @@ type ServerGroupNICTemplate struct {
 	AssignCidrBlock  string                  `yaml:"assign_cidr_block" validate:"omitempty,cidrv4"`        // 上流がスイッチの場合(ルータ含む)に割り当てるIPアドレスのCIDRブロック
 	AssignNetMaskLen int                     `yaml:"assign_netmask_len" validate:"omitempty,min=1,max=32"` // 上流がスイッチの場合(ルータ含む)に割り当てるサブネットマスク長
 	DefaultRoute     string                  `yaml:"default_route" validate:"omitempty,ipv4"`
-	PacketFilterID   string                  `yaml:"packet_filter_id"`
+	PacketFilterID   *IdOrNameOrSelector     `yaml:"packet_filter_id"`
 	ExposeInfo       *ServerGroupNICMetadata `yaml:"expose"`
 }
 
@@ -306,6 +362,20 @@ func (t *ServerGroupNICTemplate) Validate(parent *ParentResourceDef, maxServerNu
 		errors = multierror.Append(errors, t.ExposeInfo.Validate(parent, nicIndex)...)
 	}
 	return errors.Errors
+}
+
+func (t *ServerGroupNICTemplate) FindPacketFilterId(ctx context.Context, apiClient iaas.APICaller, zone string) (string, error) {
+	if t.PacketFilterID != nil {
+		found, err := iaas.NewPacketFilterOp(apiClient).Find(ctx, zone, t.PacketFilterID.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.PacketFilters) == 0 {
+			return "", nil
+		}
+		return found.PacketFilters[0].ID.String(), nil
+	}
+	return "", nil
 }
 
 // IPAddressByIndexFromCidrBlock AssignCidrBlockからindexに対応するIPアドレスを返す

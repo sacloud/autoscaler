@@ -195,6 +195,11 @@ func (r *ResourceServerGroupInstance) computeDisks(ctx *RequestContext) ([]*hand
 		if err != nil {
 			return nil, err
 		}
+		iconId, err := tmpl.FindIconID(ctx, r.apiClient)
+		if err != nil {
+			return nil, err
+		}
+
 		disks = append(disks, &handler.ServerGroupInstance_Disk{
 			Id:              "",
 			Zone:            r.zone,
@@ -206,7 +211,7 @@ func (r *ResourceServerGroupInstance) computeDisks(ctx *RequestContext) ([]*hand
 			Name:            tmpl.DiskName(r.server.Name, i),
 			Tags:            tmpl.Tags,
 			Description:     tmpl.Description,
-			IconId:          tmpl.IconID,
+			IconId:          iconId,
 		})
 	}
 	return disks, nil
@@ -254,9 +259,13 @@ func (r *ResourceServerGroupInstance) computeNetworkInterfaces(ctx *RequestConte
 			}
 		}
 
+		packetFilterId, err := tmpl.FindPacketFilterId(ctx, r.apiClient, r.zone)
+		if err != nil {
+			return nil, err
+		}
 		nic := &handler.ServerGroupInstance_NIC{
 			Upstream:       upstream,
-			PacketFilterId: tmpl.PacketFilterID,
+			PacketFilterId: packetFilterId,
 			ExposeInfo:     exposeInfo,
 		}
 
