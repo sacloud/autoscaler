@@ -15,6 +15,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -491,7 +492,7 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t1 *testing.T) {
-			got := tt.template.Validate(nil, tt.args.maxServerNum, 0)
+			got := tt.template.Validate(context.Background(), nil, tt.args.maxServerNum, 0)
 			require.EqualValues(t, tt.want, got)
 		})
 	}

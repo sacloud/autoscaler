@@ -63,12 +63,33 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	if s.IconId != "" && s.Icon != nil {
 		errors = multierror.Append(errors, fmt.Errorf("only one of icon and icon_id can be specified"))
 	}
+	if s.IconId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") // nolint:errcheck
+		}
+	}
+
 	if s.CDROMId != "" && s.CDROM != nil {
 		errors = multierror.Append(errors, fmt.Errorf("only one of cdrom and cdrom_id can be specified"))
 	}
+	if s.CDROMId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "cdrom_id is deprecated. use cdrom instead") // nolint:errcheck
+		}
+	}
+
 	if s.PrivateHostId != "" && s.PrivateHost != nil {
 		errors = multierror.Append(errors, fmt.Errorf("only one of private_host and private_host_id can be specified"))
 	}
+	if s.PrivateHostId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "private_host_id is deprecated. use private_host instead") // nolint:errcheck
+		}
+	}
+
 	if err := s.Plan.Validate(ctx, apiClient, def.Zone); err != nil {
 		errors = multierror.Append(errors, err)
 	}
@@ -89,7 +110,7 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	}
 
 	for i, nic := range s.NetworkInterfaces {
-		errors = multierror.Append(errors, nic.Validate(def.ParentDef, def.MaxSize, i)...)
+		errors = multierror.Append(errors, nic.Validate(ctx, def.ParentDef, def.MaxSize, i)...)
 	}
 
 	return errors.Errors
@@ -223,6 +244,12 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient iaas.A
 	if t.IconId != "" && t.Icon != nil {
 		errors = multierror.Append(errors, fmt.Errorf("only one of icon and icon_id can be specified"))
 	}
+	if t.IconId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") // nolint:errcheck
+		}
+	}
 
 	if _, _, err := t.FindDiskSource(ctx, apiClient, zone); err != nil {
 		errors = multierror.Append(errors, err)
@@ -354,7 +381,7 @@ type ServerGroupNICTemplate struct {
 	ExposeInfo *ServerGroupNICMetadata `yaml:"expose"`
 }
 
-func (t *ServerGroupNICTemplate) Validate(parent *ParentResourceDef, maxServerNum, nicIndex int) []error {
+func (t *ServerGroupNICTemplate) Validate(ctx context.Context, parent *ParentResourceDef, maxServerNum, nicIndex int) []error {
 	if errs := validate.StructWithMultiError(t); len(errs) > 0 {
 		return errs
 	}
@@ -362,6 +389,12 @@ func (t *ServerGroupNICTemplate) Validate(parent *ParentResourceDef, maxServerNu
 	errors := &multierror.Error{}
 	if t.PacketFilterId != "" && t.PacketFilter != nil {
 		errors = multierror.Append(errors, fmt.Errorf("only one of packet_filter and packet_filter_id can be specified"))
+	}
+	if t.PacketFilterId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") // nolint:errcheck
+		}
 	}
 
 	hasNetworkSettings := t.AssignCidrBlock != "" || t.AssignNetMaskLen > 0 || t.DefaultRoute != ""
