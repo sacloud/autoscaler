@@ -31,8 +31,9 @@ import (
 type ResourceDefServerGroup struct {
 	*ResourceDefBase `yaml:",inline" validate:"required"`
 
-	ServerNamePrefix string `yaml:"server_name_prefix"` // NameまたはServerNamePrefixが必須
-	Zone             string `yaml:"zone" validate:"required,zone"`
+	ServerNamePrefix string   `yaml:"server_name_prefix"` // NameまたはServerNamePrefixが必須
+	Zone             string   `yaml:"zone" validate:"required_without=Zones,omitempty,zone"`
+	Zones            []string `yaml:"zones" validate:"required_without=Zone,omitempty,unique,dive,required,zone"`
 
 	MinSize int `yaml:"min_size" validate:"min=0,ltefield=MaxSize"`
 	MaxSize int `yaml:"max_size" validate:"min=0,gtecsfield=MinSize"`
@@ -46,7 +47,7 @@ type ResourceDefServerGroup struct {
 }
 
 func (d *ResourceDefServerGroup) String() string {
-	return fmt.Sprintf("Zone: %s, Name: %s", d.Zone, d.Name())
+	return fmt.Sprintf("Zones: %s, Name: %s", d.Zones, d.Name())
 }
 
 func (d *ResourceDefServerGroup) namePrefix() string {
@@ -64,6 +65,21 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.AP
 
 	if err := d.printWarningForServerNamePrefix(ctx); err != nil {
 		errors = multierror.Append(errors, err)
+	}
+
+	if d.Zone != "" && len(d.Zones) > 0 {
+		errors = multierror.Append(errors, fmt.Errorf("only one of zone and zones can be specified"))
+	}
+	// HACK: 値の正規化、処理する適切なタイミングがないため暫定的にここで処理している
+	//       ResourceDefinitionレベルで初期化処理インターフェースができたらそちらに移動する
+	if d.Zone != "" {
+		d.Zones = []string{d.Zone}
+	}
+
+	if len(d.Zones) > 0 && d.ParentDef != nil {
+		if d.ParentDef.Type() == ResourceTypeLoadBalancer { // 親リソース種別が増えたらここを修正
+			errors = multierror.Append(errors, fmt.Errorf("multiple zones cannot be specified when the parent is a LoadBalancer"))
+		}
 	}
 
 	for _, p := range d.Plans {
@@ -111,8 +127,6 @@ func (d *ResourceDefServerGroup) resourcePlans() ResourcePlans {
 }
 
 func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error) {
-	ctx = ctx.WithZone(d.Zone)
-
 	// 現在のリソースを取得
 	cloudResources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
@@ -127,7 +141,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 
 	var parent Resource
 	if d.ParentDef != nil {
-		parents, err := d.ParentDef.Compute(ctx, apiClient)
+		parents, err := d.ParentDef.Compute(ctx.WithZone(d.Zones[0]), apiClient)
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +160,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 			},
 			apiClient:   apiClient,
 			server:      cloudResources[i],
-			zone:        d.Zone,
+			zone:        cloudResources[i].Zone.Name,
 			def:         d,
 			instruction: handler.ResourceInstructions_NOOP,
 			parent:      parent,
@@ -164,12 +178,15 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		return nil, err
 	}
 	for len(resources) < plan.Size {
+		zone := d.determineZone(len(resources))
+		ctx := ctx.WithZone(zone)
+
 		// セレクタ->ID変換
-		cdromId, err := d.Template.FindCDROMId(ctx, apiClient, d.Zone)
+		cdromId, err := d.Template.FindCDROMId(ctx, apiClient, zone)
 		if err != nil {
 			return nil, err
 		}
-		privateHostId, err := d.Template.FindPrivateHostId(ctx, apiClient, d.Zone)
+		privateHostId, err := d.Template.FindPrivateHostId(ctx, apiClient, zone)
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +214,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 				MemoryMB:             d.Template.Plan.Memory * size.GiB,
 				ServerPlanCommitment: commitment,
 			},
-			zone:         d.Zone,
+			zone:         zone,
 			def:          d,
 			instruction:  handler.ResourceInstructions_CREATE,
 			indexInGroup: index,
@@ -257,16 +274,34 @@ func (d *ResourceDefServerGroup) determineServerName(resources Resources) (strin
 	return d.serverNameByIndex(len(resources)), len(resources)
 }
 
+// determineZone サーバのインデックスからサーバを配置すべきゾーンを決定する
+// 現在はインデックスのみ考慮しており、特定ゾーンへのサーバの偏りがあっても考慮されない
+// d.Zonesが空だとpanicする
+func (d *ResourceDefServerGroup) determineZone(index int) string {
+	switch len(d.Zones) {
+	case 0:
+		panic("invalid zones")
+	case 1:
+		return d.Zones[0]
+	default:
+		return d.Zones[index%len(d.Zones)]
+	}
+}
+
 func (d *ResourceDefServerGroup) findCloudResources(ctx context.Context, apiClient iaas.APICaller) ([]*iaas.Server, error) {
 	serverOp := iaas.NewServerOp(apiClient)
 	selector := &ResourceSelector{Names: []string{d.namePrefix()}}
-	found, err := serverOp.Find(ctx, d.Zone, selector.findCondition())
-	if err != nil {
-		return nil, fmt.Errorf("computing status failed: %s", err)
-	}
 
-	// Nameとd.namePrefix()が前方一致するリソースだけに絞る
-	servers := d.filterCloudServers(found.Servers)
+	var servers []*iaas.Server
+	for _, zone := range d.Zones {
+		found, err := serverOp.Find(ctx, zone, selector.findCondition())
+		if err != nil {
+			return nil, fmt.Errorf("computing status failed: %s", err)
+		}
+
+		// Nameとd.namePrefix()が前方一致するリソースだけに絞る
+		servers = append(servers, d.filterCloudServers(found.Servers)...)
+	}
 
 	// 名前の昇順にソート
 	sort.Slice(servers, func(i, j int) bool {

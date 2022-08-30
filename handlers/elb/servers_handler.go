@@ -279,8 +279,8 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 	}
 
 	shouldUpdate := false
-	var servers []*iaas.ProxyLBServer
 	fn := func(ip string, port int) error {
+		var servers []*iaas.ProxyLBServer
 		for _, s := range current.Servers {
 			if s.IPAddress == ip && s.Port == port {
 				shouldUpdate = true
@@ -292,6 +292,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 			}
 			servers = append(servers, s)
 		}
+		current.Servers = servers
 		return nil
 	}
 	if err := nic.EachIPAndExposedPort(fn); err != nil {
@@ -306,7 +307,7 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 			HealthCheck:   current.HealthCheck,
 			SorryServer:   current.SorryServer,
 			BindPorts:     current.BindPorts,
-			Servers:       servers,
+			Servers:       current.Servers,
 			Rules:         current.Rules,
 			LetsEncrypt:   current.LetsEncrypt,
 			StickySession: current.StickySession,

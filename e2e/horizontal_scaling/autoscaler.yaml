@@ -1,7 +1,7 @@
 resources:
   - type: ServerGroup
     name: "autoscaler-e2e-horizontal-scaling"
-    zone: "is1a"
+    zones: ["is1a", "is1b"]
     min_size: 0
     max_size: 5
 

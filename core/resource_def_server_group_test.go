@@ -58,7 +58,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					DefName:  "autoscaler",
 					TypeName: "ServerGroup",
 				},
-				Zone:    test.Zone,
+				Zones:   []string{test.Zone},
 				MinSize: 1,
 				MaxSize: 1,
 				Template: &ServerGroupInstanceTemplate{
@@ -99,7 +99,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					DefName:  "resource-def-server-test",
 					TypeName: "ServerGroup",
 				},
-				Zone:    test.Zone,
+				Zones:   []string{test.Zone},
 				MinSize: 1,
 				MaxSize: 3,
 				Template: &ServerGroupInstanceTemplate{
@@ -156,7 +156,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					DefName:  "resource-def-server-test",
 					TypeName: "ServerGroup",
 				},
-				Zone:    test.Zone,
+				Zones:   []string{test.Zone},
 				MinSize: 1,
 				MaxSize: 3,
 				Template: &ServerGroupInstanceTemplate{
@@ -200,7 +200,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					DefName:  "resource-def-server-test",
 					TypeName: "ServerGroup",
 				},
-				Zone:    test.Zone,
+				Zones:   []string{test.Zone},
 				MinSize: 1,
 				MaxSize: 5,
 				Plans: []*ServerGroupPlan{
@@ -288,7 +288,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					DefName:  "resource-def-server-test",
 					TypeName: "ServerGroup",
 				},
-				Zone:    test.Zone,
+				Zones:   []string{test.Zone},
 				MinSize: 1,
 				MaxSize: 5,
 				Plans: []*ServerGroupPlan{
@@ -337,7 +337,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					DefName:  "resource-def-server-test",
 					TypeName: "ServerGroup",
 				},
-				Zone:    test.Zone,
+				Zones:   []string{test.Zone},
 				MinSize: 1,
 				MaxSize: 5,
 				Plans: []*ServerGroupPlan{
@@ -369,7 +369,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					DefName:  "resource-def-server-test",
 					TypeName: "ServerGroup",
 				},
-				Zone:    test.Zone,
+				Zones:   []string{test.Zone},
 				MinSize: 1,
 				MaxSize: 5,
 				Plans: []*ServerGroupPlan{
@@ -401,7 +401,7 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					DefName:  "resource-def-server-test",
 					TypeName: "ServerGroup",
 				},
-				Zone:    test.Zone,
+				Zones:   []string{test.Zone},
 				MinSize: 1,
 				MaxSize: 5,
 				Plans: []*ServerGroupPlan{
@@ -489,7 +489,7 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 				ResourceDefBase: &ResourceDefBase{
 					TypeName: "ServerGroup",
 				},
-				Zone:    "is1a",
+				Zones:   []string{"is1a"},
 				MaxSize: 1,
 				Template: &ServerGroupInstanceTemplate{
 					Plan: &ServerGroupInstancePlan{
@@ -509,7 +509,7 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 					TypeName: "ServerGroup",
 					DefName:  "test",
 				},
-				Zone:    "is1a",
+				Zones:   []string{"is1a"},
 				MinSize: 2,
 				MaxSize: 1,
 				Template: &ServerGroupInstanceTemplate{
@@ -531,7 +531,7 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 					TypeName: "ServerGroup",
 					DefName:  "test",
 				},
-				Zone:    "is1a",
+				Zones:   []string{"is1a"},
 				MinSize: 1,
 				MaxSize: 1,
 				Template: &ServerGroupInstanceTemplate{
@@ -550,7 +550,7 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 					TypeName: "ServerGroup",
 				},
 				ServerNamePrefix: "test",
-				Zone:             "is1a",
+				Zones:            []string{"is1a"},
 				MinSize:          1,
 				MaxSize:          1,
 				Template: &ServerGroupInstanceTemplate{
@@ -561,6 +561,100 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 				},
 			},
 			want: nil,
+		},
+		{
+			name: "return error with zone and zones",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+				},
+				ServerNamePrefix: "test",
+				MinSize:          1,
+				MaxSize:          1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+				Zone:  "is1a",
+				Zones: []string{"is1a", "is1b"},
+			},
+			want: []error{
+				fmt.Errorf("resource=ServerGroup only one of zone and zones can be specified"),
+			},
+		},
+		{
+			name: "returns error when parent is LB and has multiple zones",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+					DefName:  "test",
+				},
+				Zones:   []string{"is1a", "is1b"},
+				MinSize: 1,
+				MaxSize: 1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+				ParentDef: &ParentResourceDef{
+					TypeName: ResourceTypeLoadBalancer.String(),
+					Selector: &NameOrSelector{
+						ResourceSelector: ResourceSelector{
+							Names: []string{"foobar"},
+						},
+					},
+				},
+			},
+			want: []error{
+				fmt.Errorf("resource=ServerGroup multiple zones cannot be specified when the parent is a LoadBalancer"),
+				fmt.Errorf("resource=ServerGroup resource=LoadBalancer resource not found with selector: ID: , Names: [foobar], Tags: []"),
+			},
+		},
+		{
+			name: "returns error with empty zone name",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+					DefName:  "test",
+				},
+				Zones:   []string{"is1a", "", "is1b"}, // 空文字
+				MinSize: 1,
+				MaxSize: 1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			want: []error{
+				fmt.Errorf("zones[1]: required"),
+			},
+		},
+		{
+			name: "returns error with duplicated zone name",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+					DefName:  "test",
+				},
+				Zones:   []string{"is1a", "is1a", "is1b"}, // 重複
+				MinSize: 1,
+				MaxSize: 1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			want: []error{
+				fmt.Errorf("zones: unique"),
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -993,6 +1087,60 @@ func TestResourceDefServerGroup_printWarningForServerNamePrefix(t *testing.T) {
 			}
 			d.printWarningForServerNamePrefix(ctx) // nolint
 			require.Equal(t, tt.wantWarn, len(writer.Bytes()) > 0)
+		})
+	}
+}
+
+func TestResourceDefServerGroup_determineZone(t *testing.T) {
+	tests := []struct {
+		name  string
+		zones []string
+		index int
+		want  string
+	}{
+		{
+			name:  "minimum",
+			zones: []string{"is1a"},
+			index: 0,
+			want:  "is1a",
+		},
+		{
+			name:  "index is greater than zones",
+			zones: []string{"is1a"},
+			index: 1,
+			want:  "is1a",
+		},
+		{
+			name:  "multiple zones",
+			zones: []string{"is1a", "tk1a"},
+			index: 0,
+			want:  "is1a",
+		},
+		{
+			name:  "multiple zones",
+			zones: []string{"is1a", "tk1a"},
+			index: 1,
+			want:  "tk1a",
+		},
+		{
+			name:  "index is greater than zones with multiple zones",
+			zones: []string{"is1a", "tk1a"},
+			index: 2,
+			want:  "is1a",
+		},
+		{
+			name:  "index is greater than zones with multiple zones",
+			zones: []string{"is1a", "tk1a"},
+			index: 3,
+			want:  "tk1a",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := &ResourceDefServerGroup{Zones: tt.zones}
+			if got := d.determineZone(tt.index); got != tt.want {
+				t.Errorf("determineZone() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

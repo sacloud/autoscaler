@@ -90,11 +90,13 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 		}
 	}
 
-	if err := s.Plan.Validate(ctx, apiClient, def.Zone); err != nil {
-		errors = multierror.Append(errors, err)
-	}
-	for _, disk := range s.Disks {
-		errors = multierror.Append(errors, disk.Validate(ctx, apiClient, def.Zone)...)
+	for _, zone := range def.Zones {
+		if err := s.Plan.Validate(ctx, apiClient, zone); err != nil {
+			errors = multierror.Append(errors, err)
+		}
+		for _, disk := range s.Disks {
+			errors = multierror.Append(errors, disk.Validate(ctx, apiClient, zone)...)
+		}
 	}
 
 	// TODO EditParameter/CloudConfigそれぞれにおいて、Disks[0]が存在&対応していることを検証

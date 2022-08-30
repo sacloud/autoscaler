@@ -114,7 +114,7 @@ func (h *HorizontalScaleHandler) createServer(ctx *handlers.HandlerContext, req 
 	}
 
 	if err := ctx.Report(handler.HandleResponse_RUNNING,
-		"created: {ID:%s, Name:%s}", createdServer.ID, createdServer.Name); err != nil {
+		"created: {Zone:%s, ID:%s, Name:%s}", createdServer.Zone.Name, createdServer.ID, createdServer.Name); err != nil {
 		return err
 	}
 
@@ -154,8 +154,8 @@ func (h *HorizontalScaleHandler) createServer(ctx *handlers.HandlerContext, req 
 		}
 
 		if err := ctx.Report(handler.HandleResponse_RUNNING,
-			"created disk[%d]: {ID:%s, Name:%s, ServerID:%s}",
-			i, disk.ID, disk.Name, createdServer.ID); err != nil {
+			"created disk[%d]: {Zone:%s, ID:%s, Name:%s, ServerID:%s}",
+			i, server.Zone, disk.ID, disk.Name, createdServer.ID); err != nil {
 			return err
 		}
 	}
