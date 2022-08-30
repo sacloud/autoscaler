@@ -311,6 +311,48 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 			},
 		},
 		{
+			name: "icon",
+			template: &ServerGroupInstanceTemplate{
+				Plan: &ServerGroupInstancePlan{
+					Core:   1,
+					Memory: 1,
+				},
+				Icon:   &IdOrNameOrSelector{ResourceSelector{Names: []string{"test"}}},
+				IconId: "123456789012",
+			},
+			want: []error{
+				fmt.Errorf("only one of icon and icon_id can be specified"),
+			},
+		},
+		{
+			name: "cdrom",
+			template: &ServerGroupInstanceTemplate{
+				Plan: &ServerGroupInstancePlan{
+					Core:   1,
+					Memory: 1,
+				},
+				CDROM:   &IdOrNameOrSelector{ResourceSelector{Names: []string{"test"}}},
+				CDROMId: "123456789012",
+			},
+			want: []error{
+				fmt.Errorf("only one of cdrom and cdrom_id can be specified"),
+			},
+		},
+		{
+			name: "private_host",
+			template: &ServerGroupInstanceTemplate{
+				Plan: &ServerGroupInstancePlan{
+					Core:   1,
+					Memory: 1,
+				},
+				PrivateHost:   &IdOrNameOrSelector{ResourceSelector{Names: []string{"test"}}},
+				PrivateHostId: "123456789012",
+			},
+			want: []error{
+				fmt.Errorf("only one of private_host and private_host_id can be specified"),
+			},
+		},
+		{
 			name: "cloud-config",
 			template: &ServerGroupInstanceTemplate{
 				Plan: &ServerGroupInstancePlan{
@@ -360,6 +402,17 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 			template: &ServerGroupNICTemplate{Upstream: &ServerGroupNICUpstream{shared: true}},
 			args:     args{maxServerNum: 1},
 			want:     nil,
+		},
+		{
+			name: "packet_filter",
+			template: &ServerGroupNICTemplate{
+				Upstream:       &ServerGroupNICUpstream{shared: true},
+				PacketFilter:   &IdOrNameOrSelector{ResourceSelector{Names: []string{"test"}}},
+				PacketFilterId: "123456789012",
+			},
+			want: []error{
+				fmt.Errorf("only one of packet_filter and packet_filter_id can be specified"),
+			},
 		},
 		{
 			name: "shared with network settings",

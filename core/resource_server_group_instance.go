@@ -155,7 +155,6 @@ func (r *ResourceServerGroupInstance) computeEditParameter(ctx *RequestContext, 
 		EnableDhcp:          tmpl.EnableDHCP,
 		ChangePartitionUuid: tmpl.ChangePartitionUUID,
 		SshKeys:             sshKeys,
-		SshKeyIds:           tmpl.SSHKeyIDs,
 		StartupScripts:      startupScripts, // Note: この段階ではGoテンプレートは未評価のまま渡す。
 
 		// これらは必要に応じてHandlerが設定する
