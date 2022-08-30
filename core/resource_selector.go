@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/validate"
@@ -115,5 +116,30 @@ func (v *NameOrSelector) UnmarshalYAML(ctx context.Context, data []byte) error {
 		}
 	}
 	*v = NameOrSelector{ResourceSelector: selector}
+	return nil
+}
+
+// IdOrNameOrSelector ID、名前、またはResourceSelectorを表すstruct
+type IdOrNameOrSelector struct {
+	ResourceSelector
+}
+
+func (v *IdOrNameOrSelector) UnmarshalYAML(ctx context.Context, data []byte) error {
+	var selector ResourceSelector
+	s := string(data)
+
+	// 数値だけの文字列だったら(ParseUintが成功したら)IDが指定されたとみなす
+	if _, err := strconv.ParseUint(s, 10, 64); err == nil {
+		selector = ResourceSelector{ID: types.StringID(s)}
+	} else {
+		// セレクタとしてUnmarshalしてみてエラーだったらNamesと見なす
+		if err := yaml.UnmarshalWithOptions(data, &selector, yaml.Strict()); err != nil {
+			selector = ResourceSelector{
+				Names: []string{s},
+			}
+		}
+	}
+
+	*v = IdOrNameOrSelector{ResourceSelector: selector}
 	return nil
 }

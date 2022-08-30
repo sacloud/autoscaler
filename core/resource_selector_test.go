@@ -193,3 +193,41 @@ func TestNameOrSelector_UnmarshalYAML(t *testing.T) {
 		})
 	}
 }
+
+func TestIdOrNameOrSelector_UnmarshalYAML(t *testing.T) {
+	tests := []struct {
+		name string
+		data []byte
+		want IdOrNameOrSelector
+	}{
+		{
+			name: "empty",
+			data: []byte(``),
+			want: IdOrNameOrSelector{ResourceSelector{}},
+		},
+		{
+			name: "id",
+			data: []byte(`123456789012`),
+			want: IdOrNameOrSelector{ResourceSelector{ID: 123456789012}},
+		},
+		{
+			name: "name",
+			data: []byte(`foobar`),
+			want: IdOrNameOrSelector{ResourceSelector{Names: []string{"foobar"}}},
+		},
+		{
+			name: "selector",
+			data: []byte(`names: ["foobar1", "foobar2"]`),
+			want: IdOrNameOrSelector{ResourceSelector{Names: []string{"foobar1", "foobar2"}}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var v IdOrNameOrSelector
+			if err := yaml.UnmarshalWithOptions(tt.data, &v, yaml.Strict()); err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			require.EqualValues(t, tt.want, v)
+		})
+	}
+}

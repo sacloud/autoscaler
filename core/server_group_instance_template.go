@@ -35,9 +35,15 @@ type ServerGroupInstanceTemplate struct {
 	Tags        []string `yaml:"tags" validate:"unique,max=10,dive,max=32"`
 	Description string   `yaml:"description" validate:"max=512"`
 
-	IconID          string                 `yaml:"icon_id"`
-	CDROMID         string                 `yaml:"cdrom_id"`
-	PrivateHostID   string                 `yaml:"private_host_id"`
+	IconId string              `yaml:"icon_id"`
+	Icon   *IdOrNameOrSelector `yaml:"icon"`
+
+	CDROMId string              `yaml:"cdrom_id"`
+	CDROM   *IdOrNameOrSelector `yaml:"cdrom"`
+
+	PrivateHostId string              `yaml:"private_host_id"`
+	PrivateHost   *IdOrNameOrSelector `yaml:"private_host"`
+
 	InterfaceDriver types.EInterfaceDriver `yaml:"interface_driver" validate:"omitempty,oneof=virtio e1000"`
 
 	Plan              *ServerGroupInstancePlan     `yaml:"plan" validate:"required"`
@@ -54,6 +60,36 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	}
 
 	errors := &multierror.Error{}
+	if s.IconId != "" && s.Icon != nil {
+		errors = multierror.Append(errors, fmt.Errorf("only one of icon and icon_id can be specified"))
+	}
+	if s.IconId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") // nolint:errcheck
+		}
+	}
+
+	if s.CDROMId != "" && s.CDROM != nil {
+		errors = multierror.Append(errors, fmt.Errorf("only one of cdrom and cdrom_id can be specified"))
+	}
+	if s.CDROMId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "cdrom_id is deprecated. use cdrom instead") // nolint:errcheck
+		}
+	}
+
+	if s.PrivateHostId != "" && s.PrivateHost != nil {
+		errors = multierror.Append(errors, fmt.Errorf("only one of private_host and private_host_id can be specified"))
+	}
+	if s.PrivateHostId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "private_host_id is deprecated. use private_host instead") // nolint:errcheck
+		}
+	}
+
 	if err := s.Plan.Validate(ctx, apiClient, def.Zone); err != nil {
 		errors = multierror.Append(errors, err)
 	}
@@ -74,10 +110,61 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	}
 
 	for i, nic := range s.NetworkInterfaces {
-		errors = multierror.Append(errors, nic.Validate(def.ParentDef, def.MaxSize, i)...)
+		errors = multierror.Append(errors, nic.Validate(ctx, def.ParentDef, def.MaxSize, i)...)
 	}
 
 	return errors.Errors
+}
+
+func (s *ServerGroupInstanceTemplate) FindIconId(ctx context.Context, apiClient iaas.APICaller) (string, error) {
+	if s.IconId != "" {
+		return s.IconId, nil
+	}
+	if s.Icon != nil {
+		found, err := iaas.NewIconOp(apiClient).Find(ctx, s.Icon.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.Icons) == 0 {
+			return "", nil
+		}
+		return found.Icons[0].ID.String(), nil
+	}
+	return "", nil
+}
+
+func (s *ServerGroupInstanceTemplate) FindCDROMId(ctx context.Context, apiClient iaas.APICaller, zone string) (string, error) {
+	if s.CDROMId != "" {
+		return s.CDROMId, nil
+	}
+	if s.CDROM != nil {
+		found, err := iaas.NewCDROMOp(apiClient).Find(ctx, zone, s.CDROM.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.CDROMs) == 0 {
+			return "", nil
+		}
+		return found.CDROMs[0].ID.String(), nil
+	}
+	return "", nil
+}
+
+func (s *ServerGroupInstanceTemplate) FindPrivateHostId(ctx context.Context, apiClient iaas.APICaller, zone string) (string, error) {
+	if s.PrivateHostId != "" {
+		return s.PrivateHostId, nil
+	}
+	if s.PrivateHost != nil {
+		found, err := iaas.NewPrivateHostOp(apiClient).Find(ctx, zone, s.PrivateHost.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.PrivateHosts) == 0 {
+			return "", nil
+		}
+		return found.PrivateHosts[0].ID.String(), nil
+	}
+	return "", nil
 }
 
 type ServerGroupInstancePlan struct {
@@ -107,7 +194,9 @@ type ServerGroupDiskTemplate struct {
 	NamePrefix  string   `yaml:"name_prefix"` // {{.ServerName}}{{.Name}}{{.Number}}
 	Tags        []string `yaml:"tags" validate:"unique,max=10,dive,max=32"`
 	Description string   `yaml:"description" validate:"max=512"`
-	IconID      string   `yaml:"icon_id"`
+
+	IconId string              `yaml:"icon_id"`
+	Icon   *IdOrNameOrSelector `yaml:"icon"`
 
 	// ブランクディスクの場合は以下3つをゼロ値にする
 	SourceArchiveSelector *NameOrSelector `yaml:"source_archive"`
@@ -152,6 +241,15 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient iaas.A
 			errors = multierror.Append(errors, err)
 		}
 	}
+	if t.IconId != "" && t.Icon != nil {
+		errors = multierror.Append(errors, fmt.Errorf("only one of icon and icon_id can be specified"))
+	}
+	if t.IconId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") // nolint:errcheck
+		}
+	}
 
 	if _, _, err := t.FindDiskSource(ctx, apiClient, zone); err != nil {
 		errors = multierror.Append(errors, err)
@@ -160,6 +258,23 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient iaas.A
 	// TODO プラン/サイズがクラウド上で有効な値になっているか検証
 
 	return errors.Errors
+}
+
+func (t *ServerGroupDiskTemplate) FindIconID(ctx context.Context, apiClient iaas.APICaller) (string, error) {
+	if t.IconId != "" {
+		return t.IconId, nil
+	}
+	if t.Icon != nil {
+		found, err := iaas.NewIconOp(apiClient).Find(ctx, t.Icon.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.Icons) == 0 {
+			return "", nil
+		}
+		return found.Icons[0].ID.String(), nil
+	}
+	return "", nil
 }
 
 func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient iaas.APICaller, zone string) (sourceArchiveID, sourceDiskID string, retErr error) {
@@ -218,16 +333,14 @@ type ServerGroupDiskEditTemplate struct {
 	ChangePartitionUUID bool                      `yaml:"change_partition_uuid"`
 	StartupScripts      []config.StringOrFilePath `yaml:"startup_scripts"`
 
-	SSHKeys   []config.StringOrFilePath `yaml:"ssh_keys"`
-	SSHKeyIDs []string                  `yaml:"ssh_key_ids"`
+	SSHKeys []config.StringOrFilePath `yaml:"ssh_keys"`
 }
 
 func (t *ServerGroupDiskEditTemplate) Validate() []error {
 	hasValue := t.HostNamePrefix != "" ||
 		t.Password != "" ||
 		len(t.StartupScripts) > 0 ||
-		len(t.SSHKeys) > 0 ||
-		len(t.SSHKeyIDs) > 0
+		len(t.SSHKeys) > 0
 
 	if t.Disabled && hasValue {
 		return []error{fmt.Errorf("disabled=true but a value is specified")}
@@ -261,16 +374,29 @@ type ServerGroupNICTemplate struct {
 	AssignCidrBlock  string                  `yaml:"assign_cidr_block" validate:"omitempty,cidrv4"`        // 上流がスイッチの場合(ルータ含む)に割り当てるIPアドレスのCIDRブロック
 	AssignNetMaskLen int                     `yaml:"assign_netmask_len" validate:"omitempty,min=1,max=32"` // 上流がスイッチの場合(ルータ含む)に割り当てるサブネットマスク長
 	DefaultRoute     string                  `yaml:"default_route" validate:"omitempty,ipv4"`
-	PacketFilterID   string                  `yaml:"packet_filter_id"`
-	ExposeInfo       *ServerGroupNICMetadata `yaml:"expose"`
+
+	PacketFilterId string              `yaml:"packet_filter_id"`
+	PacketFilter   *IdOrNameOrSelector `yaml:"packet_filter"`
+
+	ExposeInfo *ServerGroupNICMetadata `yaml:"expose"`
 }
 
-func (t *ServerGroupNICTemplate) Validate(parent *ParentResourceDef, maxServerNum, nicIndex int) []error {
+func (t *ServerGroupNICTemplate) Validate(ctx context.Context, parent *ParentResourceDef, maxServerNum, nicIndex int) []error {
 	if errs := validate.StructWithMultiError(t); len(errs) > 0 {
 		return errs
 	}
 
 	errors := &multierror.Error{}
+	if t.PacketFilterId != "" && t.PacketFilter != nil {
+		errors = multierror.Append(errors, fmt.Errorf("only one of packet_filter and packet_filter_id can be specified"))
+	}
+	if t.PacketFilterId != "" {
+		loadCtx, ok := ctx.(*config.LoadConfigContext)
+		if ok {
+			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") // nolint:errcheck
+		}
+	}
+
 	hasNetworkSettings := t.AssignCidrBlock != "" || t.AssignNetMaskLen > 0 || t.DefaultRoute != ""
 	if t.Upstream.UpstreamShared() && hasNetworkSettings {
 		return []error{fmt.Errorf("upstream=shared but network settings are specified")}
@@ -306,6 +432,23 @@ func (t *ServerGroupNICTemplate) Validate(parent *ParentResourceDef, maxServerNu
 		errors = multierror.Append(errors, t.ExposeInfo.Validate(parent, nicIndex)...)
 	}
 	return errors.Errors
+}
+
+func (t *ServerGroupNICTemplate) FindPacketFilterId(ctx context.Context, apiClient iaas.APICaller, zone string) (string, error) {
+	if t.PacketFilterId != "" {
+		return t.PacketFilterId, nil
+	}
+	if t.PacketFilter != nil {
+		found, err := iaas.NewPacketFilterOp(apiClient).Find(ctx, zone, t.PacketFilter.findCondition())
+		if err != nil {
+			return "", err
+		}
+		if len(found.PacketFilters) == 0 {
+			return "", nil
+		}
+		return found.PacketFilters[0].ID.String(), nil
+	}
+	return "", nil
 }
 
 // IPAddressByIndexFromCidrBlock AssignCidrBlockからindexに対応するIPアドレスを返す

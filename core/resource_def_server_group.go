@@ -158,7 +158,22 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		resources = append(resources, instance)
 	}
 
+	// セレクタ->ID変換、ゾーン非依存なので先に検索しておく
+	iconId, err := d.Template.FindIconId(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
 	for len(resources) < plan.Size {
+		// セレクタ->ID変換
+		cdromId, err := d.Template.FindCDROMId(ctx, apiClient, d.Zone)
+		if err != nil {
+			return nil, err
+		}
+		privateHostId, err := d.Template.FindPrivateHostId(ctx, apiClient, d.Zone)
+		if err != nil {
+			return nil, err
+		}
+
 		commitment := types.Commitments.Standard
 		if d.Template.Plan.DedicatedCPU {
 			commitment = types.Commitments.DedicatedCPU
@@ -174,9 +189,9 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 				Name:                 serverName,
 				Tags:                 d.Template.Tags,
 				Description:          d.Template.Description,
-				IconID:               types.StringID(d.Template.IconID),
-				CDROMID:              types.StringID(d.Template.CDROMID),
-				PrivateHostID:        types.StringID(d.Template.PrivateHostID),
+				IconID:               types.StringID(iconId),
+				CDROMID:              types.StringID(cdromId),
+				PrivateHostID:        types.StringID(privateHostId),
 				InterfaceDriver:      d.Template.InterfaceDriver,
 				CPU:                  d.Template.Plan.Core,
 				MemoryMB:             d.Template.Plan.Memory * size.GiB,
