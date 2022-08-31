@@ -46,6 +46,7 @@ var (
 	upToMediumCmd = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "--desired-state-name", "medium", "up")
 	downCmd       = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "down")
 
+	zones               = []string{"is1a", "is1b"}
 	proxyLBReadyTimeout = 5 * time.Minute
 	e2eTestTimeout      = 20 * time.Minute
 
@@ -229,35 +230,40 @@ func teardown() {
 		log.Println(err)
 	} else {
 		svc := serverService.New(autoscalerE2E.SacloudAPICaller)
-		for _, server := range servers {
-			err := svc.Delete(&serverService.DeleteRequest{
-				Zone:           "is1a",
-				ID:             server.ID,
-				WithDisks:      true,
-				FailIfNotFound: false,
-				Force:          true,
-			})
-			if err != nil {
-				log.Println(err)
+		for _, zone := range zones {
+			for _, server := range servers {
+				err := svc.Delete(&serverService.DeleteRequest{
+					Zone:           zone,
+					ID:             server.ID,
+					WithDisks:      true,
+					FailIfNotFound: false,
+					Force:          true,
+				})
+				if err != nil {
+					log.Println(err)
+				}
 			}
 		}
-
 	}
 }
 
 func fetchSakuraCloudServers() ([]*iaas.Server, error) {
 	serverOp := iaas.NewServerOp(autoscalerE2E.SacloudAPICaller)
 
-	found, err := serverOp.Find(context.Background(), "is1a", &iaas.FindCondition{
-		Filter: search.Filter{
-			search.Key("Name"): search.PartialMatch("autoscaler-e2e-horizontal-scaling"),
-		},
-	})
-	if err != nil {
-		return nil, err
+	var servers []*iaas.Server
+	for _, zone := range zones {
+		found, err := serverOp.Find(context.Background(), zone, &iaas.FindCondition{
+			Filter: search.Filter{
+				search.Key("Name"): search.PartialMatch("autoscaler-e2e-horizontal-scaling"),
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		servers = append(servers, found.Servers...)
 	}
 
-	return found.Servers, nil
+	return servers, nil
 }
 
 func waitProxyLBAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error {
