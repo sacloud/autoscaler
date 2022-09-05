@@ -196,6 +196,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 			commitment = types.Commitments.DedicatedCPU
 		}
 		serverName, index := d.determineServerName(resources)
+
 		resources = append(resources, &ResourceServerGroupInstance{
 			ResourceBase: &ResourceBase{
 				resourceType:     ResourceTypeServerGroupInstance,
@@ -204,7 +205,7 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 			apiClient: apiClient,
 			server: &iaas.Server{
 				Name:                 serverName,
-				Tags:                 d.Template.Tags,
+				Tags:                 d.Template.CalculateTagsByIndex(index, len(d.Zones)),
 				Description:          d.Template.Description,
 				IconID:               types.StringID(iconId),
 				CDROMID:              types.StringID(cdromId),

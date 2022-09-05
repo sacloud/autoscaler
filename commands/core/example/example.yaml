@@ -50,6 +50,8 @@ resources:
 
     template: # 各サーバのテンプレート
       tags: [ "tag1", "tag2" ]
+      use_group_tag: true # @group特殊タグによるホスト分散を行うか
+
       description: "..."
       interface_driver: "virtio" # virtio or e1000
       plan:

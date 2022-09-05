@@ -839,3 +839,117 @@ func TestServerGroupNICMetadataHealthCheck_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestServerGroupInstanceTemplate_CalculateTagsByIndex(t *testing.T) {
+	type args struct {
+		serverIndexWithinGroup int
+		zoneLength             int
+	}
+	tests := []struct {
+		name string
+		tags []string
+		args args
+		want []string
+	}{
+		{
+			name: "minimum",
+			tags: []string{},
+			args: args{
+				serverIndexWithinGroup: 0,
+				zoneLength:             1,
+			},
+			want: []string{groupSpecialTags[0]},
+		},
+		{
+			name: "return as-is with invalid index",
+			tags: []string{},
+			args: args{
+				serverIndexWithinGroup: -1,
+				zoneLength:             1,
+			},
+			want: []string{},
+		},
+		{
+			name: "return as-is with invalid zoneLength",
+			tags: []string{},
+			args: args{
+				serverIndexWithinGroup: 0,
+				zoneLength:             0,
+			},
+			want: []string{},
+		},
+		{
+			name: "return as-is when template already has a group tag",
+			tags: []string{"tag", groupSpecialTags[0]},
+			args: args{
+				serverIndexWithinGroup: 0,
+				zoneLength:             0,
+			},
+			want: []string{"tag", groupSpecialTags[0]},
+		},
+		{
+			name: "added a group tag after template tags",
+			tags: []string{"tag"},
+			args: args{
+				serverIndexWithinGroup: 0,
+				zoneLength:             1,
+			},
+			want: []string{"tag", groupSpecialTags[0]},
+		},
+		{
+			name: "single zone",
+			tags: []string{},
+			args: args{
+				serverIndexWithinGroup: 3,
+				zoneLength:             1,
+			},
+			want: []string{groupSpecialTags[3]},
+		},
+		{
+			name: "single zone",
+			tags: []string{},
+			args: args{
+				serverIndexWithinGroup: 4,
+				zoneLength:             1,
+			},
+			want: []string{groupSpecialTags[0]},
+		},
+		{
+			name: "multiple zones",
+			tags: []string{},
+			args: args{
+				serverIndexWithinGroup: 3,
+				zoneLength:             2,
+			},
+			want: []string{groupSpecialTags[1]},
+		},
+		{
+			name: "multiple zones",
+			tags: []string{},
+			args: args{
+				serverIndexWithinGroup: 8,
+				zoneLength:             4,
+			},
+			want: []string{groupSpecialTags[2]},
+		},
+		{
+			name: "multiple zones",
+			tags: []string{},
+			args: args{
+				serverIndexWithinGroup: 17,
+				zoneLength:             2,
+			},
+			want: []string{groupSpecialTags[0]},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &ServerGroupInstanceTemplate{
+				Tags:        tt.tags,
+				UseGroupTag: true,
+			}
+			got := s.CalculateTagsByIndex(tt.args.serverIndexWithinGroup, tt.args.zoneLength)
+			require.EqualValues(t, tt.want, got)
+		})
+	}
+}
