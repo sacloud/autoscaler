@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/c-robinson/iplib"
 	"github.com/goccy/go-yaml"
@@ -33,7 +34,9 @@ import (
 
 type ServerGroupInstanceTemplate struct {
 	Tags        []string `yaml:"tags" validate:"unique,max=10,dive,max=32"`
-	Description string   `yaml:"description" validate:"max=512"`
+	UseGroupTag bool     `yaml:"use_group_tag"`
+
+	Description string `yaml:"description" validate:"max=512"`
 
 	IconId string              `yaml:"icon_id"`
 	Icon   *IdOrNameOrSelector `yaml:"icon"`
@@ -116,6 +119,24 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	}
 
 	return errors.Errors
+}
+
+var groupSpecialTags = []string{"@group=a", "@group=b", "@group=c", "@group=d"}
+
+func (s *ServerGroupInstanceTemplate) CalculateTagsByIndex(serverIndexWithinGroup int, zoneLength int) []string {
+	if !s.UseGroupTag {
+		return s.Tags
+	}
+	if serverIndexWithinGroup < 0 || zoneLength <= 0 {
+		return s.Tags
+	}
+	for _, t := range s.Tags {
+		if strings.HasPrefix(t, "@group=") {
+			return s.Tags // 既に@groupタグを持っていたらテンプレートのまま返す
+		}
+	}
+	indexWithinZones := serverIndexWithinGroup / zoneLength // ゾーン内でのインデックス
+	return append(s.Tags, groupSpecialTags[indexWithinZones%len(groupSpecialTags)])
 }
 
 func (s *ServerGroupInstanceTemplate) FindIconId(ctx context.Context, apiClient iaas.APICaller) (string, error) {

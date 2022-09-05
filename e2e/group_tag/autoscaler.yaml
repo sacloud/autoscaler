@@ -1,0 +1,23 @@
+resources:
+  - type: ServerGroup
+    name: "autoscaler-e2e-group-tag"
+    server_name_prefix: "autoscaler-e2e-group-tag"
+
+    zones: ["is1a", "is1b"]
+    min_size: 0
+    max_size: 10
+
+    setup_grace_period: 1
+    shutdown_force: true
+
+    plans:
+      - {name: "largest", size: 10}
+    template:
+      use_group_tag: true
+
+      plan:
+        core: 1
+        memory: 1
+
+autoscaler:
+  cooldown: 5
