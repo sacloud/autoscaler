@@ -248,9 +248,13 @@ func (t *ServerGroupDiskTemplate) DiskName(serverName string, index int) string 
 //
 // HostNamePrefixが空の場合はserverNameをそのまま返す
 func (t *ServerGroupDiskEditTemplate) HostName(serverName string, index int) string {
+	if t.HostNameFormat == "" && t.HostNamePrefix == "" {
+		return serverName
+	}
+
 	nameFormat := t.HostNameFormat
 	if nameFormat == "" {
-		nameFormat = "%s"
+		nameFormat = "%s-%03d"
 	}
 	if t.HostNamePrefix != "" {
 		nameFormat = "%s-%03d"
