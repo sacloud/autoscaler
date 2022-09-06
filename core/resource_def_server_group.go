@@ -31,9 +31,11 @@ import (
 type ResourceDefServerGroup struct {
 	*ResourceDefBase `yaml:",inline" validate:"required"`
 
-	ServerNamePrefix string   `yaml:"server_name_prefix"` // NameまたはServerNamePrefixが必須
-	Zone             string   `yaml:"zone" validate:"required_without=Zones,omitempty,zone"`
-	Zones            []string `yaml:"zones" validate:"required_without=Zone,omitempty,unique,dive,required,zone"`
+	ServerNamePrefix string `yaml:"server_name_prefix"` // NameまたはServerNamePrefixが必須
+	ServerNameFormat string `yaml:"server_name_format"`
+
+	Zone  string   `yaml:"zone" validate:"required_without=Zones,omitempty,zone"`
+	Zones []string `yaml:"zones" validate:"required_without=Zone,omitempty,unique,dive,required,zone"`
 
 	MinSize int `yaml:"min_size" validate:"min=0,ltefield=MaxSize"`
 	MaxSize int `yaml:"max_size" validate:"min=0,gtecsfield=MinSize"`
@@ -254,10 +256,16 @@ func (d *ResourceDefServerGroup) resourceIndex(resource Resource) int {
 }
 
 func (d *ResourceDefServerGroup) serverNameByIndex(index int) string {
-	nameFormat := "%s-%03d" // TODO フォーマット指定可能にする
+	nameFormat := d.ServerNameFormat
+	if nameFormat == "" {
+		nameFormat = "%s-%03d"
+	}
 	return fmt.Sprintf(nameFormat, d.namePrefix(), index+1)
 }
 
+// determineServerName resourcesから次に追加すべきサーバの名前を決定する
+//
+// resourcesには連番を割り当てるが、途中抜け([*-001,*-003]のようなパターン)があった場合は抜けている番号から割り当てられる(この例だと*-002)
 func (d *ResourceDefServerGroup) determineServerName(resources Resources) (string, int) {
 	for i := range resources {
 		name := d.serverNameByIndex(i)
@@ -268,7 +276,7 @@ func (d *ResourceDefServerGroup) determineServerName(resources Resources) (strin
 				break
 			}
 		}
-		if !exist {
+		if !exist { // 連番の途中抜けパターン
 			return name, i
 		}
 	}

@@ -215,6 +215,7 @@ func (p *ServerGroupInstancePlan) String() string {
 
 type ServerGroupDiskTemplate struct {
 	NamePrefix  string   `yaml:"name_prefix"` // {{.ServerName}}{{.Name}}{{.Number}}
+	NameFormat  string   `yaml:"name_format"`
 	Tags        []string `yaml:"tags" validate:"unique,max=10,dive,max=32"`
 	Description string   `yaml:"description" validate:"max=512"`
 
@@ -232,20 +233,29 @@ type ServerGroupDiskTemplate struct {
 }
 
 func (t *ServerGroupDiskTemplate) DiskName(serverName string, index int) string {
-	if t.NamePrefix == "" {
-		return fmt.Sprintf("%s-disk%03d", serverName, index+1)
+	nameFormat := t.NameFormat
+	if nameFormat == "" {
+		nameFormat = "%s-disk%03d"
 	}
-	return fmt.Sprintf("%s-%d", t.NamePrefix, index+1)
+	if t.NamePrefix != "" {
+		nameFormat = "%s-%d"
+	}
+
+	return fmt.Sprintf(nameFormat, serverName, index+1)
 }
 
 // HostName HostNamePrefixとindexからホスト名を算出する
 //
 // HostNamePrefixが空の場合はserverNameをそのまま返す
 func (t *ServerGroupDiskEditTemplate) HostName(serverName string, index int) string {
-	if t.HostNamePrefix == "" {
-		return serverName
+	nameFormat := t.HostNameFormat
+	if nameFormat == "" {
+		nameFormat = "%s"
 	}
-	return fmt.Sprintf("%s-%03d", t.HostNamePrefix, index+1)
+	if t.HostNamePrefix != "" {
+		nameFormat = "%s-%03d"
+	}
+	return fmt.Sprintf(nameFormat, serverName, index+1)
 }
 
 func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient iaas.APICaller, zone string) []error {
@@ -264,6 +274,10 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient iaas.A
 			errors = multierror.Append(errors, err)
 		}
 	}
+	if t.NamePrefix != "" && t.NameFormat != "" {
+		errors = multierror.Append(errors, fmt.Errorf("only one of name_prefix and name_format can be specified"))
+	}
+
 	if t.IconId != "" && t.Icon != nil {
 		errors = multierror.Append(errors, fmt.Errorf("only one of icon and icon_id can be specified"))
 	}
@@ -348,9 +362,12 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 }
 
 type ServerGroupDiskEditTemplate struct {
-	Disabled            bool                      `yaml:"disabled"`         // ディスクの修正を行わない場合にtrue
-	HostNamePrefix      string                    `yaml:"host_name_prefix"` // からの場合は{{ .ServerName }} 、そうでなければ {{ .HostNamePrefix }}{{ .Number }}
-	Password            string                    `yaml:"password"`         // グループ内のサーバは全部一緒になるが良いか??
+	Disabled bool `yaml:"disabled"` // ディスクの修正を行わない場合にtrue
+
+	HostNamePrefix string `yaml:"host_name_prefix"` // からの場合は{{ .ServerName }} 、そうでなければ {{ .HostNamePrefix }}{{ .Number }}
+	HostNameFormat string `yaml:"host_name_format"`
+
+	Password            string                    `yaml:"password"` // グループ内のサーバは全部一緒になるが良いか??
 	DisablePasswordAuth bool                      `yaml:"disable_pw_auth"`
 	EnableDHCP          bool                      `yaml:"enable_dhcp"`
 	ChangePartitionUUID bool                      `yaml:"change_partition_uuid"`
@@ -367,6 +384,10 @@ func (t *ServerGroupDiskEditTemplate) Validate() []error {
 
 	if t.Disabled && hasValue {
 		return []error{fmt.Errorf("disabled=true but a value is specified")}
+	}
+
+	if t.HostNamePrefix != "" && t.HostNameFormat != "" {
+		return []error{fmt.Errorf("only one of host_name_prefix and host_name_format can be specified")}
 	}
 	return nil
 }

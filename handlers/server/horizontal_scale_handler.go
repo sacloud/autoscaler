@@ -300,5 +300,5 @@ func (h *HorizontalScaleHandler) deleteServer(ctx *handlers.HandlerContext, req 
 		return err
 	}
 
-	return ctx.Report(handler.HandleResponse_DONE, "deleted: {Disks:%s}", diskIDs)
+	return ctx.Report(handler.HandleResponse_DONE, "deleted: {Zone:%s, ID:%s, Name:%s, Disks:%s}", server.Zone, server.Id, server.Name, diskIDs)
 }
