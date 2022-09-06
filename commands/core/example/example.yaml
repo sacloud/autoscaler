@@ -96,7 +96,7 @@ resources:
 
       # ディスク
       disks:
-        - name_prefix: "..." # 省略した場合は 'サーバ名+ディスク連番' (例: server-group-001-001)
+        - name_format: "%s-disk%03d" # 省略した場合は 'サーバ名+ディスク連番' (例: server-group-001-disk001)
 
           # コピー元、以下のいずれかを指定するorブランクディスクの場合は全て空にする
           source_archive:
@@ -116,6 +116,8 @@ resources:
         disable_pw_auth: true
         enable_dhcp: false
         change_partition_uuid: true
+
+        host_name_format: "%s" # ホスト名フォーマット、サーバ名とインデックスが利用可能(例: %s-%02d)。省略した場合はサーバ名が利用される
 
         # SSH公開鍵の指定
         ssh_keys:
