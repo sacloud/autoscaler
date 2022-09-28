@@ -114,10 +114,10 @@ func (r *ResourceServerGroupInstance) refresh(ctx *RequestContext) error {
 		return err
 	}
 	if len(found.Servers) == 0 {
-		return fmt.Errorf("server not found with: Filter='%s'", selector.String())
+		return fmt.Errorf("server not found with: zone=%s Filter='%s'", r.zone, selector.String())
 	}
 	if len(found.Servers) > 1 {
-		return fmt.Errorf("invalid state: found multiple server with: Filter='%s'", selector.String())
+		return fmt.Errorf("invalid state: found multiple server with: zone=%s Filter='%s'", r.zone, selector.String())
 	}
 	r.server = found.Servers[0]
 	return nil
@@ -300,10 +300,10 @@ func (r *ResourceServerGroupInstance) findNetworkUpstream(ctx *RequestContext, u
 		return "", err
 	}
 	if len(found.Switches) == 0 {
-		return "", fmt.Errorf("network interface: upstream not found with: %s", selector)
+		return "", fmt.Errorf("network interface: upstream not found with: {zone:%s, %v}", r.zone, selector)
 	}
 	if len(found.Switches) > 1 {
-		return "", fmt.Errorf("multiple source archive found with: %s, switches: %#v", selector, found.Switches)
+		return "", fmt.Errorf("multiple source archive found with: {zone: %s, %v}, switches: %v", r.zone, selector, found.Switches)
 	}
 	return found.Switches[0].ID.String(), nil
 }
