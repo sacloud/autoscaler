@@ -335,11 +335,11 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 			return
 		}
 		if len(found.Archives) == 0 {
-			retErr = fmt.Errorf("source archive not found with: %s", t.SourceArchiveSelector)
+			retErr = fmt.Errorf("source archive not found with: {zone: %s, %v}", zone, t.SourceArchiveSelector)
 			return
 		}
 		if len(found.Archives) > 1 {
-			retErr = fmt.Errorf("multiple source archive found with: %s, archives: %#v", t.SourceArchiveSelector, found.Archives)
+			retErr = fmt.Errorf("multiple source archive found with: {zone: %s, %v}, archives: %v", zone, t.SourceArchiveSelector, found.Archives)
 			return
 		}
 		sourceArchiveID = found.Archives[0].ID.String()
@@ -351,11 +351,11 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 			return
 		}
 		if len(found.Disks) == 0 {
-			retErr = fmt.Errorf("source disk not found with: %s", t.SourceArchiveSelector)
+			retErr = fmt.Errorf("source disk not found with: {zone: %s, %v}", zone, t.SourceDiskSelector)
 			return
 		}
 		if len(found.Disks) > 1 {
-			retErr = fmt.Errorf("multiple source disk found with: %s, archives: %#v", t.SourceArchiveSelector, found.Disks)
+			retErr = fmt.Errorf("multiple source disk found with: {zone: %s, %v}, disks: %v", zone, t.SourceDiskSelector, found.Disks)
 			return
 		}
 		sourceDiskID = found.Disks[0].ID.String()
