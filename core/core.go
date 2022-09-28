@@ -37,9 +37,10 @@ type Core struct {
 	jobs          map[string]*JobStatus
 	logger        *log.Logger
 
-	mu       sync.RWMutex
-	running  bool
-	stopping bool
+	mu          sync.RWMutex
+	running     bool
+	stopping    bool
+	shutdownErr error
 }
 
 func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) {
@@ -170,7 +171,7 @@ func (c *Core) run(ctx context.Context) error {
 	case <-ctx.Done():
 		c.logger.Info("message", "shutting down", "error", ctx.Err()) // nolint
 	}
-	return ctx.Err()
+	return c.shutdownErr
 }
 
 func (c *Core) Up(ctx *RequestContext) (*JobStatus, string, error) {
@@ -246,7 +247,9 @@ func (c *Core) stop(timeout time.Duration) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			err := fmt.Errorf("failed to stop core instance: %s", ctx.Err())
+			c.shutdownErr = err
+			return err
 		case <-ticker.C:
 			if !c.isRunning() {
 				return nil
