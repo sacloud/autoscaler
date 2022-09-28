@@ -36,7 +36,15 @@ func NewScalingService(instance *Core) *ScalingService {
 }
 
 func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	if err := s.instance.logger.Info("request", requestTypeUp, "message", "request received"); err != nil {
+	keyvals := []interface{}{
+		"request", requestTypeUp,
+		"message", "request received",
+		"resource", req.ResourceName,
+	}
+	if req.DesiredStateName != "" {
+		keyvals = append(keyvals, "desired", req.DesiredStateName)
+	}
+	if err := s.instance.logger.Info(keyvals...); err != nil {
 		return nil, err
 	}
 	if err := s.instance.logger.Debug("request", req); err != nil {
@@ -67,7 +75,16 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 }
 
 func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	if err := s.instance.logger.Info("request", requestTypeDown, "message", "request received"); err != nil {
+	keyvals := []interface{}{
+		"request", requestTypeDown,
+		"message", "request received",
+		"resource", req.ResourceName,
+	}
+	if req.DesiredStateName != "" {
+		keyvals = append(keyvals, "desired", req.DesiredStateName)
+	}
+
+	if err := s.instance.logger.Info(keyvals...); err != nil {
 		return nil, err
 	}
 	if err := s.instance.logger.Debug("request", req); err != nil {
