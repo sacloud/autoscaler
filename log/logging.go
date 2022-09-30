@@ -102,7 +102,7 @@ func (l *Logger) Log(keyValues ...interface{}) error {
 
 // Reset 現在のLoggerOptionを元にロガーをリセット
 //
-//  Withxxxの影響を元に戻したい時などに利用する
+//	Withxxxの影響を元に戻したい時などに利用する
 func (l *Logger) Reset() {
 	l.initLogger(l.opt)
 }
