@@ -72,7 +72,7 @@ func (h *handleService) listenAndServe(ctx context.Context) error {
 	case err := <-errCh:
 		return err
 	case <-ctx.Done():
-		h.Handler.GetLogger().Info("message", "shutting down", "error", ctx.Err()) // nolint
+		h.Handler.GetLogger().Info("message", "shutting down", "error", ctx.Err()) //nolint
 	}
 	return ctx.Err()
 }

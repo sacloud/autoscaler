@@ -54,9 +54,9 @@ func Serve(ctx context.Context, handler CustomHandler) error {
 	for {
 		select {
 		case err := <-errCh:
-			logger.Error("error", err) // nolint
+			logger.Error("error", err) //nolint
 		case <-ctx.Done():
-			logger.Info("message", "shutting down", "error", ctx.Err()) // nolint
+			logger.Info("message", "shutting down", "error", ctx.Err()) //nolint
 			return ctx.Err()
 		}
 	}
@@ -79,7 +79,7 @@ func startExporter(ctx context.Context, handler CustomHandler, conf *Config) err
 
 		server := metrics.NewServer(conf.ExporterConfig.Address, handler.GetLogger())
 		defer func() {
-			server.Shutdown(ctx) // nolint
+			server.Shutdown(ctx) //nolint
 			listener.Close()
 		}()
 

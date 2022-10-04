@@ -135,7 +135,7 @@ func (l *Logger) WithSuffix(keyvals ...interface{}) *Logger {
 }
 
 func (l *Logger) Fatal(keyvals ...interface{}) {
-	l.Error(keyvals...) // nolint
+	l.Error(keyvals...) //nolint
 	os.Exit(1)
 }
 

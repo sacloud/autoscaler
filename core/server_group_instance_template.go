@@ -69,7 +69,7 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	if s.IconId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
 		if ok {
-			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") // nolint:errcheck
+			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") //nolint:errcheck
 		}
 	}
 
@@ -79,7 +79,7 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	if s.CDROMId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
 		if ok {
-			loadCtx.Logger().Warn("message", "cdrom_id is deprecated. use cdrom instead") // nolint:errcheck
+			loadCtx.Logger().Warn("message", "cdrom_id is deprecated. use cdrom instead") //nolint:errcheck
 		}
 	}
 
@@ -89,7 +89,7 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	if s.PrivateHostId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
 		if ok {
-			loadCtx.Logger().Warn("message", "private_host_id is deprecated. use private_host instead") // nolint:errcheck
+			loadCtx.Logger().Warn("message", "private_host_id is deprecated. use private_host instead") //nolint:errcheck
 		}
 	}
 
@@ -288,7 +288,7 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient iaas.A
 	if t.IconId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
 		if ok {
-			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") // nolint:errcheck
+			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") //nolint:errcheck
 		}
 	}
 
@@ -441,7 +441,7 @@ func (t *ServerGroupNICTemplate) Validate(ctx context.Context, parent *ParentRes
 	if t.PacketFilterId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
 		if ok {
-			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") // nolint:errcheck
+			loadCtx.Logger().Warn("message", "icon_id is deprecated. use icon instead") //nolint:errcheck
 		}
 	}
 

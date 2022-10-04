@@ -71,7 +71,7 @@ func (rds *ResourceDefinitions) ResourceNames() []string {
 		return nil
 	}
 
-	rds.walk(*rds, fn) // nolint
+	rds.walk(*rds, fn) //nolint
 
 	var names []string
 	for name := range nameMap {
@@ -113,11 +113,11 @@ func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient iaas.AP
 	}
 	job := ctx.Job()
 	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
-	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) // nolint
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) //nolint
 
 	if err := rds.handleAll(ctx, apiClient, handlers, *rds); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
-		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "error", err) // nolint
+		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "error", err) //nolint
 		return
 	}
 
@@ -127,7 +127,7 @@ func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient iaas.AP
 	}
 
 	job.SetStatus(status)
-	ctx.Logger().Info("status", status) // nolint
+	ctx.Logger().Info("status", status) //nolint
 }
 
 func (rds *ResourceDefinitions) startProgressLogger(ctx *RequestContext) func() {
@@ -138,7 +138,7 @@ func (rds *ResourceDefinitions) startProgressLogger(ctx *RequestContext) func() 
 		for {
 			<-ticker.C
 			counter++
-			ctx.Logger().Info("message", fmt.Sprintf("%ds elapsed", counter*d)) // nolint
+			ctx.Logger().Info("message", fmt.Sprintf("%ds elapsed", counter*d)) //nolint
 		}
 	}()
 

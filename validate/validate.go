@@ -96,7 +96,7 @@ func errorFromValidationErr(target interface{}, err validator.FieldError) error 
 	}
 
 	// detailがvalidatorのタグ名だけの場合の対応をここで行う。
-	switch detail { // nolint: gocritic
+	switch detail { //nolint: gocritic
 	case "file":
 		detail = fmt.Sprintf("invalid file path: %v", err.Value())
 	}

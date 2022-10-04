@@ -186,12 +186,12 @@ func Test_server_exporter(t *testing.T) {
 	// /up * 2、 /down * 1
 	requests := []string{upURL, upURL, downURL}
 	for _, url := range requests {
-		if _, err := http.Get(url); err != nil { // nolint: gosec
+		if _, err := http.Get(url); err != nil { //nolint: gosec
 			t.Fatal(err)
 		}
 	}
 
-	req, err := http.Get(metricsURL) // nolint: gosec
+	req, err := http.Get(metricsURL) //nolint: gosec
 	if err != nil {
 		t.Fatal(err)
 	}
