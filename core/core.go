@@ -150,7 +150,7 @@ func (c *Core) run(ctx context.Context) error {
 		}()
 		defer func() {
 			if err := server.Shutdown(ctx); err != nil {
-				c.logger.Error("error", err) // nolint
+				c.logger.Error("error", err) //nolint
 			}
 			exporterListener.Close()
 		}()
@@ -169,7 +169,7 @@ func (c *Core) run(ctx context.Context) error {
 	case err := <-errCh:
 		return fmt.Errorf("core service failed: %s", err)
 	case <-ctx.Done():
-		c.logger.Info("message", "shutting down", "error", ctx.Err()) // nolint
+		c.logger.Info("message", "shutting down", "error", ctx.Err()) //nolint
 	}
 	return c.shutdownErr
 }
@@ -194,12 +194,12 @@ func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	job := c.currentJob(ctx)
 	if !job.Acceptable() {
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "job is in an unacceptable state") // nolint
+		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "job is in an unacceptable state") //nolint
 		return job, "job is in an unacceptable state", nil
 	}
 
 	if c.stopping {
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "core is shutting down") // nolint
+		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "core is shutting down") //nolint
 		return job, "core is shutting down", nil
 	}
 
@@ -210,12 +210,12 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	rds, err := c.targetResourceDef(ctx)
 	if err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) // nolint
+		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) //nolint
 		return job, "", err
 	}
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
-	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) // nolint
+	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) //nolint
 
 	c.setRunningStatus(true)
 	go rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers(), func() { c.setRunningStatus(false) })

@@ -32,8 +32,8 @@ func TestLogger_Error(t *testing.T) {
 		Level:     LevelError,
 	})
 
-	logger.Debug("msg", "this value will never be displayed") // nolint
-	logger.Error("msg", "this value will be displayed")       // nolint
+	logger.Debug("msg", "this value will never be displayed") //nolint
+	logger.Error("msg", "this value will be displayed")       //nolint
 
 	require.Equal(t, `level=error msg="this value will be displayed"`+"\n", buf.String())
 }
@@ -49,9 +49,9 @@ func TestLogger_With(t *testing.T) {
 		Level:     LevelError,
 	})
 
-	logger.Error("msg", "message without prefix") // nolint
+	logger.Error("msg", "message without prefix") //nolint
 	logger = logger.With("prefix", "foobar")
-	logger.Error("msg", "message with prefix") // nolint
+	logger.Error("msg", "message with prefix") //nolint
 
 	expected := []string{
 		`level=error msg="message without prefix"`,

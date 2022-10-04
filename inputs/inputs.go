@@ -81,7 +81,7 @@ func Serve(ctx context.Context, input Input) error {
 	case err := <-errCh:
 		return fmt.Errorf("inputs service failed: %s", err)
 	case <-ctx.Done():
-		input.GetLogger().Info("message", "shutting down", "error", ctx.Err()) // nolint
+		input.GetLogger().Info("message", "shutting down", "error", ctx.Err()) //nolint
 	}
 	return ctx.Err()
 }
@@ -131,7 +131,7 @@ func newServer(input Input, conf *Config) (*server, error) {
 		input:         input,
 		logger:        input.GetLogger(),
 		config:        conf,
-		Server:        &http.Server{Addr: input.ListenAddress(), Handler: serveMux},
+		Server:        &http.Server{Addr: input.ListenAddress(), Handler: serveMux}, //nolint
 	}
 
 	upWebhookHandler := promhttp.InstrumentHandlerCounter(
@@ -158,7 +158,7 @@ func newServer(input Input, conf *Config) (*server, error) {
 
 	serveMux.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok")) // nolint
+		w.Write([]byte("ok")) //nolint
 	})
 
 	return s, nil
@@ -189,21 +189,21 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 	scalingReq, err := s.parseRequest(requestType, req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error())) // nolint
+		w.Write([]byte(err.Error())) //nolint
 		return
 	}
 	if scalingReq == nil {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Add("Content-Type", "application/json")
-		w.Write([]byte(`{"message":"ignored"}`)) // nolint
+		w.Write([]byte(`{"message":"ignored"}`)) //nolint
 		return
 	}
 
-	s.logger.Info("message", "sending request to the Core server", "request-type", scalingReq.RequestType) // nolint
+	s.logger.Info("message", "sending request to the Core server", "request-type", scalingReq.RequestType) //nolint
 
 	res, err := s.send(scalingReq)
 	if err != nil {
-		s.logger.Error("error", err) // nolint
+		s.logger.Error("error", err) //nolint
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -214,14 +214,14 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 		"job-id", res.ScalingJobId,
 		"job-message", res.Message,
 	); err != nil {
-		s.logger.Error("error", err) // nolint
+		s.logger.Error("error", err) //nolint
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`{"id":"%s", "status":"%s", "message":"%s"}`, res.ScalingJobId, res.Status, res.Message))) // nolint
+	w.Write([]byte(fmt.Sprintf(`{"id":"%s", "status":"%s", "message":"%s"}`, res.ScalingJobId, res.Status, res.Message))) //nolint
 }
 
 func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRequest, error) {
