@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"runtime"
 	"sync"
 
@@ -63,7 +64,7 @@ func (sc *SakuraCloud) APIClient() iaas.APICaller {
 					version.Version,
 					runtime.GOOS,
 					runtime.GOARCH,
-					api.UserAgent,
+					os.Getenv("SAKURACLOUD_APPEND_USER_AGENT"),
 				),
 			},
 		})
@@ -88,6 +89,9 @@ func (sc *SakuraCloud) Validate(ctx context.Context) error {
 	}
 	if authStatus.Permission != types.Permissions.Create && authStatus.Permission != types.Permissions.Arrange {
 		return fmt.Errorf("required permissions have not been assigned. assigned permission: %s", authStatus.Permission)
+	}
+	if len(os.Getenv("SAKURACLOUD_APPEND_USER_AGENT")) > 1024 {
+		return fmt.Errorf("SAKURACLOUD_APPEND_USER_AGENT is too long: max=1024")
 	}
 	return nil
 }
