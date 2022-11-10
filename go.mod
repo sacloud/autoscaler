@@ -6,7 +6,7 @@ require (
 	github.com/c-robinson/iplib v1.0.3
 	github.com/go-kit/log v0.2.1
 	github.com/go-playground/validator/v10 v10.11.1
-	github.com/goccy/go-yaml v1.9.5
+	github.com/goccy/go-yaml v1.9.6
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.13.0
