@@ -139,6 +139,21 @@ func (h *ServersHandler) attachOrDetach(ctx *handlers.HandlerContext, server *ha
 	for _, s := range current.Servers {
 		for _, nic := range server.AssignedNetwork {
 			if s.IPAddress == nic.IpAddress {
+				// Note: サーバグループ(ルールや実サーバ設定)が設定されている場合、
+				//       サーバグループの最後の1台をデタッチしようとするとエラーになる。
+				//       このため実サーバのうち同じサーバグループに属するEnabledなサーバが1台以下の場合はデタッチせずにreturnする
+				if !attach && s.ServerGroup != "" {
+					enableServerCount := 0
+					for _, sv := range current.Servers {
+						if sv.ServerGroup == s.ServerGroup && sv.Enabled {
+							enableServerCount++
+						}
+					}
+					if enableServerCount <= 1 {
+						return ctx.Report(handler.HandleResponse_DONE)
+					}
+				}
+
 				s.Enabled = attach
 				shouldUpdate = true
 				targetIPAddress = s.IPAddress
