@@ -198,7 +198,7 @@ func TestResourceDefinitions_Validate(t *testing.T) {
 				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "ELB", DefName: "stub1"}},
 			},
 			want: []error{
-				fmt.Errorf("name is required if the configuration has more than one resource"),
+				validate.Errorf("name is required if the configuration has more than one resource"),
 			},
 		},
 		{
@@ -208,7 +208,7 @@ func TestResourceDefinitions_Validate(t *testing.T) {
 				&stubResourceDef{ResourceDefBase: &ResourceDefBase{TypeName: "ELB", DefName: "duplicated"}},
 			},
 			want: []error{
-				fmt.Errorf("resource name duplicated is duplicated"),
+				validate.Errorf("resource name duplicated is duplicated"),
 			},
 		},
 		{

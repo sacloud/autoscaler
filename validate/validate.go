@@ -105,5 +105,5 @@ func errorFromValidationErr(target interface{}, err validator.FieldError) error 
 }
 
 func newError(name, message string) error {
-	return fmt.Errorf("%s: %s", name, message)
+	return Errorf("%s: %s", name, message)
 }

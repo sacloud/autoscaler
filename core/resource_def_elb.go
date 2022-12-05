@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
 )
@@ -77,14 +78,14 @@ func (d *ResourceDefELB) validatePlans(_ context.Context, _ iaas.APICaller) []er
 	names := map[string]struct{}{}
 
 	if len(d.Plans) == 1 {
-		errors = append(errors, fmt.Errorf("at least two plans must be specified"))
+		errors = append(errors, validate.Errorf("at least two plans must be specified"))
 		return errors
 	}
 
 	for _, p := range d.Plans {
 		if p.Name != "" {
 			if _, ok := names[p.Name]; ok {
-				errors = append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
+				errors = append(errors, validate.Errorf("plan name %q is duplicated", p.Name))
 			}
 			names[p.Name] = struct{}{}
 		}
@@ -97,7 +98,7 @@ func (d *ResourceDefELB) validatePlans(_ context.Context, _ iaas.APICaller) []er
 			p.CPS != types.ProxyLBPlans.CPS50000.Int() &&
 			p.CPS != types.ProxyLBPlans.CPS100000.Int() &&
 			p.CPS != types.ProxyLBPlans.CPS400000.Int() {
-			errors = append(errors, fmt.Errorf("plan{CPS:%d} not found", p.CPS))
+			errors = append(errors, validate.Errorf("plan{CPS:%d} not found", p.CPS))
 		}
 	}
 	return errors
@@ -129,7 +130,7 @@ func (d *ResourceDefELB) findCloudResources(ctx context.Context, apiClient iaas.
 		return nil, fmt.Errorf("computing status failed: %s", err)
 	}
 	if len(found.ProxyLBs) == 0 {
-		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
+		return nil, validate.Errorf("resource not found with selector: %s", selector.String())
 	}
 	return found.ProxyLBs, nil
 }

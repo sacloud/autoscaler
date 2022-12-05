@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/iaas-api-go"
 )
 
@@ -64,7 +65,7 @@ func (d *ResourceDefRouter) Validate(ctx context.Context, apiClient iaas.APICall
 func (d *ResourceDefRouter) validatePlans(ctx context.Context, apiClient iaas.APICaller) []error {
 	if len(d.Plans) > 0 {
 		if len(d.Plans) == 1 {
-			return []error{fmt.Errorf("at least two plans must be specified")}
+			return []error{validate.Errorf("at least two plans must be specified")}
 		}
 		errors := &multierror.Error{}
 		for _, zone := range d.Selector.Zones {
@@ -79,7 +80,7 @@ func (d *ResourceDefRouter) validatePlans(ctx context.Context, apiClient iaas.AP
 			for _, p := range d.Plans {
 				if p.Name != "" {
 					if _, ok := names[p.Name]; ok {
-						errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
+						errors = multierror.Append(errors, validate.Errorf("plan name %q is duplicated", p.Name))
 					}
 					names[p.Name] = struct{}{}
 				}
@@ -92,7 +93,7 @@ func (d *ResourceDefRouter) validatePlans(ctx context.Context, apiClient iaas.AP
 					}
 				}
 				if !exists {
-					errors = multierror.Append(errors, fmt.Errorf("plan{zone: %s, band_width:%d} not exists", zone, p.BandWidth))
+					errors = multierror.Append(errors, validate.Errorf("plan{zone: %s, band_width:%d} not exists", zone, p.BandWidth))
 				}
 			}
 		}
@@ -133,7 +134,7 @@ func (d *ResourceDefRouter) findCloudResources(ctx context.Context, apiClient ia
 		}
 	}
 	if len(results) == 0 {
-		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
+		return nil, validate.Errorf("resource not found with selector: %s", selector.String())
 	}
 
 	return results, nil
