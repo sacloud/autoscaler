@@ -17,6 +17,7 @@ package validate
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/core"
@@ -34,7 +35,7 @@ var Command = &cobra.Command{
 		},
 		flags.ValidateStrictModeFlags,
 	),
-	RunE: run,
+	Run: run,
 }
 
 type parameter struct {
@@ -45,15 +46,23 @@ var param = &parameter{
 	ConfigPath: defaults.CoreConfigPath,
 }
 
+const ExitCodeDataErr = 65 // EX_DATAERR
+
 func init() {
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
 	flags.SetStrictModeFlag(Command)
 }
 
-func run(*cobra.Command, []string) error {
+func run(*cobra.Command, []string) {
 	_, err := core.LoadAndValidate(context.Background(), param.ConfigPath, flags.StrictMode(), flags.NewLogger())
-	if err == nil {
-		fmt.Println("OK")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		if _, ok := err.(*validate.Error); ok {
+			os.Exit(ExitCodeDataErr)
+		}
+		os.Exit(1)
 	}
-	return err
+
+	fmt.Println("OK")
 }

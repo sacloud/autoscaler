@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	client "github.com/sacloud/api-client-go"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/helper/api"
@@ -83,12 +84,12 @@ func (sc *SakuraCloud) Validate(ctx context.Context) error {
 	authStatus, err := iaas.NewAuthStatusOp(apiClient).Read(ctx)
 	if err != nil {
 		if err, ok := err.(iaas.APIError); ok {
-			return fmt.Errorf("reading SAKURA cloud account info failed: %s", err.Message())
+			return validate.Errorf("reading SAKURA cloud account info failed: %s", err.Message())
 		}
 		return fmt.Errorf("reading SAKURA cloud account info failed: unknown error: %s", err)
 	}
 	if authStatus.Permission != types.Permissions.Create && authStatus.Permission != types.Permissions.Arrange {
-		return fmt.Errorf("required permissions have not been assigned. assigned permission: %s", authStatus.Permission)
+		return validate.Errorf("required permissions have not been assigned. assigned permission: %s", authStatus.Permission)
 	}
 	if len(os.Getenv("SAKURACLOUD_APPEND_USER_AGENT")) > 1024 {
 		return fmt.Errorf("SAKURACLOUD_APPEND_USER_AGENT is too long: max=1024")

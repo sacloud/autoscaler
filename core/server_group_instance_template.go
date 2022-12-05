@@ -64,7 +64,7 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 
 	errors := &multierror.Error{}
 	if s.IconId != "" && s.Icon != nil {
-		errors = multierror.Append(errors, fmt.Errorf("only one of icon and icon_id can be specified"))
+		errors = multierror.Append(errors, validate.Errorf("only one of icon and icon_id can be specified"))
 	}
 	if s.IconId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
@@ -74,7 +74,7 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	}
 
 	if s.CDROMId != "" && s.CDROM != nil {
-		errors = multierror.Append(errors, fmt.Errorf("only one of cdrom and cdrom_id can be specified"))
+		errors = multierror.Append(errors, validate.Errorf("only one of cdrom and cdrom_id can be specified"))
 	}
 	if s.CDROMId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
@@ -84,7 +84,7 @@ func (s *ServerGroupInstanceTemplate) Validate(ctx context.Context, apiClient ia
 	}
 
 	if s.PrivateHostId != "" && s.PrivateHost != nil {
-		errors = multierror.Append(errors, fmt.Errorf("only one of private_host and private_host_id can be specified"))
+		errors = multierror.Append(errors, validate.Errorf("only one of private_host and private_host_id can be specified"))
 	}
 	if s.PrivateHostId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
@@ -204,7 +204,9 @@ func (p *ServerGroupInstancePlan) Validate(ctx context.Context, apiClient iaas.A
 		Generation: types.PlanGenerations.Default,
 	})
 	if err != nil {
-		return fmt.Errorf("plan {%s} not found: %s", p.String(), err)
+		// NOTE: 本来はエラー内容に応じてValidationErrorを返すべきだが、
+		//       query.FindServerPlanの実装がエラー内容の判定を行えるようになっていないためここでは判定していない
+		return validate.Errorf("plan {%s} not found: %s", p.String(), err)
 	}
 	return nil
 }
@@ -279,11 +281,11 @@ func (t *ServerGroupDiskTemplate) Validate(ctx context.Context, apiClient iaas.A
 		}
 	}
 	if t.NamePrefix != "" && t.NameFormat != "" {
-		errors = multierror.Append(errors, fmt.Errorf("only one of name_prefix and name_format can be specified"))
+		errors = multierror.Append(errors, validate.Errorf("only one of name_prefix and name_format can be specified"))
 	}
 
 	if t.IconId != "" && t.Icon != nil {
-		errors = multierror.Append(errors, fmt.Errorf("only one of icon and icon_id can be specified"))
+		errors = multierror.Append(errors, validate.Errorf("only one of icon and icon_id can be specified"))
 	}
 	if t.IconId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
@@ -323,7 +325,9 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 	case t.OSType != "":
 		archive, err := query.FindArchiveByOSType(ctx, iaas.NewArchiveOp(apiClient), zone, ostype.StrToOSType(t.OSType))
 		if err != nil {
-			retErr = err
+			// NOTE: 本来はエラー内容に応じてValidationErrorを返すべきだが、
+			//       query.FindArchiveByOSTypeの実装がエラー内容の判定を行えるようになっていないためここでは判定していない
+			retErr = validate.New(err)
 			return
 		}
 		sourceArchiveID = archive.ID.String()
@@ -335,11 +339,11 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 			return
 		}
 		if len(found.Archives) == 0 {
-			retErr = fmt.Errorf("source archive not found with: {zone: %s, %v}", zone, t.SourceArchiveSelector)
+			retErr = validate.Errorf("source archive not found with: {zone: %s, %v}", zone, t.SourceArchiveSelector)
 			return
 		}
 		if len(found.Archives) > 1 {
-			retErr = fmt.Errorf("multiple source archive found with: {zone: %s, %v}, archives: %v", zone, t.SourceArchiveSelector, found.Archives)
+			retErr = validate.Errorf("multiple source archive found with: {zone: %s, %v}, archives: %v", zone, t.SourceArchiveSelector, found.Archives)
 			return
 		}
 		sourceArchiveID = found.Archives[0].ID.String()
@@ -351,11 +355,11 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 			return
 		}
 		if len(found.Disks) == 0 {
-			retErr = fmt.Errorf("source disk not found with: {zone: %s, %v}", zone, t.SourceDiskSelector)
+			retErr = validate.Errorf("source disk not found with: {zone: %s, %v}", zone, t.SourceDiskSelector)
 			return
 		}
 		if len(found.Disks) > 1 {
-			retErr = fmt.Errorf("multiple source disk found with: {zone: %s, %v}, disks: %v", zone, t.SourceDiskSelector, found.Disks)
+			retErr = validate.Errorf("multiple source disk found with: {zone: %s, %v}, disks: %v", zone, t.SourceDiskSelector, found.Disks)
 			return
 		}
 		sourceDiskID = found.Disks[0].ID.String()
@@ -387,11 +391,11 @@ func (t *ServerGroupDiskEditTemplate) Validate() []error {
 		len(t.SSHKeys) > 0
 
 	if t.Disabled && hasValue {
-		return []error{fmt.Errorf("disabled=true but a value is specified")}
+		return []error{validate.Errorf("disabled=true but a value is specified")}
 	}
 
 	if t.HostNamePrefix != "" && t.HostNameFormat != "" {
-		return []error{fmt.Errorf("only one of host_name_prefix and host_name_format can be specified")}
+		return []error{validate.Errorf("only one of host_name_prefix and host_name_format can be specified")}
 	}
 	return nil
 }
@@ -412,7 +416,7 @@ func (c ServerGroupCloudConfig) Validate() []error {
 	var m map[string]interface{}
 	opts := []yaml.DecodeOption{yaml.Strict(), yaml.DisallowDuplicateKey()}
 	if err := yaml.UnmarshalWithOptions([]byte(c.CloudConfig.String()), &m, opts...); err != nil {
-		return []error{fmt.Errorf("invalid cloud-config: %s", err)}
+		return []error{validate.Errorf("invalid cloud-config: %s", err)}
 	}
 	return nil
 }
@@ -436,7 +440,7 @@ func (t *ServerGroupNICTemplate) Validate(ctx context.Context, parent *ParentRes
 
 	errors := &multierror.Error{}
 	if t.PacketFilterId != "" && t.PacketFilter != nil {
-		errors = multierror.Append(errors, fmt.Errorf("only one of packet_filter and packet_filter_id can be specified"))
+		errors = multierror.Append(errors, validate.Errorf("only one of packet_filter and packet_filter_id can be specified"))
 	}
 	if t.PacketFilterId != "" {
 		loadCtx, ok := ctx.(*config.LoadConfigContext)
@@ -447,17 +451,17 @@ func (t *ServerGroupNICTemplate) Validate(ctx context.Context, parent *ParentRes
 
 	hasNetworkSettings := t.AssignCidrBlock != "" || t.AssignNetMaskLen > 0 || t.DefaultRoute != ""
 	if t.Upstream.UpstreamShared() && hasNetworkSettings {
-		return []error{fmt.Errorf("upstream=shared but network settings are specified")}
+		return []error{validate.Errorf("upstream=shared but network settings are specified")}
 	}
 
 	if hasNetworkSettings {
 		ip, ipNet, err := net.ParseCIDR(t.AssignCidrBlock)
 		if err != nil {
-			return []error{fmt.Errorf("invalid cidr block")}
+			return []error{validate.Errorf("invalid cidr block")}
 		}
 		maskLen, _ := ipNet.Mask.Size()
 		if iplib.NewNet4(ip, maskLen).Count() < uint32(maxServerNum) {
-			errors = multierror.Append(errors, fmt.Errorf("assign_cidr_block is too small"))
+			errors = multierror.Append(errors, validate.Errorf("assign_cidr_block is too small"))
 		}
 		if t.AssignNetMaskLen != 0 {
 			maskLen = t.AssignNetMaskLen
@@ -466,7 +470,7 @@ func (t *ServerGroupNICTemplate) Validate(ctx context.Context, parent *ParentRes
 			assignedNet := iplib.NewNet(ipNet.IP, maskLen)
 			if !assignedNet.Contains(net.ParseIP(t.DefaultRoute)) {
 				errors = multierror.Append(errors,
-					fmt.Errorf(
+					validate.Errorf(
 						"default_route and assigned_address must be in the same network: assign_cidr_block:%s, assign_netmask_len:%d, default_route:%s",
 						t.AssignCidrBlock,
 						t.AssignNetMaskLen,
@@ -589,16 +593,16 @@ func (m *ServerGroupNICMetadata) Validate(parent *ParentResourceDef, nicIndex in
 		// グローバルIPを要求する項目がNIC[0]以外で指定されていたらエラーとする
 		format := "%s: can only be specified for the first NIC"
 		if m.ServerGroupName != "" {
-			errors = multierror.Append(errors, fmt.Errorf(format, "server_group_name"))
+			errors = multierror.Append(errors, validate.Errorf(format, "server_group_name"))
 		}
 		if m.Weight > 0 {
-			errors = multierror.Append(errors, fmt.Errorf(format, "weight"))
+			errors = multierror.Append(errors, validate.Errorf(format, "weight"))
 		}
 		if m.RecordName != "" {
-			errors = multierror.Append(errors, fmt.Errorf(format, "record_name"))
+			errors = multierror.Append(errors, validate.Errorf(format, "record_name"))
 		}
 		if m.RecordTTL > 0 {
-			errors = multierror.Append(errors, fmt.Errorf(format, "record_ttl"))
+			errors = multierror.Append(errors, validate.Errorf(format, "record_ttl"))
 		}
 	}
 
@@ -609,70 +613,70 @@ func (m *ServerGroupNICMetadata) Validate(parent *ParentResourceDef, nicIndex in
 		switch parent.Type() {
 		case ResourceTypeELB:
 			if len(m.Ports) == 0 {
-				errors = multierror.Append(errors, fmt.Errorf(requiredFormat, "ports", ResourceTypeELB))
+				errors = multierror.Append(errors, validate.Errorf(requiredFormat, "ports", ResourceTypeELB))
 			}
 			if m.Weight > 0 {
-				errors = multierror.Append(errors, fmt.Errorf(format, "weight", ResourceTypeELB))
+				errors = multierror.Append(errors, validate.Errorf(format, "weight", ResourceTypeELB))
 			}
 			if len(m.VIPs) > 0 {
-				errors = multierror.Append(errors, fmt.Errorf(format, "vips", ResourceTypeELB))
+				errors = multierror.Append(errors, validate.Errorf(format, "vips", ResourceTypeELB))
 			}
 			if m.HealthCheck != nil {
-				errors = multierror.Append(errors, fmt.Errorf(format, "health_check", ResourceTypeELB))
+				errors = multierror.Append(errors, validate.Errorf(format, "health_check", ResourceTypeELB))
 			}
 			if m.RecordName != "" {
-				errors = multierror.Append(errors, fmt.Errorf(format, "record_name", ResourceTypeELB))
+				errors = multierror.Append(errors, validate.Errorf(format, "record_name", ResourceTypeELB))
 			}
 			if m.RecordTTL > 0 {
-				errors = multierror.Append(errors, fmt.Errorf(format, "record_ttl", ResourceTypeELB))
+				errors = multierror.Append(errors, validate.Errorf(format, "record_ttl", ResourceTypeELB))
 			}
 		case ResourceTypeGSLB:
 			if m.ServerGroupName != "" {
-				errors = multierror.Append(errors, fmt.Errorf(format, "server_group_name", ResourceTypeGSLB))
+				errors = multierror.Append(errors, validate.Errorf(format, "server_group_name", ResourceTypeGSLB))
 			}
 			if len(m.VIPs) > 0 {
-				errors = multierror.Append(errors, fmt.Errorf(format, "vips", ResourceTypeGSLB))
+				errors = multierror.Append(errors, validate.Errorf(format, "vips", ResourceTypeGSLB))
 			}
 			if m.HealthCheck != nil {
-				errors = multierror.Append(errors, fmt.Errorf(format, "health_check", ResourceTypeGSLB))
+				errors = multierror.Append(errors, validate.Errorf(format, "health_check", ResourceTypeGSLB))
 			}
 			if m.RecordName != "" {
-				errors = multierror.Append(errors, fmt.Errorf(format, "record_name", ResourceTypeGSLB))
+				errors = multierror.Append(errors, validate.Errorf(format, "record_name", ResourceTypeGSLB))
 			}
 			if m.RecordTTL > 0 {
-				errors = multierror.Append(errors, fmt.Errorf(format, "record_ttl", ResourceTypeGSLB))
+				errors = multierror.Append(errors, validate.Errorf(format, "record_ttl", ResourceTypeGSLB))
 			}
 		case ResourceTypeLoadBalancer:
 			if len(m.Ports) == 0 {
-				errors = multierror.Append(errors, fmt.Errorf(requiredFormat, "ports", ResourceTypeLoadBalancer))
+				errors = multierror.Append(errors, validate.Errorf(requiredFormat, "ports", ResourceTypeLoadBalancer))
 			}
 			if m.HealthCheck == nil {
-				errors = multierror.Append(errors, fmt.Errorf(requiredFormat, "health_check", ResourceTypeLoadBalancer))
+				errors = multierror.Append(errors, validate.Errorf(requiredFormat, "health_check", ResourceTypeLoadBalancer))
 			}
 			if m.ServerGroupName != "" {
-				errors = multierror.Append(errors, fmt.Errorf(format, "server_group_name", ResourceTypeLoadBalancer))
+				errors = multierror.Append(errors, validate.Errorf(format, "server_group_name", ResourceTypeLoadBalancer))
 			}
 			if m.Weight > 0 {
-				errors = multierror.Append(errors, fmt.Errorf(format, "weight", ResourceTypeLoadBalancer))
+				errors = multierror.Append(errors, validate.Errorf(format, "weight", ResourceTypeLoadBalancer))
 			}
 			if m.RecordName != "" {
-				errors = multierror.Append(errors, fmt.Errorf(format, "record_name", ResourceTypeLoadBalancer))
+				errors = multierror.Append(errors, validate.Errorf(format, "record_name", ResourceTypeLoadBalancer))
 			}
 			if m.RecordTTL > 0 {
-				errors = multierror.Append(errors, fmt.Errorf(format, "record_ttl", ResourceTypeLoadBalancer))
+				errors = multierror.Append(errors, validate.Errorf(format, "record_ttl", ResourceTypeLoadBalancer))
 			}
 		case ResourceTypeDNS:
 			if m.ServerGroupName != "" {
-				errors = multierror.Append(errors, fmt.Errorf(format, "server_group_name", ResourceTypeDNS))
+				errors = multierror.Append(errors, validate.Errorf(format, "server_group_name", ResourceTypeDNS))
 			}
 			if m.Weight > 0 {
-				errors = multierror.Append(errors, fmt.Errorf(format, "weight", ResourceTypeDNS))
+				errors = multierror.Append(errors, validate.Errorf(format, "weight", ResourceTypeDNS))
 			}
 			if len(m.VIPs) > 0 {
-				errors = multierror.Append(errors, fmt.Errorf(format, "vips", ResourceTypeDNS))
+				errors = multierror.Append(errors, validate.Errorf(format, "vips", ResourceTypeDNS))
 			}
 			if m.HealthCheck != nil {
-				errors = multierror.Append(errors, fmt.Errorf(format, "health_check", ResourceTypeDNS))
+				errors = multierror.Append(errors, validate.Errorf(format, "health_check", ResourceTypeDNS))
 			}
 		}
 	}
@@ -726,17 +730,17 @@ func (h *ServerGroupNICMetadataHealthCheck) Validate() []error {
 	switch h.Protocol {
 	case "http", "https":
 		if h.Path == "" {
-			errors = multierror.Append(errors, fmt.Errorf("path: required if protocol is http or https"))
+			errors = multierror.Append(errors, validate.Errorf("path: required if protocol is http or https"))
 		}
 		if h.StatusCode == 0 {
-			errors = multierror.Append(errors, fmt.Errorf("status_code: required if protocol is http or https"))
+			errors = multierror.Append(errors, validate.Errorf("status_code: required if protocol is http or https"))
 		}
 	default:
 		if h.Path != "" {
-			errors = multierror.Append(errors, fmt.Errorf("path: can not be specified if protocol is not http or https"))
+			errors = multierror.Append(errors, validate.Errorf("path: can not be specified if protocol is not http or https"))
 		}
 		if h.StatusCode > 0 {
-			errors = multierror.Append(errors, fmt.Errorf("status_code: can not be specified if protocol is not http or https"))
+			errors = multierror.Append(errors, validate.Errorf("status_code: can not be specified if protocol is not http or https"))
 		}
 	}
 

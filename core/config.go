@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
+	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/defaults"
@@ -124,10 +125,10 @@ func (c *Config) Validate(ctx context.Context) error {
 	ctx = config.NewLoadConfigContext(ctx, c.strictMode, c.logger)
 
 	if err := validate.Struct(c); err != nil {
-		return err
+		return validate.New(err)
 	}
 
-	// API Client
+	// API Client(ValidationErrorを返すことがある)
 	if err := c.SakuraCloud.Validate(ctx); err != nil {
 		return err
 	}
@@ -136,44 +137,55 @@ func (c *Config) Validate(ctx context.Context) error {
 	// 変更される可能性があるためこのタイミングで初期化する
 	validate.InitValidatorAlias(iaas.SakuraCloudZones)
 
-	errors := &multierror.Error{}
+	allErrors := &multierror.Error{}
 
 	// CustomHandlers
 	if errs := c.ValidateCustomHandlers(ctx); len(errs) > 0 {
-		errors = multierror.Append(errors, errs...)
+		allErrors = multierror.Append(allErrors, errs...)
 	}
 
 	// Resources
 	if errs := c.Resources.Validate(ctx, c.APIClient()); len(errs) > 0 {
-		errors = multierror.Append(errors, errs...)
+		allErrors = multierror.Append(allErrors, errs...)
 	}
 
 	// AutoScalerConfig
 	if errs := c.AutoScaler.Validate(ctx); len(errs) > 0 {
-		errors = multierror.Append(errors, errs...)
+		allErrors = multierror.Append(allErrors, errs...)
 	}
 
 	// All Handlers (Builtin + Custom)
 	if len(c.Handlers()) == 0 {
-		errors = multierror.Append(errors, fmt.Errorf("one or more handlers are required"))
+		allErrors = multierror.Append(allErrors, validate.Errorf("one or more handlers are required"))
 	}
 
 	if c.strictMode {
 		// プロファイル指定を制限
 		if c.SakuraCloud.Profile != "" {
-			errors = multierror.Append(errors, fmt.Errorf("sakuracloud.profile cannot be specified when in strict mode"))
+			allErrors = multierror.Append(allErrors, validate.Errorf("sakuracloud.profile cannot be specified when in strict mode"))
 		}
 		// exporterを有効にすることを制限
 		if c.AutoScaler.ExporterEnabled() {
-			errors = multierror.Append(errors, fmt.Errorf("autoscaler.exporter_config cannot be specified when in strict mode"))
+			allErrors = multierror.Append(allErrors, validate.Errorf("autoscaler.exporter_config cannot be specified when in strict mode"))
 		}
 		// カスタムハンドラを定義することを制限
 		if len(c.CustomHandlers) > 0 {
-			errors = multierror.Append(errors, fmt.Errorf("handlers cannot be specified when in strict mode"))
+			allErrors = multierror.Append(allErrors, validate.Errorf("handlers cannot be specified when in strict mode"))
 		}
 	}
 
-	return errors.ErrorOrNil()
+	hasSystemError := false
+	for _, err := range allErrors.Errors {
+		if !errwrap.ContainsType(err, &validate.Error{}) {
+			hasSystemError = true
+			break
+		}
+	}
+	if hasSystemError {
+		return allErrors.ErrorOrNil()
+	}
+
+	return validate.New(allErrors.ErrorOrNil())
 }
 
 func (c *Config) ValidateCustomHandlers(ctx context.Context) []error {
@@ -181,7 +193,7 @@ func (c *Config) ValidateCustomHandlers(ctx context.Context) []error {
 
 	for _, handler := range c.CustomHandlers {
 		if err := c.ValidateCustomHandler(ctx, handler); err != nil {
-			errs = append(errs, fmt.Errorf("handler %q returns error: %s", handler.Name, err))
+			errs = append(errs, validate.Errorf("handler %q returns error: %s", handler.Name, err))
 		}
 	}
 	return errs
@@ -262,7 +274,7 @@ func (c *HandlersConfig) Validate(context.Context) []error {
 			}
 		}
 		if !exist {
-			errors = multierror.Append(fmt.Errorf("invalid key: %s", name))
+			errors = multierror.Append(validate.Errorf("invalid key: %s", name))
 		}
 	}
 	return errors.Errors

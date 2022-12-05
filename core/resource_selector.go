@@ -37,7 +37,7 @@ func (rs *MultiZoneSelector) String() string {
 
 func (rs *MultiZoneSelector) Validate() error {
 	if rs == nil || rs.ResourceSelector == nil {
-		return fmt.Errorf("selector: required")
+		return validate.Errorf("selector: required")
 	}
 	if err := rs.ResourceSelector.Validate(); err != nil {
 		return err
@@ -97,7 +97,7 @@ func (rs *ResourceSelector) Validate() error {
 	}
 
 	if !rs.ID.IsEmpty() && (len(rs.Names) > 0 || len(rs.Tags) > 0) {
-		return fmt.Errorf("selector.ID and (selector.Names or selector.Tags): cannot specify both")
+		return validate.Errorf("selector.ID and (selector.Names or selector.Tags): cannot specify both")
 	}
 	return nil
 }

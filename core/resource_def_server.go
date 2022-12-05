@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
 )
@@ -74,7 +75,7 @@ func (d *ResourceDefServer) Validate(ctx context.Context, apiClient iaas.APICall
 func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient iaas.APICaller) []error {
 	if len(d.Plans) > 0 {
 		if len(d.Plans) == 1 {
-			return []error{fmt.Errorf("at least two plans must be specified")}
+			return []error{validate.Errorf("at least two plans must be specified")}
 		}
 
 		errors := &multierror.Error{}
@@ -90,7 +91,7 @@ func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient iaas.AP
 			for _, p := range d.Plans {
 				if p.Name != "" {
 					if _, ok := names[p.Name]; ok {
-						errors = multierror.Append(errors, fmt.Errorf("plan name %q is duplicated", p.Name))
+						errors = multierror.Append(errors, validate.Errorf("plan name %q is duplicated", p.Name))
 					}
 					names[p.Name] = struct{}{}
 				}
@@ -106,7 +107,7 @@ func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient iaas.AP
 				}
 				if !exists {
 					errors = multierror.Append(errors,
-						fmt.Errorf("plan{zone:%s, core:%d, memory:%d, dedicated_cpu:%t} not exists", zone, p.Core, p.Memory, d.DedicatedCPU))
+						validate.Errorf("plan{zone:%s, core:%d, memory:%d, dedicated_cpu:%t} not exists", zone, p.Core, p.Memory, d.DedicatedCPU))
 				}
 			}
 		}
@@ -162,7 +163,7 @@ func (d *ResourceDefServer) findCloudResources(ctx context.Context, apiClient ia
 		}
 	}
 	if len(results) == 0 {
-		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
+		return nil, validate.Errorf("resource not found with selector: %s", selector.String())
 	}
 
 	return results, nil

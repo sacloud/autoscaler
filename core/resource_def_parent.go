@@ -21,6 +21,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
 )
@@ -150,7 +151,7 @@ func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient ia
 
 	switch len(results) {
 	case 0:
-		return nil, fmt.Errorf("resource not found with selector: %s", selector.String())
+		return nil, validate.Errorf("resource not found with selector: %s", selector.String())
 	case 1:
 		return results, nil
 	default:
@@ -158,7 +159,7 @@ func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient ia
 		for _, r := range results {
 			names = append(names, fmt.Sprintf("{ID:%s, Name:%s}", r.GetID(), r.GetName()))
 		}
-		return nil, fmt.Errorf("A parent resource definition must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
+		return nil, validate.Errorf("A parent resource definition must return one resource, but got multiple resources: definition: {Type:%s, Selector:%s}, got: %s",
 			d.Type(), d.Selector, fmt.Sprintf("[%s]", strings.Join(names, ",")),
 		)
 	}

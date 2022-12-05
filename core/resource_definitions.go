@@ -44,10 +44,10 @@ func (rds *ResourceDefinitions) Validate(ctx context.Context, apiClient iaas.API
 
 		if len(*rds) > 1 {
 			if r.Name() == "" {
-				errors = append(errors, fmt.Errorf("name is required if the configuration has more than one resource"))
+				errors = append(errors, validate.Errorf("name is required if the configuration has more than one resource"))
 			}
 			if _, exist := names[r.Name()]; exist {
-				errors = append(errors, fmt.Errorf("resource name %s is duplicated", r.Name()))
+				errors = append(errors, validate.Errorf("resource name %s is duplicated", r.Name()))
 			}
 			names[r.Name()] = struct{}{}
 		}

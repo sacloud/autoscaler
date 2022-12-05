@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/handler"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/packages-go/size"
@@ -62,7 +63,7 @@ func (d *ResourceDefServerGroup) namePrefix() string {
 func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.APICaller) []error {
 	errors := &multierror.Error{}
 	if d.namePrefix() == "" {
-		errors = multierror.Append(errors, fmt.Errorf("name or server_name_prefix: required"))
+		errors = multierror.Append(errors, validate.Errorf("name or server_name_prefix: required"))
 	}
 
 	if err := d.printWarningForServerNamePrefix(ctx); err != nil {
@@ -70,7 +71,7 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.AP
 	}
 
 	if d.Zone != "" && len(d.Zones) > 0 {
-		errors = multierror.Append(errors, fmt.Errorf("only one of zone and zones can be specified"))
+		errors = multierror.Append(errors, validate.Errorf("only one of zone and zones can be specified"))
 	}
 	// HACK: 値の正規化、処理する適切なタイミングがないため暫定的にここで処理している
 	//       ResourceDefinitionレベルで初期化処理インターフェースができたらそちらに移動する
@@ -80,13 +81,13 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.AP
 
 	if len(d.Zones) > 0 && d.ParentDef != nil {
 		if d.ParentDef.Type() == ResourceTypeLoadBalancer { // 親リソース種別が増えたらここを修正
-			errors = multierror.Append(errors, fmt.Errorf("multiple zones cannot be specified when the parent is a LoadBalancer"))
+			errors = multierror.Append(errors, validate.Errorf("multiple zones cannot be specified when the parent is a LoadBalancer"))
 		}
 	}
 
 	for _, p := range d.Plans {
 		if !(d.MinSize <= p.Size && p.Size <= d.MaxSize) {
-			errors = multierror.Append(errors, fmt.Errorf("plan: plan.size must be between min_size and max_size: size:%d", p.Size))
+			errors = multierror.Append(errors, validate.Errorf("plan: plan.size must be between min_size and max_size: size:%d", p.Size))
 		}
 	}
 	errors = multierror.Append(errors, d.Template.Validate(ctx, apiClient, d)...)

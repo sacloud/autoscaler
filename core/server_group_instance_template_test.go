@@ -22,6 +22,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/test"
+	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/iaas-api-go/types"
 	"github.com/stretchr/testify/require"
 )
@@ -284,7 +285,7 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 		{
 			name:     "empty",
 			template: &ServerGroupInstanceTemplate{},
-			want:     []error{fmt.Errorf("plan: required")},
+			want:     []error{validate.Errorf("plan: required")},
 		},
 		{
 			name: "minimum",
@@ -307,8 +308,8 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 				InterfaceDriver: types.EInterfaceDriver("foobar"),
 			},
 			want: []error{
-				fmt.Errorf("tags: unique"),
-				fmt.Errorf("interface_driver: oneof=virtio e1000"),
+				validate.Errorf("tags: unique"),
+				validate.Errorf("interface_driver: oneof=virtio e1000"),
 			},
 		},
 		{
@@ -322,7 +323,7 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 				IconId: "123456789012",
 			},
 			want: []error{
-				fmt.Errorf("only one of icon and icon_id can be specified"),
+				validate.Errorf("only one of icon and icon_id can be specified"),
 			},
 		},
 		{
@@ -336,7 +337,7 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 				CDROMId: "123456789012",
 			},
 			want: []error{
-				fmt.Errorf("only one of cdrom and cdrom_id can be specified"),
+				validate.Errorf("only one of cdrom and cdrom_id can be specified"),
 			},
 		},
 		{
@@ -350,7 +351,7 @@ func TestServerGroupInstanceTemplate_Validate(t *testing.T) {
 				PrivateHostId: "123456789012",
 			},
 			want: []error{
-				fmt.Errorf("only one of private_host and private_host_id can be specified"),
+				validate.Errorf("only one of private_host and private_host_id can be specified"),
 			},
 		},
 		{
@@ -412,7 +413,7 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 				PacketFilterId: "123456789012",
 			},
 			want: []error{
-				fmt.Errorf("only one of packet_filter and packet_filter_id can be specified"),
+				validate.Errorf("only one of packet_filter and packet_filter_id can be specified"),
 			},
 		},
 		{
@@ -422,7 +423,7 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 				AssignCidrBlock: "192.0.2.0/24",
 			},
 			args: args{maxServerNum: 1},
-			want: []error{fmt.Errorf("upstream=shared but network settings are specified")},
+			want: []error{validate.Errorf("upstream=shared but network settings are specified")},
 		},
 		{
 			name: "network settings",
@@ -461,7 +462,7 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 				DefaultRoute:     "192.0.2.1",
 			},
 			args: args{maxServerNum: 5},
-			want: []error{fmt.Errorf("assign_cidr_block: cidrv4")},
+			want: []error{validate.Errorf("assign_cidr_block: cidrv4")},
 		},
 		{
 			name: "invalid network settings",
@@ -474,7 +475,7 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 				DefaultRoute:     "192.0.2.1",
 			},
 			args: args{maxServerNum: 5},
-			want: []error{fmt.Errorf("assign_cidr_block is too small")},
+			want: []error{validate.Errorf("assign_cidr_block is too small")},
 		},
 		{
 			name: "invalid default route",
@@ -487,7 +488,7 @@ func TestServerGroupNICTemplate_Validate(t *testing.T) {
 				DefaultRoute:     "10.0.0.1",
 			},
 			args: args{maxServerNum: 1},
-			want: []error{fmt.Errorf("default_route and assigned_address must be in the same network: assign_cidr_block:192.0.2.0/24, assign_netmask_len:24, default_route:10.0.0.1")},
+			want: []error{validate.Errorf("default_route and assigned_address must be in the same network: assign_cidr_block:192.0.2.0/24, assign_netmask_len:24, default_route:10.0.0.1")},
 		},
 	}
 	for _, tt := range tests {
@@ -542,10 +543,10 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 			},
 			args: args{nil, 1},
 			want: []error{
-				fmt.Errorf("server_group_name: can only be specified for the first NIC"),
-				fmt.Errorf("weight: can only be specified for the first NIC"),
-				fmt.Errorf("record_name: can only be specified for the first NIC"),
-				fmt.Errorf("record_ttl: can only be specified for the first NIC"),
+				validate.Errorf("server_group_name: can only be specified for the first NIC"),
+				validate.Errorf("weight: can only be specified for the first NIC"),
+				validate.Errorf("record_name: can only be specified for the first NIC"),
+				validate.Errorf("record_ttl: can only be specified for the first NIC"),
 			},
 		},
 		{
@@ -558,7 +559,7 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("ports: required when parent is EnhancedLoadBalancer"),
+				validate.Errorf("ports: required when parent is EnhancedLoadBalancer"),
 			},
 		},
 		{
@@ -583,11 +584,11 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("weight: can't specify if parent resource type is EnhancedLoadBalancer"),
-				fmt.Errorf("vips: can't specify if parent resource type is EnhancedLoadBalancer"),
-				fmt.Errorf("health_check: can't specify if parent resource type is EnhancedLoadBalancer"),
-				fmt.Errorf("record_name: can't specify if parent resource type is EnhancedLoadBalancer"),
-				fmt.Errorf("record_ttl: can't specify if parent resource type is EnhancedLoadBalancer"),
+				validate.Errorf("weight: can't specify if parent resource type is EnhancedLoadBalancer"),
+				validate.Errorf("vips: can't specify if parent resource type is EnhancedLoadBalancer"),
+				validate.Errorf("health_check: can't specify if parent resource type is EnhancedLoadBalancer"),
+				validate.Errorf("record_name: can't specify if parent resource type is EnhancedLoadBalancer"),
+				validate.Errorf("record_ttl: can't specify if parent resource type is EnhancedLoadBalancer"),
 			},
 		},
 		{
@@ -623,11 +624,11 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("server_group_name: can't specify if parent resource type is GSLB"),
-				fmt.Errorf("vips: can't specify if parent resource type is GSLB"),
-				fmt.Errorf("health_check: can't specify if parent resource type is GSLB"),
-				fmt.Errorf("record_name: can't specify if parent resource type is GSLB"),
-				fmt.Errorf("record_ttl: can't specify if parent resource type is GSLB"),
+				validate.Errorf("server_group_name: can't specify if parent resource type is GSLB"),
+				validate.Errorf("vips: can't specify if parent resource type is GSLB"),
+				validate.Errorf("health_check: can't specify if parent resource type is GSLB"),
+				validate.Errorf("record_name: can't specify if parent resource type is GSLB"),
+				validate.Errorf("record_ttl: can't specify if parent resource type is GSLB"),
 			},
 		},
 		{
@@ -640,8 +641,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("ports: required when parent is LoadBalancer"),
-				fmt.Errorf("health_check: required when parent is LoadBalancer"),
+				validate.Errorf("ports: required when parent is LoadBalancer"),
+				validate.Errorf("health_check: required when parent is LoadBalancer"),
 			},
 		},
 		{
@@ -666,10 +667,10 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("server_group_name: can't specify if parent resource type is LoadBalancer"),
-				fmt.Errorf("weight: can't specify if parent resource type is LoadBalancer"),
-				fmt.Errorf("record_name: can't specify if parent resource type is LoadBalancer"),
-				fmt.Errorf("record_ttl: can't specify if parent resource type is LoadBalancer"),
+				validate.Errorf("server_group_name: can't specify if parent resource type is LoadBalancer"),
+				validate.Errorf("weight: can't specify if parent resource type is LoadBalancer"),
+				validate.Errorf("record_name: can't specify if parent resource type is LoadBalancer"),
+				validate.Errorf("record_ttl: can't specify if parent resource type is LoadBalancer"),
 			},
 		},
 		{
@@ -705,10 +706,10 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("server_group_name: can't specify if parent resource type is DNS"),
-				fmt.Errorf("weight: can't specify if parent resource type is DNS"),
-				fmt.Errorf("vips: can't specify if parent resource type is DNS"),
-				fmt.Errorf("health_check: can't specify if parent resource type is DNS"),
+				validate.Errorf("server_group_name: can't specify if parent resource type is DNS"),
+				validate.Errorf("weight: can't specify if parent resource type is DNS"),
+				validate.Errorf("vips: can't specify if parent resource type is DNS"),
+				validate.Errorf("health_check: can't specify if parent resource type is DNS"),
 			},
 		},
 		{
@@ -729,8 +730,8 @@ func TestServerGroupNICMetadata_Validate(t *testing.T) {
 				nicIndex: 0,
 			},
 			want: []error{
-				fmt.Errorf("path: can not be specified if protocol is not http or https"),
-				fmt.Errorf("status_code: can not be specified if protocol is not http or https"),
+				validate.Errorf("path: can not be specified if protocol is not http or https"),
+				validate.Errorf("status_code: can not be specified if protocol is not http or https"),
 			},
 		},
 	}
@@ -752,7 +753,7 @@ func TestServerGroupNICMetadataHealthCheck_Validate(t *testing.T) {
 			name: "minimum",
 			hc:   &ServerGroupNICMetadataHealthCheck{},
 			want: []error{
-				fmt.Errorf("protocol: required"),
+				validate.Errorf("protocol: required"),
 			},
 		},
 		{
@@ -770,8 +771,8 @@ func TestServerGroupNICMetadataHealthCheck_Validate(t *testing.T) {
 				Protocol: "http",
 			},
 			want: []error{
-				fmt.Errorf("path: required if protocol is http or https"),
-				fmt.Errorf("status_code: required if protocol is http or https"),
+				validate.Errorf("path: required if protocol is http or https"),
+				validate.Errorf("status_code: required if protocol is http or https"),
 			},
 		},
 		{
@@ -789,8 +790,8 @@ func TestServerGroupNICMetadataHealthCheck_Validate(t *testing.T) {
 				Protocol: "https",
 			},
 			want: []error{
-				fmt.Errorf("path: required if protocol is http or https"),
-				fmt.Errorf("status_code: required if protocol is http or https"),
+				validate.Errorf("path: required if protocol is http or https"),
+				validate.Errorf("status_code: required if protocol is http or https"),
 			},
 		},
 		{
@@ -801,8 +802,8 @@ func TestServerGroupNICMetadataHealthCheck_Validate(t *testing.T) {
 				StatusCode: http.StatusOK,
 			},
 			want: []error{
-				fmt.Errorf("path: can not be specified if protocol is not http or https"),
-				fmt.Errorf("status_code: can not be specified if protocol is not http or https"),
+				validate.Errorf("path: can not be specified if protocol is not http or https"),
+				validate.Errorf("status_code: can not be specified if protocol is not http or https"),
 			},
 		},
 		{
@@ -820,8 +821,8 @@ func TestServerGroupNICMetadataHealthCheck_Validate(t *testing.T) {
 				StatusCode: http.StatusOK,
 			},
 			want: []error{
-				fmt.Errorf("path: can not be specified if protocol is not http or https"),
-				fmt.Errorf("status_code: can not be specified if protocol is not http or https"),
+				validate.Errorf("path: can not be specified if protocol is not http or https"),
+				validate.Errorf("status_code: can not be specified if protocol is not http or https"),
 			},
 		},
 		{
