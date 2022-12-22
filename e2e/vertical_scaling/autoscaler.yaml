@@ -3,7 +3,7 @@ resources:
     name: "server"
     selector:
       tags: ["autoscaler-e2e-vertical-scaling"]
-      zones: ["is1a"]
+      zones: ["tk1b"]
     shutdown_force: true
     plans:
       - core: 1

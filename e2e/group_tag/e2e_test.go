@@ -45,7 +45,7 @@ var (
 		"--resource-name", "autoscaler-e2e-group-tag",
 		"up")
 
-	zones          = []string{"is1a", "is1b"}
+	zones          = []string{"tk1b", "is1b"}
 	e2eTestTimeout = 20 * time.Minute
 
 	output *e2e.Output

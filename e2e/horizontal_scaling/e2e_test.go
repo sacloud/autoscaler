@@ -46,7 +46,7 @@ var (
 	upToMediumCmd = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "--desired-state-name", "medium", "up")
 	downCmd       = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "down")
 
-	zones               = []string{"is1a", "is1b"}
+	zones               = []string{"tk1b", "is1b"}
 	proxyLBReadyTimeout = 5 * time.Minute
 	e2eTestTimeout      = 20 * time.Minute
 

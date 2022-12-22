@@ -283,7 +283,7 @@ func teardown() {
 func fetchSakuraCloudServer() (*iaas.Server, error) {
 	serverOp := iaas.NewServerOp(autoscalerE2E.SacloudAPICaller)
 
-	found, err := serverOp.Find(context.Background(), "is1a", &iaas.FindCondition{
+	found, err := serverOp.Find(context.Background(), "tk1b", &iaas.FindCondition{
 		Filter: search.Filter{
 			search.Key("Name"): search.PartialMatch("autoscaler-e2e-vertical-scaling"),
 		},
@@ -293,7 +293,7 @@ func fetchSakuraCloudServer() (*iaas.Server, error) {
 	}
 
 	if len(found.Servers) == 0 {
-		return nil, fmt.Errorf("server 'autoscaler-e2e-vertical-scaling' not found on is1a zone")
+		return nil, fmt.Errorf("server 'autoscaler-e2e-vertical-scaling' not found on tk1b zone")
 	}
 	return found.Servers[0], nil
 }
@@ -301,7 +301,7 @@ func fetchSakuraCloudServer() (*iaas.Server, error) {
 func waitResourceReadyLAndStartHTTPRequestLoop(ctx context.Context, t *testing.T) error {
 	// 対象サーバごとにHTTPリクエストが通るようになるまで待つ
 	serverOp := iaas.NewServerOp(autoscalerE2E.SacloudAPICaller)
-	found, err := serverOp.Find(context.Background(), "is1a", &iaas.FindCondition{
+	found, err := serverOp.Find(context.Background(), "tk1b", &iaas.FindCondition{
 		Filter: search.Filter{
 			search.Key("Name"): search.PartialMatch("autoscaler-e2e-vertical-scaling"),
 		},
