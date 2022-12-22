@@ -3,12 +3,12 @@ resources:
     name: "autoscaler-e2e-all-resource-types-vertical-server"
     selector:
       names: ["autoscaler-e2e-all-resource-types-vertical-server"]
-      zones: ["is1a"]
+      zones: ["tk1b"]
 
   - type: ServerGroup
     name: "autoscaler-e2e-all-resource-types-horizontal-server"
     server_name_prefix: "autoscaler-e2e-all-resource-types-horizontal-server"
-    zone: "is1a"
+    zone: "tk1b"
 
     min_size: 1
     max_size: 3
@@ -48,5 +48,5 @@ resources:
     name: "autoscaler-e2e-all-resource-types-router"
     selector:
       names: ["autoscaler-e2e-all-resource-types-router"]
-      zones: ["is1a"]
+      zones: ["tk1b"]
 

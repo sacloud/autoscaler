@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "sakuracloud" {
-  zone = "is1a"
+  zone = "tk1b"
 }
 
 resource "sakuracloud_proxylb" "autoscaler-e2e-test" {
