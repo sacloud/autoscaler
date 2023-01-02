@@ -3,7 +3,7 @@ module github.com/sacloud/autoscaler
 go 1.19
 
 require (
-	github.com/c-robinson/iplib v1.0.4
+	github.com/c-robinson/iplib v1.0.5
 	github.com/go-kit/log v0.2.1
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/goccy/go-yaml v1.9.7
