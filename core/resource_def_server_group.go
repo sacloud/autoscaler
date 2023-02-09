@@ -79,7 +79,7 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.AP
 		d.Zones = []string{d.Zone}
 	}
 
-	if len(d.Zones) > 0 && d.ParentDef != nil {
+	if len(d.Zones) > 1 && d.ParentDef != nil {
 		if d.ParentDef.Type() == ResourceTypeLoadBalancer { // 親リソース種別が増えたらここを修正
 			errors = multierror.Append(errors, validate.Errorf("multiple zones cannot be specified when the parent is a LoadBalancer"))
 		}

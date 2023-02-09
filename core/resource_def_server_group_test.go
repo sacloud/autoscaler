@@ -585,6 +585,35 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 			},
 		},
 		{
+			name: "returns only not found error when parent is LB and has zone",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+					DefName:  "test",
+				},
+				Zone:   "is1a",
+				MinSize: 1,
+				MaxSize: 1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+				ParentDef: &ParentResourceDef{
+					TypeName: ResourceTypeLoadBalancer.String(),
+					Selector: &NameOrSelector{
+						ResourceSelector: ResourceSelector{
+							Names: []string{"foobar"},
+						},
+					},
+				},
+			},
+			want: []error{
+				fmt.Errorf("resource=ServerGroup resource=LoadBalancer resource not found with selector: ID: , Names: [foobar], Tags: []"),
+			},
+		},
+		{
 			name: "returns error when parent is LB and has multiple zones",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
