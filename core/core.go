@@ -185,7 +185,7 @@ func (c *Core) Down(ctx *RequestContext) (*JobStatus, string, error) {
 func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 	job, ok := c.jobs[ctx.JobID()]
 	if !ok {
-		job = NewJobStatus(ctx.Request(), c.config.AutoScaler.JobCoolDownTime())
+		job = NewJobStatus(ctx.Request(), c.config.AutoScaler.CoolDown)
 		c.jobs[ctx.JobID()] = job
 	}
 	return job
@@ -193,7 +193,7 @@ func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 
 func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	job := c.currentJob(ctx)
-	if !job.Acceptable() {
+	if !job.Acceptable(ctx.request.requestType) {
 		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "job is in an unacceptable state") //nolint
 		return job, "job is in an unacceptable state", nil
 	}

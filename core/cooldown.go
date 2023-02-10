@@ -16,8 +16,10 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"github.com/goccy/go-yaml"
+	"github.com/sacloud/autoscaler/defaults"
 )
 
 // CoolDown スケール動作を繰り返し実行する際の冷却期間
@@ -45,4 +47,21 @@ func (c *CoolDown) UnmarshalYAML(ctx context.Context, data []byte) error {
 	}
 	*c = CoolDown(v)
 	return nil
+}
+
+func (c *CoolDown) Duration(requestType RequestTypes) time.Duration {
+	switch requestType {
+	case requestTypeUp:
+		return c.duration(c.Up)
+	case requestTypeDown:
+		return c.duration(c.Down)
+	}
+	return defaults.CoolDownTime
+}
+
+func (c *CoolDown) duration(sec int) time.Duration {
+	if sec <= 0 {
+		return defaults.CoolDownTime
+	}
+	return time.Duration(sec) * time.Second
 }
