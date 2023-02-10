@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/request"
 )
 
@@ -27,26 +26,23 @@ import (
 //
 // Inputsからのリクエストパラメータ ResourceNameごとに作成される
 type JobStatus struct {
-	requestType   RequestTypes
 	id            string
 	status        request.ScalingJobStatus
 	statusChanged time.Time
-	coolDownTime  time.Duration
+	coolDown      *CoolDown
 	mu            sync.Mutex
 }
 
-func NewJobStatus(req *requestInfo, coolDownTime time.Duration) *JobStatus {
+func NewJobStatus(req *requestInfo, coolDown *CoolDown) *JobStatus {
+	if coolDown == nil {
+		coolDown = &CoolDown{}
+	}
 	return &JobStatus{
-		requestType:   req.requestType,
 		id:            req.ID(),
 		status:        request.ScalingJobStatus_JOB_UNKNOWN,
 		statusChanged: time.Now(),
-		coolDownTime:  coolDownTime,
+		coolDown:      coolDown,
 	}
-}
-
-func (j *JobStatus) Type() RequestTypes {
-	return j.requestType
 }
 
 func (j *JobStatus) ID() string {
@@ -69,26 +65,24 @@ func (j *JobStatus) SetStatus(status request.ScalingJobStatus) {
 }
 
 func (j *JobStatus) String() string {
-	return fmt.Sprintf("Type: %s ID: %s Status: %s StatusChanged: %s", j.Type(), j.ID(), j.Status(), j.statusChanged)
+	return fmt.Sprintf("ID: %s Status: %s StatusChanged: %s", j.ID(), j.Status(), j.statusChanged)
 }
 
 // Acceptable このジョブが新規に受け入れ可能(新たに起動できる)状態の場合true
-func (j *JobStatus) Acceptable() bool {
+func (j *JobStatus) Acceptable(requestType RequestTypes) bool {
 	switch j.Status() {
 	case request.ScalingJobStatus_JOB_ACCEPTED, request.ScalingJobStatus_JOB_RUNNING:
 		// すでに受け入れ済み or 実行中
 		return false
 	default:
 		// 以外は冷却期間でなければtrue
-		return !j.inCoolDownTime()
+		return !j.inCoolDownTime(requestType)
 	}
 }
 
 // inCoolDownTime StatusがDONE、かつ冷却期間内であればtrue
-func (j *JobStatus) inCoolDownTime() bool {
-	if j.coolDownTime == 0 {
-		j.coolDownTime = defaults.CoolDownTime
-	}
+func (j *JobStatus) inCoolDownTime(requestType RequestTypes) bool {
+	coolDownTime := j.coolDown.Duration(requestType)
 	return j.Status() == request.ScalingJobStatus_JOB_DONE &&
-		j.statusChanged.After(time.Now().Add(-1*j.coolDownTime))
+		j.statusChanged.After(time.Now().Add(-1*coolDownTime))
 }

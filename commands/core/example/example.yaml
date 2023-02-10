@@ -190,6 +190,11 @@ resources:
 ## オートスケーラーの動作設定
 autoscaler:
   cooldown: 600 # ジョブの連続実行を抑止するためのクールダウン期間を秒数で指定。デフォルト: 600(10分)
+# 以下のようにup/downごとに指定することも可能(cooldownに直接数値を指定した場合、up/downともに同じ値が設定される)
+#  cooldown:
+#    up: 600
+#    down: 600
+
   shutdown_grace_period: 600 # SIGINTまたはSIGTERMをを受け取った際の処理完了待ち猶予時間を秒で指定。デフォルト: 600(10分)
 
 #  # Exporterの設定

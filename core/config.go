@@ -224,7 +224,7 @@ func (c *Config) ValidateCustomHandler(ctx context.Context, handler *Handler) er
 
 // AutoScalerConfig オートスケーラー自体の動作設定
 type AutoScalerConfig struct {
-	CoolDownSec            int                    `yaml:"cooldown"`              // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
+	CoolDown               *CoolDown              `yaml:"cooldown"`              // 同一ジョブの連続実行を防ぐための冷却期間(単位:秒)
 	ShutdownGracePeriodSec int                    `yaml:"shutdown_grace_period"` // SIGINTまたはSIGTERMをを受け取った際の処理完了待ち猶予時間(単位:秒)
 	ExporterConfig         *config.ExporterConfig `yaml:"exporter_config"`       // Exporter設定
 	HandlersConfig         *HandlersConfig        `yaml:"handlers_config"`       // ビルトインハンドラーの設定
@@ -232,14 +232,6 @@ type AutoScalerConfig struct {
 
 func (c *AutoScalerConfig) Validate(ctx context.Context) []error {
 	return c.HandlersConfig.Validate(ctx)
-}
-
-func (c *AutoScalerConfig) JobCoolDownTime() time.Duration {
-	sec := c.CoolDownSec
-	if sec <= 0 {
-		return defaults.CoolDownTime
-	}
-	return time.Duration(sec) * time.Second
 }
 
 func (c *AutoScalerConfig) ShutdownGracePeriod() time.Duration {

@@ -591,7 +591,7 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 					TypeName: "ServerGroup",
 					DefName:  "test",
 				},
-				Zone:   "is1a",
+				Zone:    "is1a",
 				MinSize: 1,
 				MaxSize: 1,
 				Template: &ServerGroupInstanceTemplate{
