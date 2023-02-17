@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -1169,6 +1170,52 @@ func TestResourceDefServerGroup_determineZone(t *testing.T) {
 			d := &ResourceDefServerGroup{Zones: tt.zones}
 			if got := d.determineZone(tt.index); got != tt.want {
 				t.Errorf("determineZone() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestResourceDefServerGroup_lastModifiedAt(t *testing.T) {
+	type args struct {
+		cloudResources []*iaas.Server
+	}
+	tests := []struct {
+		name string
+		args args
+		want time.Time
+	}{
+		{
+			name: "empty",
+			args: args{},
+			want: time.Time{},
+		},
+		{
+			name: "returns modified-at simply",
+			args: args{
+				cloudResources: []*iaas.Server{
+					{ModifiedAt: time.UnixMilli(100)},
+				},
+			},
+			want: time.UnixMilli(100),
+		},
+		{
+			name: "returns last modified-at",
+			args: args{
+				cloudResources: []*iaas.Server{
+					{ModifiedAt: time.UnixMilli(103)},
+					{ModifiedAt: time.UnixMilli(107)},
+					{ModifiedAt: time.UnixMilli(105)},
+					{ModifiedAt: time.UnixMilli(101)},
+				},
+			},
+			want: time.UnixMilli(107),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := &ResourceDefServerGroup{}
+			if got := d.lastModifiedAt(tt.args.cloudResources); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("lastModifiedAt() = %v, want %v", got, tt.want)
 			}
 		})
 	}

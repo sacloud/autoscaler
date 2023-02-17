@@ -237,3 +237,22 @@ func (rds *ResourceDefinitions) handleAllByFunc(computed Computed, handlers Hand
 	}
 	return nil
 }
+
+// LastModifiedAt 内包する定義群が対象とするリソース(群)の更新日時のうち、最も新しい(時間が遅い)値を返す
+func (rds *ResourceDefinitions) LastModifiedAt(ctx *RequestContext, apiClient iaas.APICaller) (time.Time, error) {
+	lastModifiedAt := time.Time{}
+	err := rds.walk(*rds, func(r ResourceDefinition) error {
+		t, err := r.LastModifiedAt(ctx, apiClient)
+		if err != nil {
+			return err
+		}
+		if t.After(lastModifiedAt) {
+			lastModifiedAt = t
+		}
+		return nil
+	})
+	if err != nil {
+		return time.Time{}, err
+	}
+	return lastModifiedAt, nil
+}

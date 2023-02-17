@@ -136,10 +136,11 @@ func (r *ParentResource) refresh(ctx *RequestContext) error {
 		}
 	case ResourceTypeRouter:
 		op := iaas.NewInternetOp(r.apiClient)
-		found, err = op.Read(ctx, r.zone, r.resource.GetID())
+		read, err := op.Read(ctx, r.zone, r.resource.GetID())
 		if err != nil {
 			return fmt.Errorf("computing status failed: %s", err)
 		}
+		found = &sakuraCloudRouter{Internet: read, zone: r.zone}
 	case ResourceTypeLoadBalancer:
 		op := iaas.NewLoadBalancerOp(r.apiClient)
 		found, err = op.Read(ctx, r.zone, r.resource.GetID())

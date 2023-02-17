@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/config"
@@ -328,4 +329,23 @@ func (d *ResourceDefServerGroup) filterCloudServers(servers []*iaas.Server) []*i
 		}
 	}
 	return filtered
+}
+
+// LastModifiedAt この定義が対象とするリソース(群)の最終更新日時を返す
+func (d *ResourceDefServerGroup) LastModifiedAt(ctx *RequestContext, apiClient iaas.APICaller) (time.Time, error) {
+	cloudResources, err := d.findCloudResources(ctx, apiClient)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return d.lastModifiedAt(cloudResources), nil
+}
+
+func (d *ResourceDefServerGroup) lastModifiedAt(cloudResources []*iaas.Server) time.Time {
+	last := time.Time{}
+	for _, r := range cloudResources {
+		if r.GetModifiedAt().After(last) {
+			last = r.GetModifiedAt()
+		}
+	}
+	return last
 }

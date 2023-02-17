@@ -102,6 +102,9 @@ func TestE2E_VerticalScaling(t *testing.T) {
 		t.Fatalf("grpc-health-prove: unexpected response: %s", string(out))
 	}
 
+	// 冷却期間待機(リソース更新日時が基準のため初回のスケールアップも影響を受ける)
+	time.Sleep(180 * time.Second)
+
 	/**************************************************************************
 	 * Step 1-1: スケールアップ
 	 *************************************************************************/
@@ -171,7 +174,7 @@ func TestE2E_VerticalScaling(t *testing.T) {
 	}
 
 	// 冷却期間待機
-	time.Sleep(30 * time.Second)
+	time.Sleep(180 * time.Second)
 
 	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
 	e2e.TerraformRefresh() // nolint

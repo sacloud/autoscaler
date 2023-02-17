@@ -16,6 +16,7 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/iaas-api-go"
@@ -34,6 +35,9 @@ type ResourceDefinition interface {
 	//
 	// TypeとSelectorを元にさくらのクラウドAPIを用いて実リソースを検索、Resourceを作成して返す
 	Compute(ctx *RequestContext, apiClient iaas.APICaller) (Resources, error)
+
+	// LastModifiedAt この定義が対象とするリソース(群)の最終更新を返す
+	LastModifiedAt(ctx *RequestContext, apiClient iaas.APICaller) (time.Time, error)
 }
 
 // ResourceDefBase 全てのリソース定義が実装すべき基本プロパティ
