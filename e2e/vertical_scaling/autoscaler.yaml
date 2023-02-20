@@ -19,4 +19,4 @@ resources:
       selector: "autoscaler-e2e-vertical-scaling"
 
 autoscaler:
-  cooldown: 30
+  cooldown: 180

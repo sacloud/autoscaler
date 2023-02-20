@@ -17,7 +17,9 @@ package core
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
@@ -231,6 +233,54 @@ func TestResourceDefinitions_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.rds.Validate(testContext(), test.APIClient)
 			require.EqualValues(t, tt.want, got)
+		})
+	}
+}
+
+func TestResourceDefinitions_LastModifiedAt(t *testing.T) {
+	tests := []struct {
+		name    string
+		rds     ResourceDefinitions
+		want    time.Time
+		wantErr bool
+	}{
+		{
+			name:    "empty",
+			rds:     ResourceDefinitions{},
+			want:    time.Time{},
+			wantErr: false,
+		},
+		{
+			name: "returns last modified_at",
+			rds: ResourceDefinitions{
+				&stubResourceDef{lastModifiedAt: time.UnixMilli(100)},
+				&stubResourceDef{lastModifiedAt: time.UnixMilli(300)},
+				&stubResourceDef{lastModifiedAt: time.UnixMilli(200)},
+			},
+			want:    time.UnixMilli(300),
+			wantErr: false,
+		},
+		{
+			name: "returns error",
+			rds: ResourceDefinitions{
+				&stubResourceDef{lastModifiedAt: time.UnixMilli(100)},
+				&stubResourceDef{lastmodifiedAtErr: fmt.Errorf("dummy")},
+				&stubResourceDef{lastModifiedAt: time.UnixMilli(200)},
+			},
+			want:    time.Time{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.rds.LastModifiedAt(nil, nil)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LastModifiedAt() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("LastModifiedAt() got = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/go-multierror"
@@ -92,9 +93,25 @@ func (d *ParentResourceDef) Compute(ctx *RequestContext, apiClient iaas.APICalle
 	return resources, nil
 }
 
+// LastModifiedAt この定義が対象とするリソース(群)の最終更新日時を返す
+func (d *ParentResourceDef) LastModifiedAt(ctx *RequestContext, apiClient iaas.APICaller) (time.Time, error) {
+	cloudResources, err := d.findCloudResources(ctx, apiClient, ctx.zone)
+	if err != nil {
+		return time.Time{}, err
+	}
+	last := time.Time{}
+	for _, r := range cloudResources {
+		if r.GetModifiedAt().After(last) {
+			last = r.GetModifiedAt()
+		}
+	}
+	return last, nil
+}
+
 type SakuraCloudResource interface {
 	GetID() types.ID
 	GetName() string
+	GetModifiedAt() time.Time
 }
 
 func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient iaas.APICaller, zone string) ([]SakuraCloudResource, error) {
@@ -136,7 +153,7 @@ func (d *ParentResourceDef) findCloudResources(ctx context.Context, apiClient ia
 			return nil, fmt.Errorf("computing status failed: %s", err)
 		}
 		for _, v := range found.Internet {
-			results = append(results, v)
+			results = append(results, &sakuraCloudRouter{Internet: v, zone: zone})
 		}
 	case ResourceTypeLoadBalancer:
 		op := iaas.NewLoadBalancerOp(apiClient)

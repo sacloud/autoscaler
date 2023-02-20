@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/validate"
@@ -133,4 +134,19 @@ func (d *ResourceDefELB) findCloudResources(ctx context.Context, apiClient iaas.
 		return nil, validate.Errorf("resource not found with selector: %s", selector.String())
 	}
 	return found.ProxyLBs, nil
+}
+
+// LastModifiedAt この定義が対象とするリソース(群)の最終更新日時を返す
+func (d *ResourceDefELB) LastModifiedAt(ctx *RequestContext, apiClient iaas.APICaller) (time.Time, error) {
+	cloudResources, err := d.findCloudResources(ctx, apiClient)
+	if err != nil {
+		return time.Time{}, err
+	}
+	last := time.Time{}
+	for _, r := range cloudResources {
+		if r.GetModifiedAt().After(last) {
+			last = r.GetModifiedAt()
+		}
+	}
+	return last, nil
 }

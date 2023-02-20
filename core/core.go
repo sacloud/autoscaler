@@ -193,11 +193,6 @@ func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 
 func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	job := c.currentJob(ctx)
-	if !job.Acceptable(ctx.request.requestType) {
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "job is in an unacceptable state") //nolint
-		return job, "job is in an unacceptable state", nil
-	}
-
 	if c.stopping {
 		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "core is shutting down") //nolint
 		return job, "core is shutting down", nil
@@ -212,6 +207,19 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
 		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) //nolint
 		return job, "", err
+	}
+
+	// さくらのクラウドAPI経由で対象リソース情報を参照し最終更新日時を取得
+	lastModifiedAt, err := rds.LastModifiedAt(ctx, c.config.APIClient())
+	if err != nil {
+		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
+		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) //nolint
+		return job, "", err
+	}
+
+	if !job.Acceptable(ctx.request.requestType, lastModifiedAt) {
+		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "job is in an unacceptable state") //nolint
+		return job, "job is in an unacceptable state", nil
 	}
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)

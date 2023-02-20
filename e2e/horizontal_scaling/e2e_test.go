@@ -114,7 +114,7 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 	}
 
 	// 冷却期間待機
-	time.Sleep(5 * time.Second)
+	time.Sleep(180 * time.Second)
 
 	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
 	e2e.TerraformRefresh() // nolint
@@ -148,7 +148,7 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 	}
 
 	// 冷却期間待機
-	time.Sleep(5 * time.Second)
+	time.Sleep(180 * time.Second)
 
 	// Terraformステートのリフレッシュ(複数回IDが変更されるため毎回リフレッシュしておく)
 	e2e.TerraformRefresh() // nolint

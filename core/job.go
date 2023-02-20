@@ -26,11 +26,10 @@ import (
 //
 // Inputsからのリクエストパラメータ ResourceNameごとに作成される
 type JobStatus struct {
-	id            string
-	status        request.ScalingJobStatus
-	statusChanged time.Time
-	coolDown      *CoolDown
-	mu            sync.Mutex
+	id       string
+	status   request.ScalingJobStatus
+	coolDown *CoolDown
+	mu       sync.Mutex
 }
 
 func NewJobStatus(req *requestInfo, coolDown *CoolDown) *JobStatus {
@@ -38,10 +37,9 @@ func NewJobStatus(req *requestInfo, coolDown *CoolDown) *JobStatus {
 		coolDown = &CoolDown{}
 	}
 	return &JobStatus{
-		id:            req.ID(),
-		status:        request.ScalingJobStatus_JOB_UNKNOWN,
-		statusChanged: time.Now(),
-		coolDown:      coolDown,
+		id:       req.ID(),
+		status:   request.ScalingJobStatus_JOB_DONE, // 完了状態 == ジョブ受け入れ可能ということで初期値にしておく
+		coolDown: coolDown,
 	}
 }
 
@@ -61,28 +59,27 @@ func (j *JobStatus) SetStatus(status request.ScalingJobStatus) {
 	defer j.mu.Unlock()
 
 	j.status = status
-	j.statusChanged = time.Now()
 }
 
 func (j *JobStatus) String() string {
-	return fmt.Sprintf("ID: %s Status: %s StatusChanged: %s", j.ID(), j.Status(), j.statusChanged)
+	return fmt.Sprintf("ID: %s Status: %s", j.ID(), j.Status())
 }
 
 // Acceptable このジョブが新規に受け入れ可能(新たに起動できる)状態の場合true
-func (j *JobStatus) Acceptable(requestType RequestTypes) bool {
+func (j *JobStatus) Acceptable(requestType RequestTypes, lastModifiedAt time.Time) bool {
 	switch j.Status() {
 	case request.ScalingJobStatus_JOB_ACCEPTED, request.ScalingJobStatus_JOB_RUNNING:
 		// すでに受け入れ済み or 実行中
 		return false
 	default:
 		// 以外は冷却期間でなければtrue
-		return !j.inCoolDownTime(requestType)
+		return !j.inCoolDownTime(requestType, lastModifiedAt)
 	}
 }
 
 // inCoolDownTime StatusがDONE、かつ冷却期間内であればtrue
-func (j *JobStatus) inCoolDownTime(requestType RequestTypes) bool {
+func (j *JobStatus) inCoolDownTime(requestType RequestTypes, lastModifiedAt time.Time) bool {
 	coolDownTime := j.coolDown.Duration(requestType)
 	return j.Status() == request.ScalingJobStatus_JOB_DONE &&
-		j.statusChanged.After(time.Now().Add(-1*coolDownTime))
+		lastModifiedAt.After(time.Now().Add(-1*coolDownTime))
 }

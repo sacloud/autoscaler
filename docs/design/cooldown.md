@@ -39,7 +39,22 @@ Note: 毎回のup/down実行時にさくらのクラウドAPI呼び出しが発�
 - `core.ResourceDefinitions`にも`LastModifiedAt(...)`を追加し、内包するResourceDefinitionsが返したmodified_atの内、最も遅い時間を示すmodified_atの値を返すようにする
 - `core.JobStatus`のfunc`Acceptable(...)`を上記のLastModifiedAt()を呼び出して判定するよう修正
 
+### 基準とするmodified_atフィールドについて
 
-### 更新内容
+ルータについてはmodified_atフィールドを持たない。  
+しかしルータのプラン変更時は新規リソースが作成されるためcreated_atで代用可能である。
+
+よってmodified_atだけでなくcreated_atも用いて判断する。
+
+#### modified_atはいつ変更されるか?
+
+- リソース作成時
+- プランを変更した時(実際にはリソースの新規作成にあたるため)
+- 電源操作時(サーバなど)
+
+Note: リソース名の変更など一部の操作ではmodifie_atが変更されない。
+
+## 更新内容
 
 - 2023/2/16: 作成
+- 2023/2/17: modified_atを持たないリソースが存在することへの考慮を追加

@@ -16,6 +16,7 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"github.com/sacloud/iaas-api-go"
 )
@@ -26,6 +27,9 @@ type stubResourceDef struct {
 
 	Dummy        string `validate:"omitempty,oneof=value1 value2"`
 	validateFunc func(ctx context.Context, apiClient iaas.APICaller) []error
+
+	lastModifiedAt    time.Time
+	lastmodifiedAtErr error
 }
 
 func (d *stubResourceDef) String() string {
@@ -44,6 +48,10 @@ func (d *stubResourceDef) Compute(ctx *RequestContext, apiClient iaas.APICaller)
 		return d.computeFunc(ctx, apiClient)
 	}
 	return nil, nil
+}
+
+func (d *stubResourceDef) LastModifiedAt(ctx *RequestContext, apiClient iaas.APICaller) (time.Time, error) {
+	return d.lastModifiedAt, d.lastmodifiedAtErr
 }
 
 type stubResource struct {
