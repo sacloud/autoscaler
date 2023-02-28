@@ -1210,6 +1210,30 @@ func TestResourceDefServerGroup_lastModifiedAt(t *testing.T) {
 			},
 			want: time.UnixMilli(107),
 		},
+		{
+			name: "returns last modified-at from Server.InstanceStatusChangedAt",
+			args: args{
+				cloudResources: []*iaas.Server{
+					{ModifiedAt: time.UnixMilli(103), InstanceStatusChangedAt: time.UnixMilli(108)},
+					{ModifiedAt: time.UnixMilli(107)},
+					{ModifiedAt: time.UnixMilli(105)},
+					{ModifiedAt: time.UnixMilli(101)},
+				},
+			},
+			want: time.UnixMilli(108),
+		},
+		{
+			name: "returns last modified-at from Server.ModifiedAt",
+			args: args{
+				cloudResources: []*iaas.Server{
+					{ModifiedAt: time.UnixMilli(103), InstanceStatusChangedAt: time.UnixMilli(107)},
+					{ModifiedAt: time.UnixMilli(108)},
+					{ModifiedAt: time.UnixMilli(105)},
+					{ModifiedAt: time.UnixMilli(101)},
+				},
+			},
+			want: time.UnixMilli(108),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

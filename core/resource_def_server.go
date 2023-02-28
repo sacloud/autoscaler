@@ -171,6 +171,8 @@ func (d *ResourceDefServer) findCloudResources(ctx context.Context, apiClient ia
 }
 
 // LastModifiedAt この定義が対象とするリソース(群)の最終更新日時を返す
+//
+// ServerではModifiedAt or Instance.StatusChangedAtの最も遅い時刻を返す
 func (d *ResourceDefServer) LastModifiedAt(ctx *RequestContext, apiClient iaas.APICaller) (time.Time, error) {
 	cloudResources, err := d.findCloudResources(ctx, apiClient)
 	if err != nil {
@@ -178,8 +180,14 @@ func (d *ResourceDefServer) LastModifiedAt(ctx *RequestContext, apiClient iaas.A
 	}
 	last := time.Time{}
 	for _, r := range cloudResources {
-		if r.GetModifiedAt().After(last) {
-			last = r.GetModifiedAt()
+		times := []time.Time{
+			r.ModifiedAt,
+			r.InstanceStatusChangedAt,
+		}
+		for _, t := range times {
+			if t.After(last) {
+				last = t
+			}
 		}
 	}
 	return last, nil
