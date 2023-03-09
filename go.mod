@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/prometheus/common v0.41.0
+	github.com/prometheus/common v0.42.0
 	github.com/sacloud/api-client-go v0.2.6
 	github.com/sacloud/iaas-api-go v1.8.3
 	github.com/sacloud/iaas-service-go v1.6.1
