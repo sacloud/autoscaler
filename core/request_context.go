@@ -53,6 +53,7 @@ func (c *RequestContext) WithJobStatus(job *JobStatus) *RequestContext {
 			source:           c.request.source,
 			resourceName:     c.request.resourceName,
 			desiredStateName: c.request.desiredStateName,
+			sync:             c.request.sync,
 		},
 		logger: c.logger,
 		job:    job,

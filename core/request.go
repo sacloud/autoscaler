@@ -40,6 +40,7 @@ type requestInfo struct {
 	source           string
 	resourceName     string
 	desiredStateName string
+	sync             bool
 }
 
 func (r *requestInfo) String() string {

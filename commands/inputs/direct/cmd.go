@@ -48,12 +48,14 @@ type parameter struct {
 	Source           string `name:"--source" validate:"required,printascii,max=1024"`
 	ResourceName     string `name:"--resource-name" validate:"required,printascii,max=1024"`
 	DesiredStateName string `name:"--desired-state-name" validate:"omitempty,printascii,max=1024"`
+	Sync             bool   `name:"--sync"`
 }
 
 var param = &parameter{
 	Source:           defaults.SourceName,
 	ResourceName:     defaults.ResourceName,
 	DesiredStateName: "",
+	Sync:             false,
 }
 
 func init() {
@@ -62,6 +64,7 @@ func init() {
 	Command.Flags().StringVarP(&param.ResourceName, "resource-name", "", param.ResourceName, "Name of the target resource")
 	Command.Flags().StringVarP(&param.Source, "source", "", param.Source, "A string representing the request source, passed to AutoScaler Core")
 	Command.Flags().StringVarP(&param.DesiredStateName, "desired-state-name", "", param.DesiredStateName, "Name of the desired state defined in Core's configuration file")
+	Command.Flags().BoolVarP(&param.Sync, "sync", "", param.Sync, "Flag for synchronous handling")
 }
 
 func run(_ *cobra.Command, args []string) error {
@@ -92,6 +95,7 @@ func run(_ *cobra.Command, args []string) error {
 		Source:           param.Source,
 		ResourceName:     param.ResourceName,
 		DesiredStateName: param.DesiredStateName,
+		Sync:             param.Sync,
 	})
 	if err != nil {
 		return err
