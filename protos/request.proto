@@ -30,6 +30,9 @@ message ScalingRequest {
   // 特定のスケールに一気にスケールを変更したい場合に指定する
   // 指定する名前はCoreのコンフィギュレーションで定義しておく必要がある
   string desired_state_name = 3;
+
+  // 同期的に処理を行うか
+  bool sync = 4;
 }
 
 // Scalingサービスのレスポンス

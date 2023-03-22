@@ -226,7 +226,12 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) //nolint
 
 	c.setRunningStatus(true)
-	go rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers(), func() { c.setRunningStatus(false) })
+
+	if ctx.Request().sync {
+		rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers(), func() { c.setRunningStatus(false) })
+	} else {
+		go rds.HandleAll(ctx, c.config.APIClient(), c.config.Handlers(), func() { c.setRunningStatus(false) })
+	}
 	return job, "", nil
 }
 
