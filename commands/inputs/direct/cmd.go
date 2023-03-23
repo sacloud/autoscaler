@@ -17,6 +17,7 @@ package direct
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/defaults"
@@ -44,6 +45,13 @@ var Command = &cobra.Command{
 	RunE: run,
 }
 
+const (
+	// ExitCodeDoneWithNoop up/downリクエストを受け取ったが処理なしの場合(JOB_DONE_NOOP)
+	ExitCodeDoneWithNoop = 129
+	// ExitCodeUnacceptableState up/downリクエストが受け入れられない状態の場合(処理の実行中やcooldown期間中、シャットダウン中の場合など)
+	ExitCodeUnacceptableState = 130
+)
+
 type parameter struct {
 	Source           string `name:"--source" validate:"required,printascii,max=1024"`
 	ResourceName     string `name:"--resource-name" validate:"required,printascii,max=1024"`
@@ -68,6 +76,7 @@ func init() {
 }
 
 func run(_ *cobra.Command, args []string) error {
+	var exitCode int
 	ctx := context.Background()
 
 	opts := &grpcutil.DialOption{
@@ -78,7 +87,12 @@ func run(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	defer cleanup()
+	defer func() {
+		cleanup()
+		if exitCode != 0 {
+			os.Exit(exitCode)
+		}
+	}()
 
 	req := request.NewScalingServiceClient(conn)
 	var f func(ctx context.Context, in *request.ScalingRequest, opts ...grpc.CallOption) (*request.ScalingResponse, error)
@@ -107,5 +121,14 @@ func run(_ *cobra.Command, args []string) error {
 		fmt.Printf(", message: %s", res.Message)
 	}
 	fmt.Println()
+
+	// 何らかの理由で処理されなかった場合の終了コードを設定
+	switch {
+	case res.Status == request.ScalingJobStatus_JOB_DONE_NOOP:
+		exitCode = ExitCodeDoneWithNoop
+	case res.Message != "":
+		exitCode = ExitCodeUnacceptableState
+	}
+
 	return nil
 }
