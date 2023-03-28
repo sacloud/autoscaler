@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.42.0
 	github.com/sacloud/api-client-go v0.2.7
-	github.com/sacloud/iaas-api-go v1.9.0
+	github.com/sacloud/iaas-api-go v1.9.1
 	github.com/sacloud/iaas-service-go v1.6.1
 	github.com/sacloud/packages-go v0.0.8
 	github.com/shivamMg/ppds v0.0.1
