@@ -14,7 +14,7 @@ require (
 	github.com/prometheus/common v0.42.0
 	github.com/sacloud/api-client-go v0.2.7
 	github.com/sacloud/iaas-api-go v1.10.0
-	github.com/sacloud/iaas-service-go v1.7.0
+	github.com/sacloud/iaas-service-go v1.8.2
 	github.com/sacloud/packages-go v0.0.8
 	github.com/shivamMg/ppds v0.0.1
 	github.com/spf13/cobra v1.7.0
