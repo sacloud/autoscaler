@@ -17,7 +17,7 @@ require (
 	github.com/sacloud/iaas-service-go v1.7.0
 	github.com/sacloud/packages-go v0.0.8
 	github.com/shivamMg/ppds v0.0.1
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.2
 	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.30.0
@@ -42,7 +42,7 @@ require (
 	github.com/hashicorp/hc-install v0.5.0 // indirect
 	github.com/hashicorp/terraform-exec v0.18.1 // indirect
 	github.com/hashicorp/terraform-json v0.15.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/leodido/go-urn v1.2.2 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
