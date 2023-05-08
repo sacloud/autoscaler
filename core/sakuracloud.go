@@ -21,11 +21,13 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"time"
 
 	client "github.com/sacloud/api-client-go"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/defaults"
 	"github.com/sacloud/iaas-api-go/helper/api"
 	"github.com/sacloud/iaas-api-go/types"
 )
@@ -70,6 +72,8 @@ func (sc *SakuraCloud) APIClient() iaas.APICaller {
 			},
 		})
 		sc.apiClient = api.NewCallerWithOptions(api.MergeOptions(options...))
+		// オートスケールでは時間のかかる状態変更待ち(大きなディスクのコピー待ちなど)はあまりない想定なため20分としておく
+		defaults.DefaultStatePollingTimeout = 20 * time.Minute
 	})
 	return sc.apiClient
 }
