@@ -72,8 +72,8 @@ func (sc *SakuraCloud) APIClient() iaas.APICaller {
 			},
 		})
 		sc.apiClient = api.NewCallerWithOptions(api.MergeOptions(options...))
-		// オートスケールでは時間のかかる状態変更待ち(大きなディスクのコピー待ちなど)はあまりない想定なため20分としておく
-		defaults.DefaultStatePollingTimeout = 20 * time.Minute
+		// オートスケールでは時間のかかる状態変更待ち(大きなディスクのコピー待ちなど)はあまりない想定
+		defaults.DefaultStatePollingTimeout = 60 * time.Minute
 	})
 	return sc.apiClient
 }
