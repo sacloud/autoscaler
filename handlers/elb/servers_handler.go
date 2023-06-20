@@ -177,16 +177,19 @@ func (h *ServersHandler) attachOrDetach(ctx *handlers.HandlerContext, server *ha
 	}
 
 	if _, err := elbOp.UpdateSettings(ctx, types.StringID(elb.Id), &iaas.ProxyLBUpdateSettingsRequest{
-		HealthCheck:   current.HealthCheck,
-		SorryServer:   current.SorryServer,
-		BindPorts:     current.BindPorts,
-		Servers:       current.Servers,
-		Rules:         current.Rules,
-		LetsEncrypt:   current.LetsEncrypt,
-		StickySession: current.StickySession,
-		Timeout:       current.Timeout,
-		Gzip:          current.Gzip,
-		SettingsHash:  current.SettingsHash,
+		HealthCheck:          current.HealthCheck,
+		SorryServer:          current.SorryServer,
+		BindPorts:            current.BindPorts,
+		Servers:              current.Servers,
+		Rules:                current.Rules,
+		LetsEncrypt:          current.LetsEncrypt,
+		StickySession:        current.StickySession,
+		Timeout:              current.Timeout,
+		Gzip:                 current.Gzip,
+		BackendHttpKeepAlive: current.BackendHttpKeepAlive,
+		ProxyProtocol:        current.ProxyProtocol,
+		Syslog:               current.Syslog,
+		SettingsHash:         current.SettingsHash,
 	}); err != nil {
 		return err
 	}
@@ -252,16 +255,19 @@ func (h *ServersHandler) addServer(ctx *handlers.HandlerContext, instance *handl
 			return err
 		}
 		_, err := elbOp.UpdateSettings(ctx, current.ID, &iaas.ProxyLBUpdateSettingsRequest{
-			HealthCheck:   current.HealthCheck,
-			SorryServer:   current.SorryServer,
-			BindPorts:     current.BindPorts,
-			Servers:       current.Servers,
-			Rules:         current.Rules,
-			LetsEncrypt:   current.LetsEncrypt,
-			StickySession: current.StickySession,
-			Timeout:       current.Timeout,
-			Gzip:          current.Gzip,
-			SettingsHash:  current.SettingsHash,
+			HealthCheck:          current.HealthCheck,
+			SorryServer:          current.SorryServer,
+			BindPorts:            current.BindPorts,
+			Servers:              current.Servers,
+			Rules:                current.Rules,
+			LetsEncrypt:          current.LetsEncrypt,
+			StickySession:        current.StickySession,
+			Timeout:              current.Timeout,
+			Gzip:                 current.Gzip,
+			BackendHttpKeepAlive: current.BackendHttpKeepAlive,
+			ProxyProtocol:        current.ProxyProtocol,
+			Syslog:               current.Syslog,
+			SettingsHash:         current.SettingsHash,
 		})
 		if err != nil {
 			return err
@@ -319,16 +325,19 @@ func (h *ServersHandler) deleteServer(ctx *handlers.HandlerContext, instance *ha
 			return err
 		}
 		_, err := elbOp.UpdateSettings(ctx, current.ID, &iaas.ProxyLBUpdateSettingsRequest{
-			HealthCheck:   current.HealthCheck,
-			SorryServer:   current.SorryServer,
-			BindPorts:     current.BindPorts,
-			Servers:       current.Servers,
-			Rules:         current.Rules,
-			LetsEncrypt:   current.LetsEncrypt,
-			StickySession: current.StickySession,
-			Timeout:       current.Timeout,
-			Gzip:          current.Gzip,
-			SettingsHash:  current.SettingsHash,
+			HealthCheck:          current.HealthCheck,
+			SorryServer:          current.SorryServer,
+			BindPorts:            current.BindPorts,
+			Servers:              current.Servers,
+			Rules:                current.Rules,
+			LetsEncrypt:          current.LetsEncrypt,
+			StickySession:        current.StickySession,
+			Timeout:              current.Timeout,
+			Gzip:                 current.Gzip,
+			BackendHttpKeepAlive: current.BackendHttpKeepAlive,
+			ProxyProtocol:        current.ProxyProtocol,
+			Syslog:               current.Syslog,
+			SettingsHash:         current.SettingsHash,
 		})
 		if err != nil {
 			return err
