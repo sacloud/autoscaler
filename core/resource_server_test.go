@@ -73,7 +73,15 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 
 	// IDを変えるためにプラン変更を実施
 	updated, err := plans.ChangeServerPlan(ctx, test.APIClient, test.Zone, server.ID,
-		1, 2*size.GiB, types.Commitments.Standard, types.PlanGenerations.Default)
+		&iaas.ServerChangePlanRequest{
+			CPU:                  1,
+			MemoryMB:             2 * size.GiB,
+			GPU:                  0,
+			ServerPlanCPUModel:   "",
+			ServerPlanGeneration: types.PlanGenerations.Default,
+			ServerPlanCommitment: types.Commitments.Standard,
+		},
+	)
 	require.NoError(t, err)
 
 	// refresh実施

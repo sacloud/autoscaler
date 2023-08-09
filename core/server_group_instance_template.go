@@ -191,15 +191,19 @@ func (s *ServerGroupInstanceTemplate) FindPrivateHostId(ctx context.Context, api
 }
 
 type ServerGroupInstancePlan struct {
-	Core         int  `yaml:"core"`
-	Memory       int  `yaml:"memory"`
-	DedicatedCPU bool `yaml:"dedicated_cpu"`
+	Core         int    `yaml:"core"`
+	Memory       int    `yaml:"memory"`
+	GPU          int    `yaml:"gpu"`
+	CPUModel     string `yaml:"cpu_model"`
+	DedicatedCPU bool   `yaml:"dedicated_cpu"`
 }
 
 func (p *ServerGroupInstancePlan) Validate(ctx context.Context, apiClient iaas.APICaller, zone string) error {
 	_, err := query.FindServerPlan(ctx, iaas.NewServerPlanOp(apiClient), zone, &query.FindServerPlanRequest{
 		CPU:        p.Core,
 		MemoryGB:   p.Memory,
+		GPU:        p.GPU,
+		CPUModel:   p.CPUModel,
 		Commitment: boolToCommitment(p.DedicatedCPU),
 		Generation: types.PlanGenerations.Default,
 	})
@@ -212,7 +216,8 @@ func (p *ServerGroupInstancePlan) Validate(ctx context.Context, apiClient iaas.A
 }
 
 func (p *ServerGroupInstancePlan) String() string {
-	return fmt.Sprintf("Core:%d, Memory:%d, DedicatedCPU:%t", p.Core, p.Memory, p.DedicatedCPU)
+	return fmt.Sprintf("Core:%d, Memory:%d, DedicatedCPU:%t, GPU:%d, CPUModel:%s",
+		p.Core, p.Memory, p.DedicatedCPU, p.GPU, p.CPUModel)
 }
 
 type ServerGroupDiskTemplate struct {

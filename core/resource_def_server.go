@@ -29,6 +29,8 @@ type ResourceDefServer struct {
 	*ResourceDefBase `yaml:",inline" validate:"required"`
 	Selector         *MultiZoneSelector `yaml:"selector" validate:"required"`
 
+	GPU           int           `yaml:"gpu"`
+	CPUModel      string        `yaml:"cpu_model"`
 	DedicatedCPU  bool          `yaml:"dedicated_cpu"`
 	Plans         []*ServerPlan `yaml:"plans"`
 	ShutdownForce bool          `yaml:"shutdown_force"`
@@ -100,15 +102,23 @@ func (d *ResourceDefServer) validatePlans(ctx context.Context, apiClient iaas.AP
 				exists := false
 				for _, available := range availablePlans.ServerPlans {
 					dedicatedCPU := available.Commitment == types.Commitments.DedicatedCPU
-					if available.Availability.IsAvailable() && dedicatedCPU == d.DedicatedCPU &&
-						available.CPU == p.Core && available.GetMemoryGB() == p.Memory {
+					cpuModel := "uncategorized"
+					if d.CPUModel != "" {
+						cpuModel = d.CPUModel
+					}
+					if available.Availability.IsAvailable() &&
+						dedicatedCPU == d.DedicatedCPU &&
+						available.CPU == p.Core &&
+						available.GetMemoryGB() == p.Memory &&
+						available.GPU == d.GPU &&
+						available.CPUModel == cpuModel {
 						exists = true
 						break
 					}
 				}
 				if !exists {
 					errors = multierror.Append(errors,
-						validate.Errorf("plan{zone:%s, core:%d, memory:%d, dedicated_cpu:%t} not exists", zone, p.Core, p.Memory, d.DedicatedCPU))
+						validate.Errorf("plan{zone:%s, core:%d, memory:%d, dedicated_cpu:%t, gpu:%d, cpu_mode:%s} not exists", zone, p.Core, p.Memory, d.DedicatedCPU, d.GPU, d.CPUModel))
 				}
 			}
 		}

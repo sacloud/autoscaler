@@ -217,6 +217,8 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 				InterfaceDriver:      d.Template.InterfaceDriver,
 				CPU:                  d.Template.Plan.Core,
 				MemoryMB:             d.Template.Plan.Memory * size.GiB,
+				GPU:                  d.Template.Plan.GPU,
+				ServerPlanCPUModel:   d.Template.Plan.CPUModel,
 				ServerPlanCommitment: commitment,
 			},
 			zone:         zone,

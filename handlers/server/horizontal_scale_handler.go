@@ -84,6 +84,8 @@ func (h *HorizontalScaleHandler) createServer(ctx *handlers.HandlerContext, req 
 		Name:            server.Name,
 		CPU:             int(server.Core),
 		MemoryGB:        int(server.Memory),
+		GPU:             int(server.Gpu),
+		CPUModel:        server.CpuModel,
 		Commitment:      commitment,
 		Generation:      types.PlanGenerations.Default,
 		InterfaceDriver: types.InterfaceDriverMap[server.InterfaceDriver],

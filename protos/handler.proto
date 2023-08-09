@@ -124,9 +124,13 @@ message Server {
 
   string               id               = 11;
   string               zone             = 12;
+
   uint32               core             = 13;
   uint32               memory           = 14;
   bool                 dedicated_cpu    = 15;
+  uint32               gpu              = 19;
+  string               cpu_model        = 20;
+
   repeated NetworkInfo assigned_network = 16;
   string               name             = 17;
   bool                 shutdown_force   = 18;
@@ -143,6 +147,9 @@ message ServerGroupInstance {
   uint32 core            = 13;
   uint32 memory          = 14;
   bool   dedicated_cpu   = 15;
+  uint32 gpu             = 28;
+  string cpu_model       = 29;
+
   string private_host_id = 16;
 
   // disks
