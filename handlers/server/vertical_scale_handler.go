@@ -25,6 +25,7 @@ import (
 	"github.com/sacloud/iaas-api-go/helper/plans"
 	"github.com/sacloud/iaas-api-go/helper/power"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/size"
 )
 
 type VerticalScaleHandler struct {
@@ -101,7 +102,7 @@ func (h *VerticalScaleHandler) handleServer(ctx *handlers.HandlerContext, req *h
 	updated, err := plans.ChangeServerPlan(ctx, h.APICaller(), server.Zone, types.StringID(server.Id),
 		&iaas.ServerChangePlanRequest{
 			CPU:                  int(server.Core),
-			MemoryMB:             int(server.Memory),
+			MemoryMB:             int(server.Memory) * size.GiB,
 			GPU:                  int(server.Gpu),
 			ServerPlanCPUModel:   server.CpuModel,
 			ServerPlanCommitment: commitment,
