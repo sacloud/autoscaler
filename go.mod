@@ -13,8 +13,8 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
 	github.com/sacloud/api-client-go v0.2.8
-	github.com/sacloud/iaas-api-go v1.11.1
-	github.com/sacloud/iaas-service-go v1.9.1
+	github.com/sacloud/iaas-api-go v1.11.2-0.20230808040020-104bc72d03c1
+	github.com/sacloud/iaas-service-go v1.9.2-0.20230808054001-efad52d748d4
 	github.com/sacloud/packages-go v0.0.9
 	github.com/shivamMg/ppds v0.0.1
 	github.com/spf13/cobra v1.7.0
@@ -58,11 +58,11 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/zclconf/go-cty v1.13.0 // indirect
 	go.uber.org/ratelimit v0.2.0 // indirect
-	golang.org/x/crypto v0.9.0 // indirect
+	golang.org/x/crypto v0.10.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

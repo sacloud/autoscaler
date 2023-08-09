@@ -91,6 +91,8 @@ func (c *computedServerGroupInstance) computeResource() *handler.Resource {
 					Zone:              c.zone,
 					Core:              uint32(c.server.CPU),
 					Memory:            uint32(c.server.GetMemoryGB()),
+					Gpu:               uint32(c.server.GPU),
+					CpuModel:          c.server.ServerPlanCPUModel,
 					DedicatedCpu:      c.server.ServerPlanCommitment.IsDedicatedCPU(),
 					PrivateHostId:     c.server.PrivateHostID.String(),
 					Disks:             c.disks,

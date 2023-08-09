@@ -18,6 +18,12 @@ resources:
         memory: 4
       - core: 4
         memory: 8
+
+    # スペック
+    # dedicated_cpu: false
+    # gpu: 0
+    # cpu_model: amd_epyc_7713p
+
     # スケール時の動作オプション
     shutdown_force: true
 
@@ -58,6 +64,8 @@ resources:
         core: 2
         memory: 4
         dedicated_cpu: false
+        # gpu: 0
+        # cpu_model: amd_epyc_7713p
 
       # NICs
       network_interfaces:
