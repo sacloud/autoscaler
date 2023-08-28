@@ -14,25 +14,29 @@
 
 package handlers
 
-import "github.com/sacloud/autoscaler/log"
+import (
+	"log/slog"
+
+	"github.com/sacloud/autoscaler/log"
+)
 
 type HandlerLogger struct {
-	Logger *log.Logger
+	Logger *slog.Logger
 }
 
-func (l *HandlerLogger) GetLogger() *log.Logger {
+func (l *HandlerLogger) GetLogger() *slog.Logger {
 	if l.Logger == nil {
 		l.Logger = log.NewLogger(&log.LoggerOption{
 			Writer:    nil,
 			JSON:      false,
 			TimeStamp: true,
 			Caller:    false,
-			Level:     log.LevelInfo,
+			Level:     slog.LevelInfo,
 		})
 	}
 	return l.Logger
 }
 
-func (l *HandlerLogger) SetLogger(logger *log.Logger) {
+func (l *HandlerLogger) SetLogger(logger *slog.Logger) {
 	l.Logger = logger
 }

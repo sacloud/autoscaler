@@ -16,6 +16,7 @@ package core
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/sacloud/autoscaler/request"
 	"google.golang.org/grpc/codes"
@@ -36,20 +37,15 @@ func NewScalingService(instance *Core) *ScalingService {
 }
 
 func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	keyvals := []interface{}{
-		"request", requestTypeUp,
-		"message", "request received",
+	logger := s.instance.logger.With(
+		"request", requestTypeUp.String(),
 		"resource", req.ResourceName,
-	}
+	)
 	if req.DesiredStateName != "" {
-		keyvals = append(keyvals, "desired", req.DesiredStateName)
+		logger = logger.With("desired", req.DesiredStateName)
 	}
-	if err := s.instance.logger.Info(keyvals...); err != nil {
-		return nil, err
-	}
-	if err := s.instance.logger.Debug("request", req); err != nil {
-		return nil, err
-	}
+	logger.Info("request received")
+	logger.Debug("", slog.Any("request", req))
 
 	resourceName, err := s.instance.ResourceName(req.ResourceName)
 	if err != nil {
@@ -76,21 +72,15 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 }
 
 func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
-	keyvals := []interface{}{
-		"request", requestTypeDown,
-		"message", "request received",
+	logger := s.instance.logger.With(
+		"request", requestTypeUp.String(),
 		"resource", req.ResourceName,
-	}
+	)
 	if req.DesiredStateName != "" {
-		keyvals = append(keyvals, "desired", req.DesiredStateName)
+		logger = logger.With("desired", req.DesiredStateName)
 	}
-
-	if err := s.instance.logger.Info(keyvals...); err != nil {
-		return nil, err
-	}
-	if err := s.instance.logger.Debug("request", req); err != nil {
-		return nil, err
-	}
+	logger.Info("request received")
+	logger.Debug("", slog.Any("request", req))
 
 	resourceName, err := s.instance.ResourceName(req.ResourceName)
 	if err != nil {

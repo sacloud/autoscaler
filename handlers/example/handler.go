@@ -15,9 +15,10 @@
 package example
 
 import (
+	"log/slog"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 )
 
@@ -29,7 +30,7 @@ type Handler struct {
 }
 
 // NewHandler .
-func NewHandler(listenAddr string, configPath string, logger *log.Logger) *Handler {
+func NewHandler(listenAddr string, configPath string, logger *slog.Logger) *Handler {
 	return &Handler{
 		HandlerLogger: handlers.HandlerLogger{Logger: logger},
 		listenAddress: listenAddr,
@@ -74,9 +75,7 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 
 	// TODO ここで実際の処理を実装する
 
-	if err := h.GetLogger().Debug("request", req); err != nil {
-		return err
-	}
+	h.GetLogger().Debug("Handle() received request", slog.Any("request", req))
 
 	// 完了メッセージ
 	return ctx.Report(handler.HandleResponse_DONE)

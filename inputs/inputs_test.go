@@ -18,12 +18,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"testing"
 
 	"github.com/prometheus/common/expfmt"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/metrics"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
@@ -56,7 +56,7 @@ func (i *fakeInput) ListenAddress() string {
 func (i *fakeInput) ConfigPath() string {
 	return i.configPath
 }
-func (i *fakeInput) GetLogger() *log.Logger {
+func (i *fakeInput) GetLogger() *slog.Logger {
 	return test.Logger
 }
 

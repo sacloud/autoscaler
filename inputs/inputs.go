@@ -17,6 +17,7 @@ package inputs
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -27,7 +28,6 @@ import (
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/metrics"
 	"github.com/sacloud/autoscaler/request"
 	"google.golang.org/grpc"
@@ -48,7 +48,7 @@ type Input interface {
 	Destination() string
 	ListenAddress() string
 	ConfigPath() string
-	GetLogger() *log.Logger
+	GetLogger() *slog.Logger
 }
 
 func FullName(input Input) string {
@@ -81,7 +81,7 @@ func Serve(ctx context.Context, input Input) error {
 	case err := <-errCh:
 		return fmt.Errorf("inputs service failed: %s", err)
 	case <-ctx.Done():
-		input.GetLogger().Info("message", "shutting down", "error", ctx.Err()) //nolint
+		input.GetLogger().Info("shutting down", slog.Any("error", ctx.Err()))
 	}
 	return ctx.Err()
 }
@@ -115,7 +115,7 @@ type server struct {
 	listenAddress string
 	webConfigPath string
 	input         Input
-	logger        *log.Logger
+	logger        *slog.Logger
 	config        *Config
 
 	*http.Server
@@ -175,10 +175,7 @@ func (s *server) listenAndServe() error {
 }
 
 func (s *server) serve(l net.Listener) error {
-	if err := s.logger.Info("message", "started", "address", l.Addr().String()); err != nil {
-		return err
-	}
-
+	s.logger.Info("started", slog.String("address", l.Addr().String()))
 	return s.Serve(l)
 }
 
@@ -199,25 +196,24 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	s.logger.Info("message", "sending request to the Core server", "request-type", scalingReq.RequestType) //nolint
+	s.logger.Info(
+		"sending request to the Core server",
+		slog.String("request-type", scalingReq.RequestType),
+	)
 
 	res, err := s.send(scalingReq)
 	if err != nil {
-		s.logger.Error("error", err) //nolint
+		s.logger.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if err := s.logger.Info(
-		"message", "webhook handled",
-		"status", res.Status,
-		"job-id", res.ScalingJobId,
-		"job-message", res.Message,
-	); err != nil {
-		s.logger.Error("error", err) //nolint
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	s.logger.Info(
+		"webhook handled",
+		slog.String("status", res.Status.String()),
+		slog.String("job-id", res.ScalingJobId),
+		slog.String("job-message", res.Message),
+	)
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -225,26 +221,20 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 }
 
 func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRequest, error) {
-	if err := s.logger.Info("message", "webhook received"); err != nil {
-		return nil, err
-	}
+	s.logger.Info("webhook received")
 
 	dump, err := httputil.DumpRequest(req, true)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.logger.Debug("request", string(dump)); err != nil {
-		return nil, err
-	}
+	s.logger.Debug("", slog.String("request", string(dump)))
 
 	shouldAccept, err := s.input.ShouldAccept(req)
 	if err != nil {
 		return nil, err
 	}
 	if !shouldAccept {
-		if err := s.logger.Info("message", "webhook ignored"); err != nil {
-			return nil, err
-		}
+		s.logger.Info("webhook ignored")
 		return nil, nil
 	}
 

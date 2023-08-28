@@ -16,6 +16,7 @@ package core
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"testing"
 	"time"
@@ -239,7 +240,7 @@ func TestCore_Stop(t *testing.T) {
 		c := &Core{
 			logger: log.NewLogger(&log.LoggerOption{
 				Writer: os.Stderr,
-				Level:  log.LevelInfo,
+				Level:  slog.LevelInfo,
 			}),
 		}
 
@@ -252,7 +253,7 @@ func TestCore_Stop(t *testing.T) {
 		c := &Core{
 			logger: log.NewLogger(&log.LoggerOption{
 				Writer: os.Stderr,
-				Level:  log.LevelInfo,
+				Level:  slog.LevelInfo,
 			}),
 			running: true,
 		}
@@ -270,7 +271,7 @@ func TestCore_Stop(t *testing.T) {
 		c := &Core{
 			logger: log.NewLogger(&log.LoggerOption{
 				Writer: os.Stderr,
-				Level:  log.LevelInfo,
+				Level:  slog.LevelInfo,
 			}),
 			running: true,
 		}

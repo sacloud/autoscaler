@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"time"
 
@@ -28,7 +29,6 @@ import (
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handlers/builtins"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/iaas-api-go"
 	health "google.golang.org/grpc/health/grpc_health_v1"
@@ -42,11 +42,11 @@ type Config struct {
 	AutoScaler     AutoScalerConfig    `yaml:"autoscaler"`                    // オートスケーラー自体の動作設定
 
 	strictMode bool
-	logger     *log.Logger
+	logger     *slog.Logger
 }
 
 // NewConfigFromPath 指定のファイルパスからコンフィギュレーションを読み取ってConfigを作成する
-func NewConfigFromPath(ctx context.Context, filePath string, strictMode bool, logger *log.Logger) (*Config, error) {
+func NewConfigFromPath(ctx context.Context, filePath string, strictMode bool, logger *slog.Logger) (*Config, error) {
 	reader, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("opening configuration file failed: %s error: %s", filePath, err)

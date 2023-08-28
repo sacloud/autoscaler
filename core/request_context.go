@@ -16,9 +16,8 @@ package core
 
 import (
 	"context"
+	"log/slog"
 	"time"
-
-	"github.com/sacloud/autoscaler/log"
 )
 
 // RequestContext 1リクエストのスコープに対応するコンテキスト、context.Contextを実装し、リクエスト情報や現在のジョブの情報を保持する
@@ -26,14 +25,14 @@ type RequestContext struct {
 	ctx     context.Context
 	request *requestInfo
 	job     *JobStatus
-	logger  *log.Logger
+	logger  *slog.Logger
 	zone    string
 
 	handled bool
 }
 
 // NewRequestContext 新しいリクエストコンテキストを生成する
-func NewRequestContext(parent context.Context, request *requestInfo, logger *log.Logger) *RequestContext {
+func NewRequestContext(parent context.Context, request *requestInfo, logger *slog.Logger) *RequestContext {
 	logger = logger.With("request", request.requestType, "source", request.source, "resource", request.resourceName)
 	return &RequestContext{
 		ctx:     parent,
@@ -79,7 +78,7 @@ func (c *RequestContext) Request() *requestInfo {
 }
 
 // Logger 現在のコンテキストのロガーを返す
-func (c *RequestContext) Logger() *log.Logger {
+func (c *RequestContext) Logger() *slog.Logger {
 	return c.logger
 }
 

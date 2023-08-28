@@ -16,6 +16,8 @@ package handlers
 
 import (
 	"context"
+	"log/slog"
+	"os"
 
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/handler"
@@ -46,8 +48,8 @@ func (h *handleService) listenAndServe(ctx context.Context) error {
 
 	grpcServer, listener, cleanup, err := grpcutil.Server(opts)
 	if err != nil {
-		h.Handler.GetLogger().Fatal("fatal", err)
-		return err // 到達しない
+		h.Handler.GetLogger().Error(err.Error())
+		os.Exit(1)
 	}
 
 	handler.RegisterHandleServiceServer(grpcServer, h)
@@ -60,9 +62,7 @@ func (h *handleService) listenAndServe(ctx context.Context) error {
 	}()
 
 	go func() {
-		if err := h.Handler.GetLogger().Info("message", "started", "address", listener.Addr().String()); err != nil {
-			errCh <- err
-		}
+		h.Handler.GetLogger().Info("started", slog.String("address", listener.Addr().String()))
 		if err := grpcServer.Serve(listener); err != nil {
 			errCh <- err
 		}
@@ -72,7 +72,7 @@ func (h *handleService) listenAndServe(ctx context.Context) error {
 	case err := <-errCh:
 		return err
 	case <-ctx.Done():
-		h.Handler.GetLogger().Info("message", "shutting down", "error", ctx.Err()) //nolint
+		h.Handler.GetLogger().Info("shutting down", slog.Any("error", ctx.Err()))
 	}
 	return ctx.Err()
 }
@@ -84,20 +84,20 @@ func (h *handleService) PreHandle(req *handler.HandleRequest, server handler.Han
 		"handler", handlerFullName(h.Handler),
 	)
 
+	logger.Debug("PreHandle() received request", slog.String("request", req.String()))
 	if impl, ok := h.Handler.(PreHandler); ok {
-		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
-			return err
-		}
-		if err := logger.Debug("request", req.String()); err != nil {
-			return err
-		}
+		logger.Info(
+			"PreHandle() received request",
+			slog.String("status", handler.HandleResponse_RECEIVED.String()),
+		)
 		return impl.PreHandle(req, server)
 	}
 
-	if err := logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
-		return err
-	}
-	return logger.Debug("request", req.String())
+	logger.Info(
+		"PreHandle() ignored request",
+		slog.String("status", handler.HandleResponse_IGNORED.String()),
+	)
+	return nil
 }
 
 func (h *handleService) Handle(req *handler.HandleRequest, server handler.HandleService_HandleServer) error {
@@ -107,20 +107,20 @@ func (h *handleService) Handle(req *handler.HandleRequest, server handler.Handle
 		"handler", handlerFullName(h.Handler),
 	)
 
+	logger.Debug("Handle() received request", slog.String("request", req.String()))
 	if impl, ok := h.Handler.(Handler); ok {
-		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
-			return err
-		}
-		if err := logger.Debug("request", req.String()); err != nil {
-			return err
-		}
+		logger.Info(
+			"Handle() received request",
+			slog.String("status", handler.HandleResponse_RECEIVED.String()),
+		)
 		return impl.Handle(req, server)
 	}
 
-	if err := logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
-		return err
-	}
-	return logger.Debug("request", req.String())
+	logger.Info(
+		"Handle() ignored request",
+		slog.String("status", handler.HandleResponse_IGNORED.String()),
+	)
+	return nil
 }
 
 func (h *handleService) PostHandle(req *handler.PostHandleRequest, server handler.HandleService_PostHandleServer) error {
@@ -130,20 +130,20 @@ func (h *handleService) PostHandle(req *handler.PostHandleRequest, server handle
 		"handler", handlerFullName(h.Handler),
 	)
 
+	logger.Debug("PostHandle() received request", slog.String("request", req.String()))
 	if impl, ok := h.Handler.(PostHandler); ok {
-		if err := logger.Info("status", handler.HandleResponse_RECEIVED); err != nil {
-			return err
-		}
-		if err := logger.Debug("request", req.String()); err != nil {
-			return err
-		}
+		logger.Info(
+			"PostHandle() received request",
+			slog.String("status", handler.HandleResponse_RECEIVED.String()),
+		)
 		return impl.PostHandle(req, server)
 	}
 
-	if err := logger.Info("status", handler.HandleResponse_IGNORED); err != nil {
-		return err
-	}
-	return logger.Debug("request", req.String())
+	logger.Info(
+		"PostHandle() ignored request",
+		slog.String("status", handler.HandleResponse_IGNORED.String()),
+	)
+	return nil
 }
 
 // Check gRPCヘルスチェックの実装

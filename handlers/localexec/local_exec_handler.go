@@ -17,11 +17,11 @@ package localexec
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"os/exec"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 )
 
@@ -34,7 +34,7 @@ type Handler struct {
 }
 
 // NewHandler .
-func NewHandler(listenAddr, configPath, executable, handlerType string, logger *log.Logger) *Handler {
+func NewHandler(listenAddr, configPath, executable, handlerType string, logger *slog.Logger) *Handler {
 	return &Handler{
 		HandlerLogger:  handlers.HandlerLogger{Logger: logger},
 		listenAddress:  listenAddr,
@@ -69,7 +69,8 @@ func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.Response
 		ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 		return h.handle(ctx, req.JSON())
 	}
-	return h.GetLogger().Info("status", handler.HandleResponse_IGNORED)
+	h.GetLogger().Info("PreHandle() received request but ignored")
+	return nil
 }
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
@@ -77,7 +78,8 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 		ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 		return h.handle(ctx, req.JSON())
 	}
-	return h.GetLogger().Info("status", handler.HandleResponse_IGNORED)
+	h.GetLogger().Info("Handle() received request but ignored")
+	return nil
 }
 
 func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
@@ -85,17 +87,16 @@ func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.Res
 		ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
 		return h.handle(ctx, req.JSON())
 	}
-	return h.GetLogger().Info("status", handler.HandleResponse_IGNORED)
+	h.GetLogger().Info("PostHandle() received request but ignored")
+	return nil
 }
 
 func (h *Handler) handle(ctx *handlers.HandlerContext, req []byte) error {
-	logger := h.GetLogger()
-	if err := logger.Debug("status", handler.HandleResponse_RECEIVED); err != nil {
-		return err
-	}
-	if err := logger.Debug("request", string(req)); err != nil {
-		return err
-	}
+	h.GetLogger().Debug(
+		"handle() received request",
+		slog.String("status", handler.HandleResponse_RECEIVED.String()),
+		slog.String("request", string(req)),
+	)
 
 	return h.execute(ctx, req)
 }
@@ -108,13 +109,13 @@ func (h *Handler) execute(ctx *handlers.HandlerContext, args []byte) error {
 	output, err := cmd.Output()
 	if err != nil {
 		wrapped := fmt.Errorf("command %q returned non zero status: %s", h.executablePath, err)
-		if err := h.GetLogger().Error("error", wrapped); err != nil {
-			return err
-		}
+		h.GetLogger().Error(wrapped.Error())
 		return wrapped
 	}
-	if err := h.GetLogger().Info("status", handler.HandleResponse_DONE, "output", string(output)); err != nil {
-		return err
-	}
+	h.GetLogger().Info(
+		"execute()",
+		slog.String("status", handler.HandleResponse_DONE.String()),
+		slog.String("output", string(output)),
+	)
 	return ctx.Report(handler.HandleResponse_DONE, string(output))
 }

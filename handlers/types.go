@@ -15,12 +15,12 @@
 package handlers
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/autoscaler/log"
 )
 
 // CustomHandler カスタムハンドラーが実装すべきインターフェース
@@ -43,8 +43,8 @@ type HandlerMeta interface {
 
 // Logger ログ出力のためのインターフェース
 type Logger interface {
-	GetLogger() *log.Logger
-	SetLogger(logger *log.Logger)
+	GetLogger() *slog.Logger
+	SetLogger(logger *slog.Logger)
 }
 
 // Listener gRPCサーバとしてリッスンするためのインターフェース

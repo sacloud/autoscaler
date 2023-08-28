@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os/exec"
 
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 )
 
@@ -29,13 +29,13 @@ type Input struct {
 	dest       string
 	addr       string
 	configPath string
-	logger     *log.Logger
+	logger     *slog.Logger
 
 	acceptHTTPMethods []string
 	executablePath    string
 }
 
-func NewInput(dest, addr, configPath string, logger *log.Logger, acceptHTTPMethods []string, executablePath string) (*Input, error) {
+func NewInput(dest, addr, configPath string, logger *slog.Logger, acceptHTTPMethods []string, executablePath string) (*Input, error) {
 	if len(acceptHTTPMethods) == 0 {
 		return nil, fmt.Errorf("acceptHTTPMethod: required")
 	}
@@ -78,7 +78,7 @@ func (in *Input) ConfigPath() string {
 	return in.configPath
 }
 
-func (in *Input) GetLogger() *log.Logger {
+func (in *Input) GetLogger() *slog.Logger {
 	return in.logger
 }
 

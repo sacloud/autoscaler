@@ -296,21 +296,18 @@ func (h *Handler) handleHandlerResponse(ctx *HandlingContext, receiver handlerRe
 		if err != nil {
 			return err
 		}
-		kvs := []interface{}{"status", stat.Status}
+		logger := ctx.Logger().With("status", stat.Status.String())
 		if stat.Log != "" {
-			kvs = append(kvs, "log", stat.Log)
+			logger = logger.With("log", stat.Log)
 		}
 
 		handleHandlerResponseStatus(ctx, stat.Status)
 
 		if stat.Status == handler.HandleResponse_IGNORED && stat.Log == "" {
-			if err := ctx.Logger().Debug(kvs...); err != nil {
-				return err
-			}
+			logger.Debug("")
+			return nil
 		}
-		if err := ctx.Logger().Info(kvs...); err != nil {
-			return err
-		}
+		logger.Info("")
 	}
 	return nil
 }
@@ -327,15 +324,16 @@ type builtinResponseSender struct {
 }
 
 func (s *builtinResponseSender) Send(res *handler.HandleResponse) error {
-	kvs := []interface{}{"status", res.Status}
+	logger := s.ctx.logger.With("status", res.Status)
 	if res.Log != "" {
-		kvs = append(kvs, "log", res.Log)
+		logger = logger.With("log", res.Log)
 	}
 
 	handleHandlerResponseStatus(s.ctx, res.Status)
 
 	if res.Status == handler.HandleResponse_IGNORED && res.Log == "" {
-		return s.ctx.Logger().Debug(kvs...)
+		logger.Debug("")
 	}
-	return s.ctx.Logger().Info(kvs...)
+	logger.Info("")
+	return nil
 }

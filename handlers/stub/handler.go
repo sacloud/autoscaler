@@ -15,6 +15,7 @@
 package stub
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/sacloud/autoscaler/handler"
@@ -28,7 +29,7 @@ type Handler struct {
 	PreHandleFunc  func(*handler.HandleRequest, handlers.ResponseSender) error
 	HandleFunc     func(*handler.HandleRequest, handlers.ResponseSender) error
 	PostHandleFunc func(*handler.PostHandleRequest, handlers.ResponseSender) error
-	Logger         *log.Logger
+	Logger         *slog.Logger
 }
 
 func (h *Handler) Name() string {
@@ -39,7 +40,7 @@ func (h *Handler) Version() string {
 	return version.FullVersion()
 }
 
-func (h *Handler) GetLogger() *log.Logger {
+func (h *Handler) GetLogger() *slog.Logger {
 	if h.Logger != nil {
 		return h.Logger
 	}
@@ -48,11 +49,11 @@ func (h *Handler) GetLogger() *log.Logger {
 		JSON:      false,
 		TimeStamp: true,
 		Caller:    true,
-		Level:     log.LevelDebug,
+		Level:     slog.LevelDebug,
 	})
 }
 
-func (h *Handler) SetLogger(logger *log.Logger) {
+func (h *Handler) SetLogger(logger *slog.Logger) {
 	h.Logger = logger
 }
 

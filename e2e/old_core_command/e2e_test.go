@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	coreReadyMarker = `message=started address=autoscaler.sock`
+	coreReadyMarker = `msg=started address=autoscaler.sock`
 )
 
 var (

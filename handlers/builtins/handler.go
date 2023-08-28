@@ -15,9 +15,10 @@
 package builtins
 
 import (
+	"log/slog"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/iaas-api-go"
 )
 
@@ -36,11 +37,11 @@ func (h *Handler) Version() string {
 	return h.Builtin.Version()
 }
 
-func (h *Handler) GetLogger() *log.Logger {
+func (h *Handler) GetLogger() *slog.Logger {
 	return h.Builtin.GetLogger()
 }
 
-func (h *Handler) SetLogger(logger *log.Logger) {
+func (h *Handler) SetLogger(logger *slog.Logger) {
 	h.Builtin.SetLogger(logger)
 }
 
@@ -59,57 +60,60 @@ func (h *Handler) SetAPICaller(caller iaas.APICaller) {
 
 func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
-	if err := logger.Debug("status", handler.HandleResponse_RECEIVED); err != nil {
-		return err
-	}
-	if err := logger.Debug("request", req.String()); err != nil {
-		return err
-	}
+	logger.Debug(
+		"PreHandle() received request",
+		slog.String("status", handler.HandleResponse_RECEIVED.String()),
+		slog.String("request", req.String()),
+	)
 
 	if builtin, ok := h.Builtin.(handlers.PreHandler); ok {
 		return builtin.PreHandle(req, sender)
 	}
 
-	if err := logger.Debug("status", handler.HandleResponse_IGNORED); err != nil {
-		return err
-	}
-	return logger.Debug("request", req.String())
+	logger.Debug(
+		"PreHandle() ignored request",
+		slog.String("status", handler.HandleResponse_IGNORED.String()),
+		slog.String("request", req.String()),
+	)
+	return nil
 }
 
 func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
-	if err := logger.Debug("status", handler.HandleResponse_RECEIVED); err != nil {
-		return err
-	}
-	if err := logger.Debug("request", req.String()); err != nil {
-		return err
-	}
+	logger.Debug(
+		"Handle() received request",
+		slog.String("status", handler.HandleResponse_RECEIVED.String()),
+		slog.String("request", req.String()),
+	)
 
 	if builtin, ok := h.Builtin.(handlers.Handler); ok {
 		return builtin.Handle(req, sender)
 	}
 
-	if err := logger.Debug("status", handler.HandleResponse_IGNORED); err != nil {
-		return err
-	}
-	return logger.Debug("request", req.String())
+	logger.Debug(
+		"Handle() ignored request",
+		slog.String("status", handler.HandleResponse_IGNORED.String()),
+		slog.String("request", req.String()),
+	)
+	return nil
 }
 
 func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
-	if err := logger.Debug("status", handler.HandleResponse_RECEIVED); err != nil {
-		return err
-	}
-	if err := logger.Debug("request", req.String()); err != nil {
-		return err
-	}
+	logger.Debug(
+		"PostHandle() received request",
+		slog.String("status", handler.HandleResponse_RECEIVED.String()),
+		slog.String("request", req.String()),
+	)
 
 	if builtin, ok := h.Builtin.(handlers.PostHandler); ok {
 		return builtin.PostHandle(req, sender)
 	}
 
-	if err := logger.Debug("status", handler.HandleResponse_IGNORED); err != nil {
-		return err
-	}
-	return logger.Debug("request", req.String())
+	logger.Debug(
+		"PostHandle() ignored request",
+		slog.String("status", handler.HandleResponse_IGNORED.String()),
+		slog.String("request", req.String()),
+	)
+	return nil
 }

@@ -15,6 +15,7 @@
 package flags
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/sacloud/autoscaler/log"
@@ -25,6 +26,21 @@ import (
 type logFlags struct {
 	LogLevel  string `name:"--log-level" validate:"required,oneof=error warn info debug"`
 	LogFormat string `name:"--log-format" validate:"required,oneof=logfmt json"`
+}
+
+func (l *logFlags) slogLevel() slog.Level {
+	switch l.LogLevel {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
 }
 
 var logs = &logFlags{
@@ -41,12 +57,12 @@ func ValidateLogFlags(*cobra.Command, []string) error {
 	return validate.Struct(logs)
 }
 
-func NewLogger() *log.Logger {
+func NewLogger() *slog.Logger {
 	return log.NewLogger(&log.LoggerOption{
 		Writer:    os.Stderr,
 		JSON:      logs.LogFormat == "json",
 		TimeStamp: true,
 		Caller:    false,
-		Level:     log.Level(logs.LogLevel),
+		Level:     logs.slogLevel(),
 	})
 }

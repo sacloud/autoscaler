@@ -15,9 +15,9 @@
 package zabbix
 
 import (
+	"log/slog"
 	"net/http"
 
-	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/version"
 )
 
@@ -25,10 +25,10 @@ type Input struct {
 	dest       string
 	addr       string
 	configPath string
-	logger     *log.Logger
+	logger     *slog.Logger
 }
 
-func NewInput(dest, addr, configPath string, logger *log.Logger) *Input {
+func NewInput(dest, addr, configPath string, logger *slog.Logger) *Input {
 	return &Input{
 		dest:       dest,
 		addr:       addr,
@@ -57,7 +57,7 @@ func (in *Input) ConfigPath() string {
 	return in.configPath
 }
 
-func (in *Input) GetLogger() *log.Logger {
+func (in *Input) GetLogger() *slog.Logger {
 	return in.logger
 }
 

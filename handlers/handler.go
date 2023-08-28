@@ -17,7 +17,9 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
+	"os"
 
 	"github.com/sacloud/autoscaler/metrics"
 )
@@ -54,9 +56,9 @@ func Serve(ctx context.Context, handler CustomHandler) error {
 	for {
 		select {
 		case err := <-errCh:
-			logger.Error("error", err) //nolint
+			logger.Error("handler reported un error", slog.Any("error", err))
 		case <-ctx.Done():
-			logger.Info("message", "shutting down", "error", ctx.Err()) //nolint
+			logger.Info("shutting down", slog.Any("error", ctx.Err()))
 			return ctx.Err()
 		}
 	}
@@ -94,7 +96,8 @@ func handlerFullName(server HandlerMeta) string {
 
 func validateHandlerInterfaces(server HandlerMeta) {
 	if _, ok := server.(Listener); !ok {
-		server.GetLogger().Fatal("fatal", "Handler must be implemented Listener interface")
+		server.GetLogger().Error("Handler must be implemented Listener interface")
+		os.Exit(1)
 	}
 
 	if _, ok := server.(PreHandler); ok {
@@ -106,5 +109,6 @@ func validateHandlerInterfaces(server HandlerMeta) {
 	if _, ok := server.(PostHandler); ok {
 		return
 	}
-	server.GetLogger().Fatal("fatal", "At least one of the following must be implemented: PreHandler or Handler or PostHandler")
+	server.GetLogger().Error("At least one of the following must be implemented: PreHandler or Handler or PostHandler")
+	os.Exit(1)
 }
