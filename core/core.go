@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"sync"
 	"time"
@@ -35,7 +36,7 @@ type Core struct {
 	listenAddress string
 	config        *Config
 	jobs          map[string]*JobStatus
-	logger        *log.Logger
+	logger        *slog.Logger
 
 	mu          sync.RWMutex
 	running     bool
@@ -43,7 +44,7 @@ type Core struct {
 	shutdownErr error
 }
 
-func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) {
+func newCoreInstance(addr string, c *Config, logger *slog.Logger) (*Core, error) {
 	metrics.InitErrorCount("core")
 	metrics.InitErrorCount("core_to_handlers")
 
@@ -56,21 +57,18 @@ func newCoreInstance(addr string, c *Config, logger *log.Logger) (*Core, error) 
 }
 
 // LoadAndValidate 指定のファイルパスからコンフィグを読み込み、バリデーションを行う
-func LoadAndValidate(ctx context.Context, configPath string, strictMode bool, logger *log.Logger) (*Config, error) {
+func LoadAndValidate(ctx context.Context, configPath string, strictMode bool, logger *slog.Logger) (*Config, error) {
 	if logger == nil {
 		logger = log.NewLogger(nil)
 	}
-	if err := logger.Debug("message", "loading config", "config", configPath); err != nil {
-		return nil, err
-	}
+	logger.Debug("loading config", slog.String("config-path", configPath))
+
 	config, err := NewConfigFromPath(ctx, configPath, strictMode, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := logger.Debug("message", "validating config"); err != nil {
-		return nil, err
-	}
+	logger.Debug("validating config")
 	if err := config.Validate(ctx); err != nil {
 		return nil, err
 	}
@@ -78,14 +76,12 @@ func LoadAndValidate(ctx context.Context, configPath string, strictMode bool, lo
 }
 
 // New 指定のファイルパスからコンフィグを読み込み、Coreのインスタンスを生成して返すgRPCサーバとしてリッスンを開始する
-func New(ctx context.Context, addr, configPath string, strictMode bool, logger *log.Logger) (*Core, error) {
-	if err := logger.Info("message", "starting..."); err != nil {
-		return nil, err
-	}
+func New(ctx context.Context, addr, configPath string, strictMode bool, logger *slog.Logger) (*Core, error) {
+	logger.Info("starting...")
 	return newInstanceFromConfig(ctx, addr, configPath, strictMode, logger)
 }
 
-func newInstanceFromConfig(ctx context.Context, addr, configPath string, strictMode bool, logger *log.Logger) (*Core, error) {
+func newInstanceFromConfig(ctx context.Context, addr, configPath string, strictMode bool, logger *slog.Logger) (*Core, error) {
 	config, err := LoadAndValidate(ctx, configPath, strictMode, logger)
 	if err != nil {
 		return nil, err
@@ -98,7 +94,7 @@ func newInstanceFromConfig(ctx context.Context, addr, configPath string, strictM
 	return instance, nil
 }
 
-func ResourcesTree(parentCtx context.Context, addr, configPath string, strictMode bool, logger *log.Logger) (string, error) {
+func ResourcesTree(parentCtx context.Context, addr, configPath string, strictMode bool, logger *slog.Logger) (string, error) {
 	instance, err := newInstanceFromConfig(parentCtx, addr, configPath, strictMode, logger)
 	if err != nil {
 		return "", err
@@ -150,16 +146,14 @@ func (c *Core) run(ctx context.Context) error {
 		}()
 		defer func() {
 			if err := server.Shutdown(ctx); err != nil {
-				c.logger.Error("error", err) //nolint
+				c.logger.Error(err.Error())
 			}
 			exporterListener.Close()
 		}()
 	}
 
 	go func() {
-		if err := c.logger.Info("message", "started", "address", listener.Addr().String()); err != nil {
-			errCh <- err
-		}
+		c.logger.Info("started", slog.String("address", listener.Addr().String()))
 		if err := server.Serve(listener); err != nil {
 			errCh <- err
 		}
@@ -169,7 +163,7 @@ func (c *Core) run(ctx context.Context) error {
 	case err := <-errCh:
 		return fmt.Errorf("core service failed: %s", err)
 	case <-ctx.Done():
-		c.logger.Info("message", "shutting down", "error", ctx.Err()) //nolint
+		c.logger.Info("shutting down", slog.Any("error", ctx.Err()))
 	}
 	return c.shutdownErr
 }
@@ -194,7 +188,10 @@ func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	job := c.currentJob(ctx)
 	if c.stopping {
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "core is shutting down") //nolint
+		ctx.Logger().Info(
+			"core is shutting down",
+			slog.String("status", request.ScalingJobStatus_JOB_IGNORED.String()),
+		)
 		return job, "core is shutting down", nil
 	}
 
@@ -204,26 +201,39 @@ func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
 	// 対象リソースグループを取得
 	rds, err := c.targetResourceDef(ctx)
 	if err != nil {
-		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) //nolint
+		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
+		ctx.Logger().Info(
+			"request has been canceled",
+			slog.String("status", request.ScalingJobStatus_JOB_CANCELED.String()),
+			slog.Any("error", err))
 		return job, "", err
 	}
 
 	// さくらのクラウドAPI経由で対象リソース情報を参照し最終更新日時を取得
 	lastModifiedAt, err := rds.LastModifiedAt(ctx, c.config.APIClient())
 	if err != nil {
-		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED)                             // まだ実行前のためCANCELEDを返す
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_CANCELED, "error", err) //nolint
+		job.SetStatus(request.ScalingJobStatus_JOB_CANCELED) // まだ実行前のためCANCELEDを返す
+		ctx.Logger().Info(
+			"request has been canceled",
+			slog.String("status", request.ScalingJobStatus_JOB_CANCELED.String()),
+			slog.Any("error", err),
+		)
 		return job, "", err
 	}
 
 	if !job.Acceptable(ctx.request.requestType, lastModifiedAt) {
-		ctx.Logger().Info("status", request.ScalingJobStatus_JOB_IGNORED, "message", "job is in an unacceptable state") //nolint
+		ctx.Logger().Info(
+			"job is in an unacceptable state",
+			slog.String("status", request.ScalingJobStatus_JOB_IGNORED.String()),
+		)
 		return job, "job is in an unacceptable state", nil
 	}
 
 	job.SetStatus(request.ScalingJobStatus_JOB_ACCEPTED)
-	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_ACCEPTED) //nolint
+	ctx.Logger().Info(
+		"request has been accepted",
+		slog.String("status", request.ScalingJobStatus_JOB_ACCEPTED.String()),
+	)
 
 	c.setRunningStatus(true)
 

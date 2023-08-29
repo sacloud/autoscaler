@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -113,11 +114,15 @@ func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient iaas.AP
 	}
 	job := ctx.Job()
 	job.SetStatus(request.ScalingJobStatus_JOB_RUNNING)
-	ctx.Logger().Info("status", request.ScalingJobStatus_JOB_RUNNING) //nolint
+	ctx.Logger().Info("", slog.String("status", request.ScalingJobStatus_JOB_RUNNING.String()))
 
 	if err := rds.handleAll(ctx, apiClient, handlers, *rds); err != nil {
 		job.SetStatus(request.ScalingJobStatus_JOB_FAILED)
-		ctx.Logger().Warn("status", request.ScalingJobStatus_JOB_FAILED, "error", err) //nolint
+		ctx.Logger().Warn(
+			"",
+			slog.String("status", request.ScalingJobStatus_JOB_FAILED.String()),
+			slog.Any("error", err),
+		)
 		return
 	}
 
@@ -127,7 +132,7 @@ func (rds *ResourceDefinitions) HandleAll(ctx *RequestContext, apiClient iaas.AP
 	}
 
 	job.SetStatus(status)
-	ctx.Logger().Info("status", status) //nolint
+	ctx.Logger().Info("", slog.String("status", status.String()))
 }
 
 func (rds *ResourceDefinitions) startProgressLogger(ctx *RequestContext) func() {
@@ -138,7 +143,7 @@ func (rds *ResourceDefinitions) startProgressLogger(ctx *RequestContext) func() 
 		for {
 			<-ticker.C
 			counter++
-			ctx.Logger().Info("message", fmt.Sprintf("%ds elapsed", counter*d)) //nolint
+			ctx.Logger().Info(fmt.Sprintf("%ds elapsed", counter*d))
 		}
 	}()
 

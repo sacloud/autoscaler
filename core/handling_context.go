@@ -15,8 +15,9 @@
 package core
 
 import (
+	"log/slog"
+
 	"github.com/sacloud/autoscaler/handler"
-	"github.com/sacloud/autoscaler/log"
 )
 
 // HandlingContext 1リクエスト中の1リソースに対するハンドリングのスコープに対応するコンテキスト
@@ -25,7 +26,7 @@ import (
 type HandlingContext struct {
 	*RequestContext
 	cachedComputed Computed
-	logger         *log.Logger
+	logger         *slog.Logger
 }
 
 func NewHandlingContext(parent *RequestContext, computed Computed) *HandlingContext {

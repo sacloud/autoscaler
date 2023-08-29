@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	coreReadyMarker   = `message=started address=autoscaler.sock`
+	coreReadyMarker   = `msg=started address=autoscaler.sock`
 	upJobDoneMarker   = `request=Up source=default resource=autoscaler-e2e-horizontal-scaling status=JOB_DONE`
 	downJobDoneMarker = `request=Down source=default resource=autoscaler-e2e-horizontal-scaling status=JOB_DONE`
 )

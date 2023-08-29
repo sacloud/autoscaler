@@ -16,6 +16,7 @@ package test
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"testing"
 
@@ -45,7 +46,7 @@ var (
 		JSON:      false,
 		TimeStamp: true,
 		Caller:    true,
-		Level:     log.LevelDebug,
+		Level:     slog.LevelDebug,
 	})
 )
 

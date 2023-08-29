@@ -71,10 +71,10 @@ func run(*cobra.Command, []string) error {
 	go func() {
 		<-signalCtx.Done()
 		if ctx.Err() != nil {
-			logger.Info("message", "signal received. waiting for shutdown...") //nolint: errcheck
+			logger.Info("signal received. waiting for shutdown...")
 		}
 		if err := coreInstance.Stop(); err != nil {
-			logger.Error("error", err) //nolint: errcheck
+			logger.Error(err.Error())
 		}
 		shutdown()
 	}()

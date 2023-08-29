@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"log/slog"
 	"os"
 
 	"github.com/goccy/go-yaml"
@@ -92,7 +93,7 @@ func (v *StringOrFilePath) IsFilePath() bool {
 	return v.isFilePath
 }
 
-func stringOrFilePath(s string, logger *log.Logger) (string, bool, error) {
+func stringOrFilePath(s string, logger *slog.Logger) (string, bool, error) {
 	if logger == nil {
 		logger = log.NewLogger(nil)
 	}
@@ -107,9 +108,10 @@ func stringOrFilePath(s string, logger *log.Logger) (string, bool, error) {
 
 	if err != nil {
 		if !os.IsNotExist(err) {
-			if err := logger.Warn("message", "got unknown error while processing StringOrFilePath", "error", err); err != nil {
-				return "", false, err
-			}
+			logger.Warn(
+				"got unknown error while processing StringOrFilePath",
+				slog.Any("error", err),
+			)
 		}
 		isFilePath = false
 		content = []byte(s)

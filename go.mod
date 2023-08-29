@@ -4,7 +4,6 @@ go 1.21
 
 require (
 	github.com/c-robinson/iplib v1.0.6
-	github.com/go-kit/log v0.2.1
 	github.com/go-playground/validator/v10 v10.15.0
 	github.com/goccy/go-yaml v1.11.0
 	github.com/hashicorp/errwrap v1.1.0
@@ -35,7 +34,6 @@ require (
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
-	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

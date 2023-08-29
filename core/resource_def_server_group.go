@@ -107,9 +107,7 @@ func (d *ResourceDefServerGroup) Validate(ctx context.Context, apiClient iaas.AP
 func (d *ResourceDefServerGroup) printWarningForServerNamePrefix(ctx context.Context) error {
 	if d.Name() != "" && d.ServerNamePrefix == "" {
 		if loggerHolder, ok := ctx.(config.LoggerHolder); ok {
-			if err := loggerHolder.Logger().Warn("message", "required: server_name_prefix"); err != nil {
-				return err
-			}
+			loggerHolder.Logger().Warn("required: server_name_prefix")
 		}
 	}
 	return nil

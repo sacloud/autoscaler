@@ -16,13 +16,13 @@ package metrics
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sacloud/autoscaler/log"
 )
 
 func handler() http.Handler {
@@ -49,11 +49,11 @@ func InitErrorCount(component string) {
 type Server struct {
 	ListenAddress string
 
-	logger *log.Logger
+	logger *slog.Logger
 	server *http.Server
 }
 
-func NewServer(addr string, logger *log.Logger) *Server {
+func NewServer(addr string, logger *slog.Logger) *Server {
 	return &Server{
 		ListenAddress: addr,
 		logger:        logger,
@@ -62,9 +62,7 @@ func NewServer(addr string, logger *log.Logger) *Server {
 }
 
 func (s *Server) Serve(listener net.Listener) error {
-	if err := s.logger.Info("message", "exporter started", "address", listener.Addr().String()); err != nil {
-		return err
-	}
+	s.logger.Info("exporter started", slog.String("address", listener.Addr().String()))
 
 	return s.server.Serve(listener)
 }
