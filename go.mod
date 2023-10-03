@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/c-robinson/iplib v1.0.6
-	github.com/go-playground/validator/v10 v10.15.0
+	github.com/go-playground/validator/v10 v10.15.5
 	github.com/goccy/go-yaml v1.11.0
 	github.com/hashicorp/errwrap v1.1.0
 	github.com/hashicorp/go-multierror v1.1.1
