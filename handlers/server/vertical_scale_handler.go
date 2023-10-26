@@ -15,6 +15,7 @@
 package server
 
 import (
+	"context"
 	"time"
 
 	"github.com/sacloud/autoscaler/handler"
@@ -47,8 +48,8 @@ func (h *VerticalScaleHandler) Version() string {
 	return version.FullVersion()
 }
 
-func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+func (h *VerticalScaleHandler) Handle(parentCtx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
+	ctx := handlers.NewHandlerContext(parentCtx, req.ScalingJobId, sender)
 	server := req.Desired.GetServer()
 
 	if server != nil {

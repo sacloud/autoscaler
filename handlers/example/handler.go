@@ -15,6 +15,7 @@
 package example
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/sacloud/autoscaler/handler"
@@ -63,8 +64,8 @@ func (h *Handler) ConfigPath() string {
  *************************************************/
 
 // Handle Coreからのメッセージのハンドリング
-func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+func (h *Handler) Handle(parentCtx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
+	ctx := handlers.NewHandlerContext(parentCtx, req.ScalingJobId, sender)
 
 	// TODO reqを参照しリクエストを処理すべきか判定
 

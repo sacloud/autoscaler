@@ -15,6 +15,7 @@
 package core
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/sacloud/autoscaler/handler"
@@ -34,6 +35,14 @@ func NewHandlingContext(parent *RequestContext, computed Computed) *HandlingCont
 		RequestContext: parent,
 		cachedComputed: computed,
 		logger:         parent.logger,
+	}
+}
+
+func (c *HandlingContext) WithContext(parent context.Context) *HandlingContext {
+	return &HandlingContext{
+		RequestContext: c.RequestContext.WithContext(parent),
+		cachedComputed: c.cachedComputed,
+		logger:         c.logger,
 	}
 }
 

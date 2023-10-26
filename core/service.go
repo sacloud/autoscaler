@@ -18,7 +18,10 @@ import (
 	"context"
 	"log/slog"
 
+	sacloudotel "github.com/sacloud/autoscaler/otel"
 	"github.com/sacloud/autoscaler/request"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	health "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
@@ -52,8 +55,20 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 		return nil, err
 	}
 
+	traceCtx, span := sacloudotel.Tracer().Start(context.Background(), "core.service.Up",
+		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithAttributes(
+			attribute.String("sacloud.autoscaler.request.type", requestTypeUp.String()),
+			attribute.String("sacloud.autoscaler.request.source", req.Source),
+			attribute.String("sacloud.autoscaler.request.resource_name", req.ResourceName),
+			attribute.String("sacloud.autoscaler.request.desired_state_name", req.DesiredStateName),
+			attribute.Bool("sacloud.autoscaler.request.sync", req.Sync),
+		),
+	)
+	defer span.End()
+
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
-	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
+	serviceCtx := NewRequestContext(traceCtx, &requestInfo{
 		requestType:      requestTypeUp,
 		source:           req.Source,
 		resourceName:     resourceName,
@@ -87,8 +102,20 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 		return nil, err
 	}
 
+	traceCtx, span := sacloudotel.Tracer().Start(context.Background(), "core.service.Down",
+		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithAttributes(
+			attribute.String("sacloud.autoscaler.request.type", requestTypeDown.String()),
+			attribute.String("sacloud.autoscaler.request.source", req.Source),
+			attribute.String("sacloud.autoscaler.request.resource_name", req.ResourceName),
+			attribute.String("sacloud.autoscaler.request.desired_state_name", req.DesiredStateName),
+			attribute.Bool("sacloud.autoscaler.request.sync", req.Sync),
+		),
+	)
+	defer span.End()
+
 	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
-	serviceCtx := NewRequestContext(context.Background(), &requestInfo{
+	serviceCtx := NewRequestContext(traceCtx, &requestInfo{
 		requestType:      requestTypeDown,
 		source:           req.Source,
 		resourceName:     resourceName,

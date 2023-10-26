@@ -26,9 +26,11 @@ import (
 	client "github.com/sacloud/api-client-go"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/autoscaler/version"
+	"github.com/sacloud/go-otelsetup"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/defaults"
 	"github.com/sacloud/iaas-api-go/helper/api"
+	sacloudtrace "github.com/sacloud/iaas-api-go/trace/otel"
 	"github.com/sacloud/iaas-api-go/types"
 )
 
@@ -74,6 +76,11 @@ func (sc *SakuraCloud) APIClient() iaas.APICaller {
 		sc.apiClient = api.NewCallerWithOptions(api.MergeOptions(options...))
 		// オートスケールでは時間のかかる状態変更待ち(大きなディスクのコピー待ちなど)はあまりない想定
 		defaults.DefaultStatePollingTimeout = 60 * time.Minute
+
+		// 環境変数OTEL_EXPORTER_OTLP_ENDPOINTが指定されていたらOpenTelemetryによるトレースを有効化
+		if otelsetup.Enabled() {
+			sacloudtrace.Initialize()
+		}
 	})
 	return sc.apiClient
 }

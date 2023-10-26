@@ -15,6 +15,7 @@
 package elb
 
 import (
+	"context"
 	"time"
 
 	"github.com/sacloud/autoscaler/handler"
@@ -44,8 +45,8 @@ func (h *VerticalScaleHandler) Version() string {
 	return version.FullVersion()
 }
 
-func (h *VerticalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+func (h *VerticalScaleHandler) Handle(parentCtx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
+	ctx := handlers.NewHandlerContext(parentCtx, req.ScalingJobId, sender)
 
 	elb := req.Desired.GetElb()
 	if elb != nil && req.Instruction == handler.ResourceInstructions_UPDATE {

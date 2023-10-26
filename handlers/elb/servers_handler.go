@@ -15,6 +15,8 @@
 package elb
 
 import (
+	"context"
+
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
@@ -51,8 +53,8 @@ func (h *ServersHandler) Version() string {
 	return version.FullVersion()
 }
 
-func (h *ServersHandler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+func (h *ServersHandler) PreHandle(parentCtx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
+	ctx := handlers.NewHandlerContext(parentCtx, req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Desired) {
 		switch req.Instruction {
@@ -77,8 +79,8 @@ func (h *ServersHandler) PreHandle(req *handler.HandleRequest, sender handlers.R
 	return ctx.Report(handler.HandleResponse_IGNORED)
 }
 
-func (h *ServersHandler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
-	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+func (h *ServersHandler) PostHandle(parentCtx context.Context, req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
+	ctx := handlers.NewHandlerContext(parentCtx, req.ScalingJobId, sender)
 
 	if h.shouldHandle(req.Current) {
 		switch req.Result {

@@ -15,11 +15,15 @@
 package builtins
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/handlers"
+	sacloudotel "github.com/sacloud/autoscaler/otel"
 	"github.com/sacloud/iaas-api-go"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Handler builtinハンドラーをラップし、リクエスト受付時のログ出力を担当するハンドラー
@@ -58,7 +62,7 @@ func (h *Handler) SetAPICaller(caller iaas.APICaller) {
 	}
 }
 
-func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) PreHandle(ctx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
 	logger.Debug(
 		"PreHandle() received request",
@@ -67,7 +71,14 @@ func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.Response
 	)
 
 	if builtin, ok := h.Builtin.(handlers.PreHandler); ok {
-		return builtin.PreHandle(req, sender)
+		ctx, span := sacloudotel.Tracer().Start(ctx, "handlers.PreHandle",
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.nane", h.Name())),
+			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.version", h.Version())),
+		)
+		defer span.End()
+
+		return builtin.PreHandle(ctx, req, sender)
 	}
 
 	logger.Debug(
@@ -78,7 +89,7 @@ func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.Response
 	return nil
 }
 
-func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) Handle(ctx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
 	logger.Debug(
 		"Handle() received request",
@@ -87,7 +98,14 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 	)
 
 	if builtin, ok := h.Builtin.(handlers.Handler); ok {
-		return builtin.Handle(req, sender)
+		ctx, span := sacloudotel.Tracer().Start(ctx, "handlers.Handle",
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.nane", h.Name())),
+			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.version", h.Version())),
+		)
+		defer span.End()
+
+		return builtin.Handle(ctx, req, sender)
 	}
 
 	logger.Debug(
@@ -98,7 +116,7 @@ func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSen
 	return nil
 }
 
-func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) PostHandle(ctx context.Context, req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	logger := h.Builtin.GetLogger()
 	logger.Debug(
 		"PostHandle() received request",
@@ -107,7 +125,14 @@ func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.Res
 	)
 
 	if builtin, ok := h.Builtin.(handlers.PostHandler); ok {
-		return builtin.PostHandle(req, sender)
+		ctx, span := sacloudotel.Tracer().Start(ctx, "handlers.PostHandle",
+			trace.WithSpanKind(trace.SpanKindClient),
+			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.nane", h.Name())),
+			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.version", h.Version())),
+		)
+		defer span.End()
+
+		return builtin.PostHandle(ctx, req, sender)
 	}
 
 	logger.Debug(

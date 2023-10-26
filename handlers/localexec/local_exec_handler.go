@@ -16,6 +16,7 @@ package localexec
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log/slog"
 	"os/exec"
@@ -64,27 +65,27 @@ func (h *Handler) ConfigPath() string {
 	return h.configPath
 }
 
-func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) PreHandle(parentCtx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	if h.handlerType == handlers.HandlerTypePreHandle {
-		ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+		ctx := handlers.NewHandlerContext(parentCtx, req.ScalingJobId, sender)
 		return h.handle(ctx, req.JSON())
 	}
 	h.GetLogger().Info("PreHandle() received request but ignored")
 	return nil
 }
 
-func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) Handle(parentCtx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	if h.handlerType == handlers.HandlerTypeHandle {
-		ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+		ctx := handlers.NewHandlerContext(parentCtx, req.ScalingJobId, sender)
 		return h.handle(ctx, req.JSON())
 	}
 	h.GetLogger().Info("Handle() received request but ignored")
 	return nil
 }
 
-func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) PostHandle(parentCtx context.Context, req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	if h.handlerType == handlers.HandlerTypePostHandle {
-		ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+		ctx := handlers.NewHandlerContext(parentCtx, req.ScalingJobId, sender)
 		return h.handle(ctx, req.JSON())
 	}
 	h.GetLogger().Info("PostHandle() received request but ignored")
