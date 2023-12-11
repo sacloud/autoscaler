@@ -11,7 +11,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/common v0.45.0
-	github.com/sacloud/api-client-go v0.2.9
+	github.com/sacloud/api-client-go v0.2.10
 	github.com/sacloud/iaas-api-go v1.11.2-0.20230808040020-104bc72d03c1
 	github.com/sacloud/iaas-service-go v1.9.2-0.20230808054001-efad52d748d4
 	github.com/sacloud/packages-go v0.0.9
@@ -38,7 +38,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.4 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.5 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/hc-install v0.5.2 // indirect
 	github.com/hashicorp/terraform-exec v0.18.1 // indirect
