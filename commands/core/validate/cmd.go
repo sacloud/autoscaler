@@ -24,6 +24,7 @@ import (
 	"github.com/sacloud/autoscaler/defaults"
 	sacloudotel "github.com/sacloud/autoscaler/otel"
 	"github.com/sacloud/autoscaler/validate"
+	"github.com/sacloud/go-otelsetup"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -57,7 +58,7 @@ func init() {
 }
 
 func run(_ *cobra.Command, args []string) {
-	ctx, span := sacloudotel.Tracer().Start(context.Background(), "core.validate",
+	ctx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "core.validate",
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(attribute.StringSlice("args", args)),
 	)

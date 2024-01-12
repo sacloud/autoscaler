@@ -20,6 +20,7 @@ import (
 
 	sacloudotel "github.com/sacloud/autoscaler/otel"
 	"github.com/sacloud/autoscaler/request"
+	"github.com/sacloud/go-otelsetup"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
@@ -55,7 +56,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 		return nil, err
 	}
 
-	traceCtx, span := sacloudotel.Tracer().Start(context.Background(), "core.service.Up",
+	traceCtx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "core.service.Up",
 		trace.WithSpanKind(trace.SpanKindServer),
 		trace.WithAttributes(
 			attribute.String("sacloud.autoscaler.request.type", requestTypeUp.String()),
@@ -102,7 +103,7 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 		return nil, err
 	}
 
-	traceCtx, span := sacloudotel.Tracer().Start(context.Background(), "core.service.Down",
+	traceCtx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "core.service.Down",
 		trace.WithSpanKind(trace.SpanKindServer),
 		trace.WithAttributes(
 			attribute.String("sacloud.autoscaler.request.type", requestTypeDown.String()),

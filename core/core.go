@@ -80,7 +80,7 @@ func LoadAndValidate(ctx context.Context, configPath string, strictMode bool, lo
 
 // New 指定のファイルパスからコンフィグを読み込み、Coreのインスタンスを生成して返すgRPCサーバとしてリッスンを開始する
 func New(ctx context.Context, addr, configPath string, strictMode bool, logger *slog.Logger) (*Core, error) {
-	ctx, span := sacloudotel.Tracer().Start(context.Background(), "core.New",
+	ctx, span := sacloudotel.Tracer().Start(ctx, "core.New",
 		trace.WithSpanKind(trace.SpanKindInternal),
 		trace.WithAttributes(attribute.String("config.path", configPath)),
 		trace.WithAttributes(attribute.Bool("config.strict", strictMode)),

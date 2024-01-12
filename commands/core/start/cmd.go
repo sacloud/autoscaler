@@ -23,6 +23,7 @@ import (
 	"github.com/sacloud/autoscaler/core"
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/validate"
+	"github.com/sacloud/go-otelsetup"
 	"github.com/spf13/cobra"
 )
 
@@ -55,7 +56,7 @@ func init() {
 }
 
 func run(*cobra.Command, []string) error {
-	ctx, shutdown := context.WithCancel(context.Background())
+	ctx, shutdown := context.WithCancel(otelsetup.ContextForTrace(context.Background()))
 	defer shutdown()
 
 	logger := flags.NewLogger()
