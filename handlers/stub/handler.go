@@ -15,6 +15,7 @@
 package stub
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -26,9 +27,9 @@ import (
 
 // Handler 単体テスト用のスタブハンドラ
 type Handler struct {
-	PreHandleFunc  func(*handler.HandleRequest, handlers.ResponseSender) error
-	HandleFunc     func(*handler.HandleRequest, handlers.ResponseSender) error
-	PostHandleFunc func(*handler.PostHandleRequest, handlers.ResponseSender) error
+	PreHandleFunc  func(context.Context, *handler.HandleRequest, handlers.ResponseSender) error
+	HandleFunc     func(context.Context, *handler.HandleRequest, handlers.ResponseSender) error
+	PostHandleFunc func(context.Context, *handler.PostHandleRequest, handlers.ResponseSender) error
 	Logger         *slog.Logger
 }
 
@@ -57,23 +58,23 @@ func (h *Handler) SetLogger(logger *slog.Logger) {
 	h.Logger = logger
 }
 
-func (h *Handler) PreHandle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) PreHandle(parentCtx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	if h.PreHandleFunc != nil {
-		return h.PreHandleFunc(req, sender)
+		return h.PreHandleFunc(parentCtx, req, sender)
 	}
 	return nil
 }
 
-func (h *Handler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) Handle(parentCtx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
 	if h.HandleFunc != nil {
-		return h.HandleFunc(req, sender)
+		return h.HandleFunc(parentCtx, req, sender)
 	}
 	return nil
 }
 
-func (h *Handler) PostHandle(req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
+func (h *Handler) PostHandle(parentCtx context.Context, req *handler.PostHandleRequest, sender handlers.ResponseSender) error {
 	if h.PostHandleFunc != nil {
-		return h.PostHandleFunc(req, sender)
+		return h.PostHandleFunc(parentCtx, req, sender)
 	}
 	return nil
 }

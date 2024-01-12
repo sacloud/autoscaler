@@ -178,7 +178,7 @@ func (h *Handler) preHandleBuiltin(ctx *HandlingContext, computed Computed) erro
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PreHandler); ok {
 		handleArg.preHandle = func(req *handler.HandleRequest) error {
-			return actualHandler.PreHandle(req, &builtinResponseSender{ctx: ctx})
+			return actualHandler.PreHandle(ctx, req, &builtinResponseSender{ctx: ctx})
 		}
 	}
 	return h.handle(ctx, computed, handleArg)
@@ -189,7 +189,7 @@ func (h *Handler) handleBuiltin(ctx *HandlingContext, computed Computed) error {
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.Handler); ok {
 		handleArg.handle = func(req *handler.HandleRequest) error {
-			return actualHandler.Handle(req, &builtinResponseSender{ctx: ctx})
+			return actualHandler.Handle(ctx, req, &builtinResponseSender{ctx: ctx})
 		}
 	}
 
@@ -201,7 +201,7 @@ func (h *Handler) postHandleBuiltin(ctx *HandlingContext, computed Computed) err
 
 	if actualHandler, ok := h.BuiltinHandler.(handlers.PostHandler); ok {
 		handleArg.postHandle = func(req *handler.PostHandleRequest) error {
-			return actualHandler.PostHandle(req, &builtinResponseSender{ctx: ctx})
+			return actualHandler.PostHandle(ctx, req, &builtinResponseSender{ctx: ctx})
 		}
 	}
 

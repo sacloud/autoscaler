@@ -28,9 +28,9 @@ type HandlerContext struct {
 	reporter     reportFn
 }
 
-func NewHandlerContext(scalingJobID string, sender ResponseSender) *HandlerContext {
+func NewHandlerContext(ctx context.Context, scalingJobID string, sender ResponseSender) *HandlerContext {
 	return &HandlerContext{
-		ctx:          context.Background(),
+		ctx:          ctx,
 		scalingJobID: scalingJobID,
 		sender:       sender,
 		reporter:     reporter(sender, scalingJobID),

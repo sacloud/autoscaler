@@ -22,8 +22,12 @@ import (
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/core"
 	"github.com/sacloud/autoscaler/defaults"
+	sacloudotel "github.com/sacloud/autoscaler/otel"
 	"github.com/sacloud/autoscaler/validate"
+	"github.com/sacloud/go-otelsetup"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var Command = &cobra.Command{
@@ -53,16 +57,23 @@ func init() {
 	flags.SetStrictModeFlag(Command)
 }
 
-func run(*cobra.Command, []string) {
-	_, err := core.LoadAndValidate(context.Background(), param.ConfigPath, flags.StrictMode(), flags.NewLogger())
+func run(_ *cobra.Command, args []string) {
+	ctx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "core.validate",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(attribute.StringSlice("args", args)),
+	)
+
+	_, err := core.LoadAndValidate(ctx, param.ConfigPath, flags.StrictMode(), flags.NewLogger())
 
 	if err != nil {
 		fmt.Println(err.Error())
 		if _, ok := err.(*validate.Error); ok {
 			os.Exit(ExitCodeDataErr)
 		}
+		span.End()
 		os.Exit(1)
 	}
 
 	fmt.Println("OK")
+	span.End()
 }

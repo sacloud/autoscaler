@@ -21,8 +21,12 @@ import (
 	"github.com/sacloud/autoscaler/commands/flags"
 	"github.com/sacloud/autoscaler/core"
 	"github.com/sacloud/autoscaler/defaults"
+	sacloudotel "github.com/sacloud/autoscaler/otel"
 	"github.com/sacloud/autoscaler/validate"
+	"github.com/sacloud/go-otelsetup"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var Command = &cobra.Command{
@@ -49,8 +53,14 @@ func init() {
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
 	flags.SetStrictModeFlag(Command)
 }
-func run(*cobra.Command, []string) error {
-	tree, err := core.ResourcesTree(context.Background(), "", param.ConfigPath, flags.StrictMode(), flags.NewLogger())
+func run(_ *cobra.Command, args []string) error {
+	ctx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "core.resources",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(attribute.StringSlice("args", args)),
+	)
+	defer span.End()
+
+	tree, err := core.ResourcesTree(ctx, "", param.ConfigPath, flags.StrictMode(), flags.NewLogger())
 	if err != nil {
 		return err
 	}

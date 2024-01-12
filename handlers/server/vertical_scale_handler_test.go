@@ -82,7 +82,7 @@ func TestHandler_Handle(t *testing.T) {
 			h := NewVerticalScaleHandler()
 			h.SetAPICaller(test.APIClient)
 
-			if err := h.Handle(tt.args.req, tt.args.sender); (err != nil) != tt.wantErr {
+			if err := h.Handle(context.Background(), tt.args.req, tt.args.sender); (err != nil) != tt.wantErr {
 				t.Errorf("Handle() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

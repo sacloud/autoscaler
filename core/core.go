@@ -26,7 +26,10 @@ import (
 	"github.com/sacloud/autoscaler/grpcutil"
 	"github.com/sacloud/autoscaler/log"
 	"github.com/sacloud/autoscaler/metrics"
+	sacloudotel "github.com/sacloud/autoscaler/otel"
 	"github.com/sacloud/autoscaler/request"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	health "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
@@ -77,6 +80,13 @@ func LoadAndValidate(ctx context.Context, configPath string, strictMode bool, lo
 
 // New 指定のファイルパスからコンフィグを読み込み、Coreのインスタンスを生成して返すgRPCサーバとしてリッスンを開始する
 func New(ctx context.Context, addr, configPath string, strictMode bool, logger *slog.Logger) (*Core, error) {
+	ctx, span := sacloudotel.Tracer().Start(ctx, "core.New",
+		trace.WithSpanKind(trace.SpanKindInternal),
+		trace.WithAttributes(attribute.String("config.path", configPath)),
+		trace.WithAttributes(attribute.Bool("config.strict", strictMode)),
+	)
+	defer span.End()
+
 	logger.Info("starting...")
 	return newInstanceFromConfig(ctx, addr, configPath, strictMode, logger)
 }
@@ -186,6 +196,12 @@ func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 }
 
 func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
+	traceCtx, span := sacloudotel.Tracer().Start(ctx, "core.handle",
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	defer span.End()
+	ctx = ctx.WithContext(traceCtx)
+
 	job := c.currentJob(ctx)
 	if c.stopping {
 		ctx.Logger().Info(

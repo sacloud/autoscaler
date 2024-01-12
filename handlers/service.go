@@ -90,7 +90,7 @@ func (h *handleService) PreHandle(req *handler.HandleRequest, server handler.Han
 			"PreHandle() received request",
 			slog.String("status", handler.HandleResponse_RECEIVED.String()),
 		)
-		return impl.PreHandle(req, server)
+		return impl.PreHandle(context.TODO(), req, server)
 	}
 
 	logger.Info(
@@ -113,7 +113,7 @@ func (h *handleService) Handle(req *handler.HandleRequest, server handler.Handle
 			"Handle() received request",
 			slog.String("status", handler.HandleResponse_RECEIVED.String()),
 		)
-		return impl.Handle(req, server)
+		return impl.Handle(context.TODO(), req, server)
 	}
 
 	logger.Info(
@@ -136,7 +136,7 @@ func (h *handleService) PostHandle(req *handler.PostHandleRequest, server handle
 			"PostHandle() received request",
 			slog.String("status", handler.HandleResponse_RECEIVED.String()),
 		)
-		return impl.PostHandle(req, server)
+		return impl.PostHandle(context.TODO(), req, server)
 	}
 
 	logger.Info(

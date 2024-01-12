@@ -16,6 +16,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"text/template"
 	"time"
 
@@ -49,8 +50,8 @@ func (h *HorizontalScaleHandler) Version() string {
 	return version.FullVersion()
 }
 
-func (h *HorizontalScaleHandler) Handle(req *handler.HandleRequest, sender handlers.ResponseSender) error {
-	ctx := handlers.NewHandlerContext(req.ScalingJobId, sender)
+func (h *HorizontalScaleHandler) Handle(parentCtx context.Context, req *handler.HandleRequest, sender handlers.ResponseSender) error {
+	ctx := handlers.NewHandlerContext(parentCtx, req.ScalingJobId, sender)
 
 	server := req.Desired.GetServerGroupInstance()
 	if server != nil {

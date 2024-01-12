@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -55,17 +56,17 @@ type Listener interface {
 
 // Handler CoreからのHandleリクエストを処理するためのインターフェース
 type Handler interface {
-	Handle(*handler.HandleRequest, ResponseSender) error
+	Handle(context.Context, *handler.HandleRequest, ResponseSender) error
 }
 
 // PreHandler CoreからのPreHandleリクエストを処理するためのインターフェース
 type PreHandler interface {
-	PreHandle(*handler.HandleRequest, ResponseSender) error
+	PreHandle(context.Context, *handler.HandleRequest, ResponseSender) error
 }
 
 // PostHandler CoreからのPostHandleリクエストを処理するためのインターフェース
 type PostHandler interface {
-	PostHandle(*handler.PostHandleRequest, ResponseSender) error
+	PostHandle(context.Context, *handler.PostHandleRequest, ResponseSender) error
 }
 
 // ResponseSender gRPCのサーバストリームのレスポンスをラップするインターフェース

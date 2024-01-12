@@ -41,6 +41,18 @@ func NewRequestContext(parent context.Context, request *requestInfo, logger *slo
 	}
 }
 
+func (c *RequestContext) WithContext(parent context.Context) *RequestContext {
+	return &RequestContext{
+		ctx:     parent,
+		request: c.request,
+		logger:  c.logger,
+		job:     c.job,
+		zone:    c.zone,
+
+		handled: c.handled,
+	}
+}
+
 // WithJobStatus JobStatusを持つContextを現在のContextを元に作成して返す
 //
 // 現在のContextが親Contextとなる
@@ -56,6 +68,9 @@ func (c *RequestContext) WithJobStatus(job *JobStatus) *RequestContext {
 		},
 		logger: c.logger,
 		job:    job,
+		zone:   c.zone,
+
+		handled: c.handled,
 	}
 }
 
@@ -69,6 +84,8 @@ func (c *RequestContext) WithZone(zone string) *RequestContext {
 		logger:  c.logger,
 		job:     c.job,
 		zone:    zone,
+
+		handled: c.handled,
 	}
 }
 
