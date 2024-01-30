@@ -64,7 +64,11 @@ func Execute() {
 
 func execute() error {
 	// initialize otel SDK
-	otelShutdown, err := otelsetup.Init(context.Background(), "autoscaler", version.Version)
+	otelShutdown, err := otelsetup.InitWithOptions(context.Background(), otelsetup.Options{
+		ServiceName:      "autoscaler",
+		ServiceVersion:   version.Version,
+		ServiceNamespace: "sacloud",
+	})
 	if err != nil {
 		log.Println("Error in initializing OTel SDK: " + err.Error())
 		return err
