@@ -25,7 +25,6 @@ import (
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/go-otelsetup"
 	"github.com/spf13/cobra"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -53,10 +52,9 @@ func init() {
 	Command.Flags().StringVar(&param.ConfigPath, "config", param.ConfigPath, "File path of configuration of AutoScaler Core")
 	flags.SetStrictModeFlag(Command)
 }
-func run(_ *cobra.Command, args []string) error {
-	ctx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "core.resources",
+func run(_ *cobra.Command, _ []string) error {
+	ctx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "commands/core/resources#run",
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(attribute.StringSlice("args", args)),
 	)
 	defer span.End()
 

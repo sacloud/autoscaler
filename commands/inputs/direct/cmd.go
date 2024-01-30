@@ -27,7 +27,6 @@ import (
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/go-otelsetup"
 	"github.com/spf13/cobra"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 )
@@ -81,9 +80,8 @@ func init() {
 
 func run(_ *cobra.Command, args []string) error {
 	var exitCode int
-	ctx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "inputs.direct",
+	ctx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "commands/inputs/direct#run",
 		trace.WithSpanKind(trace.SpanKindClient),
-		trace.WithAttributes(attribute.StringSlice("args", args)),
 	)
 
 	opts := &grpcutil.DialOption{

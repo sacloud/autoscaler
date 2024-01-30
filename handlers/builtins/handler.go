@@ -71,7 +71,7 @@ func (h *Handler) PreHandle(ctx context.Context, req *handler.HandleRequest, sen
 	)
 
 	if builtin, ok := h.Builtin.(handlers.PreHandler); ok {
-		ctx, span := sacloudotel.Tracer().Start(ctx, "handlers.PreHandle",
+		ctx, span := sacloudotel.Tracer().Start(ctx, "Handler#PreHandle",
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.nane", h.Name())),
 			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.version", h.Version())),
@@ -98,7 +98,7 @@ func (h *Handler) Handle(ctx context.Context, req *handler.HandleRequest, sender
 	)
 
 	if builtin, ok := h.Builtin.(handlers.Handler); ok {
-		ctx, span := sacloudotel.Tracer().Start(ctx, "handlers.Handle",
+		ctx, span := sacloudotel.Tracer().Start(ctx, "Handler#Handle",
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.nane", h.Name())),
 			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.version", h.Version())),
@@ -125,7 +125,7 @@ func (h *Handler) PostHandle(ctx context.Context, req *handler.PostHandleRequest
 	)
 
 	if builtin, ok := h.Builtin.(handlers.PostHandler); ok {
-		ctx, span := sacloudotel.Tracer().Start(ctx, "handlers.PostHandle",
+		ctx, span := sacloudotel.Tracer().Start(ctx, "Handler#PostHandle",
 			trace.WithSpanKind(trace.SpanKindClient),
 			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.nane", h.Name())),
 			trace.WithAttributes(attribute.String("sacloud.autoscaler.handler.version", h.Version())),

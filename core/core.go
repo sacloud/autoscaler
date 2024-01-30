@@ -80,10 +80,10 @@ func LoadAndValidate(ctx context.Context, configPath string, strictMode bool, lo
 
 // New 指定のファイルパスからコンフィグを読み込み、Coreのインスタンスを生成して返すgRPCサーバとしてリッスンを開始する
 func New(ctx context.Context, addr, configPath string, strictMode bool, logger *slog.Logger) (*Core, error) {
-	ctx, span := sacloudotel.Tracer().Start(ctx, "core.New",
+	ctx, span := sacloudotel.Tracer().Start(ctx, "Core#New",
 		trace.WithSpanKind(trace.SpanKindInternal),
-		trace.WithAttributes(attribute.String("config.path", configPath)),
-		trace.WithAttributes(attribute.Bool("config.strict", strictMode)),
+		trace.WithAttributes(attribute.String("sacloud.autoscaler.config.path", configPath)),
+		trace.WithAttributes(attribute.Bool("sacloud.autoscaler.config.strict", strictMode)),
 	)
 	defer span.End()
 
@@ -196,7 +196,7 @@ func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 }
 
 func (c *Core) handle(ctx *RequestContext) (*JobStatus, string, error) {
-	traceCtx, span := sacloudotel.Tracer().Start(ctx, "core.handle",
+	traceCtx, span := sacloudotel.Tracer().Start(ctx, "Core#handle",
 		trace.WithSpanKind(trace.SpanKindClient),
 	)
 	defer span.End()
