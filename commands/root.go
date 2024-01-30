@@ -26,7 +26,6 @@ import (
 	"github.com/sacloud/autoscaler/commands/handlers"
 	"github.com/sacloud/autoscaler/commands/inputs"
 	cmdVersion "github.com/sacloud/autoscaler/commands/version"
-	sacloudotel "github.com/sacloud/autoscaler/otel"
 	"github.com/sacloud/autoscaler/version"
 	"github.com/sacloud/go-otelsetup"
 	"github.com/spf13/cobra"
@@ -65,7 +64,7 @@ func Execute() {
 
 func execute() error {
 	// initialize otel SDK
-	otelShutdown, err := otelsetup.Init(context.Background(), sacloudotel.AppName, version.Version)
+	otelShutdown, err := otelsetup.Init(context.Background(), "autoscaler", version.Version)
 	if err != nil {
 		log.Println("Error in initializing OTel SDK: " + err.Error())
 		return err

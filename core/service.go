@@ -56,7 +56,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 		return nil, err
 	}
 
-	traceCtx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "core.service.Up",
+	traceCtx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "ScalingService#Up",
 		trace.WithSpanKind(trace.SpanKindServer),
 		trace.WithAttributes(
 			attribute.String("sacloud.autoscaler.request.type", requestTypeUp.String()),
@@ -103,7 +103,7 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 		return nil, err
 	}
 
-	traceCtx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "core.service.Down",
+	traceCtx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "ScalingService#Down",
 		trace.WithSpanKind(trace.SpanKindServer),
 		trace.WithAttributes(
 			attribute.String("sacloud.autoscaler.request.type", requestTypeDown.String()),
