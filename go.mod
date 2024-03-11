@@ -9,8 +9,8 @@ require (
 	github.com/hashicorp/errwrap v1.1.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/prometheus/client_golang v1.18.0
-	github.com/prometheus/common v0.46.0
+	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/common v0.48.0
 	github.com/sacloud/api-client-go v0.2.10
 	github.com/sacloud/go-otelsetup v0.0.6
 	github.com/sacloud/iaas-api-go v1.11.2
