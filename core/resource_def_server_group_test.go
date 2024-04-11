@@ -564,6 +564,38 @@ func TestResourceDefServerGroup_Validate(t *testing.T) {
 			want: nil,
 		},
 		{
+			name: "returns no error with network_interfaces",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: "ServerGroup",
+				},
+				ServerNamePrefix: "test",
+				Zones:            []string{"is1a"},
+				MinSize:          1,
+				MaxSize:          1,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+					NetworkInterfaces: []*ServerGroupNICTemplate{
+						{
+							Upstream: &ServerGroupNICUpstream{
+								selector: &ResourceSelector{Names: []string{"foobar"}},
+							},
+							AssignCidrBlock:  "192.168.0.11/24",
+							AssignNetMaskLen: 24,
+							DefaultRoute:     "192.168.0.1",
+							ExposeInfo: &ServerGroupNICMetadata{
+								Ports: []int{80},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		{
 			name: "return error with zone and zones",
 			def: &ResourceDefServerGroup{
 				ResourceDefBase: &ResourceDefBase{
