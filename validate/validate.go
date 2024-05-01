@@ -16,6 +16,8 @@ package validate
 
 import (
 	"fmt"
+	"log"
+	"net"
 	"reflect"
 	"strings"
 
@@ -23,10 +25,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-var validatorInstance = validator.New()
-
-func validate(v interface{}) error {
-	validatorInstance.RegisterTagNameFunc(func(fld reflect.StructField) string {
+var validatorInstance = func() *validator.Validate {
+	v := validator.New()
+	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("name"), ",", 2)[0]
 		if name == "" {
 			// nameタグがない場合はyamlタグを参照
@@ -37,6 +38,19 @@ func validate(v interface{}) error {
 		}
 		return name
 	})
+	if err := v.RegisterValidation("cidrv4", customCIDRv4Validator); err != nil {
+		log.Printf("Init validator failed: %s", err)
+	}
+	return v
+}()
+
+// customCIDRv4Validator cidrv4をhttps://github.com/go-playground/validator/pull/945 以前の動作にするためのカスタムバリデーター
+func customCIDRv4Validator(fl validator.FieldLevel) bool {
+	ip, _, err := net.ParseCIDR(fl.Field().String())
+	return err == nil && ip.To4() != nil
+}
+
+func validate(v interface{}) error {
 	return validatorInstance.Struct(v)
 }
 
