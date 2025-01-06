@@ -45,6 +45,6 @@ sacloud/autoscalerはGrafanaやAlertManagerなどの監視ツールからのWebh
 
 ## License
 
-`sacloud/autoscaler` Copyright (C) 2021-2023 The sacloud/autoscaler Authors.
+`sacloud/autoscaler` Copyright (C) 2021-2025 The sacloud/autoscaler Authors.
 
 This project is published under [Apache 2.0 License](LICENSE.txt).
