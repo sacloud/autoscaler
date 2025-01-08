@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2023 The sacloud/autoscaler Authors
+# Copyright 2021-2025 The sacloud/autoscaler Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 #
 #====================
 AUTHOR          ?= The sacloud/autoscaler Authors
-COPYRIGHT_YEAR  ?= 2021-2023
+COPYRIGHT_YEAR  ?= 2021-2025
 
 BIN            ?= bin/autoscaler
 BUILD_LDFLAGS   ?= "-s -w -X github.com/sacloud/autoscaler/version.Revision=`git rev-parse --short HEAD`"
