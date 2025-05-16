@@ -131,7 +131,7 @@ func newServer(input Input, conf *Config) (*server, error) {
 		input:         input,
 		logger:        input.GetLogger(),
 		config:        conf,
-		Server:        &http.Server{Addr: input.ListenAddress(), Handler: serveMux}, //nolint
+		Server:        &http.Server{Addr: input.ListenAddress(), Handler: serveMux},
 	}
 
 	upWebhookHandler := promhttp.InstrumentHandlerCounter(

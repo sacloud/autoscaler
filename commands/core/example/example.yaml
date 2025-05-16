@@ -111,7 +111,7 @@ resources:
             names: ["my-app-archive"] # セレクター(名前など)で対象アーカイブを指定
           source_disk:
             names: ["my-app-disk"]    # セレクター(名前など)で対象ディスクを指定
-          os_type: "ubuntu2004"       # OSTypeで指定
+          os_type: "ubuntu2404"       # OSTypeで指定
 
           plan: "ssd"
           connection: "virtio"

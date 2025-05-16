@@ -20,7 +20,7 @@ resources:
           expose:
             ports: [ 80 ]
       disks:
-        - os_type: "ubuntu2004"
+        - os_type: "ubuntu2404"
           plan: "ssd"
           connection: "virtio"
           size: 20

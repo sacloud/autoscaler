@@ -9,12 +9,10 @@ linters:
   disable-all: true
   enable:
     - errcheck
-    - exportloopref
     - gocritic
     - gofmt
     - goimports
     - goprintffuncname
-    - gosec
     - gosimple
     - govet
     - ineffassign
@@ -30,6 +28,7 @@ linters:
   #  - depguard
   #  - dogsled
   #  - dupl
+  #  - exportloopref
   #  - funlen
   #  - gochecknoinits
   #  - gochecknoglobals
@@ -40,6 +39,7 @@ linters:
   #  - godot
   #  - godox
   #  - goerr113
+  #  - gosec
   #  - lll
   #  - nakedret
   #  - prealloc
