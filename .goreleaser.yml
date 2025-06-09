@@ -1,3 +1,5 @@
+version: 2
+
 before:
   hooks:
     - go mod tidy
@@ -59,7 +61,7 @@ signs:
 #release:
 #  draft: true
 changelog:
-  skip: false
+  disable: false
 #  sort: desc
 #  filters:
 #    exclude:
