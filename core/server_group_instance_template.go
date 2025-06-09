@@ -419,7 +419,7 @@ func (c ServerGroupCloudConfig) Empty() bool {
 
 func (c ServerGroupCloudConfig) Validate() []error {
 	var m map[string]interface{}
-	opts := []yaml.DecodeOption{yaml.Strict(), yaml.DisallowDuplicateKey()}
+	opts := []yaml.DecodeOption{yaml.Strict()}
 	if err := yaml.UnmarshalWithOptions([]byte(c.CloudConfig.String()), &m, opts...); err != nil {
 		return []error{validate.Errorf("invalid cloud-config: %s", err)}
 	}
