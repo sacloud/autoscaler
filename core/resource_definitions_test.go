@@ -70,7 +70,7 @@ func TestResourceDefinitions_UnmarshalYAML(t *testing.T) {
 					DedicatedCPU: true,
 					ParentDef: &ParentResourceDef{
 						TypeName: "EnhancedLoadBalancer",
-						Selector: &NameOrSelector{ResourceSelector{Names: []string{"test-name"}}},
+						Selector: &NameOrSelector{ResourceSelector{Names: []string{"test-name\n"}}},
 					},
 				},
 				&ResourceDefELB{
