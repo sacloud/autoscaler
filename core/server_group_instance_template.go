@@ -333,42 +333,42 @@ func (t *ServerGroupDiskTemplate) FindDiskSource(ctx context.Context, apiClient 
 			// NOTE: 本来はエラー内容に応じてValidationErrorを返すべきだが、
 			//       query.FindArchiveByOSTypeの実装がエラー内容の判定を行えるようになっていないためここでは判定していない
 			retErr = validate.New(err)
-			return
+			return sourceArchiveID, sourceDiskID, retErr
 		}
 		sourceArchiveID = archive.ID.String()
-		return
+		return sourceArchiveID, sourceDiskID, retErr
 	case t.SourceArchiveSelector != nil:
 		found, err := iaas.NewArchiveOp(apiClient).Find(ctx, zone, t.SourceArchiveSelector.findCondition())
 		if err != nil {
 			retErr = err
-			return
+			return sourceArchiveID, sourceDiskID, retErr
 		}
 		if len(found.Archives) == 0 {
 			retErr = validate.Errorf("source archive not found with: {zone: %s, %v}", zone, t.SourceArchiveSelector)
-			return
+			return sourceArchiveID, sourceDiskID, retErr
 		}
 		if len(found.Archives) > 1 {
 			retErr = validate.Errorf("multiple source archive found with: {zone: %s, %v}, archives: %v", zone, t.SourceArchiveSelector, found.Archives)
-			return
+			return sourceArchiveID, sourceDiskID, retErr
 		}
 		sourceArchiveID = found.Archives[0].ID.String()
-		return
+		return sourceArchiveID, sourceDiskID, retErr
 	case t.SourceDiskSelector != nil:
 		found, err := iaas.NewDiskOp(apiClient).Find(ctx, zone, t.SourceDiskSelector.findCondition())
 		if err != nil {
 			retErr = err
-			return
+			return sourceArchiveID, sourceDiskID, retErr
 		}
 		if len(found.Disks) == 0 {
 			retErr = validate.Errorf("source disk not found with: {zone: %s, %v}", zone, t.SourceDiskSelector)
-			return
+			return sourceArchiveID, sourceDiskID, retErr
 		}
 		if len(found.Disks) > 1 {
 			retErr = validate.Errorf("multiple source disk found with: {zone: %s, %v}, disks: %v", zone, t.SourceDiskSelector, found.Disks)
-			return
+			return sourceArchiveID, sourceDiskID, retErr
 		}
 		sourceDiskID = found.Disks[0].ID.String()
-		return
+		return sourceArchiveID, sourceDiskID, retErr
 	}
 	// blank disk: 2番目以降のディスクや別途Tinkerbellなどのベアメタルプロビジョニングを行う場合などに到達し得る
 	return "", "", nil

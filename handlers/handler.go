@@ -81,7 +81,7 @@ func startExporter(ctx context.Context, handler CustomHandler, conf *Config) err
 
 		server := metrics.NewServer(conf.ExporterConfig.Address, handler.GetLogger())
 		defer func() {
-			server.Shutdown(ctx) //nolint
+			server.Shutdown(ctx)
 			listener.Close()
 		}()
 
