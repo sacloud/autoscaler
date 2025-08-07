@@ -158,7 +158,7 @@ func newServer(input Input, conf *Config) (*server, error) {
 
 	serveMux.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok")) //nolint
+		w.Write([]byte("ok"))
 	})
 
 	return s, nil
@@ -186,13 +186,13 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 	scalingReq, err := s.parseRequest(requestType, req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error())) //nolint
+		w.Write([]byte(err.Error()))
 		return
 	}
 	if scalingReq == nil {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Add("Content-Type", "application/json")
-		w.Write([]byte(`{"message":"ignored"}`)) //nolint
+		w.Write([]byte(`{"message":"ignored"}`))
 		return
 	}
 
@@ -217,7 +217,7 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`{"id":"%s", "status":"%s", "message":"%s"}`, res.ScalingJobId, res.Status, res.Message))) //nolint
+	w.Write([]byte(fmt.Sprintf(`{"id":"%s", "status":"%s", "message":"%s"}`, res.ScalingJobId, res.Status, res.Message)))
 }
 
 func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRequest, error) {
