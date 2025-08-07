@@ -540,7 +540,10 @@ type ServerGroupNICUpstream struct {
 }
 
 func (s *ServerGroupNICUpstream) UnmarshalYAML(ctx context.Context, data []byte) error {
-	if string(data) == "shared" {
+	var strData string
+	yaml.UnmarshalWithOptions(data, &strData, yaml.Strict()) //nolint:errcheck
+
+	if strData == "shared" {
 		*s = ServerGroupNICUpstream{raw: data, shared: true}
 		return nil
 	}
