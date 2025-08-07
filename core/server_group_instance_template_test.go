@@ -132,6 +132,49 @@ func TestServerGroupNICUpstream_UnmarshalYAML(t *testing.T) {
 			},
 		},
 		{
+			name: "shared with quote",
+			args: args{
+				data: []byte(`"shared"`),
+			},
+			wantErr: false,
+			expect: &ServerGroupNICUpstream{
+				raw:      []byte(`"shared"`),
+				shared:   true,
+				selector: nil,
+			},
+		},
+		{
+			name: "shared with single quote",
+			args: args{
+				data: []byte(`'shared'`),
+			},
+			wantErr: false,
+			expect: &ServerGroupNICUpstream{
+				raw:      []byte(`'shared'`),
+				shared:   true,
+				selector: nil,
+			},
+		},
+		{
+			name: "shared with newline",
+			args: args{
+				data: []byte("shared\n"),
+			},
+			wantErr: false,
+			expect: &ServerGroupNICUpstream{
+				raw:      []byte("shared"),
+				shared:   true,
+				selector: nil,
+			},
+		},
+		{
+			name: "invalid 'shared' string",
+			args: args{
+				data: []byte(`'sha"red'`),
+			},
+			wantErr: true,
+		},
+		{
 			name: "selector",
 			args: args{
 				data: []byte(`names: ["test"]`),
