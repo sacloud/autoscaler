@@ -134,8 +134,8 @@ github.com/sacloud/go-otelsetup v0.5.0 h1:L6h65D7i3XAoUdkRAYO7fpjF64gASKt55n0GG5
 github.com/sacloud/go-otelsetup v0.5.0/go.mod h1:e9Zt+rFgm0BwG9kVH+QKyfnS9Uxj8mBn4Z8UXkyDWTw=
 github.com/sacloud/iaas-api-go v1.17.0 h1:Ya5Z5NFYfc5g6/ZmEw3k0bVuc1Qygb+xapL5OUM2fz4=
 github.com/sacloud/iaas-api-go v1.17.0/go.mod h1:xH+8hMIEpEMZq2DdKGqiLJcB60peZOg2THVZCG09LLs=
-github.com/sacloud/iaas-api-go/trace/otel v0.0.0-20231023015307-c774eaa8854f h1:HyQY3iDL2F0a8e5vYVNVdBOWKlb9ZhIsJjdFbldadN8=
-github.com/sacloud/iaas-api-go/trace/otel v0.0.0-20231023015307-c774eaa8854f/go.mod h1:yOfFsqX8Qnzu+KteapSRiYEKAR8Y8kSxdRIDe+yBvck=
+github.com/sacloud/iaas-api-go/trace/otel v0.0.0-20250806043940-3f2d261c1ab4 h1:/6ALnYWLTSRGYJajRC6NTVk8mZ0cIe6Jf/SFbwcRevw=
+github.com/sacloud/iaas-api-go/trace/otel v0.0.0-20250806043940-3f2d261c1ab4/go.mod h1:EqHKfi6MRlaCi1fOHGZYEFuvK3umnOB9xyIKqx+cgwo=
 github.com/sacloud/iaas-service-go v1.13.0 h1:WafdkyM5duq5ehT4iDSgLlmA3sT6OZO6mPPS+861uFU=
 github.com/sacloud/iaas-service-go v1.13.0/go.mod h1:p8QNLO6fcPdLVZFgsOhefumnrT2IKrZ3xhrNMTMIJSU=
 github.com/sacloud/packages-go v0.0.11 h1:hrRWLmfPM9w7GBs6xb5/ue6pEMl8t1UuDKyR/KfteHo=
@@ -164,8 +164,6 @@ go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0 h1:x8Z78aZ
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0/go.mod h1:62CPTSry9QZtOaSsE3tOzhx6LzDhHnXJ6xHeMNNiM6Q=
 go.opentelemetry.io/otel v1.37.0 h1:9zhNfelUvx0KBfu/gb+ZgeAfAgtWrfHJZcAqFC228wQ=
 go.opentelemetry.io/otel v1.37.0/go.mod h1:ehE/umFRLnuLa/vSccNq9oS1ErUlkkK71gMcN34UG8I=
-go.opentelemetry.io/otel/exporters/jaeger v1.17.0 h1:D7UpUy2Xc2wsi1Ras6V40q806WM07rqoCWzXu7Sqy+4=
-go.opentelemetry.io/otel/exporters/jaeger v1.17.0/go.mod h1:nPCqOnEH9rNLKqH/+rrUjiMzHJdV1BlpKcTwRTyKkKI=
 go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.37.0 h1:zG8GlgXCJQd5BU98C0hZnBbElszTmUgCNCfYneaDL0A=
 go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.37.0/go.mod h1:hOfBCz8kv/wuq73Mx2H2QnWokh/kHZxkh6SNF2bdKtw=
 go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.37.0 h1:Ahq7pZmv87yiyn3jeFz/LekZmPLLdKejuO3NcK9MssM=
