@@ -33,6 +33,7 @@ var _ health.HealthServer = (*ScalingService)(nil)
 
 type ScalingService struct {
 	request.UnimplementedScalingServiceServer
+	health.UnimplementedHealthServer
 	instance *Core
 }
 
