@@ -33,6 +33,7 @@ var _ handler.HandleServiceServer = (*handleService)(nil)
 // handleService ハンドラ向けgRPCサーバの実装
 type handleService struct {
 	handler.UnimplementedHandleServiceServer
+	health.UnimplementedHealthServer
 	Handler CustomHandler
 	conf    *Config
 }
