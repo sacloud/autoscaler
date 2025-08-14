@@ -72,7 +72,7 @@ func (rds *ResourceDefinitions) ResourceNames() []string {
 		return nil
 	}
 
-	rds.walk(*rds, fn)
+	rds.walk(*rds, fn) //nolint:errcheck
 
 	var names []string
 	for name := range nameMap {

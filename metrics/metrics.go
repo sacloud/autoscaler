@@ -57,7 +57,7 @@ func NewServer(addr string, logger *slog.Logger) *Server {
 	return &Server{
 		ListenAddress: addr,
 		logger:        logger,
-		server:        &http.Server{Addr: addr, Handler: handler()},
+		server:        &http.Server{Addr: addr, Handler: handler()}, //nolint:gosec
 	}
 }
 

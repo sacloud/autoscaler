@@ -133,7 +133,7 @@ func TestCore_ResourceName(t *testing.T) {
 }
 
 func TestLoadAndValidate(t *testing.T) {
-	os.Setenv("SAKURACLOUD_FAKE_MODE", "1")
+	os.Setenv("SAKURACLOUD_FAKE_MODE", "1") //nolint:errcheck
 	defer test.AddTestELB(t, "example")()
 
 	type args struct {

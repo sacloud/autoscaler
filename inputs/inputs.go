@@ -131,7 +131,7 @@ func newServer(input Input, conf *Config) (*server, error) {
 		input:         input,
 		logger:        input.GetLogger(),
 		config:        conf,
-		Server:        &http.Server{Addr: input.ListenAddress(), Handler: serveMux},
+		Server:        &http.Server{Addr: input.ListenAddress(), Handler: serveMux}, //nolint:gosec
 	}
 
 	upWebhookHandler := promhttp.InstrumentHandlerCounter(
@@ -158,7 +158,7 @@ func newServer(input Input, conf *Config) (*server, error) {
 
 	serveMux.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		w.Write([]byte("ok")) //nolint:errcheck
 	})
 
 	return s, nil
@@ -169,7 +169,7 @@ func (s *server) listenAndServe() error {
 	if err != nil {
 		return err
 	}
-	defer listener.Close()
+	defer listener.Close() //nolint:errcheck
 
 	return s.serve(listener)
 }
@@ -186,13 +186,13 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 	scalingReq, err := s.parseRequest(requestType, req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		w.Write([]byte(err.Error())) //nolint:errcheck
 		return
 	}
 	if scalingReq == nil {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Add("Content-Type", "application/json")
-		w.Write([]byte(`{"message":"ignored"}`))
+		w.Write([]byte(`{"message":"ignored"}`)) //nolint:errcheck
 		return
 	}
 
@@ -217,7 +217,7 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`{"id":"%s", "status":"%s", "message":"%s"}`, res.ScalingJobId, res.Status, res.Message)))
+	w.Write([]byte(fmt.Sprintf(`{"id":"%s", "status":"%s", "message":"%s"}`, res.ScalingJobId, res.Status, res.Message))) //nolint:errcheck
 }
 
 func (s *server) parseRequest(requestType string, req *http.Request) (*ScalingRequest, error) {

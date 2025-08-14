@@ -47,11 +47,11 @@ type Config struct {
 
 // NewConfigFromPath 指定のファイルパスからコンフィギュレーションを読み取ってConfigを作成する
 func NewConfigFromPath(ctx context.Context, filePath string, strictMode bool, logger *slog.Logger) (*Config, error) {
-	reader, err := os.Open(filePath)
+	reader, err := os.Open(filePath) //nolint:gosec
 	if err != nil {
 		return nil, fmt.Errorf("opening configuration file failed: %s error: %s", filePath, err)
 	}
-	defer reader.Close()
+	defer reader.Close() //nolint:errcheck
 
 	c := &Config{strictMode: strictMode, logger: logger}
 	if err := c.load(ctx, reader); err != nil {

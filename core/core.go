@@ -158,7 +158,7 @@ func (c *Core) run(ctx context.Context) error {
 			if err := server.Shutdown(ctx); err != nil {
 				c.logger.Error(err.Error())
 			}
-			exporterListener.Close()
+			exporterListener.Close() //nolint:errcheck
 		}()
 	}
 

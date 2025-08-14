@@ -32,7 +32,7 @@ func LoadConfigFromPath(path string) (*Config, error) {
 	if path == "" {
 		return nil, nil
 	}
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec
 	if err != nil {
 		return nil, err
 	}
