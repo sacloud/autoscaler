@@ -9,10 +9,10 @@ issues:
 linters:
   default: none
   enable:
-#    - errcheck
+    - errcheck
     - gocritic
     - goprintffuncname
-#    - gosec
+    - gosec
     - govet
     - ineffassign
     - misspell
@@ -21,6 +21,15 @@ linters:
     - unconvert
     - unused
     - whitespace
+
+  exclusions:
+    rules:
+      - linters:
+          - gosec
+        text: "G104:"
+      - linters:
+          - gosec
+        text: "G115:"
 
 formatters:
   enable:

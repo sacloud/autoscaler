@@ -120,7 +120,7 @@ func TestConfig_Handlers(t *testing.T) {
 }
 
 func TestConfig_Validate(t *testing.T) {
-	os.Setenv("SAKURACLOUD_FAKE_MODE", "1")
+	os.Setenv("SAKURACLOUD_FAKE_MODE", "1") //nolint:errcheck
 	defer test.AddTestELB(t, "example")()
 
 	resources := ResourceDefinitions{

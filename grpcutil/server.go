@@ -41,7 +41,7 @@ func Server(opt *ListenerOption) (*grpc.Server, net.Listener, func(), error) {
 	}
 
 	cleanup := func() {
-		listener.Close()
+		listener.Close() //nolint:errcheck
 		if schema == "unix" {
 			if _, err := os.Stat(endpoint); err == nil {
 				if err := os.RemoveAll(endpoint); err != nil {

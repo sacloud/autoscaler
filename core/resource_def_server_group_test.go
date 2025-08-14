@@ -1147,7 +1147,7 @@ func TestResourceDefServerGroup_printWarningForServerNamePrefix(t *testing.T) {
 				ResourceDefBase:  &ResourceDefBase{DefName: tt.fields.Name},
 				ServerNamePrefix: tt.fields.ServerNamePrefix,
 			}
-			d.printWarningForServerNamePrefix(ctx)
+			d.printWarningForServerNamePrefix(ctx) //nolint:errcheck
 			require.Equal(t, tt.wantWarn, len(writer.Bytes()) > 0)
 		})
 	}

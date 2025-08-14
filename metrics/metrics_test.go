@@ -31,7 +31,7 @@ func TestServe(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listener.Close()
+	defer listener.Close() //nolint:errcheck
 
 	server := NewServer(listener.Addr().String(), test.Logger)
 	closed := make(chan struct{})

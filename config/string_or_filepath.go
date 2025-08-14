@@ -104,7 +104,7 @@ func stringOrFilePath(s string, logger *slog.Logger) (string, bool, error) {
 	}
 
 	isFilePath := true
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(path) //nolint:gosec
 
 	if err != nil {
 		if !os.IsNotExist(err) {
