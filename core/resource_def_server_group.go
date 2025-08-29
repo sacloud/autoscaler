@@ -42,6 +42,8 @@ type ResourceDefServerGroup struct {
 	MinSize int `yaml:"min_size" validate:"min=0,ltefield=MaxSize"`
 	MaxSize int `yaml:"max_size" validate:"min=0,gtecsfield=MinSize"`
 
+	AutoHealing *AutoHealing `yaml:"auto_healing"`
+
 	Plans []*ServerGroupPlan `yaml:"plans"`
 
 	Template      *ServerGroupInstanceTemplate `yaml:"template" validate:"required"`

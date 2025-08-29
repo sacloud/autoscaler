@@ -38,6 +38,9 @@ resources:
     min_size: 5   # 最小インスタンス数
     max_size: 20  # 最大インスタンス数
 
+    auto_healing:
+      enabled: true # 台数維持(自動復旧)機能のON/OFF
+
     shutdown_force: false # サーバでACPIが利用できない場合にtrueにする(強制シャットダウンとなる)
 
     # プラン一覧(省略可能)
