@@ -21,7 +21,7 @@ require (
 	github.com/sacloud/packages-go v0.0.11
 	github.com/shivamMg/ppds v0.0.1
 	github.com/spf13/cobra v1.9.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.37.0
 	go.opentelemetry.io/otel/trace v1.37.0
 	google.golang.org/grpc v1.75.0
