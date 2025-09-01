@@ -169,7 +169,7 @@ func desiredPlan(ctx *RequestContext, current interface{}, plans ResourcePlans) 
 				// Downリクエストなのに指定の名前のプランの方が大きいためプラン変更しない
 				return nil, fmt.Errorf("desired plan %q is larger than current plan", req.desiredStateName)
 			}
-		default:
+		default: // requestTypeKeepを含む
 			return nil, nil // 到達しない
 		}
 		return found, nil

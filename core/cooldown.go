@@ -26,6 +26,7 @@ import (
 type CoolDown struct {
 	Up   int `yaml:"up"`
 	Down int `yaml:"down"`
+	Keep int `yaml:"keep"`
 }
 
 func (c *CoolDown) UnmarshalYAML(ctx context.Context, data []byte) error {
@@ -35,6 +36,7 @@ func (c *CoolDown) UnmarshalYAML(ctx context.Context, data []byte) error {
 		*c = CoolDown{
 			Up:   cd,
 			Down: cd,
+			Keep: cd,
 		}
 		return nil
 	}
@@ -55,6 +57,8 @@ func (c *CoolDown) Duration(requestType RequestTypes) time.Duration {
 		return c.duration(c.Up)
 	case requestTypeDown:
 		return c.duration(c.Down)
+	case requestTypeKeep:
+		return c.duration(c.Keep)
 	}
 	return defaults.CoolDownTime
 }
