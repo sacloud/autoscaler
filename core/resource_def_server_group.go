@@ -137,12 +137,6 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		return nil, err
 	}
 
-	// Min/MaxとUp/Downを考慮してサーバ数を決定
-	plan, err := d.desiredPlan(ctx, len(cloudResources))
-	if err != nil {
-		return nil, err
-	}
-
 	var parent Resource
 	if d.ParentDef != nil {
 		parents, err := d.ParentDef.Compute(ctx.WithZone(d.Zones[0]), apiClient)
@@ -153,6 +147,28 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 			return nil, fmt.Errorf("got invalid parent resources: %#+v", parents)
 		}
 		parent = parents[0]
+	}
+	// セレクタ->ID変換、ゾーン非依存なので先に検索しておく
+	iconId, err := d.Template.FindIconId(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+
+	switch ctx.Request().requestType {
+	case requestTypeUp, requestTypeDown:
+		return d.buildInstancesForScaling(ctx, apiClient, cloudResources, parent, iconId)
+	case requestTypeKeep:
+		return d.buildInstancesForKeep(ctx, apiClient, cloudResources, parent, iconId)
+	default:
+		return nil, nil // 到達しないはず
+	}
+}
+
+func (d *ResourceDefServerGroup) buildInstancesForScaling(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server, parent Resource, iconId string) (Resources, error) {
+	// Min/MaxとUp/Downを考慮してサーバ数を決定
+	plan, err := d.desiredPlan(ctx, len(cloudResources))
+	if err != nil {
+		return nil, err
 	}
 
 	var resources Resources
@@ -176,11 +192,6 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		resources = append(resources, instance)
 	}
 
-	// セレクタ->ID変換、ゾーン非依存なので先に検索しておく
-	iconId, err := d.Template.FindIconId(ctx, apiClient)
-	if err != nil {
-		return nil, err
-	}
 	for len(resources) < plan.Size {
 		zone := d.determineZone(len(resources))
 		ctx := ctx.WithZone(zone)
@@ -229,6 +240,11 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		})
 	}
 	return resources, nil
+}
+
+func (d *ResourceDefServerGroup) buildInstancesForKeep(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server, parent Resource, iconId string) (Resources, error) {
+	// TODO implements here
+	return nil, nil
 }
 
 func (d *ResourceDefServerGroup) desiredPlan(ctx *RequestContext, currentCount int) (*ServerGroupPlan, error) {
