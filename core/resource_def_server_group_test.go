@@ -1276,3 +1276,128 @@ func TestResourceDefServerGroup_lastModifiedAt(t *testing.T) {
 		})
 	}
 }
+
+func TestResourceDefServerGroup_sizeByMaxIndex(t *testing.T) {
+	// ヘルパ: サーバ名のスライスから []*iaas.Server を作る
+	mk := func(names ...string) []*iaas.Server {
+		out := make([]*iaas.Server, 0, len(names))
+		for _, n := range names {
+			out = append(out, &iaas.Server{Name: n})
+		}
+		return out
+	}
+
+	tests := []struct {
+		name    string
+		maxSize int
+		format  string
+		servers []*iaas.Server
+		want    int
+	}{
+		{
+			name:    "empty -> 0",
+			maxSize: 5,
+			format:  "%03d",
+			servers: mk(),
+			want:    0,
+		},
+		{
+			name:    "contiguous 001..003 -> 3",
+			maxSize: 3,
+			format:  "%03d",
+			servers: mk("001", "002", "003"),
+			want:    3,
+		},
+		{
+			name:    "with gaps 001,003,004 (MaxSize=5) -> 4",
+			maxSize: 5,
+			format:  "%03d",
+			servers: mk("001", "003", "004"),
+			want:    4,
+		},
+		{
+			name:    "highest only 005 (MaxSize=5) -> 5",
+			maxSize: 5,
+			format:  "%03d",
+			servers: mk("005"),
+			want:    5,
+		},
+		{
+			name:    "unordered still finds highest -> 4",
+			maxSize: 5,
+			format:  "%03d",
+			servers: mk("004", "001"),
+			want:    4,
+		},
+		{
+			name:    "non-matching names are ignored",
+			maxSize: 5,
+			format:  "%03d",
+			servers: mk("foo", "bar", "002"),
+			want:    2,
+		},
+		{
+			name:    "duplicates are OK",
+			maxSize: 5,
+			format:  "%03d",
+			servers: mk("003", "003", "001"),
+			want:    3,
+		},
+		{
+			name:    "nil and empty-name entries are ignored",
+			maxSize: 5,
+			format:  "%03d",
+			servers: []*iaas.Server{
+				nil, {Name: ""}, {Name: "002"},
+			},
+			want: 2,
+		},
+		{
+			name:    "no zero padding format %d",
+			maxSize: 6,
+			format:  "%d",
+			servers: mk("1", "3", "6"),
+			want:    6,
+		},
+		{
+			name:    "MaxSize=0 -> 0",
+			maxSize: 0,
+			format:  "%03d",
+			servers: mk("001", "002"),
+			want:    0,
+		},
+		// 早期リターンの挙動をロック: MaxSize <= len(servers) なら名前一致を見ず MaxSize を返す
+		{
+			name:    "fast path: len(servers) >= MaxSize returns MaxSize even if names don't match",
+			maxSize: 2,
+			format:  "%03d",
+			servers: mk("foo", "bar"),
+			want:    2,
+		},
+		{
+			name:    "fast path: equal length returns MaxSize (mixed matching/non-matching)",
+			maxSize: 3,
+			format:  "%03d",
+			servers: mk("001", "foo", "bar"),
+			want:    3,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			d := &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					TypeName: ResourceTypeServerGroup.String(),
+					DefName:  "",
+				},
+				MaxSize:          tt.maxSize,
+				ServerNameFormat: "%s" + tt.format, // "%03d" 等: namePrefix は無視される
+			}
+			got := d.sizeByMaxIndex(tt.servers)
+			if got != tt.want {
+				t.Fatalf("sizeByMaxIndex() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}

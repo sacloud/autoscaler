@@ -244,6 +244,12 @@ func (d *ResourceDefServerGroup) buildInstancesForScaling(ctx *RequestContext, a
 
 func (d *ResourceDefServerGroup) buildInstancesForKeep(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server, parent Resource, iconId string) (Resources, error) {
 	// TODO implements here
+
+	// cloudResourcesのそれぞれのリソースの名前を確認し、グループ内での現在のサーバ数を算出 (途中抜けを考慮すること
+	// 0 ~ サーバ数-1までをループ
+	//   ヘルスチェックを実施
+	//     OK: NOOP
+	//     NG: DELETE & CREATE
 	return nil, nil
 }
 
@@ -301,6 +307,39 @@ func (d *ResourceDefServerGroup) determineServerName(resources Resources) (strin
 		}
 	}
 	return d.serverNameByIndex(len(resources)), len(resources)
+}
+
+// sizeByMaxIndex 渡されたサーバの名前からサーバグループに何台のサーバが存在すべきかを計算する
+//
+// Examples:
+//   - 001,002,003 -> 3
+//   - MaxSize=5 で 001,002,004 -> 4
+//   - サーバが存在しない場合 -> 0
+//   - MaxSize=5 で 001..005 が揃っている場合 -> 5
+//   - MaxSize=5 で 001, 002, 007 のように命名規則に沿っているがMaxSize以上のものがある時 -> 2 (MaxSizeの範囲外なので無視される)
+func (d *ResourceDefServerGroup) sizeByMaxIndex(servers []*iaas.Server) int {
+	if d.MaxSize <= 0 || len(servers) == 0 {
+		return 0
+	}
+	if d.MaxSize <= len(servers) {
+		return d.MaxSize
+	}
+
+	// 既存サーバ名をセット化して高速に検索
+	names := make(map[string]struct{}, len(servers))
+	for _, s := range servers {
+		if s != nil && s.Name != "" {
+			names[s.Name] = struct{}{}
+		}
+	}
+
+	// 大きい index から逆順に探す
+	for idx := d.MaxSize; idx >= 0; idx-- {
+		if _, ok := names[d.serverNameByIndex(idx-1)]; ok {
+			return idx
+		}
+	}
+	return 0
 }
 
 // determineZone サーバのインデックスからサーバを配置すべきゾーンを決定する
