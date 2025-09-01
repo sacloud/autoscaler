@@ -457,6 +457,89 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "keep",
+			def: &ResourceDefServerGroup{
+				ResourceDefBase: &ResourceDefBase{
+					DefName:  "resource-def-server-test",
+					TypeName: "ServerGroup",
+				},
+				Zones:   []string{test.Zone},
+				MinSize: 1,
+				MaxSize: 3,
+				Template: &ServerGroupInstanceTemplate{
+					Plan: &ServerGroupInstancePlan{
+						Core:   1,
+						Memory: 1,
+					},
+				},
+			},
+			args: args{
+				ctx: NewRequestContext(context.Background(), &requestInfo{
+					requestType:  requestTypeKeep,
+					source:       "default",
+					resourceName: "resource-def-server-test",
+				}, test.Logger),
+			},
+			want: Resources{
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server:       server1,
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_DELETE,
+					indexInGroup: 0,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server: &iaas.Server{
+						Name:                 "resource-def-server-test-001",
+						CPU:                  1,
+						MemoryMB:             1 * size.GiB,
+						ServerPlanCommitment: types.Commitments.Standard,
+					},
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_CREATE,
+					indexInGroup: 0,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server: &iaas.Server{
+						Name:                 "resource-def-server-test-002",
+						CPU:                  1,
+						MemoryMB:             1 * size.GiB,
+						ServerPlanCommitment: types.Commitments.Standard,
+					},
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_CREATE,
+					indexInGroup: 1,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server:       server2,
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_DELETE,
+					indexInGroup: 2,
+				},
+				&ResourceServerGroupInstance{
+					ResourceBase: &ResourceBase{resourceType: ResourceTypeServerGroupInstance},
+					apiClient:    test.APIClient,
+					server: &iaas.Server{
+						Name:                 "resource-def-server-test-003",
+						CPU:                  1,
+						MemoryMB:             1 * size.GiB,
+						ServerPlanCommitment: types.Commitments.Standard,
+					},
+					zone:         test.Zone,
+					instruction:  handler.ResourceInstructions_CREATE,
+					indexInGroup: 2,
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -470,7 +553,8 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 				if !ok {
 					t.Errorf("got invalid resource type: %+#v", r)
 				}
-				r.def = nil // 後で比較するときのため
+				// 後で比較するときにノイズとなる項目を消しておく
+				r.def = nil
 			}
 			require.EqualValues(t, tt.want, got)
 		})

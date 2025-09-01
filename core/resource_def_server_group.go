@@ -137,7 +137,17 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		return nil, err
 	}
 
-	var parent Resource
+	switch ctx.Request().requestType {
+	case requestTypeUp, requestTypeDown:
+		return d.buildInstancesForScaling(ctx, apiClient, cloudResources)
+	case requestTypeKeep:
+		return d.buildInstancesForKeep(ctx, apiClient, cloudResources)
+	default:
+		return nil, nil // 到達しないはず
+	}
+}
+
+func (d *ResourceDefServerGroup) computeParent(ctx *RequestContext, apiClient iaas.APICaller) (Resource, error) {
 	if d.ParentDef != nil {
 		parents, err := d.ParentDef.Compute(ctx.WithZone(d.Zones[0]), apiClient)
 		if err != nil {
@@ -146,111 +156,170 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		if len(parents) != 1 {
 			return nil, fmt.Errorf("got invalid parent resources: %#+v", parents)
 		}
-		parent = parents[0]
+		return parents[0], nil
 	}
-	// セレクタ->ID変換、ゾーン非依存なので先に検索しておく
-	iconId, err := d.Template.FindIconId(ctx, apiClient)
-	if err != nil {
-		return nil, err
-	}
-
-	switch ctx.Request().requestType {
-	case requestTypeUp, requestTypeDown:
-		return d.buildInstancesForScaling(ctx, apiClient, cloudResources, parent, iconId)
-	case requestTypeKeep:
-		return d.buildInstancesForKeep(ctx, apiClient, cloudResources, parent, iconId)
-	default:
-		return nil, nil // 到達しないはず
-	}
+	return nil, nil
 }
 
-func (d *ResourceDefServerGroup) buildInstancesForScaling(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server, parent Resource, iconId string) (Resources, error) {
+func (d *ResourceDefServerGroup) buildInstancesForScaling(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server) (Resources, error) {
 	// Min/MaxとUp/Downを考慮してサーバ数を決定
 	plan, err := d.desiredPlan(ctx, len(cloudResources))
 	if err != nil {
 		return nil, err
 	}
 
+	parent, err := d.computeParent(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+
 	var resources Resources
 	for i := range cloudResources {
-		instance := &ResourceServerGroupInstance{
-			ResourceBase: &ResourceBase{
-				resourceType:     ResourceTypeServerGroupInstance,
-				setupGracePeriod: d.SetupGracePeriod(),
-			},
-			apiClient:   apiClient,
-			server:      cloudResources[i],
-			zone:        cloudResources[i].Zone.Name,
-			def:         d,
-			instruction: handler.ResourceInstructions_NOOP,
-			parent:      parent,
-		}
-		instance.indexInGroup = d.resourceIndex(instance)
+		resource := d.createResourceFromServer(apiClient, parent, cloudResources[i])
+		resource.indexInGroup = d.resourceIndex(resource)
 		if i >= plan.Size {
-			instance.instruction = handler.ResourceInstructions_DELETE
+			resource.instruction = handler.ResourceInstructions_DELETE
 		}
-		resources = append(resources, instance)
+		resources = append(resources, resource)
+	}
+
+	iconId, err := d.Template.FindIconId(ctx, apiClient)
+	if err != nil {
+		return nil, err
 	}
 
 	for len(resources) < plan.Size {
 		zone := d.determineZone(len(resources))
 		ctx := ctx.WithZone(zone)
 
-		// セレクタ->ID変換
-		cdromId, err := d.Template.FindCDROMId(ctx, apiClient, zone)
-		if err != nil {
-			return nil, err
-		}
-		privateHostId, err := d.Template.FindPrivateHostId(ctx, apiClient, zone)
-		if err != nil {
-			return nil, err
-		}
-
-		commitment := types.Commitments.Standard
-		if d.Template.Plan.DedicatedCPU {
-			commitment = types.Commitments.DedicatedCPU
-		}
 		serverName, index := d.determineServerName(resources)
 
-		resources = append(resources, &ResourceServerGroupInstance{
-			ResourceBase: &ResourceBase{
-				resourceType:     ResourceTypeServerGroupInstance,
-				setupGracePeriod: d.SetupGracePeriod(),
-			},
-			apiClient: apiClient,
-			server: &iaas.Server{
-				Name:                 serverName,
-				Tags:                 d.Template.CalculateTagsByIndex(index, len(d.Zones)),
-				Description:          d.Template.Description,
-				IconID:               types.StringID(iconId),
-				CDROMID:              types.StringID(cdromId),
-				PrivateHostID:        types.StringID(privateHostId),
-				InterfaceDriver:      d.Template.InterfaceDriver,
-				CPU:                  d.Template.Plan.Core,
-				MemoryMB:             d.Template.Plan.Memory * size.GiB,
-				GPU:                  d.Template.Plan.GPU,
-				ServerPlanCPUModel:   d.Template.Plan.CPUModel,
-				ServerPlanCommitment: commitment,
-			},
-			zone:         zone,
-			def:          d,
-			instruction:  handler.ResourceInstructions_CREATE,
-			indexInGroup: index,
-			parent:       parent,
-		})
+		resource, err := d.createResourceWithCreateInstruction(ctx, apiClient, parent, iconId, zone, serverName, index)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, resource)
 	}
 	return resources, nil
 }
 
-func (d *ResourceDefServerGroup) buildInstancesForKeep(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server, parent Resource, iconId string) (Resources, error) {
-	// TODO implements here
+func (d *ResourceDefServerGroup) createResourceFromServer(apiClient iaas.APICaller, parent Resource, server *iaas.Server) *ResourceServerGroupInstance {
+	return &ResourceServerGroupInstance{
+		ResourceBase: &ResourceBase{
+			resourceType:     ResourceTypeServerGroupInstance,
+			setupGracePeriod: d.SetupGracePeriod(),
+		},
+		apiClient:   apiClient,
+		server:      server,
+		zone:        server.Zone.Name,
+		def:         d,
+		instruction: handler.ResourceInstructions_NOOP,
+		parent:      parent,
+	}
+}
 
-	// cloudResourcesのそれぞれのリソースの名前を確認し、グループ内での現在のサーバ数を算出 (途中抜けを考慮すること
-	// 0 ~ サーバ数-1までをループ
-	//   ヘルスチェックを実施
-	//     OK: NOOP
-	//     NG: DELETE & CREATE
-	return nil, nil
+func (d *ResourceDefServerGroup) createResourceWithCreateInstruction(ctx *RequestContext, apiClient iaas.APICaller, parent Resource, iconId string, zone string, name string, index int) (*ResourceServerGroupInstance, error) {
+	// セレクタ->ID変換
+	cdromId, err := d.Template.FindCDROMId(ctx, apiClient, zone)
+	if err != nil {
+		return nil, err
+	}
+	privateHostId, err := d.Template.FindPrivateHostId(ctx, apiClient, zone)
+	if err != nil {
+		return nil, err
+	}
+
+	commitment := types.Commitments.Standard
+	if d.Template.Plan.DedicatedCPU {
+		commitment = types.Commitments.DedicatedCPU
+	}
+
+	return &ResourceServerGroupInstance{
+		ResourceBase: &ResourceBase{
+			resourceType:     ResourceTypeServerGroupInstance,
+			setupGracePeriod: d.SetupGracePeriod(),
+		},
+		apiClient: apiClient,
+		server: &iaas.Server{
+			Name:                 name,
+			Tags:                 d.Template.CalculateTagsByIndex(index, len(d.Zones)),
+			Description:          d.Template.Description,
+			IconID:               types.StringID(iconId),
+			CDROMID:              types.StringID(cdromId),
+			PrivateHostID:        types.StringID(privateHostId),
+			InterfaceDriver:      d.Template.InterfaceDriver,
+			CPU:                  d.Template.Plan.Core,
+			MemoryMB:             d.Template.Plan.Memory * size.GiB,
+			GPU:                  d.Template.Plan.GPU,
+			ServerPlanCPUModel:   d.Template.Plan.CPUModel,
+			ServerPlanCommitment: commitment,
+		},
+		zone:         zone,
+		def:          d,
+		instruction:  handler.ResourceInstructions_CREATE,
+		indexInGroup: index,
+		parent:       parent,
+	}, nil
+}
+
+func (d *ResourceDefServerGroup) buildInstancesForKeep(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server) (Resources, error) {
+	// サーバ名から現在のサーバグループの台数を把握
+	count := d.sizeByMaxIndex(cloudResources)
+
+	parent, err := d.computeParent(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+	iconId, err := d.Template.FindIconId(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+
+	var resources Resources
+	for i := 0; i < count; i++ {
+		name := d.serverNameByIndex(i)
+		server := d.findCloudResourceByName(cloudResources, name)
+
+		var zone string
+		if server != nil {
+			// サーバのヘルスチェック〜必要なら削除をする場合は今サーバが存在しているゾーンを尊重
+			zone = server.Zone.Name
+			ctx := ctx.WithZone(zone)
+
+			// ヘルスチェックOKなら途中抜け
+			health, err := d.isServerHealthy(ctx, apiClient, parent, server)
+			if err != nil {
+				return nil, err
+			}
+			if health {
+				continue
+			}
+
+			// healthyではない場合は一度消す
+			resource := d.createResourceFromServer(apiClient, parent, server)
+			resource.instruction = handler.ResourceInstructions_DELETE
+			resource.indexInGroup = i
+
+			resources = append(resources, resource)
+		}
+
+		// 新たにサーバ作成する際はインデックスからゾーンを再計算
+		zone = d.determineZone(i)
+		ctx := ctx.WithZone(zone)
+
+		resource, err := d.createResourceWithCreateInstruction(ctx, apiClient, parent, iconId, zone, d.serverNameByIndex(i), i)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, resource)
+	}
+
+	return resources, nil
+}
+
+func (d *ResourceDefServerGroup) isServerHealthy(ctx *RequestContext, apiClient iaas.APICaller, parent Resource, server *iaas.Server) (bool, error) {
+	// TODO LBのヘルスチェックの考慮
+	return server != nil && server.InstanceStatus.IsUp(), nil
 }
 
 func (d *ResourceDefServerGroup) desiredPlan(ctx *RequestContext, currentCount int) (*ServerGroupPlan, error) {
@@ -413,4 +482,13 @@ func (d *ResourceDefServerGroup) lastModifiedAt(cloudResources []*iaas.Server) t
 		}
 	}
 	return last
+}
+
+func (d *ResourceDefServerGroup) findCloudResourceByName(cloudResources []*iaas.Server, name string) *iaas.Server {
+	for _, r := range cloudResources {
+		if r.Name == name {
+			return r
+		}
+	}
+	return nil
 }
