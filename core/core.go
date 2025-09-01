@@ -186,6 +186,10 @@ func (c *Core) Down(ctx *RequestContext) (*JobStatus, string, error) {
 	return c.handle(ctx)
 }
 
+func (c *Core) Keep(ctx *RequestContext) (*JobStatus, string, error) {
+	return c.handle(ctx)
+}
+
 func (c *Core) currentJob(ctx *RequestContext) *JobStatus {
 	job, ok := c.jobs[ctx.JobID()]
 	if !ok {

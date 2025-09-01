@@ -178,6 +178,7 @@ func TestLoadAndValidate(t *testing.T) {
 					CoolDown: &CoolDown{
 						Up:   5,
 						Down: 5,
+						Keep: 5,
 					},
 				},
 				strictMode: false,
@@ -207,6 +208,7 @@ func TestLoadAndValidate(t *testing.T) {
 					CoolDown: &CoolDown{
 						Up:   5,
 						Down: 5,
+						Keep: 5,
 					},
 				},
 				strictMode: true, // 引数での指定がConfigに引き継がれているはず

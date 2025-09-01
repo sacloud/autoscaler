@@ -46,6 +46,7 @@ down: 2
 			want: &CoolDown{
 				Up:   1,
 				Down: 1,
+				Keep: 1,
 			},
 			wantErr: false,
 		},
