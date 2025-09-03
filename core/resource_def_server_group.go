@@ -263,6 +263,10 @@ func (d *ResourceDefServerGroup) createResourceWithCreateInstruction(ctx *Reques
 }
 
 func (d *ResourceDefServerGroup) buildInstancesForKeep(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server) (Resources, error) {
+	if d.AutoHealing == nil || !d.AutoHealing.Enabled {
+		return nil, nil
+	}
+
 	// サーバ名から現在のサーバグループの台数を把握
 	count := d.sizeByMaxIndex(cloudResources)
 
@@ -286,20 +290,21 @@ func (d *ResourceDefServerGroup) buildInstancesForKeep(ctx *RequestContext, apiC
 			zone = server.Zone.Name
 			ctx := ctx.WithZone(zone)
 
-			// ヘルスチェックOKなら途中抜け
-			health, err := d.isServerHealthy(ctx, apiClient, parent, server)
-			if err != nil {
-				return nil, err
-			}
-			if health {
-				continue
-			}
-
-			// healthyではない場合は一度消す
 			resource := d.createResourceFromServer(apiClient, parent, server)
+
 			resource.instruction = handler.ResourceInstructions_DELETE
 			resource.indexInGroup = i
 
+			// ヘルスチェックOKなら何もしない
+			healthy, err := resource.isHealthy(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if healthy {
+				continue
+			}
+
+			// healthyではない場合は一度消すために操作対象リソースとしてセットしておく
 			resources = append(resources, resource)
 		}
 
@@ -315,11 +320,6 @@ func (d *ResourceDefServerGroup) buildInstancesForKeep(ctx *RequestContext, apiC
 	}
 
 	return resources, nil
-}
-
-func (d *ResourceDefServerGroup) isServerHealthy(ctx *RequestContext, apiClient iaas.APICaller, parent Resource, server *iaas.Server) (bool, error) {
-	// TODO LBのヘルスチェックの考慮
-	return server != nil && server.InstanceStatus.IsUp(), nil
 }
 
 func (d *ResourceDefServerGroup) desiredPlan(ctx *RequestContext, currentCount int) (*ServerGroupPlan, error) {
