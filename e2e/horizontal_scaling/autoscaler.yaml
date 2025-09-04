@@ -7,6 +7,9 @@ resources:
 
     setup_grace_period: 30
 
+    auto_healing:
+      enabled: true
+
     plans:
       - {name: "smallest", size: 0}
       - {name: "medium", size: 3}
