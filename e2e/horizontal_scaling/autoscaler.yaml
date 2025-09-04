@@ -7,6 +7,9 @@ resources:
 
     setup_grace_period: 30
 
+    auto_healing:
+      enabled: true
+
     plans:
       - {name: "smallest", size: 0}
       - {name: "medium", size: 3}
@@ -19,6 +22,7 @@ resources:
         - upstream: "shared"
           expose:
             ports: [ 80 ]
+            server_group_name: "group1"
       disks:
         - os_type: "ubuntu2404"
           plan: "ssd"
