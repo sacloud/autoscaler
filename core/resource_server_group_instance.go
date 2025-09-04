@@ -307,3 +307,59 @@ func (r *ResourceServerGroupInstance) findNetworkUpstream(ctx *RequestContext, u
 	}
 	return found.Switches[0].ID.String(), nil
 }
+
+func (r *ResourceServerGroupInstance) isHealthy(ctx *RequestContext) (bool, error) {
+	if !r.server.InstanceStatus.IsUp() {
+		return false, nil
+	}
+
+	if r.parent != nil {
+		requests, err := r.healthCheckRequests(ctx)
+		if err != nil {
+			return false, err
+		}
+		return r.parent.(*ParentResource).IsChildResourceHealthy(ctx, requests)
+	}
+
+	return true, nil
+}
+
+func (r *ResourceServerGroupInstance) healthCheckRequests(ctx *RequestContext) ([]*ChildResourceHealthCheckRequest, error) {
+	nics, err := r.computeNetworkInterfaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var requests []*ChildResourceHealthCheckRequest
+	for _, nic := range nics {
+		if nic.ExposeInfo == nil {
+			continue
+		}
+
+		// VIPsやPortsが指定されていない場合、1回はループを回すためにダミーを投入しておく
+		vips := nic.ExposeInfo.Vips
+		if len(vips) == 0 {
+			vips = append(vips, "")
+		}
+
+		ports := nic.ExposeInfo.Ports
+		if len(ports) == 0 {
+			ports = append(ports, 0)
+		}
+
+		for _, port := range ports {
+			for _, vip := range vips {
+				ip := nic.GetUserIpAddress()
+				if ip == "" {
+					ip = nic.AssignedNetwork.IpAddress
+				}
+
+				requests = append(requests, &ChildResourceHealthCheckRequest{
+					VIP:       vip,
+					IPAddress: ip,
+					Port:      int(port),
+				})
+			}
+		}
+	}
+	return requests, nil
+}

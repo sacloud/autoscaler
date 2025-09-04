@@ -464,9 +464,10 @@ func TestResourceDefServerGroup_Compute(t *testing.T) {
 					DefName:  "resource-def-server-test",
 					TypeName: "ServerGroup",
 				},
-				Zones:   []string{test.Zone},
-				MinSize: 1,
-				MaxSize: 3,
+				Zones:       []string{test.Zone},
+				MinSize:     1,
+				MaxSize:     3,
+				AutoHealing: &AutoHealing{Enabled: true},
 				Template: &ServerGroupInstanceTemplate{
 					Plan: &ServerGroupInstancePlan{
 						Core:   1,

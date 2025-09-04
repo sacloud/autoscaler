@@ -154,3 +154,77 @@ func (r *ParentResource) refresh(ctx *RequestContext) error {
 	r.resource = found
 	return nil
 }
+
+type ChildResourceHealthCheckRequest struct {
+	Port      int
+	VIP       string
+	IPAddress string
+}
+
+func (r *ParentResource) IsChildResourceHealthy(ctx *RequestContext, children []*ChildResourceHealthCheckRequest) (bool, error) {
+	switch r.def.Type() {
+	case ResourceTypeELB:
+		return r.isELBChildHealthy(ctx, children)
+	case ResourceTypeLoadBalancer:
+		return r.isLBChildHealthy(ctx, children)
+
+		// NOTE: 現時点ではiaas-api-goにGSLBのヘルスチェックステータスを取得するAPIがないため未実装
+		// case ResourceTypeGSLB:
+		//	return r.isGSLBChildHealthy(ctx, children)
+	}
+	return true, nil
+}
+
+func (r *ParentResource) isELBChildHealthy(ctx *RequestContext, children []*ChildResourceHealthCheckRequest) (bool, error) {
+	op := iaas.NewProxyLBOp(r.apiClient)
+	res, err := op.HealthStatus(ctx, r.resource.GetID())
+	if err != nil {
+		return false, fmt.Errorf("checking ELB child health failed: %s", err)
+	}
+	if len(res.Servers) == 0 {
+		return false, nil // ステータス情報が取得できない場合は異常とみなす
+	}
+
+	// childrenには上流でexposeするサーバのIPアドレス+ポートの組が入っている。それらの全てが稼働中であればtrueを返す
+	for _, child := range children {
+		for _, status := range res.Servers {
+			if status.IPAddress == child.IPAddress && status.Port.Int() == child.Port && !status.Status.IsUp() {
+				return false, nil
+			}
+		}
+	}
+	return true, nil
+}
+
+func (r *ParentResource) isLBChildHealthy(ctx *RequestContext, children []*ChildResourceHealthCheckRequest) (bool, error) {
+	op := iaas.NewLoadBalancerOp(r.apiClient)
+	res, err := op.Status(ctx, r.zone, r.resource.GetID())
+	if err != nil {
+		return false, fmt.Errorf("checking LB child health failed: %s", err)
+	}
+	if len(res.Status) == 0 {
+		return false, nil // ステータス情報が取得できない場合は異常とみなす
+	}
+
+	// childrenには上流でexposeするVIP+サーバのIPアドレス+ポートの組が入っている。それらの全てが稼働中であればtrueを返す
+	for _, child := range children {
+		if child.VIP == "" {
+			continue
+		}
+		for _, status := range res.Status {
+			if status.VirtualIPAddress == child.VIP && status.Port.Int() == child.Port {
+				for _, server := range status.Servers {
+					if server.IPAddress == child.IPAddress && !server.Status.IsUp() {
+						return false, nil
+					}
+				}
+			}
+		}
+	}
+	return true, nil
+}
+
+// func (r *ParentResource) isGSLBChildHealthy(ctx *RequestContext, children []*ChildResourceHealthCheckRequest) (bool, error) {
+//  // TODO 実装
+//	return true, nil
+//}
