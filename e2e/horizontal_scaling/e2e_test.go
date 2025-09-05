@@ -29,6 +29,7 @@ import (
 
 	autoscalerE2E "github.com/sacloud/autoscaler/e2e"
 	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/cleanup"
 	"github.com/sacloud/iaas-api-go/search"
 	serverService "github.com/sacloud/iaas-service-go/server"
 	"github.com/sacloud/packages-go/e2e"
@@ -38,6 +39,7 @@ const (
 	coreReadyMarker   = `msg=started address=autoscaler.sock`
 	upJobDoneMarker   = `request=Up source=default resource=autoscaler-e2e-horizontal-scaling status=JOB_DONE`
 	downJobDoneMarker = `request=Down source=default resource=autoscaler-e2e-horizontal-scaling status=JOB_DONE`
+	keepJobDoneMarker = `request=Keep source=default resource=autoscaler-e2e-horizontal-scaling status=JOB_DONE`
 )
 
 var (
@@ -45,6 +47,7 @@ var (
 	upCmd         = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "up")
 	upToMediumCmd = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "--desired-state-name", "medium", "up")
 	downCmd       = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "down")
+	keepCmd       = exec.Command("autoscaler", "inputs", "direct", "--resource-name", "autoscaler-e2e-horizontal-scaling", "keep")
 
 	zones               = []string{"tk1b", "is1b"}
 	proxyLBReadyTimeout = 5 * time.Minute
@@ -154,7 +157,35 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 	e2e.TerraformRefresh() // nolint
 
 	/**************************************************************************
-	 * Step 3-1: スケールイン
+	 * Step 3-1: 台数維持
+	 *************************************************************************/
+	// 一台消してからKeepリクエストを送り、台数維持が働くことを確認する
+	if err := cleanup.DeleteServer(ctx, autoscalerE2E.SacloudAPICaller, servers[0].Zone.Name, servers[0].ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := keepCmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+	// Coreのジョブ完了まで待機
+	if err := output.WaitOutput(keepJobDoneMarker, 10*time.Minute); err != nil {
+		output.Fatal(t, err)
+	}
+	/**************************************************************************
+	 * Step 3-2: 台数維持結果の確認
+	 *************************************************************************/
+	servers, err = fetchSakuraCloudServers()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(servers) != 3 {
+		output.Fatalf(t,
+			"got unexpected server count: expected:3 actual:%d",
+			len(servers),
+		)
+	}
+
+	/**************************************************************************
+	 * Step 4-1: スケールイン
 	 *************************************************************************/
 	log.Println("step3-1: scale in")
 	if err := downCmd.Run(); err != nil {
@@ -166,7 +197,7 @@ func TestE2E_HorizontalScaling(t *testing.T) {
 		output.Fatal(t, err)
 	}
 	/**************************************************************************
-	 * Step 2-2: スケールイン結果の確認
+	 * Step 4-2: スケールイン結果の確認
 	 *************************************************************************/
 	log.Println("step3-2: check results")
 	servers, err = fetchSakuraCloudServers()
