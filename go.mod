@@ -15,7 +15,7 @@ require (
 	github.com/prometheus/common v0.65.0
 	github.com/sacloud/api-client-go v0.3.3
 	github.com/sacloud/go-otelsetup v0.5.0
-	github.com/sacloud/iaas-api-go v1.17.0
+	github.com/sacloud/iaas-api-go v1.17.1
 	github.com/sacloud/iaas-api-go/trace/otel v0.0.0-20250806043940-3f2d261c1ab4
 	github.com/sacloud/iaas-service-go v1.13.0
 	github.com/sacloud/packages-go v0.0.11
@@ -72,11 +72,11 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
 	go.uber.org/ratelimit v0.3.1 // indirect
-	golang.org/x/crypto v0.40.0 // indirect
-	golang.org/x/mod v0.25.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
+	golang.org/x/crypto v0.41.0 // indirect
+	golang.org/x/mod v0.26.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
