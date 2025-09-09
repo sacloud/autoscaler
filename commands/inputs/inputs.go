@@ -25,6 +25,7 @@ import (
 
 var Command = &cobra.Command{
 	Use:           "inputs",
+	Aliases:       []string{"input"},
 	Short:         "A set of sub commands to manage autoscaler's inputs",
 	SilenceErrors: true,
 }
