@@ -33,7 +33,7 @@ import (
 
 var Command = &cobra.Command{
 	Use:       "direct {up | down | keep} [flags]...",
-	Short:     "Send Up/Down request directly to Core server",
+	Short:     "Send Up/Down/Keep request directly to Core server",
 	ValidArgs: []string{"up", "down", "keep"},
 	Args:      cobra.ExactValidArgs(1),
 	PreRunE: flags.ValidateMultiFunc(true,
