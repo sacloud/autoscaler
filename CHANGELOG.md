@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.18.0](https://github.com/sacloud/autoscaler/compare/v0.17.0...v0.18.0) - 2025-09-10
+- go: bump google.golang.org/grpc from 1.74.2 to 1.75.0 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/639
+- go: bump github.com/stretchr/testify from 1.10.0 to 1.11.1 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/643
+- go: bump github.com/sacloud/api-client-go from 0.3.2 to 0.3.3 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/641
+- go: bump google.golang.org/protobuf from 1.36.7 to 1.36.8 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/640
+- feat: 台数維持機能 by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/663
+
 ## [v0.17.0](https://github.com/sacloud/autoscaler/compare/v0.16.2...v0.17.0) - 2025-08-14
 - e2e: use terrafrm-provider-sakuracloud v2.27.0 by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/619
 - golangci-lint v2 by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/624
