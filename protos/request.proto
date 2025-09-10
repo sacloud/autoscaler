@@ -11,6 +11,8 @@ service ScalingService {
   rpc Up(ScalingRequest) returns (ScalingResponse);
   // Down スケールダウン or スケールインのリクエスト
   rpc Down(ScalingRequest) returns (ScalingResponse);
+  // Keep 台数維持のリクエスト
+  rpc Keep(ScalingRequest) returns (ScalingResponse);
 }
 
 // Scalingサービスのリクエストパラメータ

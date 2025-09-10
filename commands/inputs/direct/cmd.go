@@ -32,9 +32,9 @@ import (
 )
 
 var Command = &cobra.Command{
-	Use:       "direct {up | down} [flags]...",
-	Short:     "Send Up/Down request directly to Core server",
-	ValidArgs: []string{"up", "down"},
+	Use:       "direct {up | down | keep} [flags]...",
+	Short:     "Send Up/Down/Keep request directly to Core server",
+	ValidArgs: []string{"up", "down", "keep"},
 	Args:      cobra.ExactValidArgs(1),
 	PreRunE: flags.ValidateMultiFunc(true,
 		flags.ValidateDestinationFlags,
@@ -108,6 +108,8 @@ func run(_ *cobra.Command, args []string) error {
 		f = req.Up
 	case "down":
 		f = req.Down
+	case "keep":
+		f = req.Keep
 	default:
 		return fmt.Errorf("invalid args: %v", args)
 	}

@@ -135,6 +135,53 @@ func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) 
 	}, nil
 }
 
+func (s *ScalingService) Keep(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
+	logger := s.instance.logger.With(
+		"request", requestTypeKeep.String(),
+		"resource", req.ResourceName,
+	)
+	if req.DesiredStateName != "" {
+		logger = logger.With("desired", req.DesiredStateName)
+	}
+	logger.Info("request received")
+	logger.Debug("", slog.Any("request", req))
+
+	resourceName, err := s.instance.ResourceName(req.ResourceName)
+	if err != nil {
+		return nil, err
+	}
+
+	traceCtx, span := sacloudotel.Tracer().Start(otelsetup.ContextForTrace(context.Background()), "ScalingService#Keep",
+		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithAttributes(
+			attribute.String("sacloud.autoscaler.request.type", requestTypeKeep.String()),
+			attribute.String("sacloud.autoscaler.request.source", req.Source),
+			attribute.String("sacloud.autoscaler.request.resource_name", req.ResourceName),
+			attribute.String("sacloud.autoscaler.request.desired_state_name", req.DesiredStateName),
+			attribute.Bool("sacloud.autoscaler.request.sync", req.Sync),
+		),
+	)
+	defer span.End()
+
+	// リクエストには即時応答を返しつつバックグラウンドでジョブを実行するために引数のctxは引き継がない
+	serviceCtx := NewRequestContext(traceCtx, &requestInfo{
+		requestType:      requestTypeKeep,
+		source:           req.Source,
+		resourceName:     resourceName,
+		desiredStateName: req.DesiredStateName,
+		sync:             req.Sync,
+	}, s.instance.logger)
+	job, message, err := s.instance.Keep(serviceCtx)
+	if err != nil {
+		return nil, err
+	}
+	return &request.ScalingResponse{
+		ScalingJobId: job.ID(),
+		Status:       job.Status(),
+		Message:      message,
+	}, nil
+}
+
 // Check gRPCヘルスチェックの実装
 func (s *ScalingService) Check(context.Context, *health.HealthCheckRequest) (*health.HealthCheckResponse, error) {
 	return &health.HealthCheckResponse{

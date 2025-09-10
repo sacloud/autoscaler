@@ -255,6 +255,25 @@ func Test_desiredPlan(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
+		{
+			name: "Keep always returns nil",
+			args: args{
+				ctx: &RequestContext{
+					ctx: context.Background(),
+					request: &requestInfo{
+						requestType: requestTypeKeep,
+					},
+				},
+				current: 2,
+				plans: ResourcePlans{
+					&stubResourcePlan{memorySize: 3, name: "named"},
+					&stubResourcePlan{memorySize: 2},
+					&stubResourcePlan{memorySize: 1},
+				},
+			},
+			want:    nil,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

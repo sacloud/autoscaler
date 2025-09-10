@@ -22,6 +22,7 @@ const (
 	requestTypeUnknown RequestTypes = iota
 	requestTypeUp                   // スケールアップ or スケールアウト
 	requestTypeDown                 // スケールダウン or スケールイン
+	requestTypeKeep                 // 台数維持
 )
 
 func (r RequestTypes) String() string {
@@ -30,6 +31,8 @@ func (r RequestTypes) String() string {
 		return "Up"
 	case requestTypeDown:
 		return "Down"
+	case requestTypeKeep:
+		return "Keep"
 	default:
 		return "unknown request type"
 	}

@@ -42,6 +42,8 @@ type ResourceDefServerGroup struct {
 	MinSize int `yaml:"min_size" validate:"min=0,ltefield=MaxSize"`
 	MaxSize int `yaml:"max_size" validate:"min=0,gtecsfield=MinSize"`
 
+	AutoHealing *AutoHealing `yaml:"auto_healing"`
+
 	Plans []*ServerGroupPlan `yaml:"plans"`
 
 	Template      *ServerGroupInstanceTemplate `yaml:"template" validate:"required"`
@@ -135,13 +137,17 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		return nil, err
 	}
 
-	// Min/MaxとUp/Downを考慮してサーバ数を決定
-	plan, err := d.desiredPlan(ctx, len(cloudResources))
-	if err != nil {
-		return nil, err
+	switch ctx.Request().requestType {
+	case requestTypeUp, requestTypeDown:
+		return d.buildInstancesForScaling(ctx, apiClient, cloudResources)
+	case requestTypeKeep:
+		return d.buildInstancesForKeep(ctx, apiClient, cloudResources)
+	default:
+		return nil, nil // 到達しないはず
 	}
+}
 
-	var parent Resource
+func (d *ResourceDefServerGroup) computeParent(ctx *RequestContext, apiClient iaas.APICaller) (Resource, error) {
 	if d.ParentDef != nil {
 		parents, err := d.ParentDef.Compute(ctx.WithZone(d.Zones[0]), apiClient)
 		if err != nil {
@@ -150,82 +156,169 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 		if len(parents) != 1 {
 			return nil, fmt.Errorf("got invalid parent resources: %#+v", parents)
 		}
-		parent = parents[0]
+		return parents[0], nil
+	}
+	return nil, nil
+}
+
+func (d *ResourceDefServerGroup) buildInstancesForScaling(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server) (Resources, error) {
+	// Min/MaxとUp/Downを考慮してサーバ数を決定
+	plan, err := d.desiredPlan(ctx, len(cloudResources))
+	if err != nil {
+		return nil, err
+	}
+
+	parent, err := d.computeParent(ctx, apiClient)
+	if err != nil {
+		return nil, err
 	}
 
 	var resources Resources
 	for i := range cloudResources {
-		instance := &ResourceServerGroupInstance{
-			ResourceBase: &ResourceBase{
-				resourceType:     ResourceTypeServerGroupInstance,
-				setupGracePeriod: d.SetupGracePeriod(),
-			},
-			apiClient:   apiClient,
-			server:      cloudResources[i],
-			zone:        cloudResources[i].Zone.Name,
-			def:         d,
-			instruction: handler.ResourceInstructions_NOOP,
-			parent:      parent,
-		}
-		instance.indexInGroup = d.resourceIndex(instance)
+		resource := d.createResourceFromServer(apiClient, parent, cloudResources[i])
+		resource.indexInGroup = d.resourceIndex(resource)
 		if i >= plan.Size {
-			instance.instruction = handler.ResourceInstructions_DELETE
+			resource.instruction = handler.ResourceInstructions_DELETE
 		}
-		resources = append(resources, instance)
+		resources = append(resources, resource)
 	}
 
-	// セレクタ->ID変換、ゾーン非依存なので先に検索しておく
 	iconId, err := d.Template.FindIconId(ctx, apiClient)
 	if err != nil {
 		return nil, err
 	}
+
 	for len(resources) < plan.Size {
 		zone := d.determineZone(len(resources))
 		ctx := ctx.WithZone(zone)
 
-		// セレクタ->ID変換
-		cdromId, err := d.Template.FindCDROMId(ctx, apiClient, zone)
-		if err != nil {
-			return nil, err
-		}
-		privateHostId, err := d.Template.FindPrivateHostId(ctx, apiClient, zone)
-		if err != nil {
-			return nil, err
-		}
-
-		commitment := types.Commitments.Standard
-		if d.Template.Plan.DedicatedCPU {
-			commitment = types.Commitments.DedicatedCPU
-		}
 		serverName, index := d.determineServerName(resources)
 
-		resources = append(resources, &ResourceServerGroupInstance{
-			ResourceBase: &ResourceBase{
-				resourceType:     ResourceTypeServerGroupInstance,
-				setupGracePeriod: d.SetupGracePeriod(),
-			},
-			apiClient: apiClient,
-			server: &iaas.Server{
-				Name:                 serverName,
-				Tags:                 d.Template.CalculateTagsByIndex(index, len(d.Zones)),
-				Description:          d.Template.Description,
-				IconID:               types.StringID(iconId),
-				CDROMID:              types.StringID(cdromId),
-				PrivateHostID:        types.StringID(privateHostId),
-				InterfaceDriver:      d.Template.InterfaceDriver,
-				CPU:                  d.Template.Plan.Core,
-				MemoryMB:             d.Template.Plan.Memory * size.GiB,
-				GPU:                  d.Template.Plan.GPU,
-				ServerPlanCPUModel:   d.Template.Plan.CPUModel,
-				ServerPlanCommitment: commitment,
-			},
-			zone:         zone,
-			def:          d,
-			instruction:  handler.ResourceInstructions_CREATE,
-			indexInGroup: index,
-			parent:       parent,
-		})
+		resource, err := d.createResourceWithCreateInstruction(ctx, apiClient, parent, iconId, zone, serverName, index)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, resource)
 	}
+	return resources, nil
+}
+
+func (d *ResourceDefServerGroup) createResourceFromServer(apiClient iaas.APICaller, parent Resource, server *iaas.Server) *ResourceServerGroupInstance {
+	return &ResourceServerGroupInstance{
+		ResourceBase: &ResourceBase{
+			resourceType:     ResourceTypeServerGroupInstance,
+			setupGracePeriod: d.SetupGracePeriod(),
+		},
+		apiClient:   apiClient,
+		server:      server,
+		zone:        server.Zone.Name,
+		def:         d,
+		instruction: handler.ResourceInstructions_NOOP,
+		parent:      parent,
+	}
+}
+
+func (d *ResourceDefServerGroup) createResourceWithCreateInstruction(ctx *RequestContext, apiClient iaas.APICaller, parent Resource, iconId string, zone string, name string, index int) (*ResourceServerGroupInstance, error) {
+	// セレクタ->ID変換
+	cdromId, err := d.Template.FindCDROMId(ctx, apiClient, zone)
+	if err != nil {
+		return nil, err
+	}
+	privateHostId, err := d.Template.FindPrivateHostId(ctx, apiClient, zone)
+	if err != nil {
+		return nil, err
+	}
+
+	commitment := types.Commitments.Standard
+	if d.Template.Plan.DedicatedCPU {
+		commitment = types.Commitments.DedicatedCPU
+	}
+
+	return &ResourceServerGroupInstance{
+		ResourceBase: &ResourceBase{
+			resourceType:     ResourceTypeServerGroupInstance,
+			setupGracePeriod: d.SetupGracePeriod(),
+		},
+		apiClient: apiClient,
+		server: &iaas.Server{
+			Name:                 name,
+			Tags:                 d.Template.CalculateTagsByIndex(index, len(d.Zones)),
+			Description:          d.Template.Description,
+			IconID:               types.StringID(iconId),
+			CDROMID:              types.StringID(cdromId),
+			PrivateHostID:        types.StringID(privateHostId),
+			InterfaceDriver:      d.Template.InterfaceDriver,
+			CPU:                  d.Template.Plan.Core,
+			MemoryMB:             d.Template.Plan.Memory * size.GiB,
+			GPU:                  d.Template.Plan.GPU,
+			ServerPlanCPUModel:   d.Template.Plan.CPUModel,
+			ServerPlanCommitment: commitment,
+		},
+		zone:         zone,
+		def:          d,
+		instruction:  handler.ResourceInstructions_CREATE,
+		indexInGroup: index,
+		parent:       parent,
+	}, nil
+}
+
+func (d *ResourceDefServerGroup) buildInstancesForKeep(ctx *RequestContext, apiClient iaas.APICaller, cloudResources []*iaas.Server) (Resources, error) {
+	if d.AutoHealing == nil || !d.AutoHealing.Enabled {
+		return nil, nil
+	}
+
+	// サーバ名から現在のサーバグループの台数を把握
+	count := d.sizeByMaxIndex(cloudResources)
+
+	parent, err := d.computeParent(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+	iconId, err := d.Template.FindIconId(ctx, apiClient)
+	if err != nil {
+		return nil, err
+	}
+
+	var resources Resources
+	for i := 0; i < count; i++ {
+		name := d.serverNameByIndex(i)
+		server := d.findCloudResourceByName(cloudResources, name)
+
+		var zone string
+		if server != nil {
+			// サーバのヘルスチェック〜必要なら削除をする場合は今サーバが存在しているゾーンを尊重
+			zone = server.Zone.Name
+			ctx := ctx.WithZone(zone)
+
+			resource := d.createResourceFromServer(apiClient, parent, server)
+
+			resource.instruction = handler.ResourceInstructions_DELETE
+			resource.indexInGroup = i
+
+			// ヘルスチェックOKなら何もしない
+			healthy, err := resource.isHealthy(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if healthy {
+				continue
+			}
+
+			// healthyではない場合は一度消すために操作対象リソースとしてセットしておく
+			resources = append(resources, resource)
+		}
+
+		// 新たにサーバ作成する際はインデックスからゾーンを再計算
+		zone = d.determineZone(i)
+		ctx := ctx.WithZone(zone)
+
+		resource, err := d.createResourceWithCreateInstruction(ctx, apiClient, parent, iconId, zone, d.serverNameByIndex(i), i)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, resource)
+	}
+
 	return resources, nil
 }
 
@@ -283,6 +376,39 @@ func (d *ResourceDefServerGroup) determineServerName(resources Resources) (strin
 		}
 	}
 	return d.serverNameByIndex(len(resources)), len(resources)
+}
+
+// sizeByMaxIndex 渡されたサーバの名前からサーバグループに何台のサーバが存在すべきかを計算する
+//
+// Examples:
+//   - 001,002,003 -> 3
+//   - MaxSize=5 で 001,002,004 -> 4
+//   - サーバが存在しない場合 -> 0
+//   - MaxSize=5 で 001..005 が揃っている場合 -> 5
+//   - MaxSize=5 で 001, 002, 007 のように命名規則に沿っているがMaxSize以上のものがある時 -> 2 (MaxSizeの範囲外なので無視される)
+func (d *ResourceDefServerGroup) sizeByMaxIndex(servers []*iaas.Server) int {
+	if d.MaxSize <= 0 || len(servers) == 0 {
+		return 0
+	}
+	if d.MaxSize <= len(servers) {
+		return d.MaxSize
+	}
+
+	// 既存サーバ名をセット化して高速に検索
+	names := make(map[string]struct{}, len(servers))
+	for _, s := range servers {
+		if s != nil && s.Name != "" {
+			names[s.Name] = struct{}{}
+		}
+	}
+
+	// 大きい index から逆順に探す
+	for idx := d.MaxSize; idx >= 0; idx-- {
+		if _, ok := names[d.serverNameByIndex(idx-1)]; ok {
+			return idx
+		}
+	}
+	return 0
 }
 
 // determineZone サーバのインデックスからサーバを配置すべきゾーンを決定する
@@ -356,4 +482,13 @@ func (d *ResourceDefServerGroup) lastModifiedAt(cloudResources []*iaas.Server) t
 		}
 	}
 	return last
+}
+
+func (d *ResourceDefServerGroup) findCloudResourceByName(cloudResources []*iaas.Server, name string) *iaas.Server {
+	for _, r := range cloudResources {
+		if r.Name == name {
+			return r
+		}
+	}
+	return nil
 }
