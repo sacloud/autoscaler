@@ -86,7 +86,7 @@ func (rs *ResourceSelector) findCondition() *iaas.FindCondition {
 		fc.Filter[search.Key("Name")] = search.PartialMatch(rs.Names...)
 	}
 	if len(rs.Tags) != 0 {
-		fc.Filter[search.Key("Tags.Name")] = search.PartialMatch(rs.Tags...)
+		fc.Filter[search.Key("Tags.Name")] = search.TagsAndEqual(rs.Tags...)
 	}
 	return fc
 }

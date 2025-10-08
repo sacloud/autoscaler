@@ -143,7 +143,7 @@ func TestResourceSelector_findCondition(t *testing.T) {
 			},
 			want: &iaas.FindCondition{
 				Filter: search.Filter{
-					search.Key("Tags.Name"): search.PartialMatch("tags"),
+					search.Key("Tags.Name"): search.TagsAndEqual("tags"),
 				},
 			},
 		},
