@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.18.1](https://github.com/sacloud/autoscaler/compare/v0.18.0...v0.18.1) - 2025-10-08
+- Handle scaling by default for non-Keep requests by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/666
+- Change tag filtering to use TagsAndEqual by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/668
+
 ## [v0.18.0](https://github.com/sacloud/autoscaler/compare/v0.17.0...v0.18.0) - 2025-09-10
 - go: bump google.golang.org/grpc from 1.74.2 to 1.75.0 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/639
 - go: bump github.com/stretchr/testify from 1.10.0 to 1.11.1 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/643
