@@ -138,12 +138,10 @@ func (d *ResourceDefServerGroup) Compute(ctx *RequestContext, apiClient iaas.API
 	}
 
 	switch ctx.Request().requestType {
-	case requestTypeUp, requestTypeDown:
-		return d.buildInstancesForScaling(ctx, apiClient, cloudResources)
 	case requestTypeKeep:
 		return d.buildInstancesForKeep(ctx, apiClient, cloudResources)
 	default:
-		return nil, nil // 到達しないはず
+		return d.buildInstancesForScaling(ctx, apiClient, cloudResources)
 	}
 }
 
