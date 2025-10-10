@@ -53,13 +53,13 @@ var (
 func AddTestServer(t *testing.T, name string) (*iaas.Server, func()) {
 	serverOp := iaas.NewServerOp(APIClient)
 	server, err := serverOp.Create(context.Background(), Zone, &iaas.ServerCreateRequest{
-		CPU:                  2,
-		MemoryMB:             4 * size.GiB,
-		ServerPlanCommitment: types.Commitments.Standard,
-		ServerPlanGeneration: types.PlanGenerations.Default,
-		ConnectedSwitches:    nil,
-		InterfaceDriver:      types.InterfaceDrivers.VirtIO,
-		Name:                 name,
+		CPU:               2,
+		MemoryMB:          4 * size.GiB,
+		Commitment:        types.Commitments.Standard,
+		Generation:        types.PlanGenerations.Default,
+		ConnectedSwitches: nil,
+		InterfaceDriver:   types.InterfaceDrivers.VirtIO,
+		Name:              name,
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -102,12 +102,12 @@ func (h *VerticalScaleHandler) handleServer(ctx *handlers.HandlerContext, req *h
 	}
 	updated, err := plans.ChangeServerPlan(ctx, h.APICaller(), server.Zone, types.StringID(server.Id),
 		&iaas.ServerChangePlanRequest{
-			CPU:                  int(server.Core),
-			MemoryMB:             int(server.Memory) * size.GiB,
-			GPU:                  int(server.Gpu),
-			ServerPlanCPUModel:   server.CpuModel,
-			ServerPlanCommitment: commitment,
-			ServerPlanGeneration: types.PlanGenerations.Default, // TODO プランの世代はどう指定するか?
+			CPU:        int(server.Core),
+			MemoryMB:   int(server.Memory) * size.GiB,
+			GPU:        int(server.Gpu),
+			CPUModel:   server.CpuModel,
+			Commitment: commitment,
+			Generation: types.PlanGenerations.Default, // TODO プランの世代はどう指定するか?
 		},
 	)
 	if err != nil {

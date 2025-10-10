@@ -69,7 +69,7 @@ func (c *Config) load(ctx context.Context, reader io.Reader) error {
 		return fmt.Errorf("loading configuration failed: %s", err)
 	}
 	if err := yaml.UnmarshalContext(ctx, data, c, yaml.Strict()); err != nil {
-		return fmt.Errorf(yaml.FormatError(err, false, true))
+		return fmt.Errorf("%s", yaml.FormatError(err, false, true))
 	}
 
 	if c.SakuraCloud == nil {
