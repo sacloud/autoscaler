@@ -92,13 +92,13 @@ func TestHandler_Handle(t *testing.T) {
 func initTestServer(t *testing.T) (*iaas.Server, func()) {
 	serverOp := iaas.NewServerOp(test.APIClient)
 	server, err := serverOp.Create(context.Background(), test.Zone, &iaas.ServerCreateRequest{
-		CPU:                  2,
-		MemoryMB:             4 * size.GiB,
-		ServerPlanCommitment: types.Commitments.Standard,
-		ServerPlanGeneration: types.PlanGenerations.Default,
-		ConnectedSwitches:    nil,
-		InterfaceDriver:      types.InterfaceDrivers.VirtIO,
-		Name:                 "test-server",
+		CPU:               2,
+		MemoryMB:          4 * size.GiB,
+		Commitment:        types.Commitments.Standard,
+		Generation:        types.PlanGenerations.Default,
+		ConnectedSwitches: nil,
+		InterfaceDriver:   types.InterfaceDrivers.VirtIO,
+		Name:              "test-server",
 	})
 	if err != nil {
 		t.Fatal(err)

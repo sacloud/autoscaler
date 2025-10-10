@@ -32,13 +32,13 @@ import (
 func initTestResourceServer(t *testing.T) *iaas.Server {
 	serverOp := iaas.NewServerOp(test.APIClient)
 	server, err := serverOp.Create(context.Background(), test.Zone, &iaas.ServerCreateRequest{
-		CPU:                  2,
-		MemoryMB:             4 * size.GiB,
-		ServerPlanCommitment: types.Commitments.Standard,
-		ServerPlanGeneration: types.PlanGenerations.Default,
-		ConnectedSwitches:    nil,
-		InterfaceDriver:      types.InterfaceDrivers.VirtIO,
-		Name:                 "test-server",
+		CPU:               2,
+		MemoryMB:          4 * size.GiB,
+		Commitment:        types.Commitments.Standard,
+		Generation:        types.PlanGenerations.Default,
+		ConnectedSwitches: nil,
+		InterfaceDriver:   types.InterfaceDrivers.VirtIO,
+		Name:              "test-server",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -74,12 +74,12 @@ func TestResourceServer_New_Refresh(t *testing.T) {
 	// IDを変えるためにプラン変更を実施
 	updated, err := plans.ChangeServerPlan(ctx, test.APIClient, test.Zone, server.ID,
 		&iaas.ServerChangePlanRequest{
-			CPU:                  1,
-			MemoryMB:             2 * size.GiB,
-			GPU:                  0,
-			ServerPlanCPUModel:   "",
-			ServerPlanGeneration: types.PlanGenerations.Default,
-			ServerPlanCommitment: types.Commitments.Standard,
+			CPU:        1,
+			MemoryMB:   2 * size.GiB,
+			GPU:        0,
+			CPUModel:   "",
+			Generation: types.PlanGenerations.Default,
+			Commitment: types.Commitments.Standard,
 		},
 	)
 	require.NoError(t, err)
