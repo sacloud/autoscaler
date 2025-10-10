@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.18.2](https://github.com/sacloud/autoscaler/compare/v0.18.1...v0.18.2) - 2025-10-10
+- iaas-service-go v1.16.0 by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/669
+
 ## [v0.18.1](https://github.com/sacloud/autoscaler/compare/v0.18.0...v0.18.1) - 2025-10-08
 - Handle scaling by default for non-Keep requests by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/666
 - Change tag filtering to use TagsAndEqual by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/668
