@@ -15,9 +15,9 @@ require (
 	github.com/prometheus/common v0.65.0
 	github.com/sacloud/api-client-go v0.3.3
 	github.com/sacloud/go-otelsetup v0.5.0
-	github.com/sacloud/iaas-api-go v1.19.0
+	github.com/sacloud/iaas-api-go v1.21.1
 	github.com/sacloud/iaas-api-go/trace/otel v0.0.0-20251010070341-75d9482919ec
-	github.com/sacloud/iaas-service-go v1.16.0
+	github.com/sacloud/iaas-service-go v1.18.1
 	github.com/sacloud/packages-go v0.0.11
 	github.com/shivamMg/ppds v0.0.1
 	github.com/spf13/cobra v1.10.1
