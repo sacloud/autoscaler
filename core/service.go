@@ -90,7 +90,7 @@ func (s *ScalingService) Up(ctx context.Context, req *request.ScalingRequest) (*
 
 func (s *ScalingService) Down(ctx context.Context, req *request.ScalingRequest) (*request.ScalingResponse, error) {
 	logger := s.instance.logger.With(
-		"request", requestTypeUp.String(),
+		"request", requestTypeDown.String(),
 		"resource", req.ResourceName,
 	)
 	if req.DesiredStateName != "" {
