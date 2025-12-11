@@ -3,6 +3,9 @@
 ## [v0.19.1](https://github.com/sacloud/autoscaler/compare/v0.19.0...v0.19.1) - 2025-12-11
 - update dependencies - iaas-service-go v1.20.1 and iaas-api-go v1.23.1 by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/682
 
+## [v0.19.1](https://github.com/sacloud/autoscaler/compare/v0.19.0...v0.19.1) - 2025-12-11
+- update dependencies - iaas-service-go v1.20.1 and iaas-api-go v1.23.1 by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/682
+
 ## [v0.19.0](https://github.com/sacloud/autoscaler/compare/v0.18.2...v0.19.0) - 2025-12-08
 - ci: bump actions/setup-go from 5 to 6 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/658
 - go: bump github.com/spf13/cobra from 1.9.1 to 1.10.1 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/654
