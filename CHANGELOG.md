@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.19.3](https://github.com/sacloud/autoscaler/compare/v0.19.2...v0.19.3) - 2026-01-08
+- use default http.Client by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/687
+- e2e: use default http.Client by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/689
+
 ## [v0.19.2](https://github.com/sacloud/autoscaler/compare/v0.19.1...v0.19.2) - 2026-01-08
 - iaas-service-go v1.21.1 & go 1.25.5 by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/685
 
