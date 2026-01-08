@@ -17,7 +17,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"runtime"
 	"sync"
@@ -63,7 +62,6 @@ func (sc *SakuraCloud) APIClient() iaas.APICaller {
 			Options: &client.Options{
 				AccessToken:       sc.Token,
 				AccessTokenSecret: sc.Secret,
-				HttpClient:        &http.Client{},
 				UserAgent: fmt.Sprintf(
 					"sacloud/autoscaler/v%s (%s/%s; +https://github.com/sacloud/autoscaler) %s",
 					version.Version,
