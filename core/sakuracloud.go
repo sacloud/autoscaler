@@ -16,6 +16,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -30,7 +31,6 @@ import (
 	"github.com/sacloud/iaas-api-go/defaults"
 	"github.com/sacloud/iaas-api-go/helper/api"
 	sacloudtrace "github.com/sacloud/iaas-api-go/trace/otel"
-	"github.com/sacloud/iaas-api-go/types"
 )
 
 type SakuraCloud struct {
@@ -83,25 +83,25 @@ func (sc *SakuraCloud) APIClient() iaas.APICaller {
 	return sc.apiClient
 }
 
-// Validate 有効なAPIキーが指定されており、必要なパーミッションが割り当てられていることを確認する
+// Validate 有効なAPIキーが指定されているかを確認する
 func (sc *SakuraCloud) Validate(ctx context.Context) error {
+	if len(os.Getenv("SAKURACLOUD_APPEND_USER_AGENT")) > 1024 {
+		return fmt.Errorf("SAKURACLOUD_APPEND_USER_AGENT is too long: max=1024")
+	}
+
 	apiClient := sc.APIClient()
 	if sc.initError != nil {
 		return fmt.Errorf("initializing API Client failed: %s", sc.initError)
 	}
 
-	authStatus, err := iaas.NewAuthStatusOp(apiClient).Read(ctx)
+	// APIクライアントが有効かどうかを確認するためにゾーンのリストを取得してみる
+	_, err := iaas.NewZoneOp(apiClient).Find(ctx, nil)
 	if err != nil {
-		if err, ok := err.(iaas.APIError); ok {
-			return validate.Errorf("reading SAKURA cloud account info failed: %s", err.Message())
+		var apiErr iaas.APIError
+		if errors.As(err, &apiErr) {
+			return validate.Errorf("failed to call SAKURA Cloud API: %s", apiErr.Message())
 		}
-		return fmt.Errorf("reading SAKURA cloud account info failed: unknown error: %s", err)
-	}
-	if authStatus.Permission != types.Permissions.Create && authStatus.Permission != types.Permissions.Arrange {
-		return validate.Errorf("required permissions have not been assigned. assigned permission: %s", authStatus.Permission)
-	}
-	if len(os.Getenv("SAKURACLOUD_APPEND_USER_AGENT")) > 1024 {
-		return fmt.Errorf("SAKURACLOUD_APPEND_USER_AGENT is too long: max=1024")
+		return fmt.Errorf("failed to call SAKURA Cloud API: %w", err)
 	}
 	return nil
 }
