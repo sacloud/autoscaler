@@ -186,7 +186,7 @@ func (s *server) handle(requestType string, w http.ResponseWriter, req *http.Req
 	scalingReq, err := s.parseRequest(requestType, req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error())) //nolint:errcheck
+		w.Write([]byte(err.Error())) //nolint:errcheck,gosec
 		return
 	}
 	if scalingReq == nil {
