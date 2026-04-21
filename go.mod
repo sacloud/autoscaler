@@ -2,6 +2,8 @@ module github.com/sacloud/autoscaler
 
 go 1.25.8
 
+toolchain go1.26.2
+
 require (
 	github.com/c-robinson/iplib v1.0.8
 	github.com/go-playground/validator/v10 v10.30.2
