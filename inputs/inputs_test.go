@@ -31,7 +31,6 @@ import (
 )
 
 func init() {
-	model.NameValidationScheme = model.UTF8Validation
 	initMetrics()
 }
 
@@ -199,7 +198,7 @@ func Test_server_exporter(t *testing.T) {
 	}
 
 	// parse response of Exporter
-	var parser expfmt.TextParser
+	parser := expfmt.NewTextParser(model.UTF8Validation)
 	parsed, err := parser.TextToMetricFamilies(req.Body)
 	if err != nil {
 		t.Fatal(err)
