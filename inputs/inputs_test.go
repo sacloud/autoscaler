@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 	"github.com/sacloud/autoscaler/metrics"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
@@ -197,7 +198,7 @@ func Test_server_exporter(t *testing.T) {
 	}
 
 	// parse response of Exporter
-	var parser expfmt.TextParser
+	parser := expfmt.NewTextParser(model.UTF8Validation)
 	parsed, err := parser.TextToMetricFamilies(req.Body)
 	if err != nil {
 		t.Fatal(err)

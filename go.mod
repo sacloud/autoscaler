@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.23.0
-	github.com/prometheus/common v0.65.0
+	github.com/prometheus/common v0.67.5
 	github.com/sacloud/api-client-go v0.3.4
 	github.com/sacloud/go-otelsetup v0.8.0
 	github.com/sacloud/iaas-api-go v1.24.2
@@ -75,6 +75,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.43.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.uber.org/ratelimit v0.3.1 // indirect
+	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
