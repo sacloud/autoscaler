@@ -24,12 +24,14 @@ import (
 	"testing"
 
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 	"github.com/sacloud/autoscaler/metrics"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/stretchr/testify/require"
 )
 
 func init() {
+	model.NameValidationScheme = model.UTF8Validation
 	initMetrics()
 }
 
