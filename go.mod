@@ -18,7 +18,8 @@ require (
 	github.com/sacloud/iaas-api-go v1.24.2
 	github.com/sacloud/iaas-api-go/trace/otel v0.0.0-20251222225644-7df65ab7d2cf
 	github.com/sacloud/iaas-service-go v1.21.1
-	github.com/sacloud/packages-go v0.0.13
+	github.com/sacloud/packages-go v0.1.0
+	github.com/sacloud/packages-go/e2e v0.0.0-20260423012125-3b04540c85d0
 	github.com/shivamMg/ppds v0.0.1
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
@@ -52,7 +53,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/hashicorp/hc-install v0.9.4 // indirect
-	github.com/hashicorp/terraform-exec v0.25.0 // indirect
+	github.com/hashicorp/terraform-exec v0.25.1 // indirect
 	github.com/hashicorp/terraform-json v0.27.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
@@ -64,7 +65,7 @@ require (
 	github.com/sacloud/go-http v0.1.9 // indirect
 	github.com/sacloud/saclient-go v0.2.6 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
-	github.com/zclconf/go-cty v1.17.0 // indirect
+	github.com/zclconf/go-cty v1.18.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.43.0 // indirect
