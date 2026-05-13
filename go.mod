@@ -7,7 +7,7 @@ toolchain go1.26.2
 require (
 	github.com/c-robinson/iplib v1.0.8
 	github.com/go-playground/validator/v10 v10.30.2
-	github.com/goccy/go-yaml v1.18.0
+	github.com/goccy/go-yaml v1.19.2
 	github.com/hashicorp/errwrap v1.1.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mitchellh/go-homedir v1.1.0
