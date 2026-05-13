@@ -13,7 +13,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
-	github.com/sacloud/api-client-go v0.3.4
+	github.com/sacloud/api-client-go v0.3.5
 	github.com/sacloud/go-otelsetup v0.8.0
 	github.com/sacloud/iaas-api-go v1.24.2
 	github.com/sacloud/iaas-api-go/trace/otel v0.0.0-20251222225644-7df65ab7d2cf
