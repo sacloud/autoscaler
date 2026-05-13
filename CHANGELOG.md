@@ -1,5 +1,25 @@
 # Changelog
 
+## [v0.19.4](https://github.com/sacloud/autoscaler/compare/v0.19.3...v0.19.4) - 2026-05-13
+- simplify API client validation by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/695
+- remove usacloud logo by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/697
+- sacloud/packages-go v0.0.13 by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/698
+- ci: bump docker/metadata-action from 5 to 6 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/694
+- ci: bump docker/login-action from 3 to 4 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/693
+- ci: bump docker/setup-qemu-action from 3 to 4 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/692
+- ci: bump crazy-max/ghaction-import-gpg from 6 to 7 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/691
+- ci: bump goreleaser/goreleaser-action from 6 to 7 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/690
+- chore(deps): bump sacloud/go-otelsetup from 0.5.0 to 0.8.0 by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/699
+- go: bump github.com/prometheus/common from 0.65.0 to 0.67.5 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/680
+- go: bump github.com/prometheus/client_golang from 1.23.0 to 1.23.2 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/664
+- ci: bump docker/build-push-action from 6 to 7 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/706
+- ci: bump docker/setup-buildx-action from 3 to 4 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/705
+- go: bump github.com/sacloud/api-client-go from 0.3.4 to 0.3.5 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/704
+- go: bump google.golang.org/grpc from 1.80.0 to 1.81.0 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/703
+- go: bump github.com/sacloud/packages-go from 0.0.13 to 0.1.0 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/702
+- go: bump github.com/goccy/go-yaml from 1.18.0 to 1.19.2 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/701
+- go: bump github.com/sacloud/iaas-api-go from 1.24.2 to 1.29.0 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/700
+
 ## [v0.19.3](https://github.com/sacloud/autoscaler/compare/v0.19.2...v0.19.3) - 2026-01-08
 - use default http.Client by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/687
 - e2e: use default http.Client by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/689
