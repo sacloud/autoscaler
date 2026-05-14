@@ -21,7 +21,7 @@ require (
 	github.com/sacloud/packages-go v0.1.0
 	github.com/sacloud/packages-go/e2e v0.0.0-20260423012125-3b04540c85d0
 	github.com/shivamMg/ppds v0.0.1
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/trace v1.43.0
