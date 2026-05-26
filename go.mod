@@ -17,7 +17,7 @@ require (
 	github.com/sacloud/go-otelsetup v0.8.0
 	github.com/sacloud/iaas-api-go v1.29.0
 	github.com/sacloud/iaas-api-go/trace/otel v0.0.0-20251222225644-7df65ab7d2cf
-	github.com/sacloud/iaas-service-go v1.21.1
+	github.com/sacloud/iaas-service-go v1.25.0
 	github.com/sacloud/packages-go v0.1.0
 	github.com/sacloud/packages-go/e2e v0.0.0-20260423012125-3b04540c85d0
 	github.com/shivamMg/ppds v0.0.1
