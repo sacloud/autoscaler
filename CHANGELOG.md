@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.19.5](https://github.com/sacloud/autoscaler/compare/v0.19.4...v0.19.5) - 2026-05-27
+- go: bump google.golang.org/grpc from 1.81.0 to 1.81.1 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/709
+- go: bump github.com/spf13/cobra from 1.10.1 to 1.10.2 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/707
+- go: bump github.com/sacloud/iaas-service-go from 1.21.1 to 1.25.0 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/708
+- chore: update iaas-api-go, iaas-service-go and saclient-go by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/711
+
 ## [v0.19.4](https://github.com/sacloud/autoscaler/compare/v0.19.3...v0.19.4) - 2026-05-13
 - simplify API client validation by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/695
 - remove usacloud logo by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/697
