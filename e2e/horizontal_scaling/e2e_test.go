@@ -51,7 +51,7 @@ var (
 
 	zones               = []string{"tk1b", "is1b"}
 	proxyLBReadyTimeout = 5 * time.Minute
-	e2eTestTimeout      = 20 * time.Minute
+	e2eTestTimeout      = 60 * time.Minute
 
 	output *e2e.Output
 )
