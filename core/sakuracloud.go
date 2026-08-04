@@ -20,17 +20,16 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
-	client "github.com/sacloud/api-client-go"
 	"github.com/sacloud/autoscaler/validate"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/go-otelsetup"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/defaults"
-	"github.com/sacloud/iaas-api-go/helper/api"
-	sacloudtrace "github.com/sacloud/iaas-api-go/trace/otel"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/defaults"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/envvar"
+	"github.com/sacloud/sacloud-sdk-go/common/saclient"
 )
 
 type SakuraCloud struct {
@@ -46,47 +45,80 @@ type SakuraCloud struct {
 // APIClient シングルトンなAPIクライアントを返す
 func (sc *SakuraCloud) APIClient() iaas.APICaller {
 	sc.initOnce.Do(func() {
-		options := []*api.CallerOptions{
-			api.OptionsFromEnv(),
+		var sa saclient.Client
+
+		env := os.Environ()
+		if sc.Token != "" && sc.Secret != "" {
+			env = append(env, "SAKURA_ACCESS_TOKEN="+sc.Token)
+			env = append(env, "SAKURA_ACCESS_TOKEN_SECRET="+sc.Secret)
 		}
-		if !sc.strictMode {
-			opt, err := api.OptionsFromProfile(sc.Profile)
-			if err != nil {
-				sc.initError = err
-				return
-			}
-			options = append(options, opt)
+		if sc.Profile != "" {
+			env = append(env, "SAKURA_PROFILE="+sc.Profile)
+		}
+		if err := sa.SetEnviron(env); err != nil {
+			sc.initError = err
+			return
 		}
 
-		options = append(options, &api.CallerOptions{
-			Options: &client.Options{
-				AccessToken:       sc.Token,
-				AccessTokenSecret: sc.Secret,
-				UserAgent: fmt.Sprintf(
-					"sacloud/autoscaler/v%s (%s/%s; +https://github.com/sacloud/autoscaler) %s",
-					version.Version,
-					runtime.GOOS,
-					runtime.GOARCH,
-					os.Getenv("SAKURACLOUD_APPEND_USER_AGENT"),
-				),
-			},
-		})
-		sc.apiClient = api.NewCallerWithOptions(api.MergeOptions(options...))
+		appendUA := envvar.StringFromEnvMulti([]string{"SAKURA_APPEND_USER_AGENT", "SAKURACLOUD_APPEND_USER_AGENT"}, "")
+		ua := fmt.Sprintf(
+			"sacloud/autoscaler/v%s (%s/%s; +https://github.com/sacloud/autoscaler) %s",
+			version.Version,
+			runtime.GOOS,
+			runtime.GOARCH,
+			appendUA,
+		)
+
+		var err error
+
+		if sc.strictMode {
+			err = sa.SetWith(
+				saclient.WithUserAgent(ua),
+				saclient.WithoutProfile(),
+			)
+		} else {
+			err = sa.SetWith(saclient.WithUserAgent(ua))
+		}
+		if err != nil {
+			sc.initError = err
+			return
+		}
+
+		if err := sa.Populate(); err != nil {
+			sc.initError = err
+			return
+		}
+
+		cfg, err := sa.EndpointConfig()
+		if err != nil {
+			sc.initError = fmt.Errorf("failed to get endpoint config: %w", err)
+			return
+		}
+		if cfg.APIRootURL != "" {
+			if strings.HasSuffix(cfg.APIRootURL, "/") {
+				cfg.APIRootURL = strings.TrimRight(cfg.APIRootURL, "/")
+			}
+			iaas.SakuraCloudAPIRoot = cfg.APIRootURL
+		}
+		if len(cfg.Zones) > 0 {
+			iaas.SakuraCloudZones = cfg.Zones
+		}
+		if cfg.DefaultZone != "" {
+			iaas.APIDefaultZone = cfg.DefaultZone
+		}
+
+		sc.apiClient = iaas.NewClientFromSaclient(&sa)
 		// オートスケールでは時間のかかる状態変更待ち(大きなディスクのコピー待ちなど)はあまりない想定
 		defaults.DefaultStatePollingTimeout = 60 * time.Minute
-
-		// 環境変数OTEL_EXPORTER_OTLP_ENDPOINTが指定されていたらOpenTelemetryによるトレースを有効化
-		if otelsetup.Enabled() {
-			sacloudtrace.Initialize()
-		}
 	})
 	return sc.apiClient
 }
 
 // Validate 有効なAPIキーが指定されているかを確認する
 func (sc *SakuraCloud) Validate(ctx context.Context) error {
-	if len(os.Getenv("SAKURACLOUD_APPEND_USER_AGENT")) > 1024 {
-		return fmt.Errorf("SAKURACLOUD_APPEND_USER_AGENT is too long: max=1024")
+	appendUA := envvar.StringFromEnvMulti([]string{"SAKURA_APPEND_USER_AGENT", "SAKURACLOUD_APPEND_USER_AGENT"}, "")
+	if len(appendUA) > 1024 {
+		return fmt.Errorf("SAKURA_APPEND_USER_AGENT (or SAKURACLOUD_APPEND_USER_AGENT) is too long: max=1024")
 	}
 
 	apiClient := sc.APIClient()

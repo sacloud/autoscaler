@@ -25,7 +25,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
 	"github.com/stretchr/testify/require"
 )
 

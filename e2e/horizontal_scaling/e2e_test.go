@@ -28,11 +28,11 @@ import (
 	"time"
 
 	autoscalerE2E "github.com/sacloud/autoscaler/e2e"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/helper/cleanup"
-	"github.com/sacloud/iaas-api-go/search"
-	serverService "github.com/sacloud/iaas-service-go/server"
-	"github.com/sacloud/packages-go/e2e"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/cleanup"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/search"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/e2e"
+	serverService "github.com/sacloud/sacloud-sdk-go/service/iaas/server"
 )
 
 const (

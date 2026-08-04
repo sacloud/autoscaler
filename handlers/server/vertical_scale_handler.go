@@ -22,11 +22,11 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/helper/plans"
-	"github.com/sacloud/iaas-api-go/helper/power"
-	"github.com/sacloud/iaas-api-go/types"
-	"github.com/sacloud/packages-go/size"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/plans"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/power"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/size"
 )
 
 type VerticalScaleHandler struct {

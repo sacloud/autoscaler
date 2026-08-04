@@ -28,11 +28,10 @@ import (
 	"testing"
 	"time"
 
-	client "github.com/sacloud/api-client-go"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/helper/api"
-	"github.com/sacloud/iaas-api-go/types"
-	"github.com/sacloud/packages-go/e2e"
+	autoscalerE2E "github.com/sacloud/autoscaler/e2e"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	sdkE2E "github.com/sacloud/sacloud-sdk-go/common/packages/e2e"
 )
 
 const (
@@ -40,13 +39,11 @@ const (
 )
 
 var (
-	coreCmd = exec.Command("autoscaler", "core", "start")
+	coreCmd    = exec.Command("autoscaler", "core", "start")
+	setupELBID types.ID
 )
 
 func TestMain(m *testing.M) {
-	os.Setenv("SAKURACLOUD_FAKE_MODE", "1")
-	os.Setenv("SAKURACLOUD_FAKE_STORE_PATH", "fake-store.json")
-
 	defer teardown()
 	setup()
 
@@ -68,7 +65,7 @@ func TestE2E_OldCoreCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	output := e2e.NewOutput(coreOutputs, "[Core]")
+	output := sdkE2E.NewOutput(coreOutputs, "[Core]")
 	defer output.Output()
 
 	if err := output.WaitOutput(coreReadyMarker, time.Minute); err != nil {
@@ -92,18 +89,10 @@ func setup() {
 		log.SetOutput(os.Stderr)
 	}()
 
-	fakeClient := api.NewCallerWithOptions(&api.CallerOptions{
-		Options: &client.Options{
-			Trace: os.Getenv("SAKURACLOUD_TRACE") != "",
-		},
-		TraceAPI:      os.Getenv("SAKURACLOUD_TRACE") != "",
-		FakeMode:      true,
-		FakeStorePath: "fake-store.json",
-	})
+	ctx := context.Background()
+	elbOp := iaas.NewProxyLBOp(autoscalerE2E.SacloudAPICaller)
 
-	elbOp := iaas.NewProxyLBOp(fakeClient)
-
-	_, err := elbOp.Create(context.Background(), &iaas.ProxyLBCreateRequest{
+	elb, err := elbOp.Create(ctx, &iaas.ProxyLBCreateRequest{
 		Plan: types.ProxyLBPlans.CPS100,
 		HealthCheck: &iaas.ProxyLBHealthCheck{
 			Protocol:  "http",
@@ -123,9 +112,14 @@ func setup() {
 	if err != nil {
 		panic(err)
 	}
+	setupELBID = elb.ID
 }
 
 func teardown() {
+	if setupELBID != 0 {
+		_ = iaas.NewProxyLBOp(autoscalerE2E.SacloudAPICaller).Delete(context.Background(), setupELBID)
+	}
+
 	if coreCmd.Process != nil {
 		if err := coreCmd.Process.Signal(syscall.SIGINT); err != nil {
 			log.Println(err)

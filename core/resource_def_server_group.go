@@ -25,9 +25,9 @@ import (
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/types"
-	"github.com/sacloud/packages-go/size"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/size"
 )
 
 type ResourceDefServerGroup struct {

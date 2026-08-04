@@ -15,7 +15,7 @@
 package core
 
 import (
-	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
 	"github.com/shivamMg/ppds/tree"
 )
 

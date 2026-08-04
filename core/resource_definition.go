@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/sacloud/autoscaler/defaults"
-	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
 )
 
 // ResourceDefinition Coreが扱うさくらのクラウド上のリソースを表す

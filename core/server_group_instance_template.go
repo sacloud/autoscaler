@@ -26,10 +26,10 @@ import (
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/helper/query"
-	"github.com/sacloud/iaas-api-go/ostype"
-	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/query"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/ostype"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
 )
 
 type ServerGroupInstanceTemplate struct {

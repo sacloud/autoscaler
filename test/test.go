@@ -18,30 +18,24 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"strings"
 	"testing"
+	"time"
 
-	client "github.com/sacloud/api-client-go"
 	"github.com/sacloud/autoscaler/config"
 	"github.com/sacloud/autoscaler/log"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/helper/api"
-	"github.com/sacloud/iaas-api-go/types"
-	"github.com/sacloud/packages-go/size"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/defaults"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/fake"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/size"
+	"github.com/sacloud/sacloud-sdk-go/common/saclient"
 )
 
 var (
 	Zone      = "is1a"
-	APIClient = api.NewCallerWithOptions(&api.CallerOptions{
-		Options: &client.Options{
-			AccessToken:       "fake",
-			AccessTokenSecret: "fake",
-			UserAgent:         "sacloud/autoscaler/fake/test",
-			Trace:             os.Getenv("SAKURACLOUD_TRACE") != "",
-		},
-		TraceAPI: os.Getenv("SAKURACLOUD_TRACE") != "",
-		FakeMode: true,
-	})
-	Logger = log.NewLogger(&log.LoggerOption{
+	APIClient iaas.APICaller
+	Logger    = log.NewLogger(&log.LoggerOption{
 		Writer:    os.Stderr,
 		JSON:      false,
 		TimeStamp: true,
@@ -49,6 +43,63 @@ var (
 		Level:     slog.LevelDebug,
 	})
 )
+
+func init() {
+	os.Setenv("SAKURACLOUD_FAKE_MODE", "1") //nolint:errcheck
+	fake.SwitchFactoryFuncToFake()
+
+	var originalStatePollingInterval = defaults.DefaultStatePollingInterval
+	var originalDBStatusPollingInterval = defaults.DefaultDBStatusPollingInterval
+
+	defaults.DefaultStatePollingInterval = 10 * time.Millisecond
+	defaults.DefaultDBStatusPollingInterval = 10 * time.Millisecond
+
+	fake.DiskCopyDuration = time.Millisecond
+	fake.PowerOnDuration = time.Millisecond
+	fake.PowerOffDuration = time.Millisecond
+
+	// core.SakuraCloud と同じ条件で saclient.Client を初期化するため
+	// 環境変数をベースに、fake モードとテスト用トークンを設定する
+	env := os.Environ()
+	env = append(env, "SAKURACLOUD_FAKE_MODE=1")
+	env = append(env, "SAKURA_ACCESS_TOKEN=fake")
+	env = append(env, "SAKURA_ACCESS_TOKEN_SECRET=fake")
+
+	var sa saclient.Client
+	if err := sa.SetWith(saclient.WithUserAgent("sacloud/autoscaler/test")); err != nil {
+		defaults.DefaultStatePollingInterval = originalStatePollingInterval
+		defaults.DefaultDBStatusPollingInterval = originalDBStatusPollingInterval
+		panic(err)
+	}
+	if err := sa.SetEnviron(env); err != nil {
+		defaults.DefaultStatePollingInterval = originalStatePollingInterval
+		defaults.DefaultDBStatusPollingInterval = originalDBStatusPollingInterval
+		panic(err)
+	}
+	if err := sa.Populate(); err != nil {
+		defaults.DefaultStatePollingInterval = originalStatePollingInterval
+		defaults.DefaultDBStatusPollingInterval = originalDBStatusPollingInterval
+		panic(err)
+	}
+
+	cfg, err := sa.EndpointConfig()
+	if err != nil {
+		panic(err)
+	}
+	if cfg.APIRootURL != "" {
+		if strings.HasSuffix(cfg.APIRootURL, "/") {
+			cfg.APIRootURL = strings.TrimRight(cfg.APIRootURL, "/")
+		}
+		iaas.SakuraCloudAPIRoot = cfg.APIRootURL
+	}
+	if len(cfg.Zones) > 0 {
+		iaas.SakuraCloudZones = cfg.Zones
+	}
+	if cfg.DefaultZone != "" {
+		iaas.APIDefaultZone = cfg.DefaultZone
+	}
+	APIClient = iaas.NewClientFromSaclient(&sa)
+}
 
 func AddTestServer(t *testing.T, name string) (*iaas.Server, func()) {
 	serverOp := iaas.NewServerOp(APIClient)

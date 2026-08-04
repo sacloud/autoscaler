@@ -24,11 +24,11 @@ import (
 	"github.com/sacloud/autoscaler/handlers"
 	"github.com/sacloud/autoscaler/handlers/builtins"
 	"github.com/sacloud/autoscaler/version"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/helper/power"
-	"github.com/sacloud/iaas-api-go/types"
-	diskBuilder "github.com/sacloud/iaas-service-go/disk/builder"
-	serverBuilder "github.com/sacloud/iaas-service-go/server/builder"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/power"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	diskBuilder "github.com/sacloud/sacloud-sdk-go/service/iaas/disk/builder"
+	serverBuilder "github.com/sacloud/sacloud-sdk-go/service/iaas/server/builder"
 )
 
 type HorizontalScaleHandler struct {

@@ -1,3 +1,5 @@
+.workspace_cache/
+
 .env
 .mailmap
 

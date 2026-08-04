@@ -22,10 +22,10 @@ import (
 	"github.com/sacloud/autoscaler/defaults"
 	"github.com/sacloud/autoscaler/handler"
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/helper/plans"
-	"github.com/sacloud/iaas-api-go/types"
-	"github.com/sacloud/packages-go/size"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/plans"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/size"
 	"github.com/stretchr/testify/require"
 )
 
