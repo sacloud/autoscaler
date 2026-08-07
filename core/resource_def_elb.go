@@ -21,8 +21,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
 )
 
 // DefaultELBPlans 各リソースで定義しなかった場合に利用されるデフォルトのプラン一覧

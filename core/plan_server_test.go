@@ -17,8 +17,8 @@ package core
 import (
 	"testing"
 
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/packages-go/size"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/size"
 )
 
 func TestServerPlan_Equals(t *testing.T) {

@@ -23,7 +23,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/sacloud/autoscaler/test"
 	"github.com/sacloud/autoscaler/validate"
-	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
 	"github.com/stretchr/testify/require"
 )
 

@@ -14,7 +14,7 @@
 
 package core
 
-import "github.com/sacloud/iaas-api-go"
+import "github.com/sacloud/sacloud-sdk-go/api/iaas"
 
 type ServerPlan struct {
 	Name   string `yaml:"name"`

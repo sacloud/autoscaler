@@ -32,9 +32,9 @@ import (
 	"time"
 
 	autoscalerE2E "github.com/sacloud/autoscaler/e2e"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/search"
-	"github.com/sacloud/packages-go/e2e"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/search"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/e2e"
 )
 
 const (

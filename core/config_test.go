@@ -16,7 +16,6 @@ package core
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/goccy/go-yaml"
@@ -120,7 +119,7 @@ func TestConfig_Handlers(t *testing.T) {
 }
 
 func TestConfig_Validate(t *testing.T) {
-	os.Setenv("SAKURACLOUD_FAKE_MODE", "1") //nolint:errcheck
+	t.Setenv("SAKURACLOUD_FAKE_MODE", "1")
 	defer test.AddTestELB(t, "example")()
 
 	resources := ResourceDefinitions{

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/sacloud/autoscaler/test"
-	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
 )
 
 func TestGraph_Tree(t *testing.T) {

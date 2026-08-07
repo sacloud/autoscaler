@@ -14,7 +14,7 @@
 
 package builtins
 
-import "github.com/sacloud/iaas-api-go"
+import "github.com/sacloud/sacloud-sdk-go/api/iaas"
 
 // SakuraCloudAPICaller さくらのクラウドAPIを利用するビルトインハンドラ向けのインターフェース
 type SakuraCloudAPICaller interface {
