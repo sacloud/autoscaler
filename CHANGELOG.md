@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.20.0](https://github.com/sacloud/autoscaler/compare/v0.19.5...v0.20.0) - 2026-08-16
+
+- test: extend E2E horizontal scaling timeout to 60 minutes by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/720
+- ghcr.io now accepts GITHUB_TOKEN by @shyouhei in https://github.com/sacloud/autoscaler/pull/722
+- pin actions by @tokuhirom in https://github.com/sacloud/autoscaler/pull/726
+- refactor: migrate to sacloud-sdk-go by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/725
+- ci: bump actions/checkout from 6.1.0 to 7.0.1 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/728
+- ci: bump actions/setup-go from 6.5.0 to 7.0.0 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/727
+- go: bump github.com/go-playground/validator/v10 from 10.30.2 to 10.30.3 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/715
+- go: bump github.com/prometheus/common from 0.67.5 to 0.70.1 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/717
+- go: bump github.com/sacloud/go-otelsetup from 0.8.0 to 0.9.0 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/732
+- go: bump github.com/prometheus/client_golang from 1.23.2 to 1.24.1 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/731
+- go: bump google.golang.org/protobuf from 1.36.11 to 1.36.12 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/734
+
 ## [v0.19.5](https://github.com/sacloud/autoscaler/compare/v0.19.4...v0.19.5) - 2026-05-27
 - go: bump google.golang.org/grpc from 1.81.0 to 1.81.1 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/709
 - go: bump github.com/spf13/cobra from 1.10.1 to 1.10.2 by @dependabot[bot] in https://github.com/sacloud/autoscaler/pull/707
