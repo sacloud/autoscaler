@@ -17,6 +17,7 @@ package config
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/goccy/go-yaml"
@@ -80,4 +81,17 @@ func TestStringOrFilePath_UnmarshalYAML(t *testing.T) {
 			require.Equal(t, tt.warning, logBuf.String())
 		})
 	}
+}
+
+func TestStringOrFilePath_LongContentDoesNotWarn(t *testing.T) {
+	content := strings.Repeat("x", 4096)
+	logBuf := bytes.NewBufferString("")
+	logger := log.NewLogger(&log.LoggerOption{Writer: logBuf})
+
+	got, isFilePath, err := stringOrFilePath(content, logger)
+
+	require.NoError(t, err)
+	require.Equal(t, content, got)
+	require.False(t, isFilePath)
+	require.Empty(t, logBuf.String())
 }
