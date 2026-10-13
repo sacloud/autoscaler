@@ -109,6 +109,7 @@ func stringOrFilePath(s string, logger *slog.Logger) (string, bool, error) {
 	content, err := os.ReadFile(path) //nolint:gosec
 
 	if err != nil {
+		// Windowsでは、長すぎるパスに対してENAMETOOLONG以外のエラーが返る場合がある
 		if !os.IsNotExist(err) && !errors.Is(err, syscall.ENAMETOOLONG) {
 			var pathErr *os.PathError
 			if errors.As(err, &pathErr) {
