@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.20.1](https://github.com/sacloud/autoscaler/compare/v0.20.0...v0.20.1) - 2026-10-13
+
+- fix: avoid warnings for long inline config by @RyoMasumura1201 in https://github.com/sacloud/autoscaler/pull/753
+
 ## [v0.20.0](https://github.com/sacloud/autoscaler/compare/v0.19.5...v0.20.0) - 2026-08-16
 
 - test: extend E2E horizontal scaling timeout to 60 minutes by @yamamoto-febc in https://github.com/sacloud/autoscaler/pull/720
