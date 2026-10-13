@@ -16,8 +16,10 @@ package config
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
+	"syscall"
 
 	"github.com/goccy/go-yaml"
 	"github.com/mitchellh/go-homedir"
@@ -107,11 +109,17 @@ func stringOrFilePath(s string, logger *slog.Logger) (string, bool, error) {
 	content, err := os.ReadFile(path) //nolint:gosec
 
 	if err != nil {
-		if !os.IsNotExist(err) {
-			logger.Warn(
-				"got unknown error while processing StringOrFilePath",
-				slog.Any("error", err),
-			)
+		// Windowsでは、長すぎるパスに対してENAMETOOLONG以外のエラーが返る場合がある
+		if !os.IsNotExist(err) && !errors.Is(err, syscall.ENAMETOOLONG) {
+			var pathErr *os.PathError
+			if errors.As(err, &pathErr) {
+				logger.Warn(
+					"got unknown error while processing StringOrFilePath",
+					slog.Any("error", pathErr.Err),
+				)
+			} else {
+				logger.Warn("got unknown error while processing StringOrFilePath")
+			}
 		}
 		isFilePath = false
 		content = []byte(s)
