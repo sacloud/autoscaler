@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.20.2](https://github.com/sacloud/autoscaler/compare/v0.20.1...v0.20.2) - 2026-10-22
+
+- go.mod: toolchain go1.26.10 by @shyouhei in https://github.com/sacloud/autoscaler/pull/756
+
 ## [v0.20.1](https://github.com/sacloud/autoscaler/compare/v0.20.0...v0.20.1) - 2026-10-13
 
 - fix: avoid warnings for long inline config by @RyoMasumura1201 in https://github.com/sacloud/autoscaler/pull/753
